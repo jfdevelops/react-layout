@@ -10,7 +10,7 @@ export default defineConfig({
   build: {
     lib: {
       entry: resolve(rootDir, 'src/index.ts'),
-      name: 'ViewMap',
+      name: 'view-map-core',
       fileName: (format) => (format === 'es' ? 'index.js' : 'index.cjs'),
       formats: ['es', 'cjs'],
     },

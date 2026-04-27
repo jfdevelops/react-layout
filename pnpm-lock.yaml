@@ -6,7 +6,9 @@ settings:
 
 importers:
 
-  .:
+  .: {}
+
+  packages/core:
     devDependencies:
       '@testing-library/jest-dom':
         specifier: 6.9.1

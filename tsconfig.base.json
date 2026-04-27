@@ -8,9 +8,6 @@
     "strict": true,
     "isolatedModules": true,
     "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "noEmit": true,
-    "types": ["node", "vitest/globals"]
-  },
-  "include": ["src", "vite.config.ts", "vitest.setup.ts"]
+    "skipLibCheck": true
+  }
 }
