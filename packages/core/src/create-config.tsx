@@ -1,4 +1,6 @@
 import {
+  createProp,
+  type AnyBuiltPropDefinition,
   type CreateOptionalValue,
   type CreateRequiredValue,
   type DependentOnValueDefinition,
@@ -38,21 +40,23 @@ type DefinedResourceLayout<
   views: NormalizeResources<Resources>;
 };
 
-type CreateViewMapOptions<Resources extends ReadonlyArray<ResourceDefinition>> =
-  {
-    /**
-     * An array of valid resource names to support.
-     */
-    resources: Resources;
-    /**
-     * The props that are passed into the created resource layout.
-     */
-    inProps: any;
-    /**
-     * An array of valid components that all
-     */
-    // baseComponents: Array<BaseComponent>;
-  };
+type CreateViewMapOptions<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  InProps extends Record<string, AnyBuiltPropDefinition>,
+> = {
+  /**
+   * An array of valid resource names to support.
+   */
+  resources: Resources;
+  /**
+   * The props that are passed into the created resource layout.
+   */
+  inProps: InProps;
+  /**
+   * An array of valid components that all
+   */
+  // baseComponents: Array<BaseComponent>;
+};
 
 const test = defineResourceLayout({
   resources: [
@@ -63,12 +67,17 @@ const test = defineResourceLayout({
     'groups',
     'roles',
   ],
-  inProps: {},
+  inProps: {
+    title: createProp.string(),
+  },
 });
 
 export function defineResourceLayout<
   const Resources extends ReadonlyArray<ResourceDefinition>,
->(options: CreateViewMapOptions<Resources>): DefinedResourceLayout<Resources> {
+  InProps extends Record<string, AnyBuiltPropDefinition>,
+>(
+  options: CreateViewMapOptions<Resources, InProps>,
+): DefinedResourceLayout<Resources> {
   const { inProps, resources } = options;
 
   return {
