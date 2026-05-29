@@ -1,8 +1,19 @@
+import { NonEmptyReadonlyArray } from './create-value';
+
 export type ResourceDefinition =
   | string
   | {
       value: string;
-      subResources: ReadonlyArray<ResourceDefinition>;
+      subResources: ReadonlyArray<
+        ResourceDefinition & {
+          /**
+           * Whether to allow any string as a sub resource.
+           *
+           * @default false
+           */
+          allowAnyString?: boolean;
+        }
+      >;
     };
 
 type MergeIntersection<T> = {
@@ -31,7 +42,8 @@ export type NormalizeResource<Resource extends ResourceDefinition> =
       }
     : Resource extends {
           value: infer Value extends string;
-          subResources: infer SubResources extends ReadonlyArray<ResourceDefinition>;
+          subResources: infer SubResources extends
+            ReadonlyArray<ResourceDefinition>;
         }
       ? {
           [Key in Value]: {
@@ -45,6 +57,8 @@ export type NormalizeResources<
 > = MergeIntersection<
   UnionToIntersection<NormalizeResource<Resources[number]>>
 >;
+export type GetResources<Resource extends ReadonlyArray<ResourceDefinition>> =
+  {};
 
 function normalizeResourceTree(resource: ResourceDefinition): ResourceTree {
   if (typeof resource === 'string') {
@@ -84,4 +98,18 @@ export function normalizeResources<
   Resources extends ReadonlyArray<ResourceDefinition>,
 >(resources: Resources): NormalizeResources<Resources> {
   return normalizeResourcesTree(resources) as NormalizeResources<Resources>;
+}
+
+export type ResourceEnum<Resources extends ReadonlyArray<ResourceDefinition>> =
+  NonEmptyReadonlyArray<keyof NormalizeResources<Resources> & string>;
+export function toResourceEnum<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+>(resources: NormalizeResources<Resources>) {
+  const keys = Object.keys(resources);
+
+  if (keys.length === 0) {
+    throw new Error('No resources provided');
+  }
+
+  return keys as unknown as ResourceEnum<Resources>;
 }

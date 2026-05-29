@@ -1,38 +1,17 @@
+import type { JSX } from 'react';
 import {
+  createPrimitivePropBuilder,
   createProp,
+  EnumWrappedProp,
   type AnyBuiltPropDefinition,
-  type CreateOptionalValue,
-  type CreateRequiredValue,
-  type DependentOnValueDefinition,
-  type OptionalValueDefinition,
-  type PrimitiveTypesMap,
-  type RequiredValueDefinition,
-  type RequiredWhen,
 } from './create-value';
 import {
   normalizeResources,
+  ResourceEnum,
+  toResourceEnum,
   type NormalizeResources,
   type ResourceDefinition,
 } from './resource';
-
-type ViewMapConfig<Views extends string> = {};
-type ViewComponentFnResult =
-  | OptionalValueDefinition<unknown, keyof PrimitiveTypesMap>
-  | RequiredValueDefinition<unknown, keyof PrimitiveTypesMap>
-  | RequiredWhen<unknown, unknown, keyof PrimitiveTypesMap>
-  | DependentOnValueDefinition<unknown, keyof PrimitiveTypesMap, unknown>
-  | (OptionalValueDefinition<unknown, keyof PrimitiveTypesMap> & {
-      dependentOn: unknown;
-    });
-type ViewComponentFn = (createValue: {
-  optional: CreateOptionalValue;
-  required: CreateRequiredValue;
-}) => ViewComponentFnResult;
-type ViewComponentDefinition =
-  | string
-  | Record<string, ViewComponentFn | ViewComponentFnResult>;
-
-interface BaseConfigComponents {}
 
 type DefinedResourceLayout<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -40,25 +19,38 @@ type DefinedResourceLayout<
   views: NormalizeResources<Resources>;
 };
 
+type InPropsObject = Record<string, AnyBuiltPropDefinition>;
+type InPropsFunction<Resources extends ReadonlyArray<ResourceDefinition>> =
+  (props: {
+    resource: EnumWrappedProp<ResourceEnum<Resources>, 'string', 'required'>;
+  }) => InPropsObject;
+type InPropsDefinition<Resources extends ReadonlyArray<ResourceDefinition>> =
+  | InPropsObject
+  | InPropsFunction<Resources>;
+type LayoutProps<CustomProps extends InPropsObject = {}> = {
+  include?: {}; // map of created props from `options` with a `true` value to include in the layout
+  /**
+   * Custom props that the layout will receive.
+   */
+  custom?: CustomProps;
+};
+type CreateLayoutOptions = {};
 type CreateViewMapOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends Record<string, AnyBuiltPropDefinition>,
+  Options extends InPropsDefinition<Resources>,
 > = {
   /**
    * An array of valid resource names to support.
    */
   resources: Resources;
   /**
-   * The props that are passed into the created resource layout.
+   * The options that are passed into the created resource layout.
    */
-  inProps: InProps;
-  /**
-   * An array of valid components that all
-   */
-  // baseComponents: Array<BaseComponent>;
+  options: Options;
+  render: () => JSX.Element;
 };
 
-const test = defineResourceLayout({
+const createResourceLayout = defineResourceLayout({
   resources: [
     {
       value: 'users',
@@ -67,20 +59,48 @@ const test = defineResourceLayout({
     'groups',
     'roles',
   ],
-  inProps: {
-    title: createProp.string(),
+  options: (props) => ({
+    resource: props.resource,
+    name: createProp.string(),
+    title: createProp
+      .component({ type: 'ReactNode' })
+      .or(
+        createProp
+          .component({ type: 'JSX.Element' })
+          .withChildren({ visibility: 'required' }),
+      ),
+  }),
+  render: () => <div>Hello, world!</div>,
+});
+createResourceLayout({
+  resource: 'groups',
+  name: 'GroupsLayout',
+  props: {
+    segment: createProp.string(),
   },
 });
 
 export function defineResourceLayout<
   const Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends Record<string, AnyBuiltPropDefinition>,
->(
-  options: CreateViewMapOptions<Resources, InProps>,
-): DefinedResourceLayout<Resources> {
-  const { inProps, resources } = options;
+  InProps extends InPropsDefinition<Resources>,
+>(options: CreateViewMapOptions<Resources, InProps>) {
+  const { options: inProps, resources } = options;
+  const normalizedResources = normalizeResources(resources);
+  const resourceProp = createPrimitivePropBuilder('string').enum(
+    toResourceEnum(normalizedResources),
+  );
+  const resolvedOptions =
+    typeof inProps === 'function'
+      ? inProps({ resource: resourceProp })
+      : inProps;
 
-  return {
-    views: normalizeResources(resources),
-  };
+  return <
+    Name extends string,
+    Resource extends keyof NormalizeResources<Resources>,
+    Props extends InPropsDefinition<Resources> = {},
+  >(options: {
+    name: Name;
+    resource: Resource;
+    props?: Props;
+  }) => {};
 }
