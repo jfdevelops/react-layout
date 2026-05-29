@@ -27,17 +27,42 @@ type InPropsFunction<Resources extends ReadonlyArray<ResourceDefinition>> =
 type InPropsDefinition<Resources extends ReadonlyArray<ResourceDefinition>> =
   | InPropsObject
   | InPropsFunction<Resources>;
-type LayoutProps<CustomProps extends InPropsObject = {}> = {
-  include?: {}; // map of created props from `options` with a `true` value to include in the layout
+type InferredInProps<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+> = Options extends InPropsFunction<Resources> ? ReturnType<Options> : Options;
+type IncludedProps<T> = {
+  [_ in keyof T]?: true;
+};
+type LayoutProps<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  IncludeProps extends IncludedProps<InferredInProps<Resources, Options>> = {},
+  CustomProps extends InPropsObject = {},
+> = {
+  include?: IncludeProps; // map of created props from `options` with a `true` value to include in the layout
   /**
    * Custom props that the layout will receive.
    */
   custom?: CustomProps;
 };
-type CreateLayoutOptions = {};
+type CreateLayoutOptions<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  IncludeProps extends IncludedProps<InferredInProps<Resources, Options>> = {},
+  CustomProps extends InPropsObject = {},
+> = {
+  props?: LayoutProps<Resources, Options, IncludeProps, CustomProps>;
+  render: (
+    props: CustomProps &
+      Pick<InferredInProps<Resources, Options>, keyof IncludeProps & string>,
+  ) => JSX.Element;
+};
 type CreateViewMapOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
+  IncludeProps extends IncludedProps<InferredInProps<Resources, Options>> = {},
+  CustomProps extends InPropsObject = {},
 > = {
   /**
    * An array of valid resource names to support.
@@ -47,7 +72,7 @@ type CreateViewMapOptions<
    * The options that are passed into the created resource layout.
    */
   options: Options;
-  render: () => JSX.Element;
+  layout: CreateLayoutOptions<Resources, Options, IncludeProps, CustomProps>;
 };
 
 const createResourceLayout = defineResourceLayout({
@@ -70,7 +95,20 @@ const createResourceLayout = defineResourceLayout({
           .withChildren({ visibility: 'required' }),
       ),
   }),
-  render: () => <div>Hello, world!</div>,
+  layout: {
+    props: {
+      include: {
+        name: true,
+      },
+      custom: {
+        includeCreateButton: createProp.boolean().literal(true).optional(),
+        addNewIcon: createProp.component({ type: 'ReactNode' }).optional(),
+        children: createProp.component({ type: 'ReactNode' }),
+        className: createProp.string().optional(),
+      },
+    },
+    render: ({}) => <></>,
+  },
 });
 createResourceLayout({
   resource: 'groups',
@@ -83,7 +121,11 @@ createResourceLayout({
 export function defineResourceLayout<
   const Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
->(options: CreateViewMapOptions<Resources, InProps>) {
+  IncludeProps extends IncludedProps<InferredInProps<Resources, InProps>> = {},
+  CustomProps extends InPropsObject = {},
+>(
+  options: CreateViewMapOptions<Resources, InProps, IncludeProps, CustomProps>,
+) {
   const { options: inProps, resources } = options;
   const normalizedResources = normalizeResources(resources);
   const resourceProp = createPrimitivePropBuilder('string').enum(
