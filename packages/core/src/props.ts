@@ -2,6 +2,7 @@ import {
   AnyBuiltPropDefinition,
   EnumWrappedProp,
   LiteralWrappedProp,
+  ResolveProps,
 } from './create-value';
 import { ResourceDefinition, ResourceEnum } from './resource';
 import { Show } from './utils';
@@ -32,3 +33,14 @@ export type InferredInProps<
 export type IncludedProps<T> = {
   [_ in keyof T]?: true;
 };
+export type LayoutRenderProps<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  IncludeProps extends IncludedProps<InferredInProps<Resources, Options>> = {},
+  CustomProps extends InPropsObject = {},
+> = Show<
+  ResolveProps<
+    CustomProps &
+      Pick<InferredInProps<Resources, Options>, keyof IncludeProps & string>
+  >
+>;

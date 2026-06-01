@@ -15,7 +15,6 @@ export type PrimitiveValueTypes = {
   boolean: boolean;
 };
 
-
 const primitiveTypes = {
   string: 'string',
   number: 'number',
@@ -85,7 +84,7 @@ abstract class BaseProp<
   abstract allows(value: unknown): value is Value;
 }
 
-class StringProp<Visibility extends PropVisibility> extends BaseProp<
+export class StringProp<Visibility extends PropVisibility> extends BaseProp<
   'string',
   Visibility,
   string
@@ -375,7 +374,7 @@ type ConfiguredWrappedProp<
     config: Config;
   };
 
-type WrappedProp<Prop extends AnyBaseProp> = ((
+export type WrappedProp<Prop extends AnyBaseProp> = ((
   value: unknown,
 ) => ReturnType<Prop['validate']>) &
   WrappedPropState<Prop> &
@@ -386,7 +385,7 @@ type WrappedProp<Prop extends AnyBaseProp> = ((
     }): WrappedProp<UnionProp<readonly [Prop, Other], ExtractVisibility<Prop>>>;
   };
 
-type LiteralWrappedProp<
+export type LiteralWrappedProp<
   Value extends PrimitiveTypesMap[Type],
   Type extends PrimitivePropType,
   Visibility extends PropVisibility,
@@ -539,6 +538,92 @@ type ResolvedBuiltPropShape<Shape extends BuiltPropShape> = {
   [Key in keyof Shape as Shape[Key]['visibility'] extends 'required'
     ? never
     : Key]?: ExtractDefinitionValue<Shape[Key]>;
+};
+
+/** True when the prop's state type carries `type: 'JSX.Element'`. */
+type IsJSXElementProp<D extends AnyBuiltPropDefinition> = D extends {
+  type: 'JSX.Element';
+}
+  ? true
+  : false;
+
+/**
+ * Returns the resolved key name for a prop: capitalizes the key when the prop
+ * is a JSX.Element component prop (React convention for component slot props).
+ */
+type ResolvedPropKey<K extends string, D extends AnyBuiltPropDefinition> =
+  IsJSXElementProp<D> extends true ? Capitalize<K> : K;
+
+/**
+ * Resolves a shape of prop definitions created by the `createProp` builders
+ * into a plain TypeScript props interface.
+ *
+ * - Optional props become optional keys (`prop?: Type`).
+ * - Props whose type is `JSX.Element` have their key capitalized
+ *   (`icon` → `Icon`), following React's component-prop convention.
+ */
+export type ResolveProps<Shape extends Record<string, AnyBuiltPropDefinition>> =
+  {
+    [K in keyof Shape & string as Shape[K]['visibility'] extends 'required'
+      ? ResolvedPropKey<K, Shape[K]>
+      : never]: ExtractDefinitionValue<Shape[K]>;
+  } & {
+    [K in keyof Shape & string as Shape[K]['visibility'] extends 'required'
+      ? never
+      : ResolvedPropKey<K, Shape[K]>]?: ExtractDefinitionValue<Shape[K]>;
+  };
+
+/**
+ * Like `ExtractDefinitionValue` but for union members (base props).
+ * JSX.Element component props become render functions.
+ */
+type ExtractLayoutMemberValue<P extends AnyBaseProp> = P extends {
+  type: 'JSX.Element';
+  properties: infer Shape extends Record<string, AnyBuiltPropDefinition>;
+}
+  ? (props: ResolveProps<Shape>) => JSX.Element
+  : P extends { type: 'JSX.Element' }
+    ? () => JSX.Element
+    : ExtractPropValue<P>;
+
+/**
+ * Like `ExtractDefinitionValue` but JSX.Element component props resolve as
+ * render functions instead of the raw `JSX.Element` value:
+ * - No component props → `() => JSX.Element`
+ * - With component props → `(props: ResolveProps<Shape>) => JSX.Element`
+ * Union members are resolved individually with the same rule.
+ */
+type ExtractLayoutDefinitionValue<D extends AnyBuiltPropDefinition> =
+  D extends {
+    type: 'JSX.Element';
+    properties: infer Shape extends Record<string, AnyBuiltPropDefinition>;
+  }
+    ? (props: ResolveProps<Shape>) => JSX.Element
+    : D extends { type: 'JSX.Element' }
+      ? () => JSX.Element
+      : D extends { members: infer Members extends readonly AnyBaseProp[] }
+        ? ExtractLayoutMemberValue<Members[number]>
+        : ExtractDefinitionValue<D>;
+
+/**
+ * Like `ResolveProps` but intended for the resolved options passed to the
+ * function returned by `defineResourceLayout`. JSX.Element component props
+ * become render functions so consumers provide a component slot rather than
+ * a pre-rendered element:
+ * - `createProp.component({ type: 'JSX.Element' })` → `() => JSX.Element`
+ * - `createProp.component({ type: 'JSX.Element' }).props({ ... })` →
+ *   `(props: ResolveProps<Shape>) => JSX.Element`
+ */
+export type ResolveLayoutProps<
+  Shape extends Record<string, AnyBuiltPropDefinition>,
+> = {
+  [K in keyof Shape & string as Shape[K]['visibility'] extends 'required'
+    ? ResolvedPropKey<K, Shape[K]>
+    : never]: ExtractLayoutDefinitionValue<Shape[K]>;
+} & {
+  [K in keyof Shape & string as Shape[K]['visibility'] extends 'required'
+    ? never
+    : ResolvedPropKey<K, Shape[K]>]?: ExtractLayoutDefinitionValue<Shape[K]>;
 };
 
 class ObjectProp<
@@ -1271,4 +1356,3 @@ export const createProp = {
   component: <Type extends ComponentPropType>(options: { type: Type }) =>
     createComponentPropBuilder(options.type),
 };
-createPrimitivePropBuilder('string').enum;
