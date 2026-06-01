@@ -1,4 +1,6 @@
+import { ReactNode } from 'react';
 import { NonEmptyReadonlyArray } from './create-value';
+import { MergeIntersection, UnionToIntersection } from './utils';
 
 export type ResourceDefinition =
   | string
@@ -15,16 +17,6 @@ export type ResourceDefinition =
         }
       >;
     };
-
-type MergeIntersection<T> = {
-  [Key in keyof T]: T[Key];
-};
-
-type UnionToIntersection<Union> = (
-  Union extends unknown ? (value: Union) => void : never
-) extends (value: infer Intersection) => void
-  ? Intersection
-  : never;
 
 export type ResourceTree = Record<
   string,
@@ -57,8 +49,9 @@ export type NormalizeResources<
 > = MergeIntersection<
   UnionToIntersection<NormalizeResource<Resources[number]>>
 >;
-export type GetResources<Resource extends ReadonlyArray<ResourceDefinition>> =
-  {};
+export type ResourceLayoutComponentProps = {
+  children: ReactNode;
+};
 
 function normalizeResourceTree(resource: ResourceDefinition): ResourceTree {
   if (typeof resource === 'string') {
