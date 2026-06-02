@@ -34,6 +34,10 @@
     "react": ">=18",
     "react-dom": ">=18"
   },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "devDependencies": {
     "@vitest/coverage-v8": "4.1.5",
     "@vitest/ui": "4.1.5",
