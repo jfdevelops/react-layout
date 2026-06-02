@@ -20,7 +20,7 @@
     "react-dom": "18.3.1",
     "shadcn": "^4.10.0",
     "tailwind-merge": "^3.6.0",
-    "view-map": "workspace:*"
+    "@jfdevelops/react-layout": "workspace:*"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.0",

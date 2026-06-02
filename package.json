@@ -3,14 +3,16 @@
   "private": true,
   "packageManager": "pnpm@10.28.1",
   "scripts": {
-    "dev": "pnpm --filter view-map dev",
+    "dev": "pnpm --filter ./packages/core dev",
     "dev:basic-example": "pnpm --filter basic-example dev",
-    "build": "pnpm --filter view-map build",
+    "build": "pnpm --filter ./packages/core build",
     "build:examples": "pnpm --filter basic-example build",
-    "typecheck": "pnpm --filter view-map typecheck",
+    "typecheck": "pnpm --filter ./packages/core typecheck",
     "typecheck:examples": "pnpm --filter basic-example typecheck",
-    "test": "pnpm --filter view-map test",
-    "test:watch": "pnpm --filter view-map test:watch",
-    "preview": "pnpm --filter view-map preview"
+    "test": "pnpm --filter ./packages/core test",
+    "test:watch": "pnpm --filter ./packages/core test:watch",
+    "test:ui": "pnpm --filter ./packages/core test:ui",
+    "test:coverage": "pnpm --filter ./packages/core test:coverage",
+    "preview": "pnpm --filter ./packages/core preview"
   }
 }
