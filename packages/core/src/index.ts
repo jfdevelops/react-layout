@@ -10,12 +10,12 @@ export type {
   MakeComposableOptions,
 } from './composable';
 export { defineResourceLayout } from './create-config';
-export { createProp, createPrimitivePropBuilder, validateProps } from './create-value';
+export { createProp, createPrimitivePropBuilder, validateProps } from './validators';
 export type {
   AnyBuiltPropDefinition,
   ResolveLayoutProps,
   ResolveProps,
-} from './create-value';
+} from './validators';
 export type {
   IncludedProps,
   InferredInProps,

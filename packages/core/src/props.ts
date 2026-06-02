@@ -3,7 +3,7 @@ import {
   EnumWrappedProp,
   LiteralWrappedProp,
   ResolveProps,
-} from './create-value';
+} from './validators';
 import { ResourceDefinition, ResourceEnum } from './resource';
 import { Show } from './utils';
 

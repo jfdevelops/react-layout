@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { NonEmptyReadonlyArray } from './create-value';
+import { NonEmptyReadonlyArray } from './validators';
 import { MergeIntersection, UnionToIntersection } from './utils';
 
 export type ResourceDefinition =

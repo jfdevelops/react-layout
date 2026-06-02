@@ -1,251 +1,24 @@
-import { ReactNode, JSX } from 'react';
-
-export type PrimitiveTypesMap = PrimitiveValueTypes & {
-  object: object;
-  array: unknown[];
-  date: Date;
-  regex: RegExp;
-  error: Error;
-  symbol: symbol;
-  bigint: bigint;
-};
-export type PrimitiveValueTypes = {
-  string: string;
-  number: number;
-  boolean: boolean;
-};
-
-const primitiveTypes = {
-  string: 'string',
-  number: 'number',
-  boolean: 'boolean',
-  object: 'object',
-  array: 'array',
-  date: 'date',
-  regex: 'regex',
-  error: 'error',
-  symbol: 'symbol',
-  bigint: 'bigint',
-} satisfies Record<keyof PrimitiveTypesMap, string>;
-
-function createInvalidPropValueMessage(type: string) {
-  return `"value" is not of type "${type}".`;
-}
-
-class InvalidPropValueError<Type extends string> extends Error {
-  constructor(type: Type) {
-    super(createInvalidPropValueMessage(type));
-
-    this.name = 'InvalidPropValueError';
-  }
-}
-
-type PropVisibility = 'optional' | 'required';
-type PrimitivePropType = keyof PrimitiveValueTypes;
-export type NonEmptyReadonlyArray<Value> = readonly [Value, ...Value[]];
-type PropConfig = Record<string, unknown>;
-
-type PropType =
-  | keyof PrimitiveTypesMap
-  | ComponentPropType
-  | 'union'
-  | 'function';
-type BasePropOptions<
-  Type extends PropType,
-  Visibility extends PropVisibility,
-  Value = unknown,
-> = {
-  type: Type;
-  visibility: Visibility;
-  value?: Value;
-};
-
-abstract class BaseProp<
-  Type extends PropType,
-  Visibility extends PropVisibility,
-  Value = unknown,
-> {
-  readonly type: Type;
-  readonly visibility: Visibility;
-  readonly value?: Value;
-
-  protected error: InvalidPropValueError<Type>;
-
-  constructor(options: BasePropOptions<Type, Visibility, Value>) {
-    const { type, visibility, value } = options;
-
-    this.type = type;
-    this.visibility = visibility;
-    this.value = value;
-    this.error = new InvalidPropValueError(type);
-  }
-
-  abstract validate(value: unknown): void;
-  abstract allows(value: unknown): value is Value;
-}
-
-export class StringProp<Visibility extends PropVisibility> extends BaseProp<
-  'string',
-  Visibility,
-  string
-> {
-  constructor(visibility: Visibility) {
-    super({ type: 'string', visibility });
-  }
-
-  optional(this: StringProp<'required'>) {
-    return new StringProp('optional');
-  }
-
-  literal<const Value extends string>(value: Value) {
-    return new LiteralProp(value, 'string', this.visibility);
-  }
-
-  enum<const Values extends NonEmptyReadonlyArray<string>>(values: Values) {
-    return new EnumProp(values, 'string', this.visibility);
-  }
-
-  validate(value: unknown) {
-    if (typeof value !== 'string') {
-      throw this.error;
-    }
-  }
-
-  allows(value: unknown): value is string {
-    return typeof value === 'string';
-  }
-}
-
-class NumberProp<Visibility extends PropVisibility> extends BaseProp<
-  'number',
-  Visibility,
-  number
-> {
-  constructor(visibility: Visibility) {
-    super({ type: 'number', visibility });
-  }
-
-  optional(this: NumberProp<'required'>) {
-    return new NumberProp('optional');
-  }
-
-  literal<const Value extends number>(value: Value) {
-    return new LiteralProp(value, 'number', this.visibility);
-  }
-
-  enum<const Values extends NonEmptyReadonlyArray<number>>(values: Values) {
-    return new EnumProp(values, 'number', this.visibility);
-  }
-
-  validate(value: unknown) {
-    if (typeof value !== 'number') {
-      throw this.error;
-    }
-  }
-
-  allows(value: unknown): value is number {
-    return typeof value === 'number';
-  }
-}
-
-class BooleanProp<Visibility extends PropVisibility> extends BaseProp<
-  'boolean',
-  Visibility,
-  boolean
-> {
-  constructor(visibility: Visibility) {
-    super({ type: 'boolean', visibility });
-  }
-
-  optional(this: BooleanProp<'required'>) {
-    return new BooleanProp('optional');
-  }
-
-  literal<const Value extends boolean>(value: Value) {
-    return new LiteralProp(value, 'boolean', this.visibility);
-  }
-
-  enum<const Values extends NonEmptyReadonlyArray<boolean>>(values: Values) {
-    return new EnumProp(values, 'boolean', this.visibility);
-  }
-
-  validate(value: unknown) {
-    if (typeof value !== 'boolean') {
-      throw this.error;
-    }
-  }
-
-  allows(value: unknown): value is boolean {
-    return typeof value === 'boolean';
-  }
-}
-
-class LiteralProp<
-  const Value extends PrimitiveTypesMap[Type],
-  Type extends PrimitivePropType,
-  Visibility extends PropVisibility,
-> extends BaseProp<Type, Visibility, Value> {
-  declare readonly value: Value;
-
-  constructor(value: Value, type: Type, visibility: Visibility) {
-    super({ type, visibility, value });
-  }
-
-  optional(this: LiteralProp<Value, Type, 'required'>) {
-    return new LiteralProp(this.value, this.type, 'optional');
-  }
-
-  validate(value: unknown) {
-    if (value !== this.value) {
-      throw this.error;
-    }
-  }
-
-  allows(value: unknown): value is Value {
-    return value === this.value;
-  }
-}
-
-class EnumProp<
-  const Values extends NonEmptyReadonlyArray<PrimitiveTypesMap[Type]>,
-  Type extends PrimitivePropType,
-  Visibility extends PropVisibility,
-> extends BaseProp<Type, Visibility, Values[number]> {
-  private readonly allowedValues: Values;
-
-  constructor(values: Values, type: Type, visibility: Visibility) {
-    super({ type, visibility });
-    this.allowedValues = values;
-  }
-
-  optional(this: EnumProp<Values, Type, 'required'>) {
-    return new EnumProp(this.allowedValues, this.type, 'optional');
-  }
-
-  validate(value: unknown) {
-    if (typeof value !== primitiveTypes[this.type]) {
-      throw this.error;
-    }
-
-    if (
-      !(this.allowedValues as readonly PrimitiveTypesMap[Type][]).includes(
-        value as PrimitiveTypesMap[Type],
-      )
-    ) {
-      throw this.error;
-    }
-  }
-
-  allows(value: unknown): value is Values[number] {
-    // TODO alter for more complex scenarios
-    return this.allowedValues.includes(value as never);
-  }
-}
-
-type AnyBaseProp = BaseProp<PropType, PropVisibility, unknown>;
-
-type ExtractPropValue<Prop extends AnyBaseProp> =
-  Prop extends BaseProp<any, any, infer V> ? V : never;
+import { JSX } from 'react';
+import { BaseProp } from './base';
+import { ComponentProp, ComponentPropWithPropertiesProp, RenderChildrenProp } from './component';
+import { EnumProp } from './enum';
+import { LiteralProp } from './literal';
+import { ObjectProp } from './object';
+import { BooleanProp, NumberProp, StringProp } from './primitive';
+import type {
+  AnyBaseProp,
+  AnyBuiltPropDefinition,
+  BuiltPropShape,
+  ComponentPropType,
+  ExtractPropValue,
+  NonEmptyReadonlyArray,
+  PrimitivePropType,
+  PrimitiveTypesMap,
+  PropConfig,
+  PropVisibility,
+  ResolveLayoutProps,
+} from './types';
+import { UnionProp } from './union';
 
 type ExtractVisibility<Prop extends AnyBaseProp> =
   Prop extends BaseProp<any, infer V extends PropVisibility, any>
@@ -259,7 +32,6 @@ type OptionalChain<
   ? { optional(): WrappedProp<OptionalProp> }
   : {};
 
-type ConfigOptions = {};
 type ConfigChain<Prop extends AnyBaseProp> = {
   config<const Config extends PropConfig>(
     config: Config,
@@ -396,7 +168,9 @@ export type EnumWrappedProp<
   Type extends PrimitivePropType,
   Visibility extends PropVisibility,
 > = WrappedProp<EnumProp<Values, Type, Visibility>>;
+
 type WrapperFor = 'literal' | 'enum';
+
 type GetValueForWrapper<
   Type extends PrimitivePropType,
   For extends WrapperFor,
@@ -406,6 +180,7 @@ type GetValueForWrapper<
   : For extends 'enum'
     ? NonEmptyReadonlyArray<Value>
     : never;
+
 type WrappedPropFor<
   Type extends PrimitivePropType,
   Visibility extends PropVisibility,
@@ -416,6 +191,7 @@ type WrappedPropFor<
   : For extends 'enum'
     ? EnumWrappedProp<NonEmptyReadonlyArray<Value>, Type, Visibility>
     : never;
+
 type CreateWrappedProp<
   Type extends PrimitivePropType,
   Visibility extends PropVisibility,
@@ -455,14 +231,15 @@ type PrimitivePropTypeMap<Visibility extends PropVisibility> = {
     BooleanProp<'optional'>
   >;
 };
-type SpecialPropTypeMap = {};
+
 type WrappedPrimitiveProp<Prop> =
   Prop extends BaseProp<
-    infer type extends PrimitivePropType,
-    infer visibility extends PropVisibility
+    infer Type extends PrimitivePropType,
+    infer Visibility extends PropVisibility
   >
-    ? PrimitivePropTypeMap<visibility>[type]
+    ? PrimitivePropTypeMap<Visibility>[Type]
     : never;
+
 type ConfigChainBuilder<
   Prop extends AnyBaseProp,
   Visibility extends PropVisibility,
@@ -470,23 +247,25 @@ type ConfigChainBuilder<
 > = ConfigChain<Prop> & OptionalChain<Visibility, OptionalProp>;
 
 type WrappedSpecialProp<Prop> =
-  Prop extends LiteralProp<infer value, infer type, infer visibility>
+  Prop extends LiteralProp<infer Value, infer Type, infer Visibility>
     ? ConfigChainBuilder<
-        LiteralProp<value, type, visibility>,
-        visibility,
-        LiteralProp<value, type, 'optional'>
+        LiteralProp<Value, Type, Visibility>,
+        Visibility,
+        LiteralProp<Value, Type, 'optional'>
       >
-    : Prop extends EnumProp<infer values, infer type, infer visibility>
+    : Prop extends EnumProp<infer Values, infer Type, infer Visibility>
       ? ConfigChainBuilder<
-          EnumProp<values, type, visibility>,
-          visibility,
-          EnumProp<values, type, 'optional'>
+          EnumProp<Values, Type, Visibility>,
+          Visibility,
+          EnumProp<Values, Type, 'optional'>
         >
       : never;
+
 type WrappedObjectProp<Prop> =
   Prop extends ObjectProp<infer Shape, infer Visibility>
     ? OptionalChain<Visibility, ObjectProp<Shape, 'optional'>>
     : never;
+
 type WrappedComponentWithPropsProp<Prop> =
   Prop extends ComponentPropWithPropertiesProp<
     infer Type,
@@ -498,10 +277,12 @@ type WrappedComponentWithPropsProp<Prop> =
         ComponentPropWithPropertiesProp<Type, Shape, 'optional'>
       >
     : never;
+
 type WrappedUnionProp<Prop> =
   Prop extends UnionProp<infer Members, infer Visibility>
     ? OptionalChain<Visibility, UnionProp<Members, 'optional'>>
     : never;
+
 type WrappedPropChainMembers<Prop extends AnyBaseProp> = [
   WrappedSpecialProp<Prop>,
 ] extends [never]
@@ -515,355 +296,13 @@ type WrappedPropChainMembers<Prop extends AnyBaseProp> = [
       : WrappedComponentWithPropsProp<Prop>
     : WrappedObjectProp<Prop>
   : WrappedSpecialProp<Prop>;
-export interface AnyBuiltPropDefinition {
-  (value: unknown): unknown;
-  visibility: PropVisibility;
-  _baseProp?: AnyBaseProp;
-}
-interface BuiltPropShape {
-  [key: string]: AnyBuiltPropDefinition;
-}
-type ResolveBuiltPropValue<Definition extends AnyBuiltPropDefinition> =
-  ReturnType<Definition>;
-type ExtractDefinitionValue<D extends AnyBuiltPropDefinition> = D extends {
-  _baseProp: infer P extends AnyBaseProp;
-}
-  ? ExtractPropValue<P>
-  : ReturnType<D>;
-type ResolvedBuiltPropShape<Shape extends BuiltPropShape> = {
-  [Key in keyof Shape as Shape[Key]['visibility'] extends 'required'
-    ? Key
-    : never]: ExtractDefinitionValue<Shape[Key]>;
-} & {
-  [Key in keyof Shape as Shape[Key]['visibility'] extends 'required'
-    ? never
-    : Key]?: ExtractDefinitionValue<Shape[Key]>;
-};
-
-/** True when the prop's state type carries `type: 'JSX.Element'`. */
-type IsJSXElementProp<D extends AnyBuiltPropDefinition> = D extends {
-  type: 'JSX.Element';
-}
-  ? true
-  : false;
-
-/**
- * Returns the resolved key name for a prop: capitalizes the key when the prop
- * is a JSX.Element component prop (React convention for component slot props).
- */
-type ResolvedPropKey<K extends string, D extends AnyBuiltPropDefinition> =
-  IsJSXElementProp<D> extends true ? Capitalize<K> : K;
-
-/**
- * Resolves a shape of prop definitions created by the `createProp` builders
- * into a plain TypeScript props interface.
- *
- * - Optional props become optional keys (`prop?: Type`).
- * - Props whose type is `JSX.Element` have their key capitalized
- *   (`icon` → `Icon`), following React's component-prop convention.
- */
-export type ResolveProps<Shape extends Record<string, AnyBuiltPropDefinition>> =
-  {
-    [K in keyof Shape & string as Shape[K]['visibility'] extends 'required'
-      ? ResolvedPropKey<K, Shape[K]>
-      : never]: ExtractDefinitionValue<Shape[K]>;
-  } & {
-    [K in keyof Shape & string as Shape[K]['visibility'] extends 'required'
-      ? never
-      : ResolvedPropKey<K, Shape[K]>]?: ExtractDefinitionValue<Shape[K]>;
-  };
-
-/**
- * Like `ExtractDefinitionValue` but for union members (base props).
- * JSX.Element component props become render functions.
- */
-type ExtractLayoutMemberValue<P extends AnyBaseProp> = P extends {
-  type: 'JSX.Element';
-  properties: infer Shape extends Record<string, AnyBuiltPropDefinition>;
-}
-  ? (props: ResolveProps<Shape>) => JSX.Element
-  : P extends { type: 'JSX.Element' }
-    ? () => JSX.Element
-    : ExtractPropValue<P>;
-
-/**
- * Like `ExtractDefinitionValue` but JSX.Element component props resolve as
- * render functions instead of the raw `JSX.Element` value:
- * - No component props → `() => JSX.Element`
- * - With component props → `(props: ResolveProps<Shape>) => JSX.Element`
- * Union members are resolved individually with the same rule.
- */
-type ExtractLayoutDefinitionValue<D extends AnyBuiltPropDefinition> =
-  D extends {
-    type: 'JSX.Element';
-    properties: infer Shape extends Record<string, AnyBuiltPropDefinition>;
-  }
-    ? (props: ResolveProps<Shape>) => JSX.Element
-    : D extends { type: 'JSX.Element' }
-      ? () => JSX.Element
-      : D extends { members: infer Members extends readonly AnyBaseProp[] }
-        ? ExtractLayoutMemberValue<Members[number]>
-        : ExtractDefinitionValue<D>;
-
-/**
- * Like `ResolveProps` but intended for the resolved options passed to the
- * function returned by `defineResourceLayout`. JSX.Element component props
- * become render functions so consumers provide a component slot rather than
- * a pre-rendered element:
- * - `createProp.component({ type: 'JSX.Element' })` → `() => JSX.Element`
- * - `createProp.component({ type: 'JSX.Element' }).props({ ... })` →
- *   `(props: ResolveProps<Shape>) => JSX.Element`
- */
-export type ResolveLayoutProps<
-  Shape extends Record<string, AnyBuiltPropDefinition>,
-> = {
-  [K in keyof Shape & string as Shape[K]['visibility'] extends 'required'
-    ? ResolvedPropKey<K, Shape[K]>
-    : never]: ExtractLayoutDefinitionValue<Shape[K]>;
-} & {
-  [K in keyof Shape & string as Shape[K]['visibility'] extends 'required'
-    ? never
-    : ResolvedPropKey<K, Shape[K]>]?: ExtractLayoutDefinitionValue<Shape[K]>;
-};
-
-class ObjectProp<
-  const Shape extends BuiltPropShape,
-  Visibility extends PropVisibility,
-> extends BaseProp<
-  'object',
-  Visibility,
-  {
-    [Key in keyof Shape]: ResolveBuiltPropValue<Shape[Key]>;
-  }
-> {
-  readonly properties: Shape;
-
-  constructor(properties: Shape, visibility: Visibility) {
-    super({ type: 'object', visibility });
-    this.properties = properties;
-  }
-
-  optional(this: ObjectProp<Shape, 'required'>) {
-    return new ObjectProp(this.properties, 'optional');
-  }
-
-  validate(value: unknown) {
-    const validatedObject = {} as {
-      [Key in keyof Shape]: ResolveBuiltPropValue<Shape[Key]>;
-    };
-
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-      throw this.error;
-    }
-
-    const objectValue = value as Record<string, unknown>;
-
-    for (const key in this.properties) {
-      const prop = this.properties[key];
-      const propertyValue = objectValue[key];
-
-      if (propertyValue === undefined) {
-        if (prop.visibility !== 'optional') {
-          throw new TypeError(`"${key}" is required.`);
-        }
-
-        continue;
-      }
-
-      validatedObject[key] = prop(propertyValue) as ResolveBuiltPropValue<
-        Shape[typeof key]
-      >;
-    }
-
-    return validatedObject;
-  }
-
-  allows(value: unknown): value is {
-    [Key in keyof Shape]: ResolveBuiltPropValue<Shape[Key]>;
-  } {
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-      return false;
-    }
-
-    const objectValue = value as Record<string, unknown>;
-
-    for (const key in this.properties) {
-      const prop = this.properties[key];
-      const propertyValue = objectValue[key];
-
-      if (propertyValue === undefined) {
-        if (prop.visibility !== 'optional') {
-          return false;
-        }
-
-        continue;
-      }
-
-      try {
-        prop(propertyValue);
-      } catch {
-        return false;
-      }
-    }
-
-    return true;
-  }
-}
-
-class ComponentProp<
-  Type extends ComponentPropType,
-  Visibility extends PropVisibility,
-> extends BaseProp<Type, Visibility, ComponentPropTypeMap[Type]> {
-  constructor(type: Type, visibility: Visibility) {
-    super({ type, visibility });
-  }
-
-  optional(this: ComponentProp<Type, 'required'>) {
-    return new ComponentProp(this.type, 'optional');
-  }
-
-  validate(value: unknown) {
-    if (this.type === 'JSX.Element') {
-      if (
-        value === null ||
-        typeof value !== 'object' ||
-        !('$$typeof' in value)
-      ) {
-        throw this.error;
-      }
-    }
-  }
-
-  allows(value: unknown): value is ComponentPropTypeMap[Type] {
-    if (this.type === 'JSX.Element') {
-      return value !== null && typeof value === 'object' && '$$typeof' in value;
-    }
-    return true;
-  }
-}
-
-class ComponentPropWithPropertiesProp<
-  Type extends ComponentPropType,
-  const Shape extends BuiltPropShape,
-  Visibility extends PropVisibility,
-> extends BaseProp<Type, Visibility, ComponentPropTypeMap[Type]> {
-  readonly properties: Shape;
-
-  constructor(type: Type, properties: Shape, visibility: Visibility) {
-    super({ type, visibility });
-    this.properties = properties;
-  }
-
-  optional(this: ComponentPropWithPropertiesProp<Type, Shape, 'required'>) {
-    return new ComponentPropWithPropertiesProp(
-      this.type,
-      this.properties,
-      'optional',
-    );
-  }
-
-  validate(value: unknown) {
-    if (this.type === 'JSX.Element') {
-      if (
-        value === null ||
-        typeof value !== 'object' ||
-        !('$$typeof' in value)
-      ) {
-        throw this.error;
-      }
-    }
-  }
-
-  allows(value: unknown): value is ComponentPropTypeMap[Type] {
-    if (this.type === 'JSX.Element') {
-      return value !== null && typeof value === 'object' && '$$typeof' in value;
-    }
-    return true;
-  }
-}
-
-class UnionProp<
-  const Members extends readonly AnyBaseProp[],
-  Visibility extends PropVisibility,
-> extends BaseProp<'union', Visibility, ExtractPropValue<Members[number]>> {
-  readonly members: Members;
-
-  constructor(members: Members, visibility: Visibility) {
-    super({ type: 'union', visibility });
-    this.members = members;
-  }
-
-  optional(this: UnionProp<Members, 'required'>) {
-    return new UnionProp(this.members, 'optional');
-  }
-
-  validate(value: unknown) {
-    for (const member of this.members) {
-      if (member.allows(value)) return;
-    }
-    throw this.error;
-  }
-
-  allows(value: unknown): value is ExtractPropValue<Members[number]> {
-    return this.members.some((m) => m.allows(value));
-  }
-}
-
-class RenderChildrenProp<
-  const Shape extends BuiltPropShape,
-  ChildrenType extends ComponentPropType,
-  Visibility extends PropVisibility,
-> extends BaseProp<
-  'function',
-  Visibility,
-  (
-    renderProps: ResolvedBuiltPropShape<Shape>,
-  ) => ComponentPropTypeMap[ChildrenType]
-> {
-  readonly renderProps: Shape;
-  readonly childrenType: ChildrenType;
-
-  constructor(
-    renderProps: Shape,
-    childrenType: ChildrenType,
-    visibility: Visibility,
-  ) {
-    super({ type: 'function', visibility });
-    this.renderProps = renderProps;
-    this.childrenType = childrenType;
-  }
-
-  optional(this: RenderChildrenProp<Shape, ChildrenType, 'required'>) {
-    return new RenderChildrenProp(
-      this.renderProps,
-      this.childrenType,
-      'optional',
-    );
-  }
-
-  validate(value: unknown) {
-    if (typeof value !== 'function') {
-      throw this.error;
-    }
-    return value as (
-      renderProps: ResolvedBuiltPropShape<Shape>,
-    ) => ComponentPropTypeMap[ChildrenType];
-  }
-
-  allows(
-    value: unknown,
-  ): value is (
-    renderProps: ResolvedBuiltPropShape<Shape>,
-  ) => ComponentPropTypeMap[ChildrenType] {
-    return typeof value === 'function';
-  }
-}
 
 export type EnumValueDefinition<
   Values extends NonEmptyReadonlyArray<PrimitiveTypesMap[Type]>,
   Type extends PrimitivePropType,
   Visibility extends PropVisibility = 'required',
 > = WrappedProp<EnumProp<Values, Type, Visibility>>;
+
 export type ObjectValueDefinition<
   Shape extends BuiltPropShape,
   Visibility extends PropVisibility = 'required',
@@ -887,12 +326,14 @@ type LiteralPropBuilder<
 > = <const Value extends PrimitiveTypesMap[Type]>(
   value: Value,
 ) => LiteralWrappedProp<Value, Type, Visibility>;
+
 type EnumPropBuilder<
   Type extends PrimitivePropType,
   Visibility extends PropVisibility = 'required',
 > = <const Values extends NonEmptyReadonlyArray<PrimitiveTypesMap[Type]>>(
   values: Values,
 ) => EnumWrappedProp<Values, Type, Visibility>;
+
 type PrimitivePropBuilder<
   Type extends PrimitivePropType,
   Visibility extends PropVisibility = 'required',
@@ -906,9 +347,7 @@ type PrimitivePropBuilder<
     Config
   >;
 } & (Visibility extends 'required'
-    ? {
-        optional(): PrimitivePropBuilder<Type, 'optional'>;
-      }
+    ? { optional(): PrimitivePropBuilder<Type, 'optional'> }
     : {});
 
 function createConfiguredWrappedProp<
@@ -1082,12 +521,6 @@ function createObjectProp<const Shape extends BuiltPropShape>(
   return wrapProp(new ObjectProp(properties, 'required'));
 }
 
-type ComponentPropType = 'ReactNode' | 'JSX.Element';
-type ComponentPropTypeMap = {
-  ReactNode: ReactNode;
-  'JSX.Element': JSX.Element;
-};
-
 type ChildrenPropFor<
   ChildrenType extends ComponentPropType,
   ChildrenVisibility extends PropVisibility,
@@ -1109,20 +542,8 @@ type WithChildrenOptions<
   ChildrenVisibility extends PropVisibility,
   RenderProps extends BuiltPropShape | undefined,
 > = {
-  /**
-   * The type of the children.
-   * @default 'ReactNode'
-   */
   type?: ChildrenType;
-  /**
-   * The visibility of the children.
-   * @default 'optional'
-   */
   visibility?: ChildrenVisibility;
-  /**
-   * Optional props for the children. If provided, the children
-   * will be a function that renders the children.
-   */
   props?: RenderProps;
 };
 
@@ -1185,10 +606,6 @@ export type ComponentPropBuilder<
   config<const Config extends PropConfig>(
     config: Config,
   ): ConfiguredWrappedProp<ComponentProp<Type, Visibility>, Config>;
-  /**
-   * Allows the component to have children.
-   * @param options The options for the children.
-   */
   withChildren<
     ChildrenType extends ComponentPropType = 'ReactNode',
     ChildrenVisibility extends PropVisibility = 'optional',
@@ -1222,10 +639,9 @@ function createComponentPropWithChildrenBuilder<
   visibility: Visibility,
   childrenProp: ChildrenProp,
 ): ComponentPropWithChildrenBuilder<Type, Visibility, ChildrenProp> {
-  const baseShape = { children: childrenProp };
   const baseProp = new ComponentPropWithPropertiesProp(
     type,
-    baseShape,
+    { children: childrenProp },
     visibility,
   );
   const validate = ((value: unknown) =>
@@ -1289,6 +705,7 @@ function buildChildrenProp<
       RenderProps
     >;
   }
+
   return wrapProp(
     new ComponentProp(childrenType, childrenVisibility),
   ) as unknown as ChildrenPropFor<
@@ -1346,33 +763,6 @@ function createComponentPropBuilder<
       ? { optional: () => createComponentPropBuilder(type, 'optional') }
       : {}),
   }) as unknown as ComponentPropBuilder<Type, Visibility>;
-}
-
-class MissingRequiredPropError extends Error {
-  constructor(key: string) {
-    super(`Property "${key}" is required but not provided.`);
-  }
-}
-
-export function validateProps<T extends object>(
-  shape: Record<string, AnyBuiltPropDefinition>,
-  props: T,
-) {
-  for (const key in shape) {
-    const prop = shape[key];
-
-    if (prop.visibility === 'required' && !(key in props)) {
-      throw new MissingRequiredPropError(key);
-    }
-
-    if (prop.visibility === 'optional' && !(key in props)) {
-      continue;
-    }
-
-    prop((props as Record<string, unknown>)[key]);
-  }
-
-  return props;
 }
 
 export const createProp = {

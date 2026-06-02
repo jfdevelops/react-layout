@@ -1,5 +1,5 @@
 import { ComponentType, ReactNode } from 'react';
-import { AnyBuiltPropDefinition, ResolveProps } from './create-value';
+import { AnyBuiltPropDefinition, ResolveProps } from './validators';
 import { InPropsObject } from './props';
 import { BaseComponent, resolvePropDefinitionValues, Show } from './utils';
 

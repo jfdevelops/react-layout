@@ -15,7 +15,7 @@ import {
   type ResolveLayoutProps,
   type ResolveProps,
   validateProps,
-} from './create-value';
+} from './validators';
 import {
   IncludedProps,
   InferredInProps,
