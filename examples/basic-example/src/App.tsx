@@ -71,19 +71,19 @@ const createResourceLayout = defineResourceLayout({
   layout: {
     composables: (create) => ({
       Layout: create({
-        name: ({ resource }) => `${resource}Layout`,
+        name: ({ resource, capitalize }) => `${capitalize(resource)}Layout`,
         wrapWith: Card,
       }),
       Title: create({
-        name: ({ name }) => `${name}Title`,
+        name: ({ resource, capitalize }) => `${capitalize(resource)}Title`,
         wrapWith: Title,
       }),
       Description: create({
-        name: ({ name }) => `${name}Description`,
+        name: ({ resource, capitalize }) => `${capitalize(resource)}Description`,
         wrapWith: CardDescription,
       }),
       Content: create({
-        name: ({ name }) => `${name}Content`,
+        name: ({ resource, capitalize }) => `${capitalize(resource)}Content`,
         wrapWith: CardContent,
       }),
     }),
@@ -174,7 +174,8 @@ function AppShell() {
               A basic example where every page is built from{' '}
               <code>createResourceLayout</code>. This example showcases the
               ability to create a page shell for a resource and then reuse it
-              for different pages. Navigate through the pages to see the different layouts in action.
+              for different pages. Navigate through the pages to see the
+              different layouts in action.
             </p>
           </div>
         </div>

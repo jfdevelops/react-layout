@@ -2,6 +2,7 @@ import { ComponentType, ReactNode } from 'react';
 import { AnyBuiltPropDefinition, ResolveProps } from './validators';
 import { InPropsObject } from './props';
 import { BaseComponent, resolvePropDefinitionValues, Show } from './utils';
+import { CapitalizeFn } from './utils/capitalize';
 
 export type ComposableNameContext<
   Resource extends string,
@@ -9,6 +10,7 @@ export type ComposableNameContext<
 > = {
   resource: Resource;
   name: LayoutName;
+  capitalize: CapitalizeFn;
 };
 
 type ComposableComponentName<

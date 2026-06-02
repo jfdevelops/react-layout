@@ -30,7 +30,13 @@ import {
   type NormalizeResources,
   type ResourceDefinition,
 } from './resource';
-import { BaseComponent, pick, resolvePropDefinitionValues, Show } from './utils';
+import {
+  BaseComponent,
+  pick,
+  resolvePropDefinitionValues,
+  Show,
+} from './utils';
+import { capitalize } from './utils/capitalize';
 
 type LayoutProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -57,8 +63,11 @@ type LayoutRenderContext<
   resource: LayoutResourceKey<Resources>;
   name: string;
 };
-type LayoutRenderComposables<Composables extends ComposableComponents> =
-  [keyof Composables] extends [never] ? undefined : Composables;
+type LayoutRenderComposables<Composables extends ComposableComponents> = [
+  keyof Composables,
+] extends [never]
+  ? undefined
+  : Composables;
 
 type SplitLayoutInPropDefinition<
   Props extends InPropsObject = {},
@@ -135,7 +144,9 @@ type CreateViewMapOptions<
      * a scoped `create` that resolves composable `name` callbacks using the
      * layout's `resource` and `name`.
      */
-    composables?: (create: CreateLayoutComposable<LayoutResourceKey<Resources>>) => Composables;
+    composables?: (
+      create: CreateLayoutComposable<LayoutResourceKey<Resources>>,
+    ) => Composables;
     /**
      * The render function for the layout.
      */
@@ -260,6 +271,7 @@ export function defineResourceLayout<
     > = {
       resource: layoutOptions.resource,
       name,
+      capitalize,
     };
     const resolvedComposables = composables
       ? resolveLayoutComposables(composables, layoutContext)
@@ -279,9 +291,7 @@ export function defineResourceLayout<
         includedPropKeys,
       ) as Record<string, unknown>;
       const includedPropValues = {
-        ...resolvePropDefinitionValues(
-          includedPropDefinitions,
-        ),
+        ...resolvePropDefinitionValues(includedPropDefinitions),
         ...pick(
           splitInProps,
           includedPropKeys as (keyof typeof splitInProps)[],
