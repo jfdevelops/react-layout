@@ -2,6 +2,10 @@
   "name": "@jfdevelops/react-layout",
   "version": "0.2.0",
   "description": "A React library for creating layout components.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jfdevelops/react-layout.git"
+  },
   "type": "module",
   "files": [
     "dist"
