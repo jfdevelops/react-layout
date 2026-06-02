@@ -1,5 +1,6 @@
 import type { JSX } from 'react';
 import {
+  ComposableResourceLayout,
   ComposableComponents,
   MakeComposable,
   makeComposable,
@@ -44,8 +45,8 @@ type LayoutProps<
   custom?: CustomProps;
 };
 
-type LayoutRenderContext = {
-  composables: unknown;
+type LayoutRenderContext<Composables extends ComposableComponents> = {
+  composables: ComposableResourceLayout<Composables, string, any, any, any>;
   inProps: Record<string, unknown>;
 };
 
@@ -128,7 +129,7 @@ type CreateViewMapOptions<
      */
     render: (
       props: LayoutRenderProps<Resources, Options, IncludeProps, CustomProps>,
-      context: LayoutRenderContext,
+      context: LayoutRenderContext<Composables>,
     ) => JSX.Element;
   };
 };
@@ -245,10 +246,6 @@ export function defineResourceLayout<
   const resourcesEnum = createPrimitivePropBuilder('string').enum(
     toResourceEnum(normalizedResources),
   );
-  const createComposableLayout =
-    makeComposable<
-      LayoutRenderProps<Resources, InProps, IncludeProps, CustomProps>
-    >();
   const definedResourceLayout: DefinedResourceLayout<
     Resources,
     InProps,
@@ -256,8 +253,15 @@ export function defineResourceLayout<
     CustomProps,
     Composables
   > = (options) => {
-    const { name, props: instancePropDefinitions, ...layoutOptionProps } =
-      options;
+    const {
+      name,
+      props: instancePropDefinitions,
+      ...layoutOptionProps
+    } = options;
+    const createComposableLayout =
+      makeComposable<
+        LayoutRenderProps<Resources, InProps, IncludeProps, CustomProps>
+      >();
     const nameProp = createProp.string().literal(name);
     const rawResolvedOptions =
       typeof inProps === 'function'
@@ -282,12 +286,12 @@ export function defineResourceLayout<
       ...resolvedIncludedProps,
       ...customLayoutProps,
     };
-    const composableLayout = createComposableLayout({
+    const createComposables = createComposableLayout({
       components: composables,
       name,
     });
-    const mergedRenderContext: LayoutRenderContext = {
-      composables: composableLayout,
+    const mergedRenderContext: LayoutRenderContext<Composables> = {
+      composables: createComposables(),
       inProps: splitInProps,
     };
 
@@ -306,22 +310,24 @@ export function defineResourceLayout<
       return <>{render(layoutRenderProps, mergedRenderContext)}</>;
     }
 
+    function createComposition<Name extends string>(
+      options: MakeComposableOptions<Composables, Name>,
+    ) {
+      if (!options.components) {
+        return {} as ResourceLayoutComposition<Name, Composables>;
+      }
+
+      return {
+        makeComposable: createComposableLayout(options),
+      };
+    }
+
     return Object.assign(Component, {
       displayName: name,
       props: undefined as unknown as ResolveProps<CustomProps>,
       ...createComposition({ components: composables, name }),
     });
   };
-
-  function createComposition<Name extends string>(
-    options: MakeComposableOptions<Composables, Name>,
-  ): ResourceLayoutComposition<Name, Composables> {
-    if (!options.components) {
-      return {} as ResourceLayoutComposition<Name, Composables>;
-    }
-
-    return { makeComposable: createComposableLayout(options) };
-  }
 
   return definedResourceLayout;
 }

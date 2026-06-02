@@ -9,7 +9,7 @@ type CreateComposableComponentOptions<
   InProps extends InPropsObject = {},
   OutProps = {},
 > = {
-  name: (layoutName: string) => Name;
+  name: Name;
   inProps?: InProps;
   outProps?: (props: Show<ResolveProps<InProps>>) => OutProps;
   wrapWith?: Wrapper;
@@ -26,14 +26,14 @@ type ComposableComponentProps<
       ? ReactNode
       : ((props: OutProps) => JSX.Element) | ReactNode;
   };
-interface ComposableComponent<
+export type ComposableComponent<
   Name extends string,
   Wrapper,
   InProps extends InPropsObject = {},
   OutProps = {},
-> extends BaseComponent<Name, ResolveProps<InProps>> {
+> = BaseComponent<Name, ResolveProps<InProps>> & {
   (props: ComposableComponentProps<Wrapper, InProps, OutProps>): ReactNode;
-}
+};
 export type ComposableResourceLayout<
   Composables extends ComposableComponents,
   Name extends string,
@@ -101,7 +101,7 @@ function reactNodeFromSingleFieldOutProps(resolved: unknown): ReactNode {
 }
 
 export function createComposableComponent<
-  Name extends string,
+  const Name extends string,
   Wrapper,
   InProps extends InPropsObject = {},
   OutProps = {},
@@ -152,10 +152,9 @@ export function createComposableComponent<
     return resolvedChildren;
   }
 
-  Composable.displayName = '';
+  Composable.displayName = name;
 
   return Object.assign(Composable, {
-    _nameFactory: name,
     props: undefined as unknown as ResolveProps<InProps>,
   }) as unknown as ComposableComponent<Name, Wrapper, InProps, OutProps>;
 }
@@ -168,7 +167,7 @@ export type MakeComposable<
   Composables extends ComposableComponents,
   Name extends string,
 > = <OverrideName extends string = Name>(
-  options: Partial<
+  options?: Partial<
     Pick<MakeComposableOptions<Composables, OverrideName>, 'name'>
   >,
 ) => ComposableResourceLayout<Composables, Name, any, any, any>;
@@ -195,7 +194,7 @@ export function makeComposable<Props>() {
     }
 
     const create: MakeComposable<Composables, Name> = (overrideOptions) => {
-      const resolvedName = overrideOptions.name ?? layoutName;
+      const resolvedName = overrideOptions?.name ?? layoutName;
       const { Layout, ...rest } = components;
 
       return Object.assign(Layout, {
@@ -211,6 +210,6 @@ export function makeComposable<Props>() {
       >;
     };
 
-    return create
+    return create;
   };
 }
