@@ -30,7 +30,7 @@ import {
   type NormalizeResources,
   type ResourceDefinition,
 } from './resource';
-import { BaseComponent, pick, Show } from './utils';
+import { BaseComponent, pick, resolvePropDefinitionValues, Show } from './utils';
 
 type LayoutProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -273,9 +273,31 @@ export function defineResourceLayout<
 
     function Component(props: Show<ResolveProps<CustomProps>>) {
       const validatedProps = validateProps(resolvedLayoutProps, props);
+      const includedPropKeys = Object.keys(includeLayoutProps ?? {});
+      const includedPropDefinitions = pick(
+        resolvedInProps,
+        includedPropKeys,
+      ) as Record<string, unknown>;
+      const includedPropValues = {
+        ...resolvePropDefinitionValues(
+          includedPropDefinitions,
+        ),
+        ...pick(
+          splitInProps,
+          includedPropKeys as (keyof typeof splitInProps)[],
+        ),
+        ...pick(
+          layoutOptionProps,
+          includedPropKeys as (keyof typeof layoutOptionProps)[],
+        ),
+      };
+      const validatedIncludedProps = validateProps(
+        includedPropDefinitions as Record<string, AnyBuiltPropDefinition>,
+        includedPropValues,
+      );
       const layoutRenderProps = {
         ...validatedProps,
-        ...resolvedInProps,
+        ...validatedIncludedProps,
       } as unknown as LayoutRenderProps<
         Resources,
         InProps,

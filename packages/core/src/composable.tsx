@@ -1,7 +1,7 @@
 import { ComponentType, ReactNode } from 'react';
 import { AnyBuiltPropDefinition, ResolveProps } from './create-value';
 import { InPropsObject } from './props';
-import { BaseComponent, Show } from './utils';
+import { BaseComponent, resolvePropDefinitionValues, Show } from './utils';
 
 export type ComposableNameContext<
   Resource extends string,
@@ -118,30 +118,6 @@ export type ResolvedComposableComponents<
   : Components extends { Layout: infer _ }
     ? Components
     : 'The Layout composable is required';
-
-function isPropsDefinitionShape(v: unknown): v is AnyBuiltPropDefinition {
-  return typeof v === 'function' && v !== null && 'visibility' in v;
-}
-
-/**
- * Shallow-unwrap page prop descriptors so render callbacks never receive
- * prop definition objects.
- */
-function resolveOptionalDefinitionValuesInProps(
-  input: Record<string, unknown>,
-) {
-  const out: Record<string, unknown> = {};
-
-  for (const key of Object.keys(input)) {
-    const v = input[key];
-    out[key] = isPropsDefinitionShape(v)
-      ? (v as AnyBuiltPropDefinition & { _baseProp?: { value?: unknown } })
-          ._baseProp?.value
-      : v;
-  }
-
-  return out;
-}
 
 function resolveComponent<Props>(
   component: ((props: Props) => JSX.Element | ReactNode) | ReactNode,
@@ -263,7 +239,7 @@ export function createComposableComponent<
       delete (wrapperProps as Record<string, unknown>)[key];
     }
 
-    const mergedResolved = resolveOptionalDefinitionValuesInProps(
+    const mergedResolved = resolvePropDefinitionValues(
       mergedInProps as Record<string, unknown>,
     ) as Show<ResolveProps<InProps>>;
 
