@@ -7,7 +7,7 @@ import {
 } from '@tanstack/react-router';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { type ComponentPropsWithRef } from 'react';
-import { createProp, defineResourceLayout } from 'view-map';
+import { createProp, defineResourceLayout } from '@jfdevelops/react-layout';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
   Card as UiCard,
