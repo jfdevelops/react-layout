@@ -17,9 +17,11 @@
     "changeset:status": "changeset status",
     "version-packages": "changeset version",
     "release": "pnpm build && changeset publish",
+    "prepare": "husky",
     "preview": "pnpm --filter ./packages/core preview"
   },
   "devDependencies": {
-    "@changesets/cli": "2.31.0"
+    "@changesets/cli": "2.31.0",
+    "husky": "9.1.7"
   }
 }
