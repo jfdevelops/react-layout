@@ -4,8 +4,11 @@
   "packageManager": "pnpm@10.28.1",
   "scripts": {
     "dev": "pnpm --filter view-map dev",
+    "dev:basic-example": "pnpm --filter basic-example dev",
     "build": "pnpm --filter view-map build",
+    "build:examples": "pnpm --filter basic-example build",
     "typecheck": "pnpm --filter view-map typecheck",
+    "typecheck:examples": "pnpm --filter basic-example typecheck",
     "test": "pnpm --filter view-map test",
     "test:watch": "pnpm --filter view-map test:watch",
     "preview": "pnpm --filter view-map preview"

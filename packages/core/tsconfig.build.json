@@ -9,5 +9,5 @@
     "rootDir": "src",
     "types": ["react", "react-dom"]
   },
-  "include": ["src/index.ts", "src/ViewMap.tsx"]
+  "include": ["src/**/*"]
 }
