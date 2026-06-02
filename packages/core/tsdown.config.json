@@ -1,0 +1,12 @@
+{
+  "entry": "./src/index.ts",
+  "format": ["esm", "cjs"],
+  "platform": "neutral",
+  "dts": {
+    "sourcemap": true
+  },
+  "deps": {
+    "neverBundle": ["react", "react-dom", "react/jsx-runtime"]
+  },
+  "clean": true
+}

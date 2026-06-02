@@ -13,6 +13,13 @@
     "test:watch": "pnpm --filter ./packages/core test:watch",
     "test:ui": "pnpm --filter ./packages/core test:ui",
     "test:coverage": "pnpm --filter ./packages/core test:coverage",
+    "changeset": "changeset",
+    "changeset:status": "changeset status",
+    "version-packages": "changeset version",
+    "release": "changeset publish",
     "preview": "pnpm --filter ./packages/core preview"
+  },
+  "devDependencies": {
+    "@changesets/cli": "2.31.0"
   }
 }
