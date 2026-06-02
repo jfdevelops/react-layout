@@ -3,17 +3,84 @@ import { AnyBuiltPropDefinition, ResolveProps } from './create-value';
 import { InPropsObject } from './props';
 import { BaseComponent, Show } from './utils';
 
+export type ComposableNameContext<
+  Resource extends string,
+  LayoutName extends string = string,
+> = {
+  resource: Resource;
+  name: LayoutName;
+};
+
+type ComposableComponentName<
+  Name extends string,
+  Resource extends string,
+  LayoutName extends string = string,
+> = Name | ((ctx: ComposableNameContext<Resource, LayoutName>) => Name);
+
 type CreateComposableComponentOptions<
   Name extends string,
   Wrapper,
+  Resource extends string,
+  LayoutName extends string = string,
   InProps extends InPropsObject = {},
   OutProps = {},
 > = {
-  name: Name;
+  name: ComposableComponentName<Name, Resource, LayoutName>;
   inProps?: InProps;
   outProps?: (props: Show<ResolveProps<InProps>>) => OutProps;
   wrapWith?: Wrapper;
 };
+
+type ResolvedCreateComposableComponentOptions<
+  Name extends string,
+  Wrapper,
+  Resource extends string,
+  LayoutName extends string = string,
+  InProps extends InPropsObject = {},
+  OutProps = {},
+> = Omit<
+  CreateComposableComponentOptions<
+    Name,
+    Wrapper,
+    Resource,
+    LayoutName,
+    InProps,
+    OutProps
+  >,
+  'name'
+> & {
+  name: Name;
+};
+
+export type CreateLayoutComposable<
+  Resources extends string,
+  LayoutName extends string = string,
+> = <
+  const Name extends string,
+  Wrapper,
+  InProps extends InPropsObject = {},
+  OutProps = {},
+>(
+  options: CreateComposableComponentOptions<
+    Name,
+    Wrapper,
+    Resources,
+    LayoutName,
+    InProps,
+    OutProps
+  >,
+) => ComposableComponent<Name, Wrapper, InProps, OutProps>;
+
+export type LayoutComposablesFactory<
+  Resources extends string,
+  LayoutName extends string = string,
+> = (
+  create: CreateLayoutComposable<Resources, LayoutName>,
+) => ComposableComponents;
+
+export type ResolveLayoutComposables<
+  Factory extends LayoutComposablesFactory<string> | undefined,
+> = Factory extends LayoutComposablesFactory<string> ? ReturnType<Factory> : {};
 type ComposableComponentWrapperProps<Wrapper> =
   Wrapper extends ComponentType<infer Props> ? Omit<Props, 'children'> : {};
 type ComposableComponentProps<
@@ -42,7 +109,7 @@ export type ComposableResourceLayout<
   OutProps = {},
 > = Composables & ComposableComponent<Name, Wrapper, InProps, OutProps>;
 
-export type AnyComposableComponent = ComposableComponent<string, any, any, any>;
+export type AnyComposableComponent = ComposableComponent<string, any, {}, {}>;
 export type ComposableComponents = Record<string, AnyComposableComponent>;
 export type ResolvedComposableComponents<
   Components extends ComposableComponents,
@@ -100,12 +167,79 @@ function reactNodeFromSingleFieldOutProps(resolved: unknown): ReactNode {
   return values[0] as ReactNode;
 }
 
+function resolveComposableComponentName<
+  Name extends string,
+  Resource extends string,
+  LayoutName extends string,
+>(
+  name: ComposableComponentName<Name, Resource, LayoutName>,
+  ctx: ComposableNameContext<Resource, LayoutName>,
+): Name {
+  return typeof name === 'function' ? name(ctx) : name;
+}
+
+export function createLayoutComposableFactory<
+  Resources extends string,
+  LayoutName extends string,
+>(ctx: ComposableNameContext<Resources, LayoutName>) {
+  const create: CreateLayoutComposable<Resources, LayoutName> = <
+    const Name extends string,
+    Wrapper,
+    InProps extends InPropsObject = {},
+    OutProps = {},
+  >(
+    options: CreateComposableComponentOptions<
+      Name,
+      Wrapper,
+      Resources,
+      LayoutName,
+      InProps,
+      OutProps
+    >,
+  ) =>
+    createComposableComponent({
+      ...options,
+      name: resolveComposableComponentName(options.name, ctx),
+    } as ResolvedCreateComposableComponentOptions<
+      Name,
+      Wrapper,
+      Resources,
+      LayoutName,
+      InProps,
+      OutProps
+    >);
+
+  return create;
+}
+
+export function resolveLayoutComposables<
+  Resources extends string,
+  LayoutName extends string,
+  Composables extends ComposableComponents,
+>(
+  factory: (
+    create: CreateLayoutComposable<Resources, LayoutName>,
+  ) => Composables,
+  ctx: ComposableNameContext<Resources, LayoutName>,
+): Composables {
+  return factory(createLayoutComposableFactory(ctx));
+}
+
 export function createComposableComponent<
   const Name extends string,
   Wrapper,
   InProps extends InPropsObject = {},
   OutProps = {},
->(options: CreateComposableComponentOptions<Name, Wrapper, InProps, OutProps>) {
+>(
+  options: ResolvedCreateComposableComponentOptions<
+    Name,
+    Wrapper,
+    string,
+    string,
+    InProps,
+    OutProps
+  >,
+) {
   const { name, inProps = {} as InProps, outProps, wrapWith } = options;
 
   function Composable({

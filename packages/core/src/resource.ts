@@ -93,8 +93,24 @@ export function normalizeResources<
   return normalizeResourcesTree(resources) as NormalizeResources<Resources>;
 }
 
+type ResourceDefinitionValue<Resource extends ResourceDefinition> =
+  Resource extends string
+    ? Resource
+    : Resource extends { value: infer Value extends string }
+      ? Value
+      : never;
+
+/**
+ * Top-level resource names declared in a `resources` array. Preserves string
+ * literal unions for const resource definitions (unlike `keyof` on the
+ * normalized resource tree, which tends to widen to `string` in hovers).
+ */
+export type LayoutResourceKey<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> = ResourceDefinitionValue<Resources[number]>;
+
 export type ResourceEnum<Resources extends ReadonlyArray<ResourceDefinition>> =
-  NonEmptyReadonlyArray<keyof NormalizeResources<Resources> & string>;
+  NonEmptyReadonlyArray<LayoutResourceKey<Resources>>;
 export function toResourceEnum<
   Resources extends ReadonlyArray<ResourceDefinition>,
 >(resources: NormalizeResources<Resources>) {

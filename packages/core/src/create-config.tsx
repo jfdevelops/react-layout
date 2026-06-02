@@ -1,10 +1,12 @@
 import type { JSX } from 'react';
 import {
-  ComposableResourceLayout,
-  ComposableComponents,
+  type ComposableComponents,
+  type ComposableNameContext,
+  type CreateLayoutComposable,
   MakeComposable,
   makeComposable,
   MakeComposableOptions,
+  resolveLayoutComposables,
 } from './composable';
 import {
   type AnyBuiltPropDefinition,
@@ -24,6 +26,7 @@ import {
 import {
   normalizeResources,
   toResourceEnum,
+  type LayoutResourceKey,
   type NormalizeResources,
   type ResourceDefinition,
 } from './resource';
@@ -45,10 +48,17 @@ type LayoutProps<
   custom?: CustomProps;
 };
 
-type LayoutRenderContext<Composables extends ComposableComponents> = {
-  composables: ComposableResourceLayout<Composables, string, any, any, any>;
+type LayoutRenderContext<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Composables extends ComposableComponents,
+> = {
+  composables: LayoutRenderComposables<Composables>;
   inProps: Record<string, unknown>;
+  resource: LayoutResourceKey<Resources>;
+  name: string;
 };
+type LayoutRenderComposables<Composables extends ComposableComponents> =
+  [keyof Composables] extends [never] ? undefined : Composables;
 
 type SplitLayoutInPropDefinition<
   Props extends InPropsObject = {},
@@ -121,15 +131,17 @@ type CreateViewMapOptions<
      */
     props?: LayoutProps<Resources, Options, IncludeProps, CustomProps>;
     /**
-     * Components used to compose the layout.
+     * Components used to compose the layout. Invoked per layout instance with
+     * a scoped `create` that resolves composable `name` callbacks using the
+     * layout's `resource` and `name`.
      */
-    composables?: Composables;
+    composables?: (create: CreateLayoutComposable<LayoutResourceKey<Resources>>) => Composables;
     /**
      * The render function for the layout.
      */
     render: (
       props: LayoutRenderProps<Resources, Options, IncludeProps, CustomProps>,
-      context: LayoutRenderContext<Composables>,
+      context: LayoutRenderContext<Resources, Composables>,
     ) => JSX.Element;
   };
 };
@@ -155,7 +167,7 @@ type DefinedResourceLayoutOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Name extends string,
-  Resource extends keyof NormalizeResources<Resources>,
+  Resource extends LayoutResourceKey<Resources>,
   Props extends InPropsObject = {},
 > = ResolveLayoutProps<InferredInProps<Resources, InProps>> & {
   name: Name;
@@ -170,7 +182,7 @@ type DefinedResourceLayout<
   Composables extends ComposableComponents = {},
 > = <
   Name extends string,
-  Resource extends keyof NormalizeResources<Resources>,
+  Resource extends LayoutResourceKey<Resources>,
   Props extends InPropsObject = {},
 >(
   options: DefinedResourceLayoutOptions<
@@ -181,50 +193,6 @@ type DefinedResourceLayout<
     Props
   >,
 ) => ResourceLayoutComponent<Name, CustomProps, Composables>;
-
-const createResourceLayout = defineResourceLayout({
-  resources: [
-    {
-      value: 'users',
-      subResources: ['admins', 'managers'],
-    },
-    'groups',
-    'roles',
-  ],
-  options: (props) => ({
-    resource: props.resource,
-    name: createProp.string(),
-    title: createProp
-      .component({ type: 'ReactNode' })
-      .or(
-        createProp
-          .component({ type: 'JSX.Element' })
-          .withChildren({ visibility: 'required' }),
-      ),
-  }),
-  layout: {
-    props: {
-      include: {
-        name: true,
-      },
-      custom: {
-        includeCreateButton: createProp.boolean().literal(true).optional(),
-        addNewIcon: createProp.component({ type: 'ReactNode' }).optional(),
-        children: createProp.component({ type: 'ReactNode' }),
-        className: createProp.string().optional(),
-      },
-    },
-    render: () => <></>,
-  },
-});
-createResourceLayout({
-  resource: 'groups',
-  name: 'GroupsLayout',
-  props: {
-    segment: createProp.string(),
-  },
-  title: () => <></>,
-});
 
 export function defineResourceLayout<
   const Resources extends ReadonlyArray<ResourceDefinition>,
@@ -252,12 +220,12 @@ export function defineResourceLayout<
     IncludeProps,
     CustomProps,
     Composables
-  > = (options) => {
+  > = (layoutOptions) => {
     const {
       name,
       props: instancePropDefinitions,
       ...layoutOptionProps
-    } = options;
+    } = layoutOptions;
     const createComposableLayout =
       makeComposable<
         LayoutRenderProps<Resources, InProps, IncludeProps, CustomProps>
@@ -286,14 +254,22 @@ export function defineResourceLayout<
       ...resolvedIncludedProps,
       ...customLayoutProps,
     };
-    const createComposables = createComposableLayout({
-      components: composables,
+    const layoutContext: ComposableNameContext<
+      LayoutResourceKey<Resources>,
+      typeof name
+    > = {
+      resource: layoutOptions.resource,
       name,
-    });
-    const mergedRenderContext: LayoutRenderContext<Composables> = {
-      composables: createComposables(),
-      inProps: splitInProps,
     };
+    const resolvedComposables = composables
+      ? resolveLayoutComposables(composables, layoutContext)
+      : undefined;
+    const mergedRenderContext = {
+      composables: resolvedComposables as LayoutRenderComposables<Composables>,
+      resource: layoutContext.resource,
+      name: layoutContext.name,
+      inProps: splitInProps,
+    } as LayoutRenderContext<Resources, Composables>;
 
     function Component(props: Show<ResolveProps<CustomProps>>) {
       const validatedProps = validateProps(resolvedLayoutProps, props);
@@ -310,22 +286,25 @@ export function defineResourceLayout<
       return <>{render(layoutRenderProps, mergedRenderContext)}</>;
     }
 
-    function createComposition<Name extends string>(
-      options: MakeComposableOptions<Composables, Name>,
+    function createComposition<LayoutName extends string>(
+      compositionOptions: MakeComposableOptions<Composables, LayoutName>,
     ) {
-      if (!options.components) {
-        return {} as ResourceLayoutComposition<Name, Composables>;
+      if (!compositionOptions.components) {
+        return {} as ResourceLayoutComposition<LayoutName, Composables>;
       }
 
       return {
-        makeComposable: createComposableLayout(options),
+        makeComposable: createComposableLayout(compositionOptions),
       };
     }
 
     return Object.assign(Component, {
       displayName: name,
       props: undefined as unknown as ResolveProps<CustomProps>,
-      ...createComposition({ components: composables, name }),
+      ...createComposition({
+        components: resolvedComposables as Composables | undefined,
+        name,
+      }),
     });
   };
 
