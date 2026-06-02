@@ -1,63 +1,80 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: "Segoe UI", sans-serif;
+}
+
 :root {
-  color: #f5f1e8;
-  background:
-    radial-gradient(circle at top, rgba(192, 255, 114, 0.18), transparent 30%),
-    linear-gradient(180deg, #0d1117 0%, #121a23 100%);
-  font-family: "Segoe UI", sans-serif;
+  --radius: 1rem;
+  --background: hsl(218 37% 10%);
+  --foreground: hsl(42 38% 93%);
+  --card: hsl(216 34% 13%);
+  --card-foreground: hsl(42 38% 93%);
+  --popover: hsl(216 34% 13%);
+  --popover-foreground: hsl(42 38% 93%);
+  --primary: hsl(87 53% 59%);
+  --primary-foreground: hsl(219 35% 9%);
+  --secondary: hsl(214 28% 20%);
+  --secondary-foreground: hsl(42 38% 93%);
+  --muted: hsl(215 24% 18%);
+  --muted-foreground: hsl(214 17% 72%);
+  --accent: hsl(214 28% 20%);
+  --accent-foreground: hsl(42 38% 93%);
+  --destructive: hsl(0 72% 52%);
+  --border: hsl(0 0% 100% / 0.12);
+  --input: hsl(0 0% 100% / 0.12);
+  --ring: hsl(87 53% 59%);
 }
 
-* {
-  box-sizing: border-box;
-}
+@layer base {
+  * {
+    @apply border-border;
+  }
 
-body {
-  margin: 0;
-  min-height: 100vh;
-}
+  html,
+  body,
+  #root {
+    min-height: 100vh;
+  }
 
-#root {
-  min-height: 100vh;
-}
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    background-image:
+      radial-gradient(circle at top, rgb(192 255 114 / 18%), transparent 30%),
+      linear-gradient(180deg, #0d1117 0%, #121a23 100%);
+  }
 
-.page {
-  width: min(960px, calc(100vw - 32px));
-  margin: 0 auto;
-  padding: 56px 0 72px;
-}
+  a {
+    @apply text-inherit;
+  }
 
-.hero {
-  margin-bottom: 28px;
-}
-
-.kicker,
-.eyebrow {
-  margin: 0 0 10px;
-  font-size: 12px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: #9acb62;
-}
-
-.hero h1,
-.layout-shell h2 {
-  margin: 0;
-}
-
-.lede {
-  width: min(56ch, 100%);
-  color: #c3ced9;
-}
-
-.layout-shell {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  padding: 28px;
-  background: rgba(10, 16, 23, 0.7);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
-  backdrop-filter: blur(14px);
-}
-
-.body {
-  margin-top: 16px;
-  color: #d9e1ea;
+  code {
+    @apply rounded-md bg-white/5 px-1.5 py-0.5 text-[0.9em];
+  }
 }

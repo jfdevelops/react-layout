@@ -5,6 +5,7 @@
     "ignoreDeprecations": "6.0",
     "noEmit": true,
     "paths": {
+      "@/*": ["./src/*"],
       "view-map": ["../../packages/core/src/index.ts"]
     },
     "types": ["node"]
