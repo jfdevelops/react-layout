@@ -18,7 +18,14 @@ import {
 } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
-const users = [
+type User = {
+  id: string;
+  name: string;
+  role: string;
+  description: string;
+};
+
+const users: User[] = [
   {
     id: 'ada-lovelace',
     name: 'Ada Lovelace',
@@ -31,7 +38,7 @@ const users = [
     role: 'Manager',
     description: 'Coordinates rollout plans and tracks cross-team approvals.',
   },
-] as const;
+];
 
 function Card(props: ComponentPropsWithRef<'div'>) {
   return <UiCard {...props} />;
@@ -79,7 +86,8 @@ const createResourceLayout = defineResourceLayout({
         wrapWith: Title,
       }),
       Description: create({
-        name: ({ resource, capitalize }) => `${capitalize(resource)}Description`,
+        name: ({ resource, capitalize }) =>
+          `${capitalize(resource)}Description`,
         wrapWith: CardDescription,
       }),
       Content: create({
@@ -123,12 +131,21 @@ const createResourceLayout = defineResourceLayout({
   },
 });
 
-const UsersPage = createResourceLayout({
-  resource: 'users',
+const createUsersPage = createResourceLayout.forResource({ resource: 'users' });
+const UsersPage = createUsersPage({
   name: 'UsersPage',
   title: 'Users page',
   description:
     'A single layout factory can produce a page shell for the users resource.',
+});
+const AdminUsersPage = createUsersPage({
+  name: 'AdminUsersPage',
+  title: 'Admin users page',
+  description:
+    'A single layout factory can produce a page shell for the users resource.',
+});
+const UserDetailPage = UsersPage.makeComposable({
+  name: 'UserDetailPage',
 });
 
 const GroupsLayout = createResourceLayout({
@@ -147,9 +164,6 @@ const RolesLayout = createResourceLayout({
     'Each page remains a normal React component backed by the shared layout definition.',
 });
 
-const UserDetailPage = UsersPage.makeComposable({
-  name: 'UserDetailPage',
-});
 
 const navButtonClass = buttonVariants({
   variant: 'ghost',
@@ -190,6 +204,13 @@ function AppShell() {
             Users
           </Link>
           <Link
+            to='/admin-users'
+            className={cn(navButtonClass, 'text-muted-foreground')}
+            activeProps={{ className: activeNavButtonClass }}
+          >
+            Admin Users
+          </Link>
+          <Link
             to='/groups'
             className={cn(navButtonClass, 'text-muted-foreground')}
             activeProps={{ className: activeNavButtonClass }}
@@ -211,41 +232,52 @@ function AppShell() {
   );
 }
 
+function Users({ users }: { users: User[] }) {
+  return (
+    <div className='space-y-4'>
+      {users.map(({ id, name, description, role }) => (
+        <UiCard key={id} className='border-white/10 bg-white/4 shadow-none'>
+          <CardHeader className='gap-3 md:flex-row md:items-start md:justify-between'>
+            <div className='space-y-2'>
+              <CardTitle className='text-xl'>{name}</CardTitle>
+              <CardDescription className='max-w-xl text-sm leading-6 text-muted-foreground'>
+                {description}
+              </CardDescription>
+            </div>
+            <span className='inline-flex w-fit items-center rounded-full border border-lime-300/20 bg-lime-300/10 px-3 py-1 text-xs font-medium text-lime-100'>
+              {role}
+            </span>
+          </CardHeader>
+          <CardContent className='flex flex-wrap items-center justify-between gap-3 pt-0'>
+            <span className='text-sm text-muted-foreground'>
+              Route: <code>/users/{id}</code>
+            </span>
+            <Button asChild>
+              <Link to='/users/$userId' params={{ userId: id }}>
+                View user
+                <ArrowRight className='size-4' />
+              </Link>
+            </Button>
+          </CardContent>
+        </UiCard>
+      ))}
+    </div>
+  );
+}
+
 function UsersIndexPage() {
   return (
     <UsersPage className='rounded-3xl'>
-      <div className='space-y-4'>
-        {users.map((user) => (
-          <UiCard
-            key={user.id}
-            className='border-white/10 bg-white/4 shadow-none'
-          >
-            <CardHeader className='gap-3 md:flex-row md:items-start md:justify-between'>
-              <div className='space-y-2'>
-                <CardTitle className='text-xl'>{user.name}</CardTitle>
-                <CardDescription className='max-w-xl text-sm leading-6 text-muted-foreground'>
-                  {user.description}
-                </CardDescription>
-              </div>
-              <span className='inline-flex w-fit items-center rounded-full border border-lime-300/20 bg-lime-300/10 px-3 py-1 text-xs font-medium text-lime-100'>
-                {user.role}
-              </span>
-            </CardHeader>
-            <CardContent className='flex flex-wrap items-center justify-between gap-3 pt-0'>
-              <span className='text-sm text-muted-foreground'>
-                Route: <code>/users/{user.id}</code>
-              </span>
-              <Button asChild>
-                <Link to='/users/$userId' params={{ userId: user.id }}>
-                  View user
-                  <ArrowRight className='size-4' />
-                </Link>
-              </Button>
-            </CardContent>
-          </UiCard>
-        ))}
-      </div>
+      <Users users={users} />
     </UsersPage>
+  );
+}
+
+function AdminUsers() {
+  return (
+    <AdminUsersPage className='rounded-3xl'>
+      <Users users={users.filter((user) => user.role === 'Admin')} />
+    </AdminUsersPage>
   );
 }
 
@@ -328,6 +360,12 @@ const userShowRoute = createRoute({
   component: UserShowPage,
 });
 
+const adminUsersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/admin-users',
+  component: AdminUsers,
+});
+
 const groupsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/groups',
@@ -343,6 +381,7 @@ const rolesRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   usersRoute,
   userShowRoute,
+  adminUsersRoute,
   groupsRoute,
   rolesRoute,
 ]);

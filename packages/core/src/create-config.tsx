@@ -185,7 +185,37 @@ type DefinedResourceLayoutOptions<
   resource: Resource;
   props?: Props;
 };
-type DefinedResourceLayout<
+type LayoutForResourceOptions<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Name extends string,
+  Resource extends LayoutResourceKey<Resources>,
+> = {
+  name?: Name;
+  resource: Resource;
+};
+type DefinedLayoutForResourceFn<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  InProps extends InPropsDefinition<Resources>,
+  IncludeProps extends IncludedProps<InferredInProps<Resources, InProps>> = {},
+  CustomProps extends InPropsObject = {},
+  Composables extends ComposableComponents = {},
+> = <Name extends string, Resource extends LayoutResourceKey<Resources>>(
+  options: LayoutForResourceOptions<Resources, Name, Resource>,
+) => <OverrideName extends string = Name, Props extends InPropsObject = {}>(
+  options: Omit<
+    DefinedResourceLayoutOptions<
+      Resources,
+      InProps,
+      OverrideName,
+      Resource,
+      Props
+    >,
+    'name' | 'resource'
+  > & {
+    name?: OverrideName;
+  },
+) => ResourceLayoutComponent<OverrideName, CustomProps, Composables>;
+type DefinedResourceLayoutFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   IncludeProps extends IncludedProps<InferredInProps<Resources, InProps>> = {},
@@ -204,6 +234,30 @@ type DefinedResourceLayout<
     Props
   >,
 ) => ResourceLayoutComponent<Name, CustomProps, Composables>;
+interface DefinedResourceLayout<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  InProps extends InPropsDefinition<Resources>,
+  IncludeProps extends IncludedProps<InferredInProps<Resources, InProps>> = {},
+  CustomProps extends InPropsObject = {},
+  Composables extends ComposableComponents = {},
+> extends DefinedResourceLayoutFn<
+  Resources,
+  InProps,
+  IncludeProps,
+  CustomProps,
+  Composables
+> {
+  /**
+   * A function to create a resource layout for a specific resource.
+   */
+  forResource: DefinedLayoutForResourceFn<
+    Resources,
+    InProps,
+    IncludeProps,
+    CustomProps,
+    Composables
+  >;
+}
 
 export function defineResourceLayout<
   const Resources extends ReadonlyArray<ResourceDefinition>,
@@ -225,7 +279,7 @@ export function defineResourceLayout<
   const resourcesEnum = createPrimitivePropBuilder('string').enum(
     toResourceEnum(normalizedResources),
   );
-  const definedResourceLayout: DefinedResourceLayout<
+  const definedResourceLayout: DefinedResourceLayoutFn<
     Resources,
     InProps,
     IncludeProps,
@@ -339,6 +393,34 @@ export function defineResourceLayout<
       }),
     });
   };
+  const forResource: DefinedLayoutForResourceFn<
+    Resources,
+    InProps,
+    IncludeProps,
+    CustomProps,
+    Composables
+  > = (options) => {
+    const { name: defaultName, resource } = options;
 
-  return definedResourceLayout;
+    if (!resource) {
+      throw new Error('"resource" is required when calling "forResource"');
+    }
+
+    return ({ name, ...rest }) =>
+      definedResourceLayout({
+        name: name ?? defaultName,
+        resource,
+        ...rest,
+      } as never) as never;
+  };
+
+  return Object.assign(definedResourceLayout, {
+    forResource,
+  }) as DefinedResourceLayout<
+    Resources,
+    InProps,
+    IncludeProps,
+    CustomProps,
+    Composables
+  >;
 }
