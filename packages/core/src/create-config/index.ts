@@ -8,8 +8,15 @@ export type {
   CreateResourceConfigFn,
   CreatedResourceConfig,
   GetComponent,
+  GetComponentAtBound,
+  GetComponentForResource,
+  GetComponentForResourceBound,
+  GetComponentForResourceOptions,
   GetComponentOptions,
+  ResourceFromGetComponentBound,
   GetComponentOptionsForResource,
+  SubResourceFromGetComponentBound,
+  ValidateForResourceBound,
 } from './get-component';
 export type {
   BaseResourceConfigComponents,

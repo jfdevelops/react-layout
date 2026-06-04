@@ -115,9 +115,9 @@ describe('getComponent', () => {
       users: { component: <div>users</div> },
     });
 
-    expect(() =>
-      config.getComponent({ resource: 'groups' }),
-    ).toThrowError('Resource "groups" is not configured');
+    expect(() => config.getComponent({ resource: 'groups' })).toThrowError(
+      'Resource "groups" is not configured',
+    );
   });
 
   it('throws when the sub-resource path is not configured', () => {
@@ -144,5 +144,60 @@ describe('getComponent', () => {
         component: 'errorComponent',
       }),
     ).toThrowError('Missing "errorComponent" configuration');
+  });
+
+  it('forResource returns a reusable getter bound to resource and subResource', () => {
+    const root = <div>users</div>;
+    const female = <div data-testid='female-bound'>female</div>;
+    const config = createResourceConfig({
+      users: {
+        component: root,
+        subResources: {
+          managers: {
+            component: <div>managers</div>,
+            subResources: {
+              female: { component: female },
+            },
+          },
+        },
+      },
+    });
+
+    const getFemale = config.getComponent.forResource({
+      resource: 'users',
+      subResource: {
+        resource: 'managers',
+        subResource: 'female',
+      },
+    });
+
+    expect(getFemale()).toBe(female);
+    expect(getFemale({ component: 'component' })).toBe(female);
+  });
+
+  it('forResource binds only resource when subResource is omitted', () => {
+    const root = <div data-testid='users-bound'>users</div>;
+    const config = createResourceConfig({
+      users: { component: root },
+    });
+
+    const getUsers = config.getComponent.forResource({ resource: 'users' });
+
+    expect(getUsers()).toBe(root);
+  });
+
+  it('forResource supports alternate component slots on the bound path', () => {
+    const main = <div>main</div>;
+    const error = <div data-testid='bound-error'>error</div>;
+    const config = createResourceConfig({
+      users: {
+        component: main,
+        errorComponent: error,
+      },
+    });
+
+    const getUsers = config.getComponent.forResource({ resource: 'users' });
+
+    expect(getUsers({ component: 'errorComponent' })).toBe(error);
   });
 });
