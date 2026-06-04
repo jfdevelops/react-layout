@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { createProp, defineResourceLayout } from '../src';
+import { createProp, defineResourceLayout } from '../../src';
 
 describe('defineResourceLayout', () => {
   afterEach(() => {
@@ -8,7 +8,7 @@ describe('defineResourceLayout', () => {
   });
 
   it('creates layouts bound to a resource and uses the provided default name', () => {
-    const createResourceLayout = defineResourceLayout({
+    const { createResourceLayout } = defineResourceLayout({
       resources: ['users', 'posts'],
       options: {
         title: createProp.string(),
@@ -41,11 +41,13 @@ describe('defineResourceLayout', () => {
 
     expect(screen.getByText('UsersPage')).toBeInTheDocument();
     expect(screen.getByText('users')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Directory' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Directory' }),
+    ).toBeInTheDocument();
   });
 
   it('allows overriding the default name for a resource-bound layout', () => {
-    const createResourceLayout = defineResourceLayout({
+    const { createResourceLayout } = defineResourceLayout({
       resources: ['users'],
       options: {},
       layout: {
@@ -73,7 +75,7 @@ describe('defineResourceLayout', () => {
   });
 
   it('throws when forResource is called without a resource', () => {
-    const createResourceLayout = defineResourceLayout({
+    const { createResourceLayout } = defineResourceLayout({
       resources: ['users'],
       options: {},
       layout: {
@@ -87,7 +89,7 @@ describe('defineResourceLayout', () => {
   });
 
   it('resolves included option props before passing them to render', () => {
-    const createResourceLayout = defineResourceLayout({
+    const { createResourceLayout } = defineResourceLayout({
       resources: ['users'],
       options: {
         title: createProp.string(),
@@ -122,9 +124,9 @@ describe('defineResourceLayout', () => {
 
     render(<UsersPage>Body content</UsersPage>);
 
-    expect(screen.getByRole('heading', { name: 'Users page' }).textContent).toBe(
-      'Users page',
-    );
+    expect(
+      screen.getByRole('heading', { name: 'Users page' }).textContent,
+    ).toBe('Users page');
     expect(
       screen.getByText('Resolved include props should reach render as strings.')
         .textContent,
@@ -133,7 +135,7 @@ describe('defineResourceLayout', () => {
   });
 
   it('passes split render options through the render context', () => {
-    const createResourceLayout = defineResourceLayout({
+    const { createResourceLayout } = defineResourceLayout({
       resources: ['users'],
       options: {
         title: createProp.string(),

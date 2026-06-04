@@ -62,11 +62,23 @@ function Description({ className, ...props }: ComponentPropsWithRef<'p'>) {
   );
 }
 
-const createResourceLayout = defineResourceLayout({
+const { createResourceLayout } = defineResourceLayout({
   resources: [
     {
       value: 'users',
-      subResources: ['admins', 'managers'],
+      subResources: [
+        'admins',
+        {
+          value: 'managers',
+          subResources: [
+            {
+              value: 'male',
+              subResources: ['wfh', 'onsite'],
+            },
+            'female',
+          ],
+        },
+      ],
     },
     'groups',
     'roles',
@@ -163,7 +175,6 @@ const RolesLayout = createResourceLayout({
   description:
     'Each page remains a normal React component backed by the shared layout definition.',
 });
-
 
 const navButtonClass = buttonVariants({
   variant: 'ghost',

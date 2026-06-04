@@ -4,7 +4,11 @@ export type Show<T> = T extends (...args: infer A) => infer R
 export type MergeIntersection<T> = {
   [Key in keyof T]: T[Key];
 };
-
+export type IsUnion<T, U = T> = T extends unknown
+  ? [U] extends [T]
+    ? false
+    : true
+  : never;
 export type UnionToIntersection<Union> = (
   Union extends unknown ? (value: Union) => void : never
 ) extends (value: infer Intersection) => void
