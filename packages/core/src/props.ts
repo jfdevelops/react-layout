@@ -2,6 +2,7 @@ import {
   AnyBuiltPropDefinition,
   EnumWrappedProp,
   LiteralWrappedProp,
+  ResolveLayoutProps,
   ResolveProps,
 } from './validators';
 import { ResourceDefinition, ResourceEnum } from './resource';
@@ -39,8 +40,8 @@ export type LayoutRenderProps<
   IncludeProps extends IncludedProps<InferredInProps<Resources, Options>> = {},
   CustomProps extends InPropsObject = {},
 > = Show<
-  ResolveProps<
-    CustomProps &
+  ResolveProps<CustomProps> &
+    ResolveLayoutProps<
       Pick<InferredInProps<Resources, Options>, keyof IncludeProps & string>
-  >
+    >
 >;

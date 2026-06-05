@@ -21,7 +21,17 @@ export function validateProps<T extends object>(
       continue;
     }
 
-    prop((props as Record<string, unknown>)[key]);
+    const value = (props as Record<string, unknown>)[key];
+
+    if (
+      'type' in prop &&
+      prop.type === 'JSX.Element' &&
+      typeof value === 'function'
+    ) {
+      continue;
+    }
+
+    prop(value);
   }
 
   return props;

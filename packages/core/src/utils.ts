@@ -14,6 +14,7 @@ export type UnionToIntersection<Union> = (
 ) extends (value: infer Intersection) => void
   ? Intersection
   : never;
+export type Updater<T> = T | ((prev: T) => T);
 
 export interface BaseComponent<Name extends string, Props = {}> {
   /**
@@ -65,4 +66,12 @@ export function pick<T extends object, K extends keyof T>(obj: T, keys: K[]) {
     },
     {} as Pick<T, K>,
   );
+}
+
+export function functionalUpdate<T>(value: T, updater: Updater<T>){
+  if (typeof updater === 'function') {
+    return (updater as (prev: T) => T)(value);
+  }
+
+  return updater;
 }
