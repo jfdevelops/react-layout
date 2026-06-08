@@ -11,15 +11,16 @@ import {
   RequiredPresetLayoutProps,
   resolveComposablePresetProps,
   resolveLayoutComposables,
-} from '../composable';
+} from '@jfdevelops/react-layout-composables';
 import {
   type AnyBuiltPropDefinition,
   createPrimitivePropBuilder,
   createProp,
   type ResolveLayoutProps,
   type ResolveProps,
+  resolvePropDefinitionValues,
   validateProps,
-} from '../validators';
+} from '@jfdevelops/react-layout-validator';
 import {
   IncludedProps,
   InferredInProps,
@@ -38,7 +39,6 @@ import {
   BaseComponent,
   functionalUpdate,
   pick,
-  resolvePropDefinitionValues,
   Show,
   Updater,
 } from '../utils';

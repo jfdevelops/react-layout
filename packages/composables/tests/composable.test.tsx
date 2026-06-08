@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { createProp } from '@jfdevelops/react-layout-validator';
 import {
   createComposableComponent,
-  createProp,
   defineComposableComponent,
   makeComposable,
 } from '../src';

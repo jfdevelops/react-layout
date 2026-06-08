@@ -48,3 +48,7 @@ export {
 } from './types';
 export { UnionProp } from './union';
 export { MissingRequiredPropError, validateProps } from './validate-props';
+export {
+  isPropDefinitionShape,
+  resolvePropDefinitionValues,
+} from './definition-utils';

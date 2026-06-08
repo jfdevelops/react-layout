@@ -7,11 +7,8 @@ import {
 } from '@tanstack/react-router';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { type ComponentPropsWithRef } from 'react';
-import {
-  createProp,
-  defineComposableComponent,
-  defineResourceLayout,
-} from '@jfdevelops/react-layout';
+import { createBreadcrumbComposable } from '@jfdevelops/react-layout-composable-breadcrumb';
+import { createProp, defineResourceLayout } from '@jfdevelops/react-layout';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
   Card as UiCard,
@@ -65,20 +62,6 @@ function Description({ className, ...props }: ComponentPropsWithRef<'p'>) {
     />
   );
 }
-
-const createBreadcrumbComposable = defineComposableComponent({
-  name: 'Breadcrumb',
-  props: {
-    segments: createProp.record({
-      value: createProp.string().or(
-        createProp.object({
-          value: createProp.string(),
-          isActive: createProp.boolean().optional(),
-        }),
-      ),
-    }),
-  },
-});
 
 const { createResourceLayout } = defineResourceLayout({
   resources: [

@@ -1,0 +1,49 @@
+{
+  "name": "@jfdevelops/react-layout-validator",
+  "version": "0.1.0",
+  "description": "Prop validators for react-layout.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jfdevelops/react-layout.git",
+    "directory": "packages/validators"
+  },
+  "type": "module",
+  "files": ["dist"],
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "@types/react": "18.3.28",
+    "react": "18.3.1",
+    "tsdown": "0.22.1",
+    "typescript": "6.0.3",
+    "unrun": "0.3.0",
+    "vite": "8.0.10",
+    "vitest": "4.1.5"
+  }
+}

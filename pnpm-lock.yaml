@@ -20,6 +20,9 @@ importers:
       '@jfdevelops/react-layout':
         specifier: workspace:*
         version: link:../../packages/core
+      '@jfdevelops/react-layout-composable-breadcrumb':
+        specifier: workspace:*
+        version: link:../../packages/composable-breadcrumb
       '@radix-ui/react-slot':
         specifier: ^1.2.4
         version: 1.2.4(@types/react@18.3.28)(react@18.3.1)
@@ -76,7 +79,115 @@ importers:
         specifier: 8.0.10
         version: 8.0.10(@types/node@24.10.1)(jiti@2.7.0)
 
+  packages/composable-breadcrumb:
+    dependencies:
+      '@jfdevelops/react-layout-composables':
+        specifier: workspace:*
+        version: link:../composables
+      '@jfdevelops/react-layout-validator':
+        specifier: workspace:*
+        version: link:../validators
+    devDependencies:
+      '@testing-library/jest-dom':
+        specifier: 6.9.1
+        version: 6.9.1
+      '@testing-library/react':
+        specifier: 16.3.2
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@types/node':
+        specifier: 24.10.1
+        version: 24.10.1
+      '@types/react':
+        specifier: 18.3.28
+        version: 18.3.28
+      '@types/react-dom':
+        specifier: 18.3.7
+        version: 18.3.7(@types/react@18.3.28)
+      '@vitejs/plugin-react':
+        specifier: 6.0.1
+        version: 6.0.1(vite@8.0.10(@types/node@24.10.1)(jiti@2.7.0))
+      jsdom:
+        specifier: 29.0.2
+        version: 29.0.2(@noble/hashes@1.8.0)
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: 18.3.1
+        version: 18.3.1(react@18.3.1)
+      tsdown:
+        specifier: 0.22.1
+        version: 0.22.1(typescript@6.0.3)(unrun@0.3.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      unrun:
+        specifier: 0.3.0
+        version: 0.3.0
+      vite:
+        specifier: 8.0.10
+        version: 8.0.10(@types/node@24.10.1)(jiti@2.7.0)
+      vitest:
+        specifier: 4.1.5
+        version: 4.1.5(@types/node@24.10.1)(@vitest/coverage-v8@4.1.5)(@vitest/ui@4.1.5)(jsdom@29.0.2(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@24.10.1)(typescript@6.0.3))(vite@8.0.10(@types/node@24.10.1)(jiti@2.7.0))
+
+  packages/composables:
+    dependencies:
+      '@jfdevelops/react-layout-validator':
+        specifier: workspace:*
+        version: link:../validators
+    devDependencies:
+      '@testing-library/jest-dom':
+        specifier: 6.9.1
+        version: 6.9.1
+      '@testing-library/react':
+        specifier: 16.3.2
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@types/node':
+        specifier: 24.10.1
+        version: 24.10.1
+      '@types/react':
+        specifier: 18.3.28
+        version: 18.3.28
+      '@types/react-dom':
+        specifier: 18.3.7
+        version: 18.3.7(@types/react@18.3.28)
+      '@vitejs/plugin-react':
+        specifier: 6.0.1
+        version: 6.0.1(vite@8.0.10(@types/node@24.10.1)(jiti@2.7.0))
+      jsdom:
+        specifier: 29.0.2
+        version: 29.0.2(@noble/hashes@1.8.0)
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: 18.3.1
+        version: 18.3.1(react@18.3.1)
+      tsdown:
+        specifier: 0.22.1
+        version: 0.22.1(typescript@6.0.3)(unrun@0.3.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      unrun:
+        specifier: 0.3.0
+        version: 0.3.0
+      vite:
+        specifier: 8.0.10
+        version: 8.0.10(@types/node@24.10.1)(jiti@2.7.0)
+      vitest:
+        specifier: 4.1.5
+        version: 4.1.5(@types/node@24.10.1)(@vitest/coverage-v8@4.1.5)(@vitest/ui@4.1.5)(jsdom@29.0.2(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@24.10.1)(typescript@6.0.3))(vite@8.0.10(@types/node@24.10.1)(jiti@2.7.0))
+
   packages/core:
+    dependencies:
+      '@jfdevelops/react-layout-composables':
+        specifier: workspace:*
+        version: link:../composables
+      '@jfdevelops/react-layout-validator':
+        specifier: workspace:*
+        version: link:../validators
     devDependencies:
       '@testing-library/jest-dom':
         specifier: 6.9.1
@@ -111,6 +222,33 @@ importers:
       react-dom:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
+      tsdown:
+        specifier: 0.22.1
+        version: 0.22.1(typescript@6.0.3)(unrun@0.3.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      unrun:
+        specifier: 0.3.0
+        version: 0.3.0
+      vite:
+        specifier: 8.0.10
+        version: 8.0.10(@types/node@24.10.1)(jiti@2.7.0)
+      vitest:
+        specifier: 4.1.5
+        version: 4.1.5(@types/node@24.10.1)(@vitest/coverage-v8@4.1.5)(@vitest/ui@4.1.5)(jsdom@29.0.2(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@24.10.1)(typescript@6.0.3))(vite@8.0.10(@types/node@24.10.1)(jiti@2.7.0))
+
+  packages/validators:
+    devDependencies:
+      '@types/node':
+        specifier: 24.10.1
+        version: 24.10.1
+      '@types/react':
+        specifier: 18.3.28
+        version: 18.3.28
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
       tsdown:
         specifier: 0.22.1
         version: 0.22.1(typescript@6.0.3)(unrun@0.3.0)
@@ -2579,10 +2717,6 @@ packages:
 
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
-
-  tinyexec@1.1.1:
-    resolution: {integrity: sha512-VKS/ZaQhhkKFMANmAOhhXVoIfBXblQxGX1myCQ2faQrfmobMftXeJPcZGp0gS07ocvGJWDLZGyOZDadDBqYIJg==}
-    engines: {node: '>=18'}
 
   tinyexec@1.2.4:
     resolution: {integrity: sha512-SHf/r48b7vOrjve9PxJo3MN5v5yuyjHvdUcrQffT3WXMUfnGmHDVbC4k3sHJaJTgZCwpUplIaAo5ANtMyp3YHg==}
@@ -5345,8 +5479,6 @@ snapshots:
 
   tinybench@2.9.0: {}
 
-  tinyexec@1.1.1: {}
-
   tinyexec@1.2.4: {}
 
   tinyglobby@0.2.16:
@@ -5501,7 +5633,7 @@ snapshots:
       picomatch: 4.0.4
       std-env: 4.1.0
       tinybench: 2.9.0
-      tinyexec: 1.1.1
+      tinyexec: 1.2.4
       tinyglobby: 0.2.16
       tinyrainbow: 3.1.0
       vite: 8.0.10(@types/node@24.10.1)(jiti@2.7.0)

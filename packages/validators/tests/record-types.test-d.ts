@@ -1,5 +1,5 @@
-import { createProp } from '../../src';
-import type { ExtractDefinitionValue } from '../../src';
+import { createProp } from '../src';
+import type { ExtractDefinitionValue } from '../src';
 
 const segments = createProp.record({
   value: createProp.string().or(

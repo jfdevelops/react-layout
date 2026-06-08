@@ -6,7 +6,8 @@
     "noEmit": true,
     "paths": {
       "@/*": ["./src/*"],
-      "@jfdevelops/react-layout": ["../../packages/core/src/index.ts"]
+      "@jfdevelops/react-layout": ["../../packages/core/src/index.ts"],
+      "@jfdevelops/react-layout-composable-breadcrumb": ["../../packages/composable-breadcrumb/src/index.ts"]
     },
     "types": ["node"]
   },

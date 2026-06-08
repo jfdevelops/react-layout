@@ -9,10 +9,6 @@ export default defineConfig({
         __dirname,
         '../validators/src/index.ts',
       ),
-      '@jfdevelops/react-layout-composables': path.resolve(
-        __dirname,
-        '../composables/src/index.ts',
-      ),
     },
   },
   plugins: [react()],
@@ -20,9 +16,5 @@ export default defineConfig({
     environment: 'jsdom',
     include: ['tests/**/*.{test,spec}.{ts,tsx}'],
     setupFiles: './vitest.setup.ts',
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'html'],
-    },
   },
-})
+});

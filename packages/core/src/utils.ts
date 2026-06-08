@@ -28,31 +28,6 @@ export interface BaseComponent<Name extends string, Props = {}> {
   props: Props;
 }
 
-type ValueBackedDefinition = {
-  _baseProp?: {
-    value?: unknown;
-  };
-};
-
-export function isPropDefinitionShape(value: unknown): value is {
-  visibility: unknown;
-} {
-  return typeof value === 'function' && value !== null && 'visibility' in value;
-}
-
-export function resolvePropDefinitionValues(input: Record<string, unknown>) {
-  const out: Record<string, unknown> = {};
-
-  for (const key of Object.keys(input)) {
-    const value = input[key];
-    out[key] = isPropDefinitionShape(value)
-      ? (value as ValueBackedDefinition)._baseProp?.value
-      : value;
-  }
-
-  return out;
-}
-
 export function pick<T extends object, K extends keyof T>(obj: T, keys: K[]) {
   if (keys.length === 0) {
     return {} as Pick<T, K>;

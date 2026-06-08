@@ -1,15 +1,14 @@
 {
-  "name": "@jfdevelops/react-layout",
-  "version": "0.3.0",
-  "description": "A React library for creating layout components.",
+  "name": "@jfdevelops/react-layout-composables",
+  "version": "0.1.0",
+  "description": "Composable components for react-layout.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jfdevelops/react-layout.git"
+    "url": "https://github.com/jfdevelops/react-layout.git",
+    "directory": "packages/composables"
   },
   "type": "module",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -25,17 +24,12 @@
     "node": "^20.19.0 || >=22.12.0"
   },
   "scripts": {
-    "dev": "vite",
     "build": "tsdown",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage",
-    "preview": "vite preview"
+    "test:watch": "vitest"
   },
   "dependencies": {
-    "@jfdevelops/react-layout-composables": "workspace:*",
     "@jfdevelops/react-layout-validator": "workspace:*"
   },
   "peerDependencies": {
@@ -47,8 +41,6 @@
     "provenance": true
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "4.1.5",
-    "@vitest/ui": "4.1.5",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.2",
     "@types/node": "24.10.1",
@@ -59,8 +51,8 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "tsdown": "0.22.1",
-    "unrun": "0.3.0",
     "typescript": "6.0.3",
+    "unrun": "0.3.0",
     "vite": "8.0.10",
     "vitest": "4.1.5"
   }

@@ -8,15 +8,11 @@ import {
   AnyBuiltPropDefinition,
   ResolveLayoutProps,
   ResolveProps,
-  validateProps,
-} from './validators';
-import { InPropsObject } from './props';
-import {
-  BaseComponent,
   resolvePropDefinitionValues,
-  Show,
-  UnionToIntersection,
-} from './utils';
+  validateProps,
+} from '@jfdevelops/react-layout-validator';
+import { InPropsObject } from './types';
+import { BaseComponent, Show, UnionToIntersection } from './utils';
 import { CapitalizeFn } from './utils/capitalize';
 
 export const composablePresetMetaKey = Symbol.for(

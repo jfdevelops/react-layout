@@ -1,4 +1,5 @@
-import { createProp, defineComposableComponent } from '../src';
+import { createProp } from '@jfdevelops/react-layout-validator';
+import { defineComposableComponent } from '../src';
 import type { ComposablePresetComponentCallProps } from '../src';
 
 const createBreadcrumbComposable = defineComposableComponent({

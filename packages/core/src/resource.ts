@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { NonEmptyReadonlyArray } from './validators';
+import { NonEmptyReadonlyArray } from '@jfdevelops/react-layout-validator';
 import { MergeIntersection, UnionToIntersection } from './utils';
 
 export type ResourceDefinition =
