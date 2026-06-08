@@ -1,30 +1,72 @@
-# view-map
+# @jfdevelops/react-layout
 
-pnpm monorepo containing the `view-map` React library.
+A React library for building resource-based page layouts. Define a shared layout once, then create typed page components for each resource in your app — useful for admin dashboards, CRUD apps, and any UI where many pages share the same shell.
+
+## What it does
+
+- **Define layouts by resource** — group pages under resources like `users`, `settings`, or nested sub-resources.
+- **Reuse layout structure** — composable slots (e.g. `Layout`, `Title`, `Content`) keep markup consistent across pages.
+- **Type-safe props** — validate and infer layout props with a small built-in prop builder.
+
+## Quick example
+
+```tsx
+import { createProp, defineResourceLayout } from '@jfdevelops/react-layout';
+
+const { createResourceLayout } = defineResourceLayout({
+  resources: ['users', 'settings'],
+  options: {
+    title: createProp.string(),
+    description: createProp.string(),
+  },
+  layout: {
+    composables: (create) => ({
+      Layout: create({ name: 'PageLayout' }),
+      Title: create({ name: 'PageTitle' }),
+    }),
+    props: {
+      include: { title: true, description: true },
+    },
+    render: (props, { composables }) => (
+      <composables.Layout>
+        <composables.Title>{props.title}</composables.Title>
+        <p>{props.description}</p>
+      </composables.Layout>
+    ),
+  },
+});
+
+const UsersPage = createResourceLayout({
+  resource: 'users',
+  name: 'UsersPage',
+  title: 'Users',
+  description: 'Manage users.',
+});
+```
+
+See [`examples/basic-example`](./examples/basic-example) for a full working app.
 
 ## Workspace
 
-- `packages/core`: library package built with Vite 8, Vitest, and Rolldown
+| Path | Description |
+| --- | --- |
+| `packages/core` | `@jfdevelops/react-layout` — the published library |
+| `examples/basic-example` | Demo app showing resource layouts in action |
 
-## Requirements
+## Development
 
-- Node `^20.19.0 || >=22.12.0`
-- pnpm `10.28.1`
-- React `>=18`
+**Requirements:** Node `^20.19.0 \|\| >=22.12.0`, pnpm `10.28.1`, React `>=18`
 
-## Root scripts
+```bash
+pnpm install
+pnpm dev              # library dev server
+pnpm dev:basic-example # run the example app
+pnpm build            # build the library
+pnpm test             # run tests
+```
 
-- `pnpm dev` starts the `view-map` demo app
-- `pnpm build` builds the `view-map` library
-- `pnpm test` runs the `view-map` Vitest suite
-- `pnpm typecheck` runs the `view-map` TypeScript check
+## Install
 
-## Package usage
-
-```tsx
-import { ViewMap } from 'view-map'
-
-export function Example() {
-  return <ViewMap title="Office map" src="https://example.com/embed" />
-}
+```bash
+pnpm add @jfdevelops/react-layout
 ```

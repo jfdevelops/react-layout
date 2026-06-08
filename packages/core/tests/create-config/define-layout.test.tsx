@@ -1,6 +1,10 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { createProp, defineResourceLayout } from '../../src';
+import {
+  createProp,
+  defineComposableComponent,
+  defineResourceLayout,
+} from '../../src';
 
 describe('defineResourceLayout', () => {
   afterEach(() => {
@@ -376,5 +380,73 @@ describe('defineResourceLayout', () => {
     expect(screen.getByText('users')).toBeInTheDocument();
     expect(screen.getByText('Directory')).toBeInTheDocument();
     expect(screen.getByText('0')).toBeInTheDocument();
+  });
+
+  it('renders defined composable presets with resolved create-time props', () => {
+    const createBreadcrumbComposable = defineComposableComponent({
+      name: 'Breadcrumbs',
+      props: {
+        segments: createProp.record({
+          value: createProp.string(),
+          key: createProp
+            .string()
+            .literal('contacts')
+            .or(createProp.string()),
+        }),
+      },
+    });
+
+    const Breadcrumbs = createBreadcrumbComposable((props) => (
+      <nav aria-label='Breadcrumb'>
+        {Object.values(props.segments).join(' / ')}
+      </nav>
+    ));
+
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['contacts'],
+      options: {
+        title: createProp.string(),
+      },
+      layout: {
+        composables: () => ({
+          ...Breadcrumbs,
+        }),
+        props: {
+          include: {
+            title: true,
+            segments: true,
+          },
+        },
+        render: (props, { composables }) => (
+          <section>
+            <composables.Breadcrumbs segments={props.segments} />
+            <h1>{props.title}</h1>
+            <p>{Object.values(props.segments).join(' / ')}</p>
+          </section>
+        ),
+      },
+    });
+
+    const ContactsPage = createResourceLayout({
+      resource: 'contacts',
+      name: 'ContactsPage',
+      title: 'Single Male Records',
+      segments: {
+        contacts: 'Contacts',
+        'single-male': 'Single Males',
+      },
+    });
+
+    render(<ContactsPage />);
+
+    expect(screen.getByLabelText('Breadcrumb')).toHaveTextContent(
+      'Contacts / Single Males',
+    );
+    expect(
+      screen.getByRole('heading', { name: 'Single Male Records' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('paragraph')).toHaveTextContent(
+      'Contacts / Single Males',
+    );
   });
 });

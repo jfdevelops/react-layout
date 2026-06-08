@@ -7,7 +7,11 @@ import {
 } from '@tanstack/react-router';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { type ComponentPropsWithRef } from 'react';
-import { createProp, defineResourceLayout } from '@jfdevelops/react-layout';
+import {
+  createProp,
+  defineComposableComponent,
+  defineResourceLayout,
+} from '@jfdevelops/react-layout';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
   Card as UiCard,
@@ -62,6 +66,20 @@ function Description({ className, ...props }: ComponentPropsWithRef<'p'>) {
   );
 }
 
+const createBreadcrumbComposable = defineComposableComponent({
+  name: 'Breadcrumb',
+  props: {
+    segments: createProp.record({
+      value: createProp.string().or(
+        createProp.object({
+          value: createProp.string(),
+          isActive: createProp.boolean().optional(),
+        }),
+      ),
+    }),
+  },
+});
+
 const { createResourceLayout } = defineResourceLayout({
   resources: [
     {
@@ -106,11 +124,33 @@ const { createResourceLayout } = defineResourceLayout({
         name: ({ resource, capitalize }) => `${capitalize(resource)}Content`,
         wrapWith: CardContent,
       }),
+      ...createBreadcrumbComposable(({ segments }) => (
+        <nav
+          aria-label='Breadcrumb'
+          className='flex flex-wrap items-center gap-1 text-xs text-muted-foreground'
+        >
+          {Object.entries(segments).map(([key, segment], index) => {
+            const label = typeof segment === 'string' ? segment : segment.value;
+            const isActive =
+              typeof segment === 'string' ? false : (segment.isActive ?? false);
+
+            return (
+              <span key={key} className='inline-flex items-center gap-1'>
+                {index > 0 ? <span aria-hidden='true'>/</span> : null}
+                <span className={cn(isActive && 'font-medium text-foreground')}>
+                  {label}
+                </span>
+              </span>
+            );
+          })}
+        </nav>
+      )),
     }),
     props: {
       include: {
         title: true,
         description: true,
+        segments: true,
       },
       custom: {
         children: createProp.component({ type: 'ReactNode' }),
@@ -127,6 +167,7 @@ const { createResourceLayout } = defineResourceLayout({
         >
           <CardHeader className='flex justify-between space-y-4'>
             <div className='space-y-2'>
+              <composables.Breadcrumb segments={props.segments} />
               <composables.Title>{props.title}</composables.Title>
               <composables.Description className='max-w-2xl text-sm leading-6 text-muted-foreground'>
                 {props.description}
@@ -149,12 +190,19 @@ const UsersPage = createUsersPage({
   title: 'Users page',
   description:
     'A single layout factory can produce a page shell for the users resource.',
+  segments: {
+    users: { value: 'Users', isActive: true },
+  },
 });
 const AdminUsersPage = createUsersPage({
   name: 'AdminUsersPage',
   title: 'Admin users page',
   description:
     'A single layout factory can produce a page shell for the users resource.',
+  segments: {
+    users: 'Users',
+    admins: { value: 'Admins', isActive: true },
+  },
 });
 const UserDetailPage = UsersPage.makeComposable({
   name: 'UserDetailPage',
@@ -166,6 +214,9 @@ const GroupsLayout = createResourceLayout({
   title: 'Groups page',
   description:
     'The same factory can map a different resource into a different page surface.',
+  segments: {
+    groups: { value: 'Groups', isActive: true },
+  },
 });
 
 const RolesLayout = createResourceLayout({
@@ -174,6 +225,9 @@ const RolesLayout = createResourceLayout({
   title: 'Roles page',
   description:
     'Each page remains a normal React component backed by the shared layout definition.',
+  segments: {
+    roles: { value: 'Roles', isActive: true },
+  },
 });
 
 const navButtonClass = buttonVariants({

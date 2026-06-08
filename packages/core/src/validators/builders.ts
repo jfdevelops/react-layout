@@ -4,6 +4,7 @@ import { ComponentProp, ComponentPropWithPropertiesProp, RenderChildrenProp } fr
 import { EnumProp } from './enum';
 import { LiteralProp } from './literal';
 import { ObjectProp } from './object';
+import { RecordProp } from './record';
 import { BooleanProp, NumberProp, StringProp } from './primitive';
 import type {
   AnyBaseProp,
@@ -86,6 +87,17 @@ type RenderChildrenWrappedPropState<
   childrenType: ChildrenType;
 };
 
+type RecordWrappedPropState<
+  ValueProp extends AnyBuiltPropDefinition,
+  KeyProp extends AnyBuiltPropDefinition | undefined,
+  Visibility extends PropVisibility,
+> = {
+  type: 'record';
+  visibility: Visibility;
+  valueProp: ValueProp;
+  keyProp: KeyProp;
+};
+
 type StringWrappedPropState<Visibility extends PropVisibility> =
   PrimitiveWrappedPropState<'string', Visibility, string | undefined>;
 type NumberWrappedPropState<Visibility extends PropVisibility> =
@@ -135,7 +147,17 @@ type WrappedPropState<Prop extends AnyBaseProp> =
                           ChildrenType,
                           Visibility
                         >
-                      : never;
+                      : Prop extends RecordProp<
+                            infer ValueProp,
+                            infer KeyProp,
+                            infer Visibility
+                          >
+                        ? RecordWrappedPropState<
+                            ValueProp,
+                            KeyProp,
+                            Visibility
+                          >
+                        : never;
 
 type ConfiguredWrappedProp<
   Prop extends AnyBaseProp,
@@ -283,15 +305,25 @@ type WrappedUnionProp<Prop> =
     ? OptionalChain<Visibility, UnionProp<Members, 'optional'>>
     : never;
 
+type WrappedRecordProp<Prop> =
+  Prop extends RecordProp<infer ValueProp, infer KeyProp, infer Visibility>
+    ? OptionalChain<
+        Visibility,
+        RecordProp<ValueProp, KeyProp, 'optional'>
+      >
+    : never;
+
 type WrappedPropChainMembers<Prop extends AnyBaseProp> = [
   WrappedSpecialProp<Prop>,
 ] extends [never]
   ? [WrappedObjectProp<Prop>] extends [never]
     ? [WrappedComponentWithPropsProp<Prop>] extends [never]
       ? [WrappedUnionProp<Prop>] extends [never]
-        ? [WrappedPrimitiveProp<Prop>] extends [never]
-          ? {}
-          : WrappedPrimitiveProp<Prop>
+        ? [WrappedRecordProp<Prop>] extends [never]
+          ? [WrappedPrimitiveProp<Prop>] extends [never]
+            ? {}
+            : WrappedPrimitiveProp<Prop>
+          : WrappedRecordProp<Prop>
         : WrappedUnionProp<Prop>
       : WrappedComponentWithPropsProp<Prop>
     : WrappedObjectProp<Prop>
@@ -307,6 +339,12 @@ export type ObjectValueDefinition<
   Shape extends BuiltPropShape,
   Visibility extends PropVisibility = 'required',
 > = WrappedProp<ObjectProp<Shape, Visibility>>;
+
+export type RecordValueDefinition<
+  ValueProp extends AnyBuiltPropDefinition,
+  KeyProp extends AnyBuiltPropDefinition | undefined = undefined,
+  Visibility extends PropVisibility = 'required',
+> = WrappedProp<RecordProp<ValueProp, KeyProp, Visibility>>;
 
 type PrimitivePropInstanceMap<Visibility extends PropVisibility> = {
   string: WrappedProp<StringProp<Visibility>>;
@@ -389,6 +427,11 @@ function getPropState<Prop extends AnyBaseProp>(
   if (prop instanceof RenderChildrenProp) {
     state.renderProps = prop.renderProps;
     state.childrenType = prop.childrenType;
+  }
+
+  if (prop instanceof RecordProp) {
+    state.valueProp = prop.valueProp;
+    state.keyProp = prop.keyProp;
   }
 
   return state as WrappedPropState<Prop>;
@@ -519,6 +562,48 @@ function createObjectProp<const Shape extends BuiltPropShape>(
   properties: Shape,
 ): ObjectValueDefinition<Shape, 'required'> {
   return wrapProp(new ObjectProp(properties, 'required'));
+}
+
+type RecordPropOptions<
+  ValueProp extends AnyBuiltPropDefinition,
+  KeyProp extends AnyBuiltPropDefinition | undefined = undefined,
+> = {
+  value: ValueProp;
+  key?: KeyProp;
+};
+
+function isRecordPropOptions<
+  ValueProp extends AnyBuiltPropDefinition,
+  KeyProp extends AnyBuiltPropDefinition | undefined,
+>(
+  options: ValueProp | RecordPropOptions<ValueProp, KeyProp>,
+): options is RecordPropOptions<ValueProp, KeyProp> {
+  return (
+    typeof options === 'object' &&
+    options !== null &&
+    'value' in options &&
+    typeof options.value === 'function' &&
+    'visibility' in options.value
+  );
+}
+
+function createRecordProp<
+  ValueProp extends AnyBuiltPropDefinition,
+  KeyProp extends AnyBuiltPropDefinition | undefined = undefined,
+>(
+  options: ValueProp | RecordPropOptions<ValueProp, KeyProp>,
+): RecordValueDefinition<ValueProp, KeyProp, 'required'> {
+  if (isRecordPropOptions(options)) {
+    const { value, key } = options;
+
+    return wrapProp(
+      new RecordProp(value, key, 'required'),
+    ) as RecordValueDefinition<ValueProp, KeyProp, 'required'>;
+  }
+
+  return wrapProp(
+    new RecordProp(options, undefined, 'required'),
+  ) as RecordValueDefinition<ValueProp, KeyProp, 'required'>;
 }
 
 type ChildrenPropFor<
@@ -770,6 +855,7 @@ export const createProp = {
   number: createPrimitivePropBuilder('number'),
   boolean: createPrimitivePropBuilder('boolean'),
   object: createObjectProp,
+  record: createRecordProp,
   component: <Type extends ComponentPropType>(options: { type: Type }) =>
     createComponentPropBuilder(options.type),
 };

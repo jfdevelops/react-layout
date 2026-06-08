@@ -31,7 +31,8 @@ export type PropType =
   | keyof PrimitiveTypesMap
   | ComponentPropType
   | 'union'
-  | 'function';
+  | 'function'
+  | 'record';
 
 export type BasePropOptions<
   Type extends PropType,
@@ -61,11 +62,12 @@ export interface BuiltPropShape {
 export type ResolveBuiltPropValue<Definition extends AnyBuiltPropDefinition> =
   ReturnType<Definition>;
 
-type ExtractDefinitionValue<D extends AnyBuiltPropDefinition> = D extends {
-  _baseProp: infer P extends AnyBaseProp;
-}
-  ? ExtractPropValue<P>
-  : ReturnType<D>;
+export type ExtractDefinitionValue<D extends AnyBuiltPropDefinition> =
+  D extends {
+    _baseProp: infer P extends AnyBaseProp;
+  }
+    ? ExtractPropValue<P>
+    : ReturnType<D>;
 
 export type ResolvedBuiltPropShape<Shape extends BuiltPropShape> = {
   [Key in keyof Shape as Shape[Key]['visibility'] extends 'required'

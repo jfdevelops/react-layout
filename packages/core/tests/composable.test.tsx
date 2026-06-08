@@ -1,6 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { createComposableComponent, createProp, makeComposable } from '../src';
+import {
+  createComposableComponent,
+  createProp,
+  defineComposableComponent,
+  makeComposable,
+} from '../src';
 
 describe('composable helpers', () => {
   it('renders resolved out props into function children', () => {
@@ -27,18 +32,36 @@ describe('composable helpers', () => {
     expect(Badge.displayName).toBe('Badge');
   });
 
-  it('requires a Layout composable when composing a layout', () => {
-    const createComposition = makeComposable<{}>();
+  it('returns a composable record keyed by name', () => {
+    const createBreadcrumbComposable = defineComposableComponent({
+      name: 'Breadcrumb',
+      props: {
+        foo: createProp.string(),
+      },
+    });
 
-    expect(() =>
-      createComposition({
-        name: 'UsersLayout',
-        components: {
-          Header: createComposableComponent({
-            name: 'Header',
-          }),
-        },
-      }),
-    ).toThrow('The Layout composable is required');
+    const Breadcrumb = createBreadcrumbComposable(({ foo }) => <>{foo}</>);
+
+    expect(createBreadcrumbComposable.props).toHaveProperty('foo');
+    expect(Breadcrumb).toHaveProperty('Breadcrumb');
+    expect(Breadcrumb.Breadcrumb.displayName).toBe('Breadcrumb');
+  });
+
+  it('composes a layout from available composables', () => {
+    const createUsersLayout = makeComposable<{}>()({
+      name: 'UsersLayout',
+      components: {
+        Header: createComposableComponent({
+          name: 'Header',
+        }),
+        Layout: createComposableComponent({
+          name: 'Layout',
+        }),
+      },
+    });
+    const UsersLayout = createUsersLayout();
+
+    expect(UsersLayout.displayName).toBe('UsersLayout');
+    expect(UsersLayout.Header.displayName).toBe('Header');
   });
 });

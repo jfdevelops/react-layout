@@ -8,6 +8,7 @@ export {
   type EnumWrappedProp,
   type LiteralWrappedProp,
   type ObjectValueDefinition,
+  type RecordValueDefinition,
   type WrappedProp,
 } from './builders';
 export {
@@ -18,6 +19,7 @@ export {
 export { EnumProp } from './enum';
 export { LiteralProp } from './literal';
 export { ObjectProp } from './object';
+export { RecordProp } from './record';
 export {
   BooleanProp,
   NumberProp,
@@ -30,6 +32,7 @@ export {
   type BuiltPropShape,
   type ComponentPropType,
   type ComponentPropTypeMap,
+  type ExtractDefinitionValue,
   type ExtractPropValue,
   type NonEmptyReadonlyArray,
   type PrimitivePropType,

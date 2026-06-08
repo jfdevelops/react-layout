@@ -65,6 +65,68 @@ describe('create-value', () => {
     );
   });
 
+  it('validates record props with literal and string keys', () => {
+    const segmentValue = createProp
+      .string()
+      .or(
+        createProp.object({
+          value: createProp.string(),
+          isActive: createProp.boolean.optional()(),
+        }),
+      );
+    const segments = createProp.record({
+      value: segmentValue,
+      key: createProp
+        .string()
+        .literal('contacts')
+        .or(createProp.string()),
+    });
+
+    const props = validateProps(
+      { segments },
+      {
+        segments: {
+          contacts: { value: 'Contacts', isActive: false },
+          'single-male': 'Single Males',
+        },
+      },
+    );
+
+    expect(props).toEqual({
+      segments: {
+        contacts: { value: 'Contacts', isActive: false },
+        'single-male': 'Single Males',
+      },
+    });
+    expect(() =>
+      segments({
+        contacts: 42,
+      }),
+    ).toThrow('"value" is not of type "union".');
+    const strictSegments = createProp.record({
+      value: createProp.string(),
+      key: createProp
+        .string()
+        .literal('contacts')
+        .or(createProp.string().literal('single-male')),
+    });
+
+    expect(() =>
+      strictSegments({
+        groups: 'Groups',
+      }),
+    ).toThrow('"groups" is not an allowed record key.');
+  });
+
+  it('supports record props with only string keys', () => {
+    const labels = createProp.record(createProp.string());
+
+    expect(labels({ alpha: 'Alpha', beta: 'Beta' })).toEqual({
+      alpha: 'Alpha',
+      beta: 'Beta',
+    });
+  });
+
   it('supports JSX element with props', () => {
     const elementProp = createProp.component({ type: 'JSX.Element' }).props({
       title: createProp.string(),

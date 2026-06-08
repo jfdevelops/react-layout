@@ -1,7 +1,8 @@
 import type {
   BuiltPropShape,
+  ExtractDefinitionValue,
   PropVisibility,
-  ResolveBuiltPropValue,
+  ResolvedBuiltPropShape,
 } from './types';
 import { BaseProp } from './base';
 
@@ -11,9 +12,7 @@ export class ObjectProp<
 > extends BaseProp<
   'object',
   Visibility,
-  {
-    [Key in keyof Shape]: ResolveBuiltPropValue<Shape[Key]>;
-  }
+  ResolvedBuiltPropShape<Shape>
 > {
   readonly properties: Shape;
 
@@ -27,9 +26,7 @@ export class ObjectProp<
   }
 
   validate(value: unknown) {
-    const validatedObject = {} as {
-      [Key in keyof Shape]: ResolveBuiltPropValue<Shape[Key]>;
-    };
+    const validatedObject = {} as ResolvedBuiltPropShape<Shape>;
 
     if (typeof value !== 'object' || value === null || Array.isArray(value)) {
       throw this.error;
@@ -49,17 +46,16 @@ export class ObjectProp<
         continue;
       }
 
-      validatedObject[key] = prop(propertyValue) as ResolveBuiltPropValue<
-        Shape[typeof key]
-      >;
+      prop(propertyValue);
+      (validatedObject as Record<string, ExtractDefinitionValue<Shape[string]>>)[
+        key
+      ] = propertyValue as ExtractDefinitionValue<Shape[typeof key]>;
     }
 
     return validatedObject;
   }
 
-  allows(value: unknown): value is {
-    [Key in keyof Shape]: ResolveBuiltPropValue<Shape[Key]>;
-  } {
+  allows(value: unknown): value is ResolvedBuiltPropShape<Shape> {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) {
       return false;
     }
