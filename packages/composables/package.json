@@ -1,6 +1,6 @@
 {
   "name": "@jfdevelops/react-layout-composables",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Composable components for react-layout.",
   "repository": {
     "type": "git",
@@ -8,7 +8,9 @@
     "directory": "packages/composables"
   },
   "type": "module",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",

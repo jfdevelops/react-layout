@@ -1,5 +1,18 @@
 # @jfdevelops/react-layout
 
+## 0.4.0
+
+### Minor Changes
+
+- 6dfc052: Split validators, composables, and breadcrumb preset into dedicated packages.
+- 3d7f627: add ability to define reusable composables
+
+### Patch Changes
+
+- Updated dependencies [6dfc052]
+  - @jfdevelops/react-layout-validator@0.2.0
+  - @jfdevelops/react-layout-composables@0.2.0
+
 ## 0.3.0
 
 ### Minor Changes
