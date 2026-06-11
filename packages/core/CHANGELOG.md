@@ -1,5 +1,14 @@
 # @jfdevelops/react-layout
 
+## 0.4.1
+
+### Patch Changes
+
+- 6b29ea9: Add `types` condition to package exports for correct TypeScript resolution under `moduleResolution: "bundler"`. Also corrects the top-level `types` field to point to `.d.mts` instead of `.d.cts`.
+- Updated dependencies [6b29ea9]
+  - @jfdevelops/react-layout-composables@0.2.1
+  - @jfdevelops/react-layout-validator@0.2.1
+
 ## 0.4.0
 
 ### Minor Changes
