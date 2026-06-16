@@ -1,5 +1,12 @@
 # @jfdevelops/react-layout
 
+## 0.5.0
+
+### Minor Changes
+
+- fd041b3: Add `createResourceLinks` to `defineResourceLayout` for building navigation links from resource config. Links are normalized with a `/#` prefix, and anchor links support custom `href` values as strings or resource-aware functions.
+- 6b8c043: Add top-level `createResourceLayout.makeComposable` for creating a `ComposableResourceLayout` directly with `CreateResourceLayoutMakeComposableOptions` (required `name` and `resource`, optional layout props). Matches `createResourceLayout(...).makeComposable()` and is only available when the layout defines composables.
+
 ## 0.4.1
 
 ### Patch Changes
