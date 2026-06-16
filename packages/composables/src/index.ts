@@ -24,7 +24,6 @@ export type {
   DefinedComposableComponentRecord,
   LayoutComposablesFactory,
   MakeComposable,
-  MakeComposableFactory,
   MakeComposableOptions,
   MergePresetProps,
   PresetPropsFromComposable,

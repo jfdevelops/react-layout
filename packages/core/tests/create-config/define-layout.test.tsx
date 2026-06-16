@@ -679,7 +679,7 @@ describe('defineResourceLayout', () => {
 
       const UserDetailPage = ContactsPage.makeComposable({
         name: 'UserDetailPage',
-      } as never);
+      });
 
       expect(ContactsPage.displayName).toBe('ContactsPage');
       expect(UserDetailPage.displayName).toBe('UserDetailPage');
