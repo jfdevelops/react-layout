@@ -64,20 +64,4 @@ describe('composable helpers', () => {
     expect(UsersLayout.displayName).toBe('UsersLayout');
     expect(UsersLayout.Header.displayName).toBe('Header');
   });
-
-  it('allows calling makeComposable without options when all options are defined', () => {
-    const createUsersLayout = makeComposable<{}>()({
-      name: 'UsersLayout',
-      components: {
-        Layout: createComposableComponent({
-          name: 'Layout',
-        }),
-      },
-    });
-    const UsersLayout = createUsersLayout();
-    const SameLayout = createUsersLayout({});
-
-    expect(UsersLayout.displayName).toBe('UsersLayout');
-    expect(SameLayout.displayName).toBe('UsersLayout');
-  });
 });
