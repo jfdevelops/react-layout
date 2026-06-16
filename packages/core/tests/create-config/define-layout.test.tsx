@@ -6,6 +6,134 @@ import {
   defineResourceLayout,
 } from '../../src';
 
+function createTestResourceLayout() {
+  return defineResourceLayout({
+    resources: ['users', 'posts'],
+    options: {},
+    layout: {
+      render: () => <section />,
+    },
+  });
+}
+
+describe('createResourceLinks', () => {
+  it('throws when the resource is not declared in the layout', () => {
+    const { createResourceLinks } = createTestResourceLayout();
+
+    expect(() =>
+      createResourceLinks({ invalid: { label: 'Invalid' } } as never),
+    ).toThrowError('[createResourceLinks]: Invalid resource: invalid');
+  });
+
+  it('throws when config is missing', () => {
+    const { createResourceLinks } = createTestResourceLayout();
+
+    expect(() =>
+      createResourceLinks({ users: undefined } as never),
+    ).toThrowError(
+      '[createResourceLinks]: "config" is required for the users resource.',
+    );
+  });
+
+  it('throws when config is not an object', () => {
+    const { createResourceLinks } = createTestResourceLayout();
+
+    expect(() =>
+      createResourceLinks({ users: 'not-an-object' } as never),
+    ).toThrowError(
+      '[createResourceLinks]: "config" must be an object for the users resource. Received string',
+    );
+  });
+
+  it('throws when label is missing', () => {
+    const { createResourceLinks } = createTestResourceLayout();
+
+    expect(() => createResourceLinks({ users: {} } as never)).toThrowError(
+      '[createResourceLinks]: "label" is required for the users resource.',
+    );
+  });
+
+  it('throws when label is not a string', () => {
+    const { createResourceLinks } = createTestResourceLayout();
+
+    expect(() =>
+      createResourceLinks({ users: { label: 123 } } as never),
+    ).toThrowError(
+      '[createResourceLinks]: "label" must be a string for the users resource. Received number',
+    );
+  });
+
+  it('prefixes the resource name with /# by default', () => {
+    const { createResourceLinks } = createTestResourceLayout();
+
+    expect(createResourceLinks({ users: { label: 'Users' } })).toEqual([
+      { href: '/#users', label: 'Users' },
+    ]);
+  });
+
+  it('prefixes anchor links without a custom href with /#resource', () => {
+    const { createResourceLinks } = createTestResourceLayout();
+
+    expect(
+      createResourceLinks({
+        users: { label: 'Users', type: 'anchor' },
+      }),
+    ).toEqual([{ href: '/#users', label: 'Users' }]);
+  });
+
+  it('strips leading slashes and hashes from anchor string hrefs before prefixing', () => {
+    const { createResourceLinks } = createTestResourceLayout();
+
+    expect(
+      createResourceLinks({
+        users: { label: 'Users', type: 'anchor', href: '/#/custom-path' },
+      }),
+    ).toEqual([{ href: '/#custom-path', label: 'Users' }]);
+  });
+
+  it('resolves anchor hrefs from a function and prefixes the result', () => {
+    const { createResourceLinks } = createTestResourceLayout();
+
+    expect(
+      createResourceLinks({
+        users: {
+          label: 'Users',
+          type: 'anchor',
+          href: (resource) => `custom-${resource}`,
+        },
+      }),
+    ).toEqual([{ href: '/#custom-users', label: 'Users' }]);
+  });
+
+  it('strips leading slashes and hashes from function anchor hrefs before prefixing', () => {
+    const { createResourceLinks } = createTestResourceLayout();
+
+    expect(
+      createResourceLinks({
+        users: {
+          label: 'Users',
+          type: 'anchor',
+          href: () => '/#/from-function',
+        },
+      }),
+    ).toEqual([{ href: '/#from-function', label: 'Users' }]);
+  });
+
+  it('maps each resource entry to a link', () => {
+    const { createResourceLinks } = createTestResourceLayout();
+
+    expect(
+      createResourceLinks({
+        users: { label: 'Users' },
+        posts: { label: 'Posts', type: 'anchor' },
+      }),
+    ).toEqual([
+      { href: '/#users', label: 'Users' },
+      { href: '/#posts', label: 'Posts' },
+    ]);
+  });
+});
+
 describe('defineResourceLayout', () => {
   afterEach(() => {
     cleanup();
@@ -388,10 +516,7 @@ describe('defineResourceLayout', () => {
       props: {
         segments: createProp.record({
           value: createProp.string(),
-          key: createProp
-            .string()
-            .literal('contacts')
-            .or(createProp.string()),
+          key: createProp.string().literal('contacts').or(createProp.string()),
         }),
       },
     });

@@ -30,18 +30,13 @@ import {
   MergedLayoutInProps,
 } from '../props';
 import {
+  createIsValidResourceFn,
   normalizeResources,
   toResourceEnum,
   type LayoutResourceKey,
   type ResourceDefinition,
 } from '../resource';
-import {
-  BaseComponent,
-  functionalUpdate,
-  pick,
-  Show,
-  Updater,
-} from '../utils';
+import { BaseComponent, functionalUpdate, pick, Show, Updater } from '../utils';
 import { capitalize } from '../utils/capitalize';
 import {
   type CreateResourceConfigFn,
@@ -58,11 +53,7 @@ type LayoutProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
-  IncludeProps extends LayoutIncludeProps<
-    Resources,
-    Options,
-    Composables
-  > = {},
+  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables> = {},
   CustomProps extends InPropsObject = {},
 > = {
   /**
@@ -125,10 +116,7 @@ function isJSXElementDefinition(
   );
 }
 
-function toLayoutRenderPropKey(
-  includeKey: string,
-  definition: unknown,
-) {
+function toLayoutRenderPropKey(includeKey: string, definition: unknown) {
   return isJSXElementDefinition(definition)
     ? capitalize(includeKey)
     : includeKey;
@@ -203,11 +191,7 @@ type CreateViewMapOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents = {},
-  IncludeProps extends LayoutIncludeProps<
-    Resources,
-    Options,
-    Composables
-  > = {},
+  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables> = {},
   CustomProps extends InPropsObject = {},
 > = {
   /**
@@ -376,7 +360,11 @@ type SetDefaultPropForResourceFn<
   Resource extends LayoutResourceKey<Resources>,
   CustomProps extends InPropsObject = {},
 > = <
-  const Defaults extends SetDefaultPropsForResource<Resources, InProps, Composables>,
+  const Defaults extends SetDefaultPropsForResource<
+    Resources,
+    InProps,
+    Composables
+  >,
 >(
   /**
    * Default values for layout props. Each prop can only be set once.
@@ -396,11 +384,7 @@ type CreateLayoutForResource<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents = {},
-  IncludeProps extends LayoutIncludeProps<
-    Resources,
-    InProps,
-    Composables
-  > = {},
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
   CustomProps extends InPropsObject = {},
 > = <Name extends string, Resource extends LayoutResourceKey<Resources>>(
   options: CreateLayoutForResourceOptions<Resources, Name, Resource>,
@@ -428,11 +412,7 @@ type CreateResourceLayoutFnImpl<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
-  IncludeProps extends LayoutIncludeProps<
-    Resources,
-    InProps,
-    Composables
-  > = {},
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
   CustomProps extends InPropsObject = {},
 > = <
   Name extends string,
@@ -452,11 +432,7 @@ export interface CreateResourceLayoutFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents = {},
-  IncludeProps extends LayoutIncludeProps<
-    Resources,
-    InProps,
-    Composables
-  > = {},
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
   CustomProps extends InPropsObject = {},
 > extends CreateResourceLayoutFnImpl<
   Resources,
@@ -476,16 +452,52 @@ export interface CreateResourceLayoutFn<
     CustomProps
   >;
 }
+export interface CreateResourceLinkOptionsBase {
+  label: string;
+}
+export type ResourceAnchorLinkFn<
+  Resource extends string,
+> = (resource: Resource) => string;
+export interface CreateResourceAnchorLinkOptions<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Resource extends LayoutResourceKey<Resources>,
+> extends CreateResourceLinkOptionsBase {
+  type: 'anchor';
+  /**
+   * The href of the link. By default, the href will be the resource name. If you need to customize it, you can provide
+   * a string or a function that returns a string.
+   *
+   * Any **leading** `"/"` or `"#"` will be stripped since it is automatically added by the layout.
+   */
+  href?: string | ResourceAnchorLinkFn< Resource>;
+}
+export type CreateResourceLinkOptions<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Resource extends LayoutResourceKey<Resources>,
+> =
+  | CreateResourceAnchorLinkOptions<Resources, Resource>
+  | CreateResourceLinkOptionsBase;
+export type CreateResourceLinkConfig<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> = {
+  [resource in LayoutResourceKey<Resources>]?: CreateResourceLinkOptions<
+    Resources,
+    resource
+  >;
+};
+export type CreatedResourceLink = {
+  href: string;
+  label: string;
+};
+export type CreateResourceLinksFn<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> = (config: CreateResourceLinkConfig<Resources>) => Array<CreatedResourceLink>;
 
 type DefinedResourceLayout<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents = {},
-  IncludeProps extends LayoutIncludeProps<
-    Resources,
-    InProps,
-    Composables
-  > = {},
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
   CustomProps extends InPropsObject = {},
 > = {
   createResourceConfig: CreateResourceConfigFn<Resources>;
@@ -496,6 +508,7 @@ type DefinedResourceLayout<
     IncludeProps,
     CustomProps
   >;
+  createResourceLinks: CreateResourceLinksFn<Resources>;
 };
 
 export function defineResourceLayout<
@@ -522,6 +535,7 @@ export function defineResourceLayout<
   const resourcesEnum = createPrimitivePropBuilder('string').enum(
     toResourceEnum(normalizedResources),
   );
+  const isValidResource = createIsValidResourceFn(resources);
   const definedResourceLayout: CreateResourceLayoutFnImpl<
     Resources,
     InProps,
@@ -576,9 +590,9 @@ export function defineResourceLayout<
       : undefined;
     const mergedResolvedInProps = { ...resolvedInProps };
 
-    for (const { props: presetPropDefinitions } of collectComposablePresetEntries(
-      resolvedComposables,
-    )) {
+    for (const {
+      props: presetPropDefinitions,
+    } of collectComposablePresetEntries(resolvedComposables)) {
       Object.assign(mergedResolvedInProps, presetPropDefinitions);
     }
 
@@ -632,7 +646,9 @@ export function defineResourceLayout<
           return [
             [
               toLayoutRenderPropKey(key, mergedResolvedInProps[key]),
-              validatedIncludedProps[key as keyof typeof validatedIncludedProps],
+              validatedIncludedProps[
+                key as keyof typeof validatedIncludedProps
+              ],
             ],
           ];
         }),
@@ -728,7 +744,11 @@ export function defineResourceLayout<
     const createLayout = createLayoutForResource(defaultName, resource, {});
 
     const setDefaults = ((defaults) =>
-      createLayoutForResource(defaultName, resource, defaults)) as SetDefaultPropForResourceFn<
+      createLayoutForResource(
+        defaultName,
+        resource,
+        defaults,
+      )) as SetDefaultPropForResourceFn<
       Resources,
       InProps,
       Composables,
@@ -764,9 +784,63 @@ export function defineResourceLayout<
     forResource,
   });
 
+  const createResourceLinks: CreateResourceLinksFn<Resources> = (config) => {
+    return Object.entries(config).map(([resource, config]) => {
+      if (!isValidResource(resource)) {
+        throw new Error(`[createResourceLinks]: Invalid resource: ${resource}`);
+      }
+
+      if (!config) {
+        throw new Error(
+          `[createResourceLinks]: "config" is required for the ${resource} resource.`,
+        );
+      }
+
+      if (typeof config !== 'object') {
+        throw new Error(
+          `[createResourceLinks]: "config" must be an object for the ${resource} resource. Received ${typeof config}`,
+        );
+      }
+
+      if (!('label' in config)) {
+        throw new Error(
+          `[createResourceLinks]: "label" is required for the ${resource} resource.`,
+        );
+      }
+
+      if (typeof config.label !== 'string') {
+        throw new Error(
+          `[createResourceLinks]: "label" must be a string for the ${resource} resource. Received ${typeof config.label}`,
+        );
+      }
+
+      let href: string = resource;
+
+      if ('type' in config && config.type === 'anchor') {
+        if ('href' in config) {
+          if (typeof config.href === 'string') {
+            href = config.href.replace(/^[\/#]+/, '');
+          }
+
+          if (typeof config.href === 'function') {
+            href = config.href(resource).replace(/^[\/#]+/, '');
+          }
+        }
+      }
+
+      href = `/#${href}`;
+
+      return {
+        href,
+        label: config.label,
+      };
+    });
+  };
+
   return {
     createResourceConfig,
     createResourceLayout,
+    createResourceLinks,
   } as DefinedResourceLayout<
     Resources,
     InProps,
