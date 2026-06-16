@@ -1,5 +1,5 @@
 export { defineResourceLayout } from './define-layout';
-export type { CreateResourceLayoutFn } from './define-layout';
+export type { CreateResourceLayoutFn, CreateResourceLayoutMakeComposableOptions } from './define-layout';
 export {
   createGetComponent,
   createResourceConfig,

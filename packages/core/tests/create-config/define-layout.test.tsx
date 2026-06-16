@@ -2,6 +2,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   createProp,
+  createComposableComponent,
   defineComposableComponent,
   defineResourceLayout,
 } from '../../src';
@@ -14,6 +15,53 @@ function createTestResourceLayout() {
       render: () => <section />,
     },
   });
+}
+
+function createContactsComposableLayout() {
+  const createBreadcrumbComposable = defineComposableComponent({
+    name: 'Breadcrumbs',
+    props: {
+      segments: createProp.record({
+        value: createProp.string(),
+        key: createProp.string().literal('contacts').or(createProp.string()),
+      }),
+    },
+  });
+
+  const Breadcrumbs = createBreadcrumbComposable((props) => (
+    <nav aria-label='Breadcrumb'>
+      {Object.values(props.segments).join(' / ')}
+    </nav>
+  ));
+
+  const { createResourceLayout } = defineResourceLayout({
+    resources: ['contacts'],
+    options: {
+      title: createProp.string(),
+    },
+    layout: {
+      composables: () => ({
+        Layout: createComposableComponent({
+          name: 'Layout',
+        }),
+        ...Breadcrumbs,
+      }),
+      props: {
+        include: {
+          title: true,
+          segments: true,
+        },
+      },
+      render: (props, { composables }) => (
+        <section>
+          <composables.Breadcrumbs segments={props.segments} />
+          <h1>{props.title}</h1>
+        </section>
+      ),
+    },
+  });
+
+  return { createResourceLayout, Breadcrumbs };
 }
 
 describe('createResourceLinks', () => {
@@ -573,5 +621,69 @@ describe('defineResourceLayout', () => {
     expect(screen.getByRole('paragraph')).toHaveTextContent(
       'Contacts / Single Males',
     );
+  });
+
+  describe('createResourceLayout.makeComposable', () => {
+    it('returns a ComposableResourceLayout with the layout name and composables', () => {
+      const { createResourceLayout } = createContactsComposableLayout();
+
+      const ContactSection = createResourceLayout.makeComposable({
+        resource: 'contacts',
+        name: 'ContactSection',
+        title: 'Contact',
+        segments: {
+          contacts: 'Contacts',
+        },
+      });
+
+      expect(ContactSection.displayName).toBe('ContactSection');
+      expect(ContactSection.Breadcrumbs.displayName).toBe('Breadcrumbs');
+    });
+
+    it('matches createResourceLayout(...).makeComposable()', () => {
+      const { createResourceLayout } = createContactsComposableLayout();
+      const layoutOptions = {
+        resource: 'contacts' as const,
+        name: 'ContactSection',
+        title: 'Contact',
+        segments: {
+          contacts: 'Contacts',
+        },
+      };
+
+      const fromTopLevel = createResourceLayout.makeComposable(layoutOptions);
+      const fromLayout = createResourceLayout(layoutOptions).makeComposable();
+
+      expect(fromTopLevel.displayName).toBe(fromLayout.displayName);
+      expect(fromTopLevel.Breadcrumbs.displayName).toBe(
+        fromLayout.Breadcrumbs.displayName,
+      );
+    });
+
+    it('is not available when the layout has no composables', () => {
+      const { createResourceLayout } = createTestResourceLayout();
+
+      expect('makeComposable' in createResourceLayout).toBe(false);
+    });
+
+    it('allows per-layout makeComposable to override the composable name', () => {
+      const { createResourceLayout } = createContactsComposableLayout();
+      const ContactsPage = createResourceLayout({
+        resource: 'contacts',
+        name: 'ContactsPage',
+        title: 'Directory',
+        segments: {
+          contacts: 'Contacts',
+        },
+      });
+
+      const UserDetailPage = ContactsPage.makeComposable({
+        name: 'UserDetailPage',
+      } as never);
+
+      expect(ContactsPage.displayName).toBe('ContactsPage');
+      expect(UserDetailPage.displayName).toBe('UserDetailPage');
+      expect(UserDetailPage.Breadcrumbs.displayName).toBe('Breadcrumbs');
+    });
   });
 });
