@@ -2,6 +2,7 @@ import type { JSX } from 'react';
 import {
   type ComposableComponents,
   type ComposableNameContext,
+  type ComposableResourceLayout,
   type CreateLayoutComposable,
   collectComposablePresetEntries,
   LayoutComposablePresetProvider,
@@ -280,6 +281,16 @@ type ResolveLayoutPropsWithDefaults<
   >;
 };
 
+export type CreateResourceLayoutOptionsBase<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Name extends string,
+  Resource extends LayoutResourceKey<Resources>,
+  Props extends InPropsObject = {},
+> = {
+  name: Name;
+  resource: Resource;
+  props?: Props;
+};
 type CreateResourceLayoutOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
@@ -287,11 +298,8 @@ type CreateResourceLayoutOptions<
   Name extends string,
   Resource extends LayoutResourceKey<Resources>,
   Props extends InPropsObject = {},
-> = LayoutPropsForResource<Resources, InProps, Composables> & {
-  name: Name;
-  resource: Resource;
-  props?: Props;
-};
+> = LayoutPropsForResource<Resources, InProps, Composables> &
+  CreateResourceLayoutOptionsBase<Resources, Name, Resource, Props>;
 type CreateLayoutForResourceOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Name extends string,
@@ -428,19 +436,51 @@ type CreateResourceLayoutFnImpl<
     Props
   >,
 ) => ResourceLayoutComponent<Name, CustomProps, Composables>;
-export interface CreateResourceLayoutFn<
+
+export type CreateResourceLayoutMakeComposableOptions<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  InProps extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  Name extends string,
+  Resource extends LayoutResourceKey<Resources>,
+  Props extends InPropsObject = {},
+> = CreateResourceLayoutOptionsBase<Resources, Name, Resource, Props> &
+  Partial<LayoutPropsForResource<Resources, InProps, Composables>>;
+
+type CreateResourceLayoutMakeComposableFn<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  InProps extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
+  CustomProps extends InPropsObject,
+> = <
+  Name extends string,
+  Resource extends LayoutResourceKey<Resources>,
+  Props extends InPropsObject = {},
+>(
+  options: CreateResourceLayoutMakeComposableOptions<
+    Resources,
+    InProps,
+    Composables,
+    Name,
+    Resource,
+    Props
+  >,
+) => ComposableResourceLayout<Composables, Name, any, any, any>;
+
+type CreateResourceLayoutFnBase<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents = {},
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
   CustomProps extends InPropsObject = {},
-> extends CreateResourceLayoutFnImpl<
+> = CreateResourceLayoutFnImpl<
   Resources,
   InProps,
   Composables,
   IncludeProps,
   CustomProps
-> {
+> & {
   /**
    * A function to create a resource layout for a specific resource.
    */
@@ -451,13 +491,53 @@ export interface CreateResourceLayoutFn<
     IncludeProps,
     CustomProps
   >;
-}
+};
+
+type CreateResourceLayoutMakeComposableMember<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  InProps extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
+  CustomProps extends InPropsObject,
+> = [keyof Composables] extends [never]
+  ? {}
+  : {
+
+      makeComposable: CreateResourceLayoutMakeComposableFn<
+        Resources,
+        InProps,
+        Composables,
+        IncludeProps,
+        CustomProps
+      >;
+    };
+
+export type CreateResourceLayoutFn<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  InProps extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents = {},
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
+  CustomProps extends InPropsObject = {},
+> = CreateResourceLayoutFnBase<
+  Resources,
+  InProps,
+  Composables,
+  IncludeProps,
+  CustomProps
+> &
+  CreateResourceLayoutMakeComposableMember<
+    Resources,
+    InProps,
+    Composables,
+    IncludeProps,
+    CustomProps
+  >;
 export interface CreateResourceLinkOptionsBase {
   label: string;
 }
-export type ResourceAnchorLinkFn<
-  Resource extends string,
-> = (resource: Resource) => string;
+export type ResourceAnchorLinkFn<Resource extends string> = (
+  resource: Resource,
+) => string;
 export interface CreateResourceAnchorLinkOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Resource extends LayoutResourceKey<Resources>,
@@ -469,7 +549,7 @@ export interface CreateResourceAnchorLinkOptions<
    *
    * Any **leading** `"/"` or `"#"` will be stripped since it is automatically added by the layout.
    */
-  href?: string | ResourceAnchorLinkFn< Resource>;
+  href?: string | ResourceAnchorLinkFn<Resource>;
 }
 export type CreateResourceLinkOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -536,13 +616,20 @@ export function defineResourceLayout<
     toResourceEnum(normalizedResources),
   );
   const isValidResource = createIsValidResourceFn(resources);
-  const definedResourceLayout: CreateResourceLayoutFnImpl<
-    Resources,
-    InProps,
-    Composables,
-    IncludeProps,
-    CustomProps
-  > = (layoutOptions) => {
+  const definedResourceLayout = (<
+    Name extends string,
+    Resource extends LayoutResourceKey<Resources>,
+    Props extends InPropsObject = {},
+  >(
+    layoutOptions: CreateResourceLayoutOptions<
+      Resources,
+      InProps,
+      Composables,
+      Name,
+      Resource,
+      Props
+    >,
+  ) => {
     const {
       name,
       props: instancePropDefinitions,
@@ -671,15 +758,18 @@ export function defineResourceLayout<
       );
     }
 
-    function createComposition<LayoutName extends string>(
-      compositionOptions: MakeComposableOptions<Composables, LayoutName>,
-    ) {
+    function createComposition<
+      LayoutName extends string,
+      const Defined extends MakeComposableOptions<Composables, LayoutName>,
+    >(compositionOptions: Defined) {
       if (!compositionOptions.components) {
         return {} as ResourceLayoutComposition<LayoutName, Composables>;
       }
 
       return {
-        makeComposable: createComposableLayout(compositionOptions),
+        makeComposable: createComposableLayout(
+          compositionOptions,
+        ) as MakeComposable<Composables, LayoutName>,
       };
     }
 
@@ -691,7 +781,13 @@ export function defineResourceLayout<
         name,
       }),
     });
-  };
+  }) as CreateResourceLayoutFnImpl<
+    Resources,
+    InProps,
+    Composables,
+    IncludeProps,
+    CustomProps
+  >;
   function createLayoutForResource<
     Name extends string,
     Resource extends LayoutResourceKey<Resources>,
@@ -774,15 +870,51 @@ export function defineResourceLayout<
 
     return createLayoutForResourceBuilder(defaultName, resource);
   };
-  const createResourceLayout: CreateResourceLayoutFn<
+
+  const createTopLevelMakeComposable = () => {
+    return (options: Record<string, unknown>) => {
+      const layout = definedResourceLayout(options as never);
+
+      if (
+        !('makeComposable' in layout) ||
+        typeof layout.makeComposable !== 'function'
+      ) {
+        throw new Error(
+          'makeComposable requires composables to be defined in the layout',
+        );
+      }
+
+      return layout.makeComposable();
+    };
+  };
+
+  const createResourceLayoutExtras: {
+    forResource: CreateLayoutForResource<
+      Resources,
+      InProps,
+      Composables,
+      IncludeProps,
+      CustomProps
+    >;
+    makeComposable?: ReturnType<typeof createTopLevelMakeComposable>;
+  } = {
+    forResource,
+  };
+
+  if (layout.composables) {
+    createResourceLayoutExtras.makeComposable = createTopLevelMakeComposable();
+  }
+
+  const createResourceLayout = Object.assign(
+    definedResourceLayout,
+    createResourceLayoutExtras,
+  ) as CreateResourceLayoutFn<
     Resources,
     InProps,
     Composables,
     IncludeProps,
     CustomProps
-  > = Object.assign(definedResourceLayout, {
-    forResource,
-  });
+  >;
 
   const createResourceLinks: CreateResourceLinksFn<Resources> = (config) => {
     return Object.entries(config).map(([resource, config]) => {

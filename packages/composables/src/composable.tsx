@@ -562,17 +562,32 @@ export type MakeComposableOptions<
 export type MakeComposable<
   Composables extends ComposableComponents,
   Name extends string,
-> = <OverrideName extends string = Name>(
-  options?: Partial<
-    Pick<MakeComposableOptions<Composables, OverrideName>, 'name'>
+  Defined extends MakeComposableOptions<Composables, Name> = MakeComposableOptions<
+    Composables,
+    Name
   >,
-) => ComposableResourceLayout<Composables, Name, any, any, any>;
+  Props = unknown,
+> = (
+  overrideOptions?: Partial<Defined>,
+) => Omit<
+  ComposableResourceLayout<Composables, Name, any, any, any>,
+  'props'
+> &
+  BaseComponent<Name, Props>;
+export type MakeComposableFactory<Props = unknown> = <
+  Composables extends ComposableComponents,
+  Name extends string,
+  const Defined extends MakeComposableOptions<Composables, Name>,
+>(
+  options: Defined,
+) => MakeComposable<Composables, Name, Defined, Props>;
 
-export function makeComposable<Props>() {
+export function makeComposable<Props>(): MakeComposableFactory<Props> {
   return function <
     Composables extends ComposableComponents,
     Name extends string,
-  >(options: MakeComposableOptions<Composables, Name>) {
+    const Defined extends MakeComposableOptions<Composables, Name>,
+  >(options: Defined) {
     const { components, name: layoutName } = options;
 
     if (!components || typeof components !== 'object') {
@@ -589,21 +604,18 @@ export function makeComposable<Props>() {
     //   throw new Error('The Layout composable is required');
     // }
 
-    const create: MakeComposable<Composables, Name> = (overrideOptions) => {
+    const create: MakeComposable<Composables, Name, Defined, Props> = (
+      overrideOptions,
+    ) => {
       const resolvedName = overrideOptions?.name ?? layoutName;
-      const { Layout, ...rest } = components;
+      const resolvedComponents = overrideOptions?.components ?? components;
+      const { Layout, ...rest } = resolvedComponents;
 
       return Object.assign(Layout, {
         displayName: resolvedName,
         props: undefined as unknown as Props,
         ...rest,
-      }) as unknown as ComposableResourceLayout<
-        Composables,
-        Name,
-        any,
-        any,
-        any
-      >;
+      }) as unknown as ReturnType<MakeComposable<Composables, Name, Defined, Props>>;
     };
 
     return create;
