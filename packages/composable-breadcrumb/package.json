@@ -1,6 +1,6 @@
 {
   "name": "@jfdevelops/react-layout-composable-breadcrumb",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Breadcrumb preset composable for react-layout.",
   "repository": {
     "type": "git",

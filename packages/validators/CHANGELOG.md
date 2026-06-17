@@ -1,5 +1,11 @@
 # @jfdevelops/react-layout-validator
 
+## 0.2.3
+
+### Patch Changes
+
+- Disable tsdown auto-generated exports so `package.json` types conditions are preserved when publishing.
+
 ## 0.2.2
 
 ### Patch Changes

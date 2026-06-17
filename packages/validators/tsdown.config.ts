@@ -7,7 +7,7 @@ export default defineConfig({
   unbundle: true,
   sourcemap: true,
   minify: false,
-  exports: true,
+  exports: false,
   format: ['cjs', 'es'],
   clean: true,
   dts: true,
