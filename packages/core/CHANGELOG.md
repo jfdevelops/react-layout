@@ -1,5 +1,11 @@
 # @jfdevelops/react-layout
 
+## 0.6.0
+
+### Minor Changes
+
+- 4a7450b: Update `createResourceLinks` to return structured href metadata with separate `given`, `full`, and optional `hash` values. Resource link config now supports independent `href` and `hash` options, including resource-aware functions, and the implementation has been extracted into its own module.
+
 ## 0.5.2
 
 ### Patch Changes
