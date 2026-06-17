@@ -111,60 +111,146 @@ describe('createResourceLinks', () => {
     );
   });
 
-  it('prefixes the resource name with /# by default', () => {
+  it('throws when href is not a string or function', () => {
+    const { createResourceLinks } = createTestResourceLayout();
+
+    expect(() =>
+      createResourceLinks({ users: { label: 'Users', href: 123 } } as never),
+    ).toThrowError(
+      '[createResourceLinks]: "href" must be a string or function for the users resource. Received number',
+    );
+  });
+
+  it('throws when hash is not a string or function', () => {
+    const { createResourceLinks } = createTestResourceLayout();
+
+    expect(() =>
+      createResourceLinks({ users: { label: 'Users', hash: 123 } } as never),
+    ).toThrowError(
+      '[createResourceLinks]: "hash" must be a string or function for the users resource. Received number',
+    );
+  });
+
+  it('uses / as href and the resource name as hash by default', () => {
     const { createResourceLinks } = createTestResourceLayout();
 
     expect(createResourceLinks({ users: { label: 'Users' } })).toEqual([
-      { href: '/#users', label: 'Users' },
+      {
+        href: {
+          given: '/',
+          full: '/#users',
+        },
+        label: 'Users',
+      },
     ]);
   });
 
-  it('prefixes anchor links without a custom href with /#resource', () => {
-    const { createResourceLinks } = createTestResourceLayout();
-
-    expect(
-      createResourceLinks({
-        users: { label: 'Users', type: 'anchor' },
-      }),
-    ).toEqual([{ href: '/#users', label: 'Users' }]);
-  });
-
-  it('strips leading slashes and hashes from anchor string hrefs before prefixing', () => {
-    const { createResourceLinks } = createTestResourceLayout();
-
-    expect(
-      createResourceLinks({
-        users: { label: 'Users', type: 'anchor', href: '/#/custom-path' },
-      }),
-    ).toEqual([{ href: '/#custom-path', label: 'Users' }]);
-  });
-
-  it('resolves anchor hrefs from a function and prefixes the result', () => {
+  it('uses a custom string href with the resource name as hash', () => {
     const { createResourceLinks } = createTestResourceLayout();
 
     expect(
       createResourceLinks({
         users: {
           label: 'Users',
-          type: 'anchor',
-          href: (resource) => `custom-${resource}`,
+          href: '/directory',
         },
       }),
-    ).toEqual([{ href: '/#custom-users', label: 'Users' }]);
+    ).toEqual([
+      {
+        href: {
+          given: '/directory',
+          full: '/directory#users',
+        },
+        label: 'Users',
+      },
+    ]);
   });
 
-  it('strips leading slashes and hashes from function anchor hrefs before prefixing', () => {
+  it('resolves hrefs from a function', () => {
     const { createResourceLinks } = createTestResourceLayout();
 
     expect(
       createResourceLinks({
         users: {
           label: 'Users',
-          type: 'anchor',
-          href: () => '/#/from-function',
+          href: (resource) => `/directory/${resource}`,
         },
       }),
-    ).toEqual([{ href: '/#from-function', label: 'Users' }]);
+    ).toEqual([
+      {
+        href: {
+          given: '/directory/users',
+          full: '/directory/users#users',
+        },
+        label: 'Users',
+      },
+    ]);
+  });
+
+  it('uses a custom string hash and strips leading hashes', () => {
+    const { createResourceLinks } = createTestResourceLayout();
+
+    expect(
+      createResourceLinks({
+        users: {
+          label: 'Users',
+          hash: '#directory-users',
+        },
+      }),
+    ).toEqual([
+      {
+        href: {
+          given: '/',
+          full: '/#directory-users',
+          hash: 'directory-users',
+        },
+        label: 'Users',
+      },
+    ]);
+  });
+
+  it('resolves hashes from a function', () => {
+    const { createResourceLinks } = createTestResourceLayout();
+
+    expect(
+      createResourceLinks({
+        users: {
+          label: 'Users',
+          hash: (resource) => `${resource}-section`,
+        },
+      }),
+    ).toEqual([
+      {
+        href: {
+          given: '/',
+          full: '/#users-section',
+          hash: 'users-section',
+        },
+        label: 'Users',
+      },
+    ]);
+  });
+
+  it('uses the href hash when href and hash are both provided', () => {
+    const { createResourceLinks } = createTestResourceLayout();
+
+    expect(
+      createResourceLinks({
+        users: {
+          label: 'Users',
+          href: '/directory#overview',
+          hash: 'ignored',
+        },
+      }),
+    ).toEqual([
+      {
+        href: {
+          given: '/directory#overview',
+          full: '/directory#overview',
+        },
+        label: 'Users',
+      },
+    ]);
   });
 
   it('maps each resource entry to a link', () => {
@@ -173,11 +259,24 @@ describe('createResourceLinks', () => {
     expect(
       createResourceLinks({
         users: { label: 'Users' },
-        posts: { label: 'Posts', type: 'anchor' },
+        posts: { label: 'Posts', href: '/content', hash: 'articles' },
       }),
     ).toEqual([
-      { href: '/#users', label: 'Users' },
-      { href: '/#posts', label: 'Posts' },
+      {
+        href: {
+          given: '/',
+          full: '/#users',
+        },
+        label: 'Users',
+      },
+      {
+        href: {
+          given: '/content',
+          full: '/content#articles',
+          hash: 'articles',
+        },
+        label: 'Posts',
+      },
     ]);
   });
 });
