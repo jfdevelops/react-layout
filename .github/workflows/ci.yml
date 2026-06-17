@@ -43,7 +43,32 @@ jobs:
         run: pnpm typecheck
 
       - name: Run tests
-        run: pnpm test
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          packages=(
+            "@jfdevelops/react-layout-validator"
+            "@jfdevelops/react-layout-composables"
+            "@jfdevelops/react-layout-composable-breadcrumb"
+            "@jfdevelops/react-layout"
+          )
+
+          for package in "${packages[@]}"; do
+            temp_summary="$(mktemp)"
+            test_status=0
+
+            GITHUB_STEP_SUMMARY="$temp_summary" pnpm --filter "$package" test || test_status=$?
+
+            if [[ -n "${GITHUB_STEP_SUMMARY:-}" && -s "$temp_summary" ]]; then
+              sed "1s|^## Vitest Test Report$|## ${package} Test Report|" "$temp_summary" >> "$GITHUB_STEP_SUMMARY"
+              printf '\n' >> "$GITHUB_STEP_SUMMARY"
+            fi
+
+            if [[ "$test_status" -ne 0 ]]; then
+              exit "$test_status"
+            fi
+          done
 
       - name: Build library
         run: pnpm build
