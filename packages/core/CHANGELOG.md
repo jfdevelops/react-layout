@@ -1,5 +1,14 @@
 # @jfdevelops/react-layout
 
+## 0.5.1
+
+### Patch Changes
+
+- Restore `types` export condition and `.d.mts` types entry for correct TypeScript resolution under `moduleResolution: "bundler"`.
+- Updated dependencies
+  - @jfdevelops/react-layout-composables@0.2.2
+  - @jfdevelops/react-layout-validator@0.2.2
+
 ## 0.5.0
 
 ### Minor Changes

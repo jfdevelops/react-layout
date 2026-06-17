@@ -1,6 +1,6 @@
 {
   "name": "@jfdevelops/react-layout-composable-breadcrumb",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Breadcrumb preset composable for react-layout.",
   "repository": {
     "type": "git",
@@ -14,9 +14,10 @@
   "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
-  "types": "./dist/index.d.cts",
+  "types": "./dist/index.d.mts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
     },
