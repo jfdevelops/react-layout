@@ -31,7 +31,6 @@ import {
   MergedLayoutInProps,
 } from '../props';
 import {
-  createIsValidResourceFn,
   normalizeResources,
   toResourceEnum,
   type LayoutResourceKey,
@@ -43,6 +42,10 @@ import {
   type CreateResourceConfigFn,
   createResourceConfig,
 } from './get-component';
+import {
+  createResourceLinksFn,
+  type CreateResourceLinksFn,
+} from './create-resource-links';
 
 type LayoutIncludeProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -502,7 +505,6 @@ type CreateResourceLayoutMakeComposableMember<
 > = [keyof Composables] extends [never]
   ? {}
   : {
-
       makeComposable: CreateResourceLayoutMakeComposableFn<
         Resources,
         InProps,
@@ -532,46 +534,6 @@ export type CreateResourceLayoutFn<
     IncludeProps,
     CustomProps
   >;
-export interface CreateResourceLinkOptionsBase {
-  label: string;
-}
-export type ResourceAnchorLinkFn<Resource extends string> = (
-  resource: Resource,
-) => string;
-export interface CreateResourceAnchorLinkOptions<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  Resource extends LayoutResourceKey<Resources>,
-> extends CreateResourceLinkOptionsBase {
-  type: 'anchor';
-  /**
-   * The href of the link. By default, the href will be the resource name. If you need to customize it, you can provide
-   * a string or a function that returns a string.
-   *
-   * Any **leading** `"/"` or `"#"` will be stripped since it is automatically added by the layout.
-   */
-  href?: string | ResourceAnchorLinkFn<Resource>;
-}
-export type CreateResourceLinkOptions<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  Resource extends LayoutResourceKey<Resources>,
-> =
-  | CreateResourceAnchorLinkOptions<Resources, Resource>
-  | CreateResourceLinkOptionsBase;
-export type CreateResourceLinkConfig<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-> = {
-  [resource in LayoutResourceKey<Resources>]?: CreateResourceLinkOptions<
-    Resources,
-    resource
-  >;
-};
-export type CreatedResourceLink = {
-  href: string;
-  label: string;
-};
-export type CreateResourceLinksFn<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-> = (config: CreateResourceLinkConfig<Resources>) => Array<CreatedResourceLink>;
 
 type DefinedResourceLayout<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -615,7 +577,6 @@ export function defineResourceLayout<
   const resourcesEnum = createPrimitivePropBuilder('string').enum(
     toResourceEnum(normalizedResources),
   );
-  const isValidResource = createIsValidResourceFn(resources);
   const definedResourceLayout = (<
     Name extends string,
     Resource extends LayoutResourceKey<Resources>,
@@ -916,58 +877,7 @@ export function defineResourceLayout<
     CustomProps
   >;
 
-  const createResourceLinks: CreateResourceLinksFn<Resources> = (config) => {
-    return Object.entries(config).map(([resource, config]) => {
-      if (!isValidResource(resource)) {
-        throw new Error(`[createResourceLinks]: Invalid resource: ${resource}`);
-      }
-
-      if (!config) {
-        throw new Error(
-          `[createResourceLinks]: "config" is required for the ${resource} resource.`,
-        );
-      }
-
-      if (typeof config !== 'object') {
-        throw new Error(
-          `[createResourceLinks]: "config" must be an object for the ${resource} resource. Received ${typeof config}`,
-        );
-      }
-
-      if (!('label' in config)) {
-        throw new Error(
-          `[createResourceLinks]: "label" is required for the ${resource} resource.`,
-        );
-      }
-
-      if (typeof config.label !== 'string') {
-        throw new Error(
-          `[createResourceLinks]: "label" must be a string for the ${resource} resource. Received ${typeof config.label}`,
-        );
-      }
-
-      let href: string = resource;
-
-      if ('type' in config && config.type === 'anchor') {
-        if ('href' in config) {
-          if (typeof config.href === 'string') {
-            href = config.href.replace(/^[\/#]+/, '');
-          }
-
-          if (typeof config.href === 'function') {
-            href = config.href(resource).replace(/^[\/#]+/, '');
-          }
-        }
-      }
-
-      href = `/#${href}`;
-
-      return {
-        href,
-        label: config.label,
-      };
-    });
-  };
+  const createResourceLinks = createResourceLinksFn(resources);
 
   return {
     createResourceConfig,
