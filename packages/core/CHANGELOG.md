@@ -1,5 +1,11 @@
 # @jfdevelops/react-layout
 
+## 0.8.1
+
+### Patch Changes
+
+- 7e136fc: Make `createResourceLinks.withGroup` group `label` optional and default to `null`. Preserve `resource` and `icon` on hashed grouped link types.
+
 ## 0.8.0
 
 ### Minor Changes
