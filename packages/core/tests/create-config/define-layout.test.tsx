@@ -325,6 +325,146 @@ describe('createResourceLinks', () => {
 
     expect(link.icon).toBe(icon);
   });
+
+  describe('withGroup', () => {
+    it('throws when label is missing from a group', () => {
+      const { createResourceLinks } = createTestResourceLayout();
+
+      expect(() =>
+        createResourceLinks.withGroup([
+          { links: { users: { label: 'Users' } } } as never,
+        ]),
+      ).toThrowError(
+        '[createResourceLinks.withGroup]: "label" is required for group at index 0.',
+      );
+    });
+
+    it('throws when label is not a string', () => {
+      const { createResourceLinks } = createTestResourceLayout();
+
+      expect(() =>
+        createResourceLinks.withGroup([
+          { label: 123, links: { users: { label: 'Users' } } } as never,
+        ]),
+      ).toThrowError(
+        '[createResourceLinks.withGroup]: "label" must be a string for group at index 0. Received number',
+      );
+    });
+
+    it('throws when links is missing from a group', () => {
+      const { createResourceLinks } = createTestResourceLayout();
+
+      expect(() =>
+        createResourceLinks.withGroup([{ label: 'Directory' } as never]),
+      ).toThrowError(
+        '[createResourceLinks.withGroup]: "links" is required for group at index 0.',
+      );
+    });
+
+    it('throws when links is not an object', () => {
+      const { createResourceLinks } = createTestResourceLayout();
+
+      expect(() =>
+        createResourceLinks.withGroup([
+          { label: 'Directory', links: 'not-an-object' } as never,
+        ]),
+      ).toThrowError(
+        '[createResourceLinks.withGroup]: "links" must be an object for group at index 0. Received string',
+      );
+    });
+
+    it('validates links using createResourceLinks rules', () => {
+      const { createResourceLinks } = createTestResourceLayout();
+
+      expect(() =>
+        createResourceLinks.withGroup([
+          {
+            label: 'Directory',
+            links: { invalid: { label: 'Invalid' } } as never,
+          },
+        ]),
+      ).toThrowError('[createResourceLinks]: Invalid resource: invalid');
+    });
+
+    it('maps each group to label, icon, and links', () => {
+      const { createResourceLinks } = createTestResourceLayout();
+      const icon = <span data-testid='directory-icon'>D</span>;
+
+      expect(
+        createResourceLinks.withGroup([
+          {
+            label: 'Directory',
+            icon,
+            links: {
+              users: { label: 'Users' },
+              posts: { label: 'Posts', href: '/content', hash: 'articles' },
+            },
+          },
+          {
+            label: 'Settings',
+            links: {
+              users: { label: 'User Settings', hash: 'user-settings' },
+            },
+          },
+        ]),
+      ).toEqual([
+        {
+          label: 'Directory',
+          icon,
+          links: [
+            {
+              href: {
+                given: '/',
+                full: '/#users',
+              },
+              label: 'Users',
+              resource: 'users',
+              icon: null,
+            },
+            {
+              href: {
+                given: '/content',
+                full: '/content#articles',
+                hash: 'articles',
+              },
+              label: 'Posts',
+              resource: 'posts',
+              icon: null,
+            },
+          ],
+        },
+        {
+          label: 'Settings',
+          icon: null,
+          links: [
+            {
+              href: {
+                given: '/',
+                full: '/#user-settings',
+                hash: 'user-settings',
+              },
+              label: 'User Settings',
+              resource: 'users',
+              icon: null,
+            },
+          ],
+        },
+      ]);
+    });
+
+    it('defaults group icon to null when not provided', () => {
+      const { createResourceLinks } = createTestResourceLayout();
+
+      const [group] = createResourceLinks.withGroup([
+        {
+          label: 'Directory',
+          links: { users: { label: 'Users' } },
+        },
+      ]);
+
+      expect(group.icon).toBeNull();
+    });
+  });
 });
 
 describe('defineResourceLayout', () => {
