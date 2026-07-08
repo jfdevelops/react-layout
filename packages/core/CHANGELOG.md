@@ -1,5 +1,11 @@
 # @jfdevelops/react-layout
 
+## 0.7.0
+
+### Minor Changes
+
+- fe26a4f: Update `createResourceLinks` to include `resource` on each returned link and support an optional `icon` in link config.
+
 ## 0.6.0
 
 ### Minor Changes
