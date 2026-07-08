@@ -141,6 +141,8 @@ describe('createResourceLinks', () => {
           full: '/#users',
         },
         label: 'Users',
+        resource: 'users',
+        icon: null,
       },
     ]);
   });
@@ -162,6 +164,8 @@ describe('createResourceLinks', () => {
           full: '/directory#users',
         },
         label: 'Users',
+        resource: 'users',
+        icon: null,
       },
     ]);
   });
@@ -183,6 +187,8 @@ describe('createResourceLinks', () => {
           full: '/directory/users#users',
         },
         label: 'Users',
+        resource: 'users',
+        icon: null,
       },
     ]);
   });
@@ -205,6 +211,8 @@ describe('createResourceLinks', () => {
           hash: 'directory-users',
         },
         label: 'Users',
+        resource: 'users',
+        icon: null,
       },
     ]);
   });
@@ -227,6 +235,8 @@ describe('createResourceLinks', () => {
           hash: 'users-section',
         },
         label: 'Users',
+        resource: 'users',
+        icon: null,
       },
     ]);
   });
@@ -249,6 +259,8 @@ describe('createResourceLinks', () => {
           full: '/directory#overview',
         },
         label: 'Users',
+        resource: 'users',
+        icon: null,
       },
     ]);
   });
@@ -268,6 +280,8 @@ describe('createResourceLinks', () => {
           full: '/#users',
         },
         label: 'Users',
+        resource: 'users',
+        icon: null,
       },
       {
         href: {
@@ -276,8 +290,40 @@ describe('createResourceLinks', () => {
           hash: 'articles',
         },
         label: 'Posts',
+        resource: 'posts',
+        icon: null,
       },
     ]);
+  });
+
+  it('includes the resource name on each link', () => {
+    const { createResourceLinks } = createTestResourceLayout();
+
+    const links = createResourceLinks({
+      users: { label: 'Users' },
+      posts: { label: 'Posts' },
+    });
+
+    expect(links.map((link) => link.resource)).toEqual(['users', 'posts']);
+  });
+
+  it('defaults icon to null when not provided', () => {
+    const { createResourceLinks } = createTestResourceLayout();
+
+    const [link] = createResourceLinks({ users: { label: 'Users' } });
+
+    expect(link.icon).toBeNull();
+  });
+
+  it('includes a custom icon when provided', () => {
+    const { createResourceLinks } = createTestResourceLayout();
+    const icon = <span data-testid='users-icon'>U</span>;
+
+    const [link] = createResourceLinks({
+      users: { label: 'Users', icon },
+    });
+
+    expect(link.icon).toBe(icon);
   });
 });
 

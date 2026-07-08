@@ -1,3 +1,4 @@
+import { ReactNode } from 'react';
 import {
   createIsValidResourceFn,
   type LayoutResourceKey,
@@ -16,7 +17,15 @@ export interface CreateResourceLinkOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Resource extends LayoutResourceKey<Resources>,
 > {
+  /**
+   * The label of the link. This is the text that will be displayed in the link.
+   */
   label: string;
+  /**
+   * An optional icon to register with the link. This is a headless approach, meaning you have full control
+   * over the icon's rendering.
+   */
+  icon?: ReactNode;
   /**
    * The href of the link. By default, the href will be `"/"`. While you **don't** need to include a hash,
    * if you do, it will override the `hash` property (if provided).
@@ -60,14 +69,16 @@ export type CreatedResourceHref = {
   given: string;
 };
 
-export type CreatedResourceLinkBase = {
+export type CreatedResourceLinkBase<Resource extends string> = {
   href: CreatedResourceHref;
   label: string;
+  resource: Resource;
+  icon: ReactNode
 };
 export type CreateResourceLinkWithHash<
   Resource extends string,
   Hash extends ResourceLinkHref<Resource>,
-> = Pick<CreatedResourceLinkBase, 'label'> & {
+> = Pick<CreatedResourceLinkBase<Resource>, 'label'> & {
   href: CreatedResourceHref & {
     hash: InferHashFromResourceLinkHref<Resource, Hash>;
   };
@@ -82,7 +93,7 @@ export type CreatedResourceLink<
         hash: infer hash extends ResourceLinkHref<Resource>;
       }
       ? CreateResourceLinkWithHash<Resource, hash>
-      : CreatedResourceLinkBase
+      : CreatedResourceLinkBase<Resource>
     : never;
 }[keyof Config];
 
@@ -191,6 +202,8 @@ export function createResourceLinksFn<
       return {
         href,
         label: config.label,
+        resource,
+        icon: 'icon' in config ? config.icon : null,
       };
     });
   }) as CreateResourceLinksFn<Resources>;
