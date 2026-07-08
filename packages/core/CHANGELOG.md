@@ -1,5 +1,11 @@
 # @jfdevelops/react-layout
 
+## 0.8.0
+
+### Minor Changes
+
+- a7cbc20: Add `createResourceLinks.withGroup` for building grouped navigation links with full IDE autocomplete support.
+
 ## 0.7.0
 
 ### Minor Changes
