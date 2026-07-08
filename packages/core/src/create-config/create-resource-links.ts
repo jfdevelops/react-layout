@@ -73,12 +73,12 @@ export type CreatedResourceLinkBase<Resource extends string> = {
   href: CreatedResourceHref;
   label: string;
   resource: Resource;
-  icon: ReactNode
+  icon: ReactNode;
 };
 export type CreateResourceLinkWithHash<
   Resource extends string,
   Hash extends ResourceLinkHref<Resource>,
-> = Pick<CreatedResourceLinkBase<Resource>, 'label'> & {
+> = Omit<CreatedResourceLinkBase<Resource>, 'href'> & {
   href: CreatedResourceHref & {
     hash: InferHashFromResourceLinkHref<Resource, Hash>;
   };
@@ -108,12 +108,13 @@ export interface CreateResourceLinksFn<
 
 export interface CreateResourceLinkGroupOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  Links extends CreateResourceLinkConfig<Resources> = CreateResourceLinkConfig<Resources>,
+  Links extends CreateResourceLinkConfig<Resources> =
+    CreateResourceLinkConfig<Resources>,
 > {
   /**
    * The label of the group. This is the text that will be displayed for the group.
    */
-  label: string;
+  label?: string;
   /**
    * An optional icon to register with the group. This is a headless approach, meaning you have full control
    * over the icon's rendering.
@@ -127,27 +128,31 @@ export interface CreateResourceLinkGroupOptions<
 
 export type CreateResourceLinkGroupInput<
   Resources extends ReadonlyArray<ResourceDefinition>,
-> = CreateResourceLinkGroupOptions<Resources, CreateResourceLinkConfig<Resources>>;
+> = CreateResourceLinkGroupOptions<
+  Resources,
+  CreateResourceLinkConfig<Resources>
+>;
 
 export type CreateResourceLinksWithGroups<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Links extends CreateResourceLinkConfig<Resources>,
 > = {
-  label: string;
+  label: string | null;
   icon: ReactNode;
   links: Array<CreatedResourceLink<Resources, Links>>;
 };
 
 export type CreateResourceLinksWithGroupFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
-> = <
-  Groups extends ReadonlyArray<CreateResourceLinkGroupInput<Resources>>,
->(
+> = <Groups extends ReadonlyArray<CreateResourceLinkGroupInput<Resources>>>(
   groups: Groups,
 ) => Array<
   Groups[number] extends CreateResourceLinkGroupOptions<Resources, infer Links>
     ? CreateResourceLinksWithGroups<Resources, Links>
-    : CreateResourceLinksWithGroups<Resources, CreateResourceLinkConfig<Resources>>
+    : CreateResourceLinksWithGroups<
+        Resources,
+        CreateResourceLinkConfig<Resources>
+      >
 >;
 
 function resolveResourceLinkHref<Resource extends string>(
@@ -280,13 +285,11 @@ function createResourceLinksWithGroup<
       );
     }
 
-    if (!('label' in group)) {
-      throw new Error(
-        `[createResourceLinks.withGroup]: "label" is required for group at index ${index}.`,
-      );
-    }
-
-    if (typeof group.label !== 'string') {
+    if (
+      'label' in group &&
+      group.label !== undefined &&
+      typeof group.label !== 'string'
+    ) {
       throw new Error(
         `[createResourceLinks.withGroup]: "label" must be a string for group at index ${index}. Received ${typeof group.label}`,
       );
@@ -309,7 +312,7 @@ function createResourceLinksWithGroup<
     }
 
     return {
-      label: group.label,
+      label: 'label' in group ? (group.label ?? null) : null,
       icon: 'icon' in group ? group.icon : null,
       links: createResourceLinksFromConfig(isValidResource, group.links),
     };
@@ -321,17 +324,19 @@ export function createResourceLinksFn<
 >(resources: Resources): CreateResourceLinksFn<Resources> {
   const isValidResource = createIsValidResourceFn(resources);
 
-  function createResourceLinks<const Config extends CreateResourceLinkConfig<Resources>>(
-    config: Config,
-  ) {
+  function createResourceLinks<
+    const Config extends CreateResourceLinkConfig<Resources>,
+  >(config: Config) {
     return createResourceLinksFromConfig(isValidResource, config);
   }
 
   function withGroup(
-  groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources>>,
-) {
+    groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources>>,
+  ) {
     return createResourceLinksWithGroup(isValidResource, groups);
   }
 
-  return Object.assign(createResourceLinks, { withGroup }) as CreateResourceLinksFn<Resources>;
+  return Object.assign(createResourceLinks, {
+    withGroup,
+  }) as CreateResourceLinksFn<Resources>;
 }

@@ -327,16 +327,14 @@ describe('createResourceLinks', () => {
   });
 
   describe('withGroup', () => {
-    it('throws when label is missing from a group', () => {
+    it('defaults group label to null when not provided', () => {
       const { createResourceLinks } = createTestResourceLayout();
 
-      expect(() =>
-        createResourceLinks.withGroup([
-          { links: { users: { label: 'Users' } } } as never,
-        ]),
-      ).toThrowError(
-        '[createResourceLinks.withGroup]: "label" is required for group at index 0.',
-      );
+      const [group] = createResourceLinks.withGroup([
+        { links: { users: { label: 'Users' } } },
+      ]);
+
+      expect(group.label).toBeNull();
     });
 
     it('throws when label is not a string', () => {
