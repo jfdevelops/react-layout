@@ -1,5 +1,11 @@
 # @jfdevelops/react-layout
 
+## 0.8.2
+
+### Patch Changes
+
+- d886b27: Rename `createResourceLinks.withGroup` to `withGroups`, add a generated `id` to each returned group, and improve grouped link autocomplete when mapping over results.
+
 ## 0.8.1
 
 ### Patch Changes
