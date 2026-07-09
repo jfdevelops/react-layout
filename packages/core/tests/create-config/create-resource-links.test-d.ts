@@ -8,9 +8,9 @@ const { createResourceLinks } = defineResourceLayout({
   },
 });
 
-const _withGroup = createResourceLinks.withGroup;
+const _withGroups = createResourceLinks.withGroups;
 
-const _groups = createResourceLinks.withGroup([
+const _groups = createResourceLinks.withGroups([
   {
     label: 'Directory',
     links: {
@@ -26,7 +26,7 @@ const _groups = createResourceLinks.withGroup([
   },
 ]);
 
-const [hashedGroup] = createResourceLinks.withGroup([
+const [hashedGroup] = createResourceLinks.withGroups([
   {
     links: {
       posts: { label: 'Posts', hash: 'articles' },
@@ -36,11 +36,12 @@ const [hashedGroup] = createResourceLinks.withGroup([
 
 const [hashedLink] = hashedGroup.links;
 
-const _hashedPostResource: 'posts' = hashedLink.resource;
+const _hashedPostResource: 'users' | 'posts' = hashedLink.resource;
 const _hashedPostIcon = hashedLink.icon;
-const _hashedPostHash: string = hashedLink.href.hash;
+const _hashedPostHash =
+  'hash' in hashedLink.href ? hashedLink.href.hash : undefined;
 
-createResourceLinks.withGroup([
+createResourceLinks.withGroups([
   {
     label: 'Directory',
     links: {
@@ -50,7 +51,7 @@ createResourceLinks.withGroup([
   },
 ]);
 
-const _groupsWithoutLabel = createResourceLinks.withGroup([
+const _groupsWithoutLabel = createResourceLinks.withGroups([
   {
     links: {
       users: { label: 'Users' },
@@ -61,6 +62,32 @@ const _groupsWithoutLabel = createResourceLinks.withGroup([
 void _hashedPostResource;
 void _hashedPostIcon;
 void _hashedPostHash;
-void _withGroup;
+const _groupId: string = hashedGroup.id;
+
+const navItems = createResourceLinks.withGroups([
+  {
+    label: 'Directory',
+    links: {
+      users: { label: 'Users' },
+      posts: { label: 'Posts', hash: 'articles' },
+    },
+  },
+  {
+    links: {
+      users: { label: 'User Settings', hash: 'user-settings' },
+    },
+  },
+]);
+
+navItems.map((group) =>
+  group.links.map(({ label, icon, resource }) => {
+    void label;
+    void icon;
+    void resource;
+  }),
+);
+
+void _withGroups;
 void _groups;
+void _groupId;
 void _groupsWithoutLabel;

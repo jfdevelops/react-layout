@@ -103,7 +103,7 @@ export interface CreateResourceLinksFn<
   <const Config extends CreateResourceLinkConfig<Resources>>(
     config: Config,
   ): Array<CreatedResourceLink<Resources, Config>>;
-  withGroup: CreateResourceLinksWithGroupFn<Resources>;
+  withGroups: CreateResourceLinksWithGroupsFn<Resources>;
 }
 
 export interface CreateResourceLinkGroupOptions<
@@ -133,27 +133,28 @@ export type CreateResourceLinkGroupInput<
   CreateResourceLinkConfig<Resources>
 >;
 
+export type AnyCreatedResourceLink<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> = {
+  [Resource in LayoutResourceKey<Resources>]:
+    | CreatedResourceLinkBase<Resource>
+    | CreateResourceLinkWithHash<Resource, string>;
+}[LayoutResourceKey<Resources>];
+
 export type CreateResourceLinksWithGroups<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  Links extends CreateResourceLinkConfig<Resources>,
 > = {
+  id: string;
   label: string | null;
   icon: ReactNode;
-  links: Array<CreatedResourceLink<Resources, Links>>;
+  links: Array<AnyCreatedResourceLink<Resources>>;
 };
 
-export type CreateResourceLinksWithGroupFn<
+export type CreateResourceLinksWithGroupsFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
-> = <Groups extends ReadonlyArray<CreateResourceLinkGroupInput<Resources>>>(
-  groups: Groups,
-) => Array<
-  Groups[number] extends CreateResourceLinkGroupOptions<Resources, infer Links>
-    ? CreateResourceLinksWithGroups<Resources, Links>
-    : CreateResourceLinksWithGroups<
-        Resources,
-        CreateResourceLinkConfig<Resources>
-      >
->;
+> = (
+  groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources>>,
+) => Array<CreateResourceLinksWithGroups<Resources>>;
 
 function resolveResourceLinkHref<Resource extends string>(
   value: ResourceLinkHref<Resource> | undefined,
@@ -260,28 +261,36 @@ function createResourceLinksFromConfig<
   });
 }
 
-function createResourceLinksWithGroup<
+function createResourceLinkGroupId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+
+  return `group-${Math.random().toString(36).slice(2, 11)}`;
+}
+
+function createResourceLinksWithGroups<
   Resources extends ReadonlyArray<ResourceDefinition>,
 >(
   isValidResource: ReturnType<typeof createIsValidResourceFn<Resources>>,
   groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources>>,
-) {
+): Array<CreateResourceLinksWithGroups<Resources>> {
   if (!Array.isArray(groups)) {
     throw new Error(
-      '[createResourceLinks.withGroup]: "groups" must be an array.',
+      '[createResourceLinks.withGroups]: "groups" must be an array.',
     );
   }
 
   return groups.map((group, index) => {
     if (!group) {
       throw new Error(
-        `[createResourceLinks.withGroup]: group at index ${index} is required.`,
+        `[createResourceLinks.withGroups]: group at index ${index} is required.`,
       );
     }
 
     if (typeof group !== 'object') {
       throw new Error(
-        `[createResourceLinks.withGroup]: group at index ${index} must be an object. Received ${typeof group}`,
+        `[createResourceLinks.withGroups]: group at index ${index} must be an object. Received ${typeof group}`,
       );
     }
 
@@ -291,13 +300,13 @@ function createResourceLinksWithGroup<
       typeof group.label !== 'string'
     ) {
       throw new Error(
-        `[createResourceLinks.withGroup]: "label" must be a string for group at index ${index}. Received ${typeof group.label}`,
+        `[createResourceLinks.withGroups]: "label" must be a string for group at index ${index}. Received ${typeof group.label}`,
       );
     }
 
     if (!('links' in group)) {
       throw new Error(
-        `[createResourceLinks.withGroup]: "links" is required for group at index ${index}.`,
+        `[createResourceLinks.withGroups]: "links" is required for group at index ${index}.`,
       );
     }
 
@@ -307,16 +316,17 @@ function createResourceLinksWithGroup<
       Array.isArray(group.links)
     ) {
       throw new Error(
-        `[createResourceLinks.withGroup]: "links" must be an object for group at index ${index}. Received ${Array.isArray(group.links) ? 'array' : typeof group.links}`,
+        `[createResourceLinks.withGroups]: "links" must be an object for group at index ${index}. Received ${Array.isArray(group.links) ? 'array' : typeof group.links}`,
       );
     }
 
     return {
+      id: createResourceLinkGroupId(),
       label: 'label' in group ? (group.label ?? null) : null,
       icon: 'icon' in group ? group.icon : null,
       links: createResourceLinksFromConfig(isValidResource, group.links),
     };
-  });
+  }) as Array<CreateResourceLinksWithGroups<Resources>>;
 }
 
 export function createResourceLinksFn<
@@ -330,13 +340,13 @@ export function createResourceLinksFn<
     return createResourceLinksFromConfig(isValidResource, config);
   }
 
-  function withGroup(
+  function withGroups(
     groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources>>,
   ) {
-    return createResourceLinksWithGroup(isValidResource, groups);
+    return createResourceLinksWithGroups(isValidResource, groups);
   }
 
   return Object.assign(createResourceLinks, {
-    withGroup,
+    withGroups,
   }) as CreateResourceLinksFn<Resources>;
 }
