@@ -326,11 +326,11 @@ describe('createResourceLinks', () => {
     expect(link.icon).toBe(icon);
   });
 
-  describe('withGroup', () => {
+  describe('withGroups', () => {
     it('defaults group label to null when not provided', () => {
       const { createResourceLinks } = createTestResourceLayout();
 
-      const [group] = createResourceLinks.withGroup([
+      const [group] = createResourceLinks.withGroups([
         { links: { users: { label: 'Users' } } },
       ]);
 
@@ -341,11 +341,11 @@ describe('createResourceLinks', () => {
       const { createResourceLinks } = createTestResourceLayout();
 
       expect(() =>
-        createResourceLinks.withGroup([
+        createResourceLinks.withGroups([
           { label: 123, links: { users: { label: 'Users' } } } as never,
         ]),
       ).toThrowError(
-        '[createResourceLinks.withGroup]: "label" must be a string for group at index 0. Received number',
+        '[createResourceLinks.withGroups]: "label" must be a string for group at index 0. Received number',
       );
     });
 
@@ -353,9 +353,9 @@ describe('createResourceLinks', () => {
       const { createResourceLinks } = createTestResourceLayout();
 
       expect(() =>
-        createResourceLinks.withGroup([{ label: 'Directory' } as never]),
+        createResourceLinks.withGroups([{ label: 'Directory' } as never]),
       ).toThrowError(
-        '[createResourceLinks.withGroup]: "links" is required for group at index 0.',
+        '[createResourceLinks.withGroups]: "links" is required for group at index 0.',
       );
     });
 
@@ -363,11 +363,11 @@ describe('createResourceLinks', () => {
       const { createResourceLinks } = createTestResourceLayout();
 
       expect(() =>
-        createResourceLinks.withGroup([
+        createResourceLinks.withGroups([
           { label: 'Directory', links: 'not-an-object' } as never,
         ]),
       ).toThrowError(
-        '[createResourceLinks.withGroup]: "links" must be an object for group at index 0. Received string',
+        '[createResourceLinks.withGroups]: "links" must be an object for group at index 0. Received string',
       );
     });
 
@@ -375,7 +375,7 @@ describe('createResourceLinks', () => {
       const { createResourceLinks } = createTestResourceLayout();
 
       expect(() =>
-        createResourceLinks.withGroup([
+        createResourceLinks.withGroups([
           {
             label: 'Directory',
             links: { invalid: { label: 'Invalid' } } as never,
@@ -384,29 +384,43 @@ describe('createResourceLinks', () => {
       ).toThrowError('[createResourceLinks]: Invalid resource: invalid');
     });
 
-    it('maps each group to label, icon, and links', () => {
+    it('assigns a generated id to each group', () => {
+      const { createResourceLinks } = createTestResourceLayout();
+
+      const groups = createResourceLinks.withGroups([
+        { label: 'Directory', links: { users: { label: 'Users' } } },
+        { links: { posts: { label: 'Posts' } } },
+      ]);
+
+      expect(groups[0]?.id).toEqual(expect.any(String));
+      expect(groups[1]?.id).toEqual(expect.any(String));
+      expect(groups[0]?.id).not.toBe(groups[1]?.id);
+    });
+
+    it('maps each group to id, label, icon, and links', () => {
       const { createResourceLinks } = createTestResourceLayout();
       const icon = <span data-testid='directory-icon'>D</span>;
 
-      expect(
-        createResourceLinks.withGroup([
-          {
-            label: 'Directory',
-            icon,
-            links: {
-              users: { label: 'Users' },
-              posts: { label: 'Posts', href: '/content', hash: 'articles' },
-            },
-          },
-          {
-            label: 'Settings',
-            links: {
-              users: { label: 'User Settings', hash: 'user-settings' },
-            },
-          },
-        ]),
-      ).toEqual([
+      const groups = createResourceLinks.withGroups([
         {
+          label: 'Directory',
+          icon,
+          links: {
+            users: { label: 'Users' },
+            posts: { label: 'Posts', href: '/content', hash: 'articles' },
+          },
+        },
+        {
+          label: 'Settings',
+          links: {
+            users: { label: 'User Settings', hash: 'user-settings' },
+          },
+        },
+      ]);
+
+      expect(groups).toEqual([
+        {
+          id: expect.any(String),
           label: 'Directory',
           icon,
           links: [
@@ -432,6 +446,7 @@ describe('createResourceLinks', () => {
           ],
         },
         {
+          id: expect.any(String),
           label: 'Settings',
           icon: null,
           links: [
@@ -453,7 +468,7 @@ describe('createResourceLinks', () => {
     it('defaults group icon to null when not provided', () => {
       const { createResourceLinks } = createTestResourceLayout();
 
-      const [group] = createResourceLinks.withGroup([
+      const [group] = createResourceLinks.withGroups([
         {
           label: 'Directory',
           links: { users: { label: 'Users' } },

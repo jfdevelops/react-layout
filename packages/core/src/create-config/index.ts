@@ -12,7 +12,7 @@ export type {
   CreateResourceLinkGroupOptions,
   CreateResourceLinkOptions,
   CreateResourceLinksFn,
-  CreateResourceLinksWithGroupFn,
+  CreateResourceLinksWithGroupsFn,
   CreateResourceLinksWithGroups,
   InferHashFromResourceLinkHref,
   ResourceAnchorLinkFn,
