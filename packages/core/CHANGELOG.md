@@ -1,5 +1,11 @@
 # @jfdevelops/react-layout
 
+## 0.9.0
+
+### Minor Changes
+
+- d8b66a7: Allow `createResourceLinks` and `createResourceLinks.withGroups` to use arbitrary property names while preserving each key's literal type in `href` and `hash` callbacks.
+
 ## 0.8.2
 
 ### Patch Changes
