@@ -1,6 +1,5 @@
 import { ReactNode } from 'react';
 import {
-  createIsValidResourceFn,
   type LayoutResourceKey,
   type ResourceDefinition,
 } from '../resource';
@@ -13,9 +12,12 @@ export type ResourceLinkHref<Resource extends string> =
   | string
   | ResourceAnchorLinkFn<Resource>;
 
+export type ResourceLinkConfigResource<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> = LayoutResourceKey<Resources> | (string & {});
 export interface CreateResourceLinkOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  Resource extends LayoutResourceKey<Resources>,
+  Resource extends ResourceLinkConfigResource<Resources>,
 > {
   /**
    * The label of the link. This is the text that will be displayed in the link.
@@ -42,10 +44,11 @@ export interface CreateResourceLinkOptions<
 
 export type CreateResourceLinkConfig<
   Resources extends ReadonlyArray<ResourceDefinition>,
+  Resource extends ResourceLinkConfigResource<Resources> = ResourceLinkConfigResource<Resources>,
 > = {
-  [resource in LayoutResourceKey<Resources>]?: CreateResourceLinkOptions<
+  [Key in Resource]?: CreateResourceLinkOptions<
     Resources,
-    resource
+    Key
   >;
 };
 
@@ -86,9 +89,9 @@ export type CreateResourceLinkWithHash<
 
 export type CreatedResourceLink<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  Config extends CreateResourceLinkConfig<Resources>,
+  Config,
 > = {
-  [Resource in keyof Config]: Resource extends LayoutResourceKey<Resources>
+  [Resource in keyof Config]-?: Resource extends ResourceLinkConfigResource<Resources>
     ? Config[Resource] extends {
         hash: infer hash extends ResourceLinkHref<Resource>;
       }
@@ -100,15 +103,20 @@ export type CreatedResourceLink<
 export interface CreateResourceLinksFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
 > {
-  <const Config extends CreateResourceLinkConfig<Resources>>(
-    config: Config,
-  ): Array<CreatedResourceLink<Resources, Config>>;
+  <const Resource extends ResourceLinkConfigResource<Resources>>(
+    config: CreateResourceLinkConfig<Resources, Resource>,
+  ): Array<
+    CreatedResourceLink<
+      Resources,
+      CreateResourceLinkConfig<Resources, Resource>
+    >
+  >;
   withGroups: CreateResourceLinksWithGroupsFn<Resources>;
 }
 
 export interface CreateResourceLinkGroupOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  Links extends CreateResourceLinkConfig<Resources> =
+  Links extends object =
     CreateResourceLinkConfig<Resources>,
 > {
   /**
@@ -128,9 +136,10 @@ export interface CreateResourceLinkGroupOptions<
 
 export type CreateResourceLinkGroupInput<
   Resources extends ReadonlyArray<ResourceDefinition>,
+  Resource extends ResourceLinkConfigResource<Resources> = ResourceLinkConfigResource<Resources>,
 > = CreateResourceLinkGroupOptions<
   Resources,
-  CreateResourceLinkConfig<Resources>
+  CreateResourceLinkConfig<Resources, Resource>
 >;
 
 export type AnyCreatedResourceLink<
@@ -152,8 +161,8 @@ export type CreateResourceLinksWithGroups<
 
 export type CreateResourceLinksWithGroupsFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
-> = (
-  groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources>>,
+> = <const Resource extends ResourceLinkConfigResource<Resources>>(
+  groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources, Resource>>,
 ) => Array<CreateResourceLinksWithGroups<Resources>>;
 
 function resolveResourceLinkHref<Resource extends string>(
@@ -178,15 +187,9 @@ function createFullResourceLinkHref(href: string, hash: string) {
 
 function createResourceLinksFromConfig<
   Resources extends ReadonlyArray<ResourceDefinition>,
->(
-  isValidResource: ReturnType<typeof createIsValidResourceFn<Resources>>,
-  config: CreateResourceLinkConfig<Resources>,
-) {
+  Resource extends ResourceLinkConfigResource<Resources>,
+>(config: CreateResourceLinkConfig<Resources, Resource>) {
   return Object.entries(config).map(([resource, config]) => {
-    if (!isValidResource(resource)) {
-      throw new Error(`[createResourceLinks]: Invalid resource: ${resource}`);
-    }
-
     if (!config) {
       throw new Error(
         `[createResourceLinks]: "config" is required for the ${resource} resource.`,
@@ -262,7 +265,10 @@ function createResourceLinksFromConfig<
 }
 
 function createResourceLinkGroupId() {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof crypto.randomUUID === 'function'
+  ) {
     return crypto.randomUUID();
   }
 
@@ -271,9 +277,9 @@ function createResourceLinkGroupId() {
 
 function createResourceLinksWithGroups<
   Resources extends ReadonlyArray<ResourceDefinition>,
+  Resource extends ResourceLinkConfigResource<Resources>,
 >(
-  isValidResource: ReturnType<typeof createIsValidResourceFn<Resources>>,
-  groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources>>,
+  groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources, Resource>>,
 ): Array<CreateResourceLinksWithGroups<Resources>> {
   if (!Array.isArray(groups)) {
     throw new Error(
@@ -324,26 +330,26 @@ function createResourceLinksWithGroups<
       id: createResourceLinkGroupId(),
       label: 'label' in group ? (group.label ?? null) : null,
       icon: 'icon' in group ? group.icon : null,
-      links: createResourceLinksFromConfig(isValidResource, group.links),
+      links: createResourceLinksFromConfig(group.links),
     };
   }) as Array<CreateResourceLinksWithGroups<Resources>>;
 }
 
 export function createResourceLinksFn<
   const Resources extends ReadonlyArray<ResourceDefinition>,
->(resources: Resources): CreateResourceLinksFn<Resources> {
-  const isValidResource = createIsValidResourceFn(resources);
-
+>(_resources: Resources): CreateResourceLinksFn<Resources> {
   function createResourceLinks<
-    const Config extends CreateResourceLinkConfig<Resources>,
-  >(config: Config) {
-    return createResourceLinksFromConfig(isValidResource, config);
+    const Resource extends ResourceLinkConfigResource<Resources>,
+  >(config: CreateResourceLinkConfig<Resources, Resource>) {
+    return createResourceLinksFromConfig(config);
   }
 
-  function withGroups(
-    groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources>>,
+  function withGroups<
+    const Resource extends ResourceLinkConfigResource<Resources>,
+  >(
+    groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources, Resource>>,
   ) {
-    return createResourceLinksWithGroups(isValidResource, groups);
+    return createResourceLinksWithGroups(groups);
   }
 
   return Object.assign(createResourceLinks, {

@@ -65,12 +65,31 @@ function createContactsComposableLayout() {
 }
 
 describe('createResourceLinks', () => {
-  it('throws when the resource is not declared in the layout', () => {
+  it('allows an arbitrary property name', () => {
     const { createResourceLinks } = createTestResourceLayout();
 
-    expect(() =>
-      createResourceLinks({ invalid: { label: 'Invalid' } } as never),
-    ).toThrowError('[createResourceLinks]: Invalid resource: invalid');
+    expect(
+      createResourceLinks({
+        overview: {
+          label: 'Overview',
+          href(resource) {
+            const overviewResource: 'overview' = resource;
+
+            return `/directory/${overviewResource}`;
+          },
+        },
+      }),
+    ).toEqual([
+      {
+        href: {
+          given: '/directory/overview',
+          full: '/directory/overview#overview',
+        },
+        label: 'Overview',
+        resource: 'overview',
+        icon: null,
+      },
+    ]);
   });
 
   it('throws when config is missing', () => {
@@ -371,17 +390,37 @@ describe('createResourceLinks', () => {
       );
     });
 
-    it('validates links using createResourceLinks rules', () => {
+    it('allows an arbitrary link property name', () => {
       const { createResourceLinks } = createTestResourceLayout();
 
-      expect(() =>
-        createResourceLinks.withGroups([
-          {
-            label: 'Directory',
-            links: { invalid: { label: 'Invalid' } } as never,
+      const [group] = createResourceLinks.withGroups([
+        {
+          label: 'Directory',
+          links: {
+            overview: {
+              label: 'Overview',
+              hash(resource) {
+                const overviewResource: 'overview' = resource;
+
+                return `${overviewResource}-section`;
+              },
+            },
           },
-        ]),
-      ).toThrowError('[createResourceLinks]: Invalid resource: invalid');
+        },
+      ]);
+
+      expect(group.links).toEqual([
+        {
+          href: {
+            given: '/',
+            full: '/#overview-section',
+            hash: 'overview-section',
+          },
+          label: 'Overview',
+          resource: 'overview',
+          icon: null,
+        },
+      ]);
     });
 
     it('assigns a generated id to each group', () => {

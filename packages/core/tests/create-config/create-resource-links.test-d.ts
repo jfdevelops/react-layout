@@ -45,8 +45,33 @@ createResourceLinks.withGroups([
   {
     label: 'Directory',
     links: {
-      // @ts-expect-error links must match createResourceLinks config
       invalid: { label: 'Invalid' },
+    },
+  },
+]);
+
+const _linksWithAnyPropertyName = createResourceLinks({
+  overview: {
+    label: 'Overview',
+    href: (resource) => {
+      const _overviewResource: 'overview' = resource;
+
+      return `/directory/${_overviewResource}`;
+    },
+  },
+});
+
+const _groupsWithAnyPropertyName = createResourceLinks.withGroups([
+  {
+    links: {
+      overview: {
+        label: 'Overview',
+        hash: (resource) => {
+          const _overviewResource: 'overview' = resource;
+
+          return `${_overviewResource}-section`;
+        },
+      },
     },
   },
 ]);
@@ -91,3 +116,5 @@ void _withGroups;
 void _groups;
 void _groupId;
 void _groupsWithoutLabel;
+void _linksWithAnyPropertyName;
+void _groupsWithAnyPropertyName;
