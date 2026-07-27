@@ -53,6 +53,7 @@ export type {
   InPropsOptions,
   LayoutRenderProps,
   MergedLayoutInProps,
+  ResolvedIncludedProps,
 } from './props';
 export { normalizeResource, normalizeResources, toResourceEnum } from './resource';
 export type {
