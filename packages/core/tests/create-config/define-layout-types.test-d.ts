@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { JSX, ReactNode } from 'react';
 import { createProp, defineResourceLayout } from '../../src';
 
 const { createResourceLayout } = defineResourceLayout({
@@ -207,44 +207,73 @@ const Directory = createDirectoryLayout.createComponent({
       eyebrow: createProp.string().optional(),
     },
   },
-  render: (props) => {
+  users: {
+    render: (props) => {
+      const resource: 'users' = props.resource;
+
+      void resource;
+      return null as never;
+    },
+  },
+  admins: {
+    render: (props) => {
+      const resource: 'admins' = props.resource;
+
+      void resource;
+      return null as never;
+    },
+  },
+  render: (props, context) => {
     const actions: ReactNode | undefined = props.actions;
     const children: ReactNode | undefined = props.children;
     const description: string | undefined = props.description;
+    const resource: 'users' | 'admins' = props.resource;
     const title: string = props.title;
+    const Users: () => JSX.Element = context.Users;
+    const Admins: () => JSX.Element = context.Admins;
 
     void actions;
+    void Admins;
     void children;
     void description;
+    void resource;
     void title;
+    void Users;
     return null as never;
   },
 });
 
-Directory<typeof UsersResourcePage>({ title: 'Users' });
+Directory<typeof UsersResourcePage>({ resource: 'users', title: 'Users' });
 Directory<typeof AdminsResourcePage>({
   actions: null,
   children: null,
   description: 'Manage admins',
   eyebrow: 'Directory',
+  resource: 'admins',
   title: 'Admins',
 });
 // @ts-expect-error required included props remain required at the call site
-Directory<typeof UsersResourcePage>({});
+Directory<typeof UsersResourcePage>({ resource: 'users' });
+// @ts-expect-error the resource must match the concrete resource component
+Directory<typeof UsersResourcePage>({ resource: 'admins', title: 'Admins' });
 // @ts-expect-error resource components outside the scope cannot be used
-Directory<typeof PostsResourcePage>({ title: 'Posts' });
+Directory<typeof PostsResourcePage>({ resource: 'posts', title: 'Posts' });
 // @ts-expect-error include only accepts props from the layout definition
 createDirectoryLayout.createComponent({ props: { include: { missing: true } }, render: () => null as never });
+// @ts-expect-error custom renders only accept selected resource keys
+createDirectoryLayout.createComponent({ posts: { render: () => null as never }, render: () => null as never });
 
 const ComponentWithoutProps = createDirectoryLayout.createComponent({
   render: (props) => {
     const children: ReactNode | undefined = props.children;
+    const resource: 'users' | 'admins' = props.resource;
 
     void children;
+    void resource;
     return null as never;
   },
 });
-ComponentWithoutProps<typeof UsersResourcePage>({});
+ComponentWithoutProps<typeof UsersResourcePage>({ resource: 'users' });
 
 // @ts-expect-error the resources-array form no longer accepts a shared string
 createResourceLayout.forResources({ resources: ['users'], name: 'UsersPage' });
