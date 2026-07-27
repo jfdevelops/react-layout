@@ -704,21 +704,37 @@ describe('defineResourceLayout', () => {
           eyebrow: createProp.string().optional(),
         },
       },
-      render: ({ actions, children, description, eyebrow, title }) => (
-        <section>
-          {eyebrow ? <span>{eyebrow}</span> : null}
-          <h1>{title}</h1>
-          {description ? <p>{description}</p> : null}
-          {actions}
-          {children}
-        </section>
-      ),
+      users: {
+        render: ({ resource }) => <span>{`custom:${resource}`}</span>,
+      },
+      admins: {
+        render: ({ resource }) => <span>{`custom:${resource}`}</span>,
+      },
+      render: (
+        { actions, children, description, eyebrow, resource, title },
+        context,
+      ) => {
+        const ResourceRender =
+          resource === 'users' ? context.Users : context.Admins;
+
+        return (
+          <section>
+            {eyebrow ? <span>{eyebrow}</span> : null}
+            <h1>{title}</h1>
+            {description ? <p>{description}</p> : null}
+            {actions}
+            {children}
+            <ResourceRender />
+          </section>
+        );
+      },
     });
 
     render(
       <Directory<typeof UsersPage>
         actions={<button type='button'>Create user</button>}
         eyebrow='Directory'
+        resource='users'
         title='Users'
       >
         User content
@@ -733,6 +749,7 @@ describe('defineResourceLayout', () => {
       screen.getByRole('button', { name: 'Create user' }),
     ).toBeInTheDocument();
     expect(screen.getByText('User content')).toBeInTheDocument();
+    expect(screen.getByText('custom:users')).toBeInTheDocument();
   });
 
   it('allows optional scoped component props to be omitted', () => {
@@ -762,7 +779,7 @@ describe('defineResourceLayout', () => {
         ),
     });
 
-    render(<Directory<typeof UsersPage> />);
+    render(<Directory<typeof UsersPage> resource='users' />);
 
     expect(screen.getByText('Empty directory')).toBeInTheDocument();
   });

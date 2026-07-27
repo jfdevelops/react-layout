@@ -334,6 +334,7 @@ type ScopedResourceComponentProps<
     >
   >,
   ComponentCustomProps extends InPropsObject,
+  Resource extends string,
 > = Show<
   Omit<
     ResolvedIncludedProps<
@@ -346,15 +347,56 @@ type ScopedResourceComponentProps<
       ComponentIncludeProps
     > &
       ResolveProps<ComponentCustomProps>,
-    'children'
+    'children' | 'resource'
   > & {
     children?: ReactNode;
+    resource: Resource;
   }
 >;
 
 type ScopedTargetResourceComponent<Resource extends string> = {
   (props: any): JSX.Element;
   readonly resource: Resource;
+};
+
+type ScopedResourceComponentRenderOptions<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  InProps extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  Arguments extends ReadonlyArray<unknown>,
+  LayoutCustomProps extends InPropsObject,
+  ComponentIncludeProps extends IncludedProps<
+    ScopedComponentAvailableProps<
+      Resources,
+      InProps,
+      Composables,
+      LayoutCustomProps
+    >
+  >,
+  ComponentCustomProps extends InPropsObject,
+> = {
+  [Resource in SelectedLayoutResources<Resources, Arguments>]?: {
+    render: (
+      props: ScopedResourceComponentProps<
+        Resources,
+        InProps,
+        Composables,
+        LayoutCustomProps,
+        ComponentIncludeProps,
+        ComponentCustomProps,
+        Resource
+      >,
+    ) => JSX.Element;
+  };
+};
+
+type ScopedResourceComponentRenderContext<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Arguments extends ReadonlyArray<unknown>,
+> = {
+  [Resource in SelectedLayoutResources<Resources, Arguments> as Capitalize<
+    Resource
+  >]: () => JSX.Element;
 };
 
 type ScopedResourceComponent<
@@ -380,7 +422,8 @@ type ScopedResourceComponent<
     Composables,
     LayoutCustomProps,
     ComponentIncludeProps,
-    ComponentCustomProps
+    ComponentCustomProps,
+    SelectedLayoutResources<Resources, Arguments>
   >
 > & {
   <
@@ -396,7 +439,8 @@ type ScopedResourceComponent<
       Composables,
       LayoutCustomProps,
       ComponentIncludeProps,
-      ComponentCustomProps
+      ComponentCustomProps,
+      ResourceComponent['resource']
     >,
   ): JSX.Element;
 };
@@ -424,7 +468,11 @@ type ScopedCreateComponent<
     /** Additional props accepted by the component. */
     custom?: ComponentCustomProps;
   };
-  /** Renders the scoped component. `children` is always available and optional. */
+  /**
+   * Renders the scoped component. `children` and `resource` are always
+   * available. The context contains capitalized components for the selected
+   * resources.
+   */
   render: (
     props: ScopedResourceComponentProps<
       Resources,
@@ -432,10 +480,21 @@ type ScopedCreateComponent<
       Composables,
       LayoutCustomProps,
       ComponentIncludeProps,
-      ComponentCustomProps
+      ComponentCustomProps,
+      SelectedLayoutResources<Resources, Arguments>
     >,
+    context: ScopedResourceComponentRenderContext<Resources, Arguments>,
   ) => JSX.Element;
-}) => ScopedResourceComponent<
+} &
+  ScopedResourceComponentRenderOptions<
+    Resources,
+    InProps,
+    Composables,
+    Arguments,
+    LayoutCustomProps,
+    ComponentIncludeProps,
+    ComponentCustomProps
+  >) => ScopedResourceComponent<
   Resources,
   InProps,
   Composables,
@@ -466,14 +525,22 @@ type ScopedCreateResourceLayoutFn<
    * @example
    * const Directory = createDirectoryLayout.createComponent({
    *   props: { include: { title: true, actions: 'optional' } },
-   *   render: ({ actions, children, title }) => (
-   *     <Page title={title} actions={actions}>
-   *       {children}
-   *     </Page>
-   *   ),
+   *   users: {
+   *     render: ({ resource }) => <span>{resource}</span>,
+   *   },
+   *   render: ({ actions, children, resource, title }, context) => {
+   *     const ResourceRender = context.Users
+   *
+   *     return (
+   *       <Page resource={resource} title={title} actions={actions}>
+   *         {children}
+   *         <ResourceRender />
+   *       </Page>
+   *     )
+   *   },
    * })
    *
-   * <Directory<typeof UsersPage> title='Users' />
+   * <Directory<typeof UsersPage> resource='users' title='Users' />
    *
    * @param options The props configuration and component render function.
    * @returns A component scoped to the selected resources.
@@ -784,21 +851,29 @@ export function createForResources<
     }
 
     function createComponent(componentOptions: {
+      [resource: string]: unknown;
       props?: {
         include?: Record<string, true | 'optional'>;
         custom?: Record<string, AnyBuiltPropDefinition>;
       };
-      render: (props: Record<string, unknown>) => JSX.Element;
+      render: (
+        props: Record<string, unknown>,
+        context: Record<string, () => JSX.Element>,
+      ) => JSX.Element;
     }) {
       const include = componentOptions.props?.include ?? {};
       const custom = componentOptions.props?.custom ?? {};
+      const selectedResources = new Set(
+        resourceOptions.map(({ resource }) => resource),
+      );
 
       function Component(componentProps: Record<string, unknown>) {
-        const componentResource = resourceOptions[0]?.resource;
+        const componentResource =
+          componentProps.resource as LayoutResourceKey<Resources>;
 
-        if (!componentResource) {
+        if (!selectedResources.has(componentResource)) {
           throw new Error(
-            'createComponent requires at least one scoped resource',
+            `Resource "${componentResource}" is not available in this scoped component`,
           );
         }
 
@@ -825,7 +900,7 @@ export function createForResources<
         }
 
         for (const [key, definition] of Object.entries(custom)) {
-          if (key === 'children') {
+          if (key === 'children' || key === 'resource') {
             continue;
           }
 
@@ -838,7 +913,26 @@ export function createForResources<
 
         validateProps(definitionsToValidate, componentProps);
 
-        return componentOptions.render(componentProps);
+        const renderContext = Object.fromEntries(
+          resourceOptions.map(({ resource }) => {
+            const resourceRenderOptions = componentOptions[resource] as
+              | {
+                  render: (props: Record<string, unknown>) => JSX.Element;
+                }
+              | undefined;
+
+            function ResourceRender() {
+              return resourceRenderOptions?.render({
+                ...componentProps,
+                resource,
+              }) ?? (null as unknown as JSX.Element);
+            }
+
+            return [capitalize(resource), ResourceRender];
+          }),
+        );
+
+        return componentOptions.render(componentProps, renderContext);
       }
 
       return Object.assign(Component, {
