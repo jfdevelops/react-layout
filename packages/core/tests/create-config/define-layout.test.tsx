@@ -563,6 +563,177 @@ describe('defineResourceLayout', () => {
     ).toBeInTheDocument();
   });
 
+  it('creates resource-bound layouts from every supported notation', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users', 'admins'],
+      options: {},
+      layout: {
+        render: () => <section />,
+      },
+    });
+
+    const createUsersPage = createResourceLayout.forResource('users');
+    const UsersPage = createUsersPage({
+      name: 'UsersPage',
+    });
+    const createUsersDirectory = createResourceLayout.forResource({
+      resource: 'users',
+      name: (resource) => `${resource}Directory`,
+    });
+    const UsersDirectory = createUsersDirectory();
+    const createMappedUsersDirectory = createResourceLayout.forResource({
+      resource: 'users',
+      name: {
+        users: (resource) => `${resource.toLowerCase()}Directory`,
+      },
+    });
+    const MappedUsersDirectory = createMappedUsersDirectory();
+    const createAdminsDirectory = createResourceLayout.forResource({
+      admins: {
+        name: (resource) => `${resource.toLowerCase()}Directory`,
+      },
+    });
+    const AdminsDirectory = createAdminsDirectory();
+
+    expect(UsersPage.displayName).toBe('UsersPage');
+    expect(UsersDirectory.displayName).toBe('UsersDirectory');
+    expect(MappedUsersDirectory.displayName).toBe('usersDirectory');
+    expect(AdminsDirectory.displayName).toBe('adminsDirectory');
+  });
+
+  it('creates resource-bound layouts from resource arguments', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users', 'admins', 'posts'],
+      options: {},
+      layout: {
+        render: (_props, context) => (
+          <span>{`${context.resource}:${context.name}`}</span>
+        ),
+      },
+    });
+
+    const createScopedResourceLayout = createResourceLayout.forResources(
+      'users',
+      'admins',
+    );
+    const UsersPage = createScopedResourceLayout({
+      resource: 'users',
+      name: 'UsersPage',
+    });
+    const createAdminsPage = createScopedResourceLayout.forResource({
+      resource: 'admins',
+      name: 'AdminsPage',
+    });
+    const AdminsPage = createAdminsPage({});
+
+    render(
+      <>
+        <UsersPage />
+        <AdminsPage />
+      </>,
+    );
+
+    expect(screen.getByText('users:UsersPage')).toBeInTheDocument();
+    expect(screen.getByText('admins:AdminsPage')).toBeInTheDocument();
+    expect(createScopedResourceLayout).not.toHaveProperty('forResources');
+  });
+
+  it('creates resource-bound layouts with shared name options', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users', 'admins'],
+      options: {},
+      layout: {
+        render: (_props, context) => (
+          <span>{`${context.resource}:${context.name}`}</span>
+        ),
+      },
+    });
+
+    const createScopedResourceLayout = createResourceLayout.forResources({
+      resources: ['users', 'admins'],
+      name: (resource) => `${resource}Test`,
+    });
+    const UsersPage = createScopedResourceLayout({ resource: 'users' });
+    const AdminsPage = createScopedResourceLayout({ resource: 'admins' });
+
+    render(
+      <>
+        <UsersPage />
+        <AdminsPage />
+      </>,
+    );
+
+    expect(screen.getByText('users:UsersTest')).toBeInTheDocument();
+    expect(screen.getByText('admins:AdminsTest')).toBeInTheDocument();
+  });
+
+  it('creates resource-bound layouts with a selected-resource name map', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users', 'admins', 'posts'],
+      options: {},
+      layout: {
+        render: (_props, context) => (
+          <span>{`${context.resource}:${context.name}`}</span>
+        ),
+      },
+    });
+
+    const createScopedResourceLayout = createResourceLayout.forResources({
+      resources: ['users', 'admins'],
+      name: {
+        users: (resource) => `${resource.toLowerCase()}Page`,
+        admins: 'AdminDirectory',
+      },
+    });
+    const UsersPage = createScopedResourceLayout({ resource: 'users' });
+    const AdminsPage = createScopedResourceLayout({ resource: 'admins' });
+
+    render(
+      <>
+        <UsersPage />
+        <AdminsPage />
+      </>,
+    );
+
+    expect(screen.getByText('users:usersPage')).toBeInTheDocument();
+    expect(screen.getByText('admins:AdminDirectory')).toBeInTheDocument();
+  });
+
+  it('creates resource-bound layouts with per-resource options', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users', 'admins'],
+      options: {
+        title: createProp.string(),
+      },
+      layout: {
+        props: {
+          include: {
+            title: true,
+          },
+        },
+        render: (props, context) => (
+          <span>{`${context.resource}:${context.name}:${props.title}`}</span>
+        ),
+      },
+    });
+
+    const createScopedResourceLayout = createResourceLayout.forResources({
+      users: {
+        name: (resource) => `${resource.toLowerCase()}Test`,
+      },
+    });
+    const createUsersPage = createScopedResourceLayout
+      .forResource({ resource: 'users' })
+      .setDefaults({ title: 'Directory' });
+    const UsersPage = createUsersPage({});
+
+    render(<UsersPage />);
+
+    expect(
+      screen.getByText('users:usersTest:Directory'),
+    ).toBeInTheDocument();
+  });
+
   it('allows overriding the default name for a resource-bound layout', () => {
     const { createResourceLayout } = defineResourceLayout({
       resources: ['users'],
@@ -975,6 +1146,28 @@ describe('defineResourceLayout', () => {
 
       expect(ContactSection.displayName).toBe('ContactSection');
       expect(ContactSection.Breadcrumbs.displayName).toBe('Breadcrumbs');
+    });
+
+    it('is retained on factories returned by forResources', () => {
+      const { createResourceLayout } = createContactsComposableLayout();
+      const createScopedResourceLayout = createResourceLayout.forResources({
+        resources: ['contacts'],
+        name: {
+          contacts: 'ContactSection',
+        },
+      });
+
+      const ContactSection = createScopedResourceLayout.makeComposable({
+        resource: 'contacts',
+        title: 'Contact',
+        segments: {
+          contacts: 'Contacts',
+        },
+      });
+
+      expect(ContactSection.displayName).toBe('ContactSection');
+      expect(ContactSection.Breadcrumbs.displayName).toBe('Breadcrumbs');
+      expect(createScopedResourceLayout).not.toHaveProperty('forResources');
     });
 
     it('matches createResourceLayout(...).makeComposable()', () => {

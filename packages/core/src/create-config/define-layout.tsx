@@ -46,8 +46,18 @@ import {
   createResourceLinksFn,
   type CreateResourceLinksFn,
 } from './create-resource-links';
+import {
+  createForResource,
+  type CreateLayoutForResource,
+  type CreateResourceLayoutOptions,
+  type CreateResourceLayoutOptionsBase,
+} from './for-resource';
+import {
+  createForResources,
+  type CreateResourceLayoutForResourcesFn,
+} from './for-resources';
 
-type LayoutIncludeProps<
+export type LayoutIncludeProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
@@ -249,7 +259,7 @@ type ResourceLayoutComposition<
   : {
       makeComposable: MakeComposable<Composables, Name>;
     };
-type ResourceLayoutComponent<
+export type ResourceLayoutComponent<
   Name extends string,
   Props extends InPropsObject = {},
   Composables extends ComposableComponents = {},
@@ -258,167 +268,13 @@ type ResourceLayoutComponent<
     (props: Show<ResolveProps<Props>>): JSX.Element;
   };
 
-type LayoutPropDefaults = Record<string, unknown>;
-
-type LayoutPropsForResource<
+export type LayoutPropsForResource<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents = {},
 > = ResolveLayoutProps<InferredInProps<Resources, InProps>> &
   RequiredPresetLayoutProps<Composables>;
 
-type CreateTimeLayoutPropWithDefault<
-  LayoutProps extends LayoutPropDefaults,
-  K extends keyof LayoutProps,
-> = LayoutProps[K] extends (...args: unknown[]) => unknown
-  ? LayoutProps[K]
-  : Updater<LayoutProps[K]>;
-
-type ResolveLayoutPropsWithDefaults<
-  LayoutProps extends LayoutPropDefaults,
-  Defaults extends LayoutPropDefaults,
-> = Omit<LayoutProps, keyof Defaults> & {
-  [K in keyof Defaults & keyof LayoutProps]?: CreateTimeLayoutPropWithDefault<
-    LayoutProps,
-    K
-  >;
-};
-
-export type CreateResourceLayoutOptionsBase<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  Name extends string,
-  Resource extends LayoutResourceKey<Resources>,
-  Props extends InPropsObject = {},
-> = {
-  name: Name;
-  resource: Resource;
-  props?: Props;
-};
-type CreateResourceLayoutOptions<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents,
-  Name extends string,
-  Resource extends LayoutResourceKey<Resources>,
-  Props extends InPropsObject = {},
-> = LayoutPropsForResource<Resources, InProps, Composables> &
-  CreateResourceLayoutOptionsBase<Resources, Name, Resource, Props>;
-type CreateLayoutForResourceOptions<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  Name extends string,
-  Resource extends LayoutResourceKey<Resources>,
-> = {
-  name?: Name;
-  resource: Resource;
-};
-type CreatedLayoutForResourceOptions<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents,
-  Props extends InPropsObject = {},
-  Defaults extends LayoutPropDefaults = {},
-> = ResolveLayoutPropsWithDefaults<
-  LayoutPropsForResource<Resources, InProps, Composables>,
-  Defaults
-> & {
-  props?: Props;
-};
-type CreatedLayoutForResource<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents,
-  Name extends string,
-  Resource extends LayoutResourceKey<Resources>,
-  CustomProps extends InPropsObject = {},
-  Defaults extends LayoutPropDefaults = {},
-> = <OverrideName extends string = Name, Props extends InPropsObject = {}>(
-  options: CreatedLayoutForResourceOptions<
-    Resources,
-    InProps,
-    Composables,
-    Props,
-    Defaults
-  > & {
-    name?: OverrideName;
-  },
-) => ResourceLayoutComponent<OverrideName, CustomProps, Composables>;
-
-type SetDefaultPropsForResource<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents = {},
-> = Partial<LayoutPropsForResource<Resources, InProps, Composables>>;
-
-type ResolvedSetDefaultProps<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents,
-  Defaults extends SetDefaultPropsForResource<Resources, InProps, Composables>,
-> = {
-  [K in keyof Defaults &
-    keyof LayoutPropsForResource<
-      Resources,
-      InProps,
-      Composables
-    >]: LayoutPropsForResource<Resources, InProps, Composables>[K];
-};
-
-type SetDefaultPropForResourceFn<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents,
-  Name extends string,
-  Resource extends LayoutResourceKey<Resources>,
-  CustomProps extends InPropsObject = {},
-> = <
-  const Defaults extends SetDefaultPropsForResource<
-    Resources,
-    InProps,
-    Composables
-  >,
->(
-  /**
-   * Default values for layout props. Each prop can only be set once.
-   */
-  defaults: Defaults,
-) => CreatedLayoutForResource<
-  Resources,
-  InProps,
-  Composables,
-  Name,
-  Resource,
-  CustomProps,
-  ResolvedSetDefaultProps<Resources, InProps, Composables, Defaults>
->;
-
-type CreateLayoutForResource<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents = {},
-  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
-  CustomProps extends InPropsObject = {},
-> = <Name extends string, Resource extends LayoutResourceKey<Resources>>(
-  options: CreateLayoutForResourceOptions<Resources, Name, Resource>,
-) => CreatedLayoutForResource<
-  Resources,
-  InProps,
-  Composables,
-  Name,
-  Resource,
-  CustomProps
-> & {
-  /**
-   * Set default values for layout props in a single call.
-   */
-  setDefaults: SetDefaultPropForResourceFn<
-    Resources,
-    InProps,
-    Composables,
-    Name,
-    Resource,
-    CustomProps
-  >;
-};
 type CreateResourceLayoutFnImpl<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
@@ -488,6 +344,16 @@ type CreateResourceLayoutFnBase<
    * A function to create a resource layout for a specific resource.
    */
   forResource: CreateLayoutForResource<
+    Resources,
+    InProps,
+    Composables,
+    IncludeProps,
+    CustomProps
+  >;
+  /**
+   * Creates resource layout factories for multiple defined resources.
+   */
+  forResources: CreateResourceLayoutForResourcesFn<
     Resources,
     InProps,
     Composables,
@@ -749,89 +615,6 @@ export function defineResourceLayout<
     IncludeProps,
     CustomProps
   >;
-  function createLayoutForResource<
-    Name extends string,
-    Resource extends LayoutResourceKey<Resources>,
-    Defaults extends LayoutPropDefaults,
-  >(
-    defaultName: Name | undefined,
-    resource: Resource,
-    defaults: Record<string, unknown>,
-  ) {
-    return (({ name, ...rest }) =>
-      definedResourceLayout({
-        ...defaults,
-        name: name ?? defaultName,
-        resource,
-        ...resolveLayoutOptionDefaults(defaults, rest),
-      } as never) as never) as CreatedLayoutForResource<
-      Resources,
-      InProps,
-      Composables,
-      Name,
-      Resource,
-      CustomProps,
-      Defaults
-    >;
-  }
-
-  function createLayoutForResourceBuilder<
-    Name extends string,
-    Resource extends LayoutResourceKey<Resources>,
-  >(
-    defaultName: Name | undefined,
-    resource: Resource,
-  ): CreatedLayoutForResource<
-    Resources,
-    InProps,
-    Composables,
-    Name,
-    Resource,
-    CustomProps
-  > & {
-    setDefaults: SetDefaultPropForResourceFn<
-      Resources,
-      InProps,
-      Composables,
-      Name,
-      Resource,
-      CustomProps
-    >;
-  } {
-    const createLayout = createLayoutForResource(defaultName, resource, {});
-
-    const setDefaults = ((defaults) =>
-      createLayoutForResource(
-        defaultName,
-        resource,
-        defaults,
-      )) as SetDefaultPropForResourceFn<
-      Resources,
-      InProps,
-      Composables,
-      Name,
-      Resource,
-      CustomProps
-    >;
-
-    return Object.assign(createLayout, { setDefaults });
-  }
-  const forResource: CreateLayoutForResource<
-    Resources,
-    InProps,
-    Composables,
-    IncludeProps,
-    CustomProps
-  > = (options) => {
-    const { name: defaultName, resource } = options;
-
-    if (!resource) {
-      throw new Error('"resource" is required when calling "forResource"');
-    }
-
-    return createLayoutForResourceBuilder(defaultName, resource);
-  };
-
   const createTopLevelMakeComposable = () => {
     return (options: Record<string, unknown>) => {
       const layout = definedResourceLayout(options as never);
@@ -849,8 +632,39 @@ export function defineResourceLayout<
     };
   };
 
+  const { createLayoutForResourceBuilder, forResource } = createForResource<
+    Resources,
+    InProps,
+    Composables,
+    IncludeProps,
+    CustomProps
+  >({
+    createResourceLayout: definedResourceLayout as never,
+    resolveLayoutOptionDefaults,
+  });
+  const forResources = createForResources<
+    Resources,
+    InProps,
+    Composables,
+    IncludeProps,
+    CustomProps
+  >({
+    createLayoutForResource: createLayoutForResourceBuilder,
+    ...(layout.composables
+      ? { createMakeComposableLayout: createTopLevelMakeComposable }
+      : {}),
+    createResourceLayout: definedResourceLayout as never,
+  });
+
   const createResourceLayoutExtras: {
     forResource: CreateLayoutForResource<
+      Resources,
+      InProps,
+      Composables,
+      IncludeProps,
+      CustomProps
+    >;
+    forResources: CreateResourceLayoutForResourcesFn<
       Resources,
       InProps,
       Composables,
@@ -860,6 +674,7 @@ export function defineResourceLayout<
     makeComposable?: ReturnType<typeof createTopLevelMakeComposable>;
   } = {
     forResource,
+    forResources,
   };
 
   if (layout.composables) {
