@@ -1,4 +1,10 @@
-import type { JSX, ReactNode } from 'react';
+import {
+  createContext,
+  createElement,
+  type JSX,
+  type ReactNode,
+  useContext,
+} from 'react';
 import type {
   ComposableComponents,
   ComposableResourceLayout,
@@ -866,6 +872,47 @@ export function createForResources<
       const selectedResources = new Set(
         resourceOptions.map(({ resource }) => resource),
       );
+      const componentPropsContext = createContext<
+        Record<string, unknown> | undefined
+      >(undefined);
+      const contextResources = new Map<string, LayoutResourceKey<Resources>>();
+      const renderContext = Object.fromEntries(
+        resourceOptions.map(({ resource }) => {
+          const contextKey = capitalize(resource);
+          const existingResource = contextResources.get(contextKey);
+
+          if (existingResource !== undefined) {
+            throw new Error(
+              `Resources "${existingResource}" and "${resource}" both map to render context key "${contextKey}"`,
+            );
+          }
+
+          contextResources.set(contextKey, resource);
+
+          const resourceRenderOptions = componentOptions[resource] as
+            | {
+                render: (props: Record<string, unknown>) => JSX.Element;
+              }
+            | undefined;
+
+          function ResourceRender() {
+            const componentProps = useContext(componentPropsContext);
+
+            if (componentProps === undefined) {
+              throw new Error(
+                `Render context component "${contextKey}" must be rendered inside its scoped component`,
+              );
+            }
+
+            return resourceRenderOptions?.render({
+              ...componentProps,
+              resource,
+            }) ?? (null as unknown as JSX.Element);
+          }
+
+          return [contextKey, ResourceRender];
+        }),
+      );
 
       function Component(componentProps: Record<string, unknown>) {
         const componentResource =
@@ -913,26 +960,11 @@ export function createForResources<
 
         validateProps(definitionsToValidate, componentProps);
 
-        const renderContext = Object.fromEntries(
-          resourceOptions.map(({ resource }) => {
-            const resourceRenderOptions = componentOptions[resource] as
-              | {
-                  render: (props: Record<string, unknown>) => JSX.Element;
-                }
-              | undefined;
-
-            function ResourceRender() {
-              return resourceRenderOptions?.render({
-                ...componentProps,
-                resource,
-              }) ?? (null as unknown as JSX.Element);
-            }
-
-            return [capitalize(resource), ResourceRender];
-          }),
+        return createElement(
+          componentPropsContext.Provider,
+          { value: componentProps },
+          componentOptions.render(componentProps, renderContext),
         );
-
-        return componentOptions.render(componentProps, renderContext);
       }
 
       return Object.assign(Component, {

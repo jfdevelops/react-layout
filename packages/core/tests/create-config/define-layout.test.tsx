@@ -1,4 +1,5 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   createProp,
@@ -750,6 +751,88 @@ describe('defineResourceLayout', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('User content')).toBeInTheDocument();
     expect(screen.getByText('custom:users')).toBeInTheDocument();
+  });
+
+  it('preserves resource render state when the scoped component rerenders', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users'],
+      options: {
+        title: createProp.string(),
+      },
+      layout: {
+        render: () => <section />,
+      },
+    });
+    const createDirectoryLayout = createResourceLayout.forResources('users');
+    const UsersPage = createDirectoryLayout({
+      name: 'UsersPage',
+      resource: 'users',
+      title: 'Users',
+    });
+
+    function StatefulResourceContent() {
+      const [count, setCount] = useState(0);
+
+      return (
+        <button type='button' onClick={() => setCount((value) => value + 1)}>
+          {`Count: ${count}`}
+        </button>
+      );
+    }
+
+    const Directory = createDirectoryLayout.createComponent({
+      props: {
+        include: {
+          title: true,
+        },
+      },
+      users: {
+        render: () => <StatefulResourceContent />,
+      },
+      render: ({ title }, context) => (
+        <section>
+          <h1>{title}</h1>
+          <context.Users />
+        </section>
+      ),
+    });
+    const view = render(
+      <Directory<typeof UsersPage> resource='users' title='Users' />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Count: 0' }));
+    expect(screen.getByRole('button', { name: 'Count: 1' })).toBeInTheDocument();
+
+    view.rerender(
+      <Directory<typeof UsersPage> resource='users' title='Updated users' />,
+    );
+
+    expect(
+      screen.getByRole('heading', { name: 'Updated users' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Count: 1' })).toBeInTheDocument();
+  });
+
+  it('rejects colliding capitalized resource render keys', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users', 'Users'],
+      options: {},
+      layout: {
+        render: () => <section />,
+      },
+    });
+    const createDirectoryLayout = createResourceLayout.forResources(
+      'users',
+      'Users',
+    );
+
+    expect(() =>
+      createDirectoryLayout.createComponent({
+        render: () => <section />,
+      }),
+    ).toThrowError(
+      'Resources "users" and "Users" both map to render context key "Users"',
+    );
   });
 
   it('allows optional scoped component props to be omitted', () => {
