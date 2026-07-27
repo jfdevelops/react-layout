@@ -127,7 +127,12 @@ export type CreatedLayoutForResource<
         Props,
         Defaults
       >]
-) => ResourceLayoutComponent<OverrideName, CustomProps, Composables>;
+) => ResourceLayoutComponent<
+  OverrideName,
+  CustomProps,
+  Composables,
+  Resource
+>;
 
 type SetDefaultPropsForResource<
   Resources extends ReadonlyArray<ResourceDefinition>,

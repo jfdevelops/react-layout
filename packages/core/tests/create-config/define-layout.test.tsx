@@ -667,6 +667,106 @@ describe('defineResourceLayout', () => {
     expect(screen.getByText('admins:AdminsTest')).toBeInTheDocument();
   });
 
+  it('creates a component shared by the scoped resources', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users', 'admins', 'posts'],
+      options: {
+        description: createProp.string(),
+        title: createProp.string(),
+      },
+      layout: {
+        props: {
+          custom: {
+            actions: createProp.component({ type: 'ReactNode' }),
+          },
+        },
+        render: () => <section />,
+      },
+    });
+    const createDirectoryLayout = createResourceLayout.forResources(
+      'users',
+      'admins',
+    );
+    const UsersPage = createDirectoryLayout({
+      description: 'Manage users',
+      name: 'UsersPage',
+      resource: 'users',
+      title: 'Users',
+    });
+    const Directory = createDirectoryLayout.createComponent({
+      props: {
+        include: {
+          actions: 'optional',
+          description: 'optional',
+          title: true,
+        },
+        custom: {
+          eyebrow: createProp.string().optional(),
+        },
+      },
+      render: ({ actions, children, description, eyebrow, title }) => (
+        <section>
+          {eyebrow ? <span>{eyebrow}</span> : null}
+          <h1>{title}</h1>
+          {description ? <p>{description}</p> : null}
+          {actions}
+          {children}
+        </section>
+      ),
+    });
+
+    render(
+      <Directory<typeof UsersPage>
+        actions={<button type='button'>Create user</button>}
+        eyebrow='Directory'
+        title='Users'
+      >
+        User content
+      </Directory>,
+    );
+
+    expect(createDirectoryLayout.resources).toBeUndefined();
+    expect(UsersPage.resource).toBeUndefined();
+    expect(screen.getByText('Directory')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Users' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Create user' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('User content')).toBeInTheDocument();
+  });
+
+  it('allows optional scoped component props to be omitted', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users'],
+      options: {
+        description: createProp.string(),
+      },
+      layout: {
+        render: () => <section />,
+      },
+    });
+    const createDirectoryLayout = createResourceLayout.forResources('users');
+    const UsersPage = createDirectoryLayout({
+      description: 'Manage users',
+      name: 'UsersPage',
+      resource: 'users',
+    });
+    const Directory = createDirectoryLayout.createComponent({
+        props: {
+          include: {
+            description: 'optional',
+          },
+        },
+        render: ({ children, description }) => (
+          <section>{description ?? children ?? 'Empty directory'}</section>
+        ),
+    });
+
+    render(<Directory<typeof UsersPage> />);
+
+    expect(screen.getByText('Empty directory')).toBeInTheDocument();
+  });
+
   it('creates resource-bound layouts with a selected-resource name map', () => {
     const { createResourceLayout } = defineResourceLayout({
       resources: ['users', 'admins', 'posts'],

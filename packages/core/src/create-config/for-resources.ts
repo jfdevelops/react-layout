@@ -1,16 +1,23 @@
+import type { JSX, ReactNode } from 'react';
 import type {
   ComposableComponents,
   ComposableResourceLayout,
 } from '@jfdevelops/react-layout-composables';
+import {
+  type AnyBuiltPropDefinition,
+  type ResolveProps,
+  validateProps,
+} from '@jfdevelops/react-layout-validator';
 import type {
+  IncludedProps,
   InPropsDefinition,
   InPropsObject,
+  MergedLayoutInProps,
+  ResolvedIncludedProps,
 } from '../props';
-import type {
-  LayoutResourceKey,
-  ResourceDefinition,
-} from '../resource';
+import type { LayoutResourceKey, ResourceDefinition } from '../resource';
 import { capitalize } from '../utils/capitalize';
+import type { BaseComponent, Show } from '../utils';
 import type {
   LayoutIncludeProps,
   LayoutPropsForResource,
@@ -23,12 +30,11 @@ import type {
   SetDefaultPropForResourceFn,
 } from './for-resource';
 
-type CapitalizedResource<Resource extends string> =
-  Resource extends Resource
-    ? {
-        toLowerCase: () => Lowercase<Capitalize<Resource>>;
-      } & Capitalize<Resource>
-    : never;
+type CapitalizedResource<Resource extends string> = Resource extends Resource
+  ? {
+      toLowerCase: () => Lowercase<Capitalize<Resource>>;
+    } & Capitalize<Resource>
+  : never;
 
 type ResourceLayoutName<
   Resource extends string,
@@ -70,9 +76,7 @@ type ResourceLayoutSelection<
   CallbackName extends string = string,
 > = {
   [Resource in LayoutResourceKey<Resources>]?: {
-    name?:
-      | string
-      | ((resource: CapitalizedResource<Resource>) => CallbackName);
+    name?: string | ((resource: CapitalizedResource<Resource>) => CallbackName);
   };
 };
 
@@ -89,20 +93,22 @@ type AtLeastOneResourceLayoutSelection<
 type SelectedLayoutResources<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Arguments extends ReadonlyArray<unknown>,
-> = Arguments extends ReadonlyArray<LayoutResourceKey<Resources>>
-  ? Arguments[number]
-  : Arguments[0] extends {
-        resources: ReadonlyArray<infer Resource>;
-      }
-    ? Resource & LayoutResourceKey<Resources>
-    : keyof Arguments[0] & LayoutResourceKey<Resources>;
+> =
+  Arguments extends ReadonlyArray<LayoutResourceKey<Resources>>
+    ? Arguments[number]
+    : Arguments[0] extends {
+          resources: ReadonlyArray<infer Resource>;
+        }
+      ? Resource & LayoutResourceKey<Resources>
+      : keyof Arguments[0] & LayoutResourceKey<Resources>;
 
-type ResolveResourceLayoutName<Name> =
-  Name extends (...args: never[]) => infer Result
-    ? Result & string
-    : Name extends string
-      ? Name
-      : string;
+type ResolveResourceLayoutName<Name> = Name extends (
+  ...args: never[]
+) => infer Result
+  ? Result & string
+  : Name extends string
+    ? Name
+    : string;
 
 type NormalizeCapitalizedResourceName<
   Name extends string,
@@ -124,41 +130,33 @@ type NormalizeCapitalizedResourceNameMatch<
     : never
   : never;
 
-type SelectedResourceLayoutName<
-  Arguments,
-  Resource extends string,
-> = Arguments extends ReadonlyArray<string>
-  ? string
-  : Arguments extends readonly [infer Options]
-    ? Options extends {
-        resources: ReadonlyArray<string>;
-        name?: infer Name;
-      }
-      ? Name extends (...args: never[]) => unknown
-        ? ResolveResourceLayoutName<Name>
-        : Name extends Record<Resource, infer ResourceName>
-          ? ResolveResourceLayoutName<ResourceName>
-          : string
-      : Options extends Record<Resource, infer ResourceOptions>
-        ? ResourceOptions extends { name?: infer Name }
+type SelectedResourceLayoutName<Arguments, Resource extends string> =
+  Arguments extends ReadonlyArray<string>
+    ? string
+    : Arguments extends readonly [infer Options]
+      ? Options extends {
+          resources: ReadonlyArray<string>;
+          name?: infer Name;
+        }
+        ? Name extends (...args: never[]) => unknown
           ? ResolveResourceLayoutName<Name>
+          : Name extends Record<Resource, infer ResourceName>
+            ? ResolveResourceLayoutName<ResourceName>
+            : string
+        : Options extends Record<Resource, infer ResourceOptions>
+          ? ResourceOptions extends { name?: infer Name }
+            ? ResolveResourceLayoutName<Name>
+            : string
           : string
-        : string
-    : string;
+      : string;
 
-type NormalizeResourceLayoutNames<
-  Names,
-  CallbackName extends string,
-> = {
+type NormalizeResourceLayoutNames<Names, CallbackName extends string> = {
   [Resource in keyof Names]: Names[Resource] extends (
     ...args: never[]
   ) => unknown
     ? (
         resource: CapitalizedResource<Resource & string>,
-      ) => NormalizeCapitalizedResourceName<
-        CallbackName,
-        Resource & string
-      >
+      ) => NormalizeCapitalizedResourceName<CallbackName, Resource & string>
     : Names[Resource];
 };
 
@@ -236,11 +234,10 @@ type ScopedCreateResourceLayoutOptions<
   Name extends string,
   Resource extends SelectedLayoutResources<Resources, Arguments>,
   Props extends InPropsObject,
-> = LayoutPropsForResource<Resources, InProps, Composables> &
-  {
-    resource: Resource;
-    props?: Props;
-  } & (HasResourceLayoutName<Arguments, Resource> extends true
+> = LayoutPropsForResource<Resources, InProps, Composables> & {
+  resource: Resource;
+  props?: Props;
+} & (HasResourceLayoutName<Arguments, Resource> extends true
     ? { name?: Name }
     : { name: Name });
 
@@ -264,7 +261,7 @@ type ScopedCreateResourceLayoutFnImpl<
     Resource,
     Props
   >,
-) => ResourceLayoutComponent<Name, CustomProps, Composables>;
+) => ResourceLayoutComponent<Name, CustomProps, Composables, Resource>;
 
 type ScopedCreateLayoutForResource<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -316,6 +313,138 @@ type ScopedCreateResourceLayoutMakeComposableFn<
       : { name: Name }),
 ) => ComposableResourceLayout<Composables, Name, any, any, any>;
 
+type ScopedComponentAvailableProps<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  InProps extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  LayoutCustomProps extends InPropsObject,
+> = MergedLayoutInProps<Resources, InProps, Composables> & LayoutCustomProps;
+
+type ScopedResourceComponentProps<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  InProps extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  LayoutCustomProps extends InPropsObject,
+  ComponentIncludeProps extends IncludedProps<
+    ScopedComponentAvailableProps<
+      Resources,
+      InProps,
+      Composables,
+      LayoutCustomProps
+    >
+  >,
+  ComponentCustomProps extends InPropsObject,
+> = Show<
+  Omit<
+    ResolvedIncludedProps<
+      ScopedComponentAvailableProps<
+        Resources,
+        InProps,
+        Composables,
+        LayoutCustomProps
+      >,
+      ComponentIncludeProps
+    > &
+      ResolveProps<ComponentCustomProps>,
+    'children'
+  > & {
+    children?: ReactNode;
+  }
+>;
+
+type ScopedTargetResourceComponent<Resource extends string> = {
+  (props: any): JSX.Element;
+  readonly resource: Resource;
+};
+
+type ScopedResourceComponent<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  InProps extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  Arguments extends ReadonlyArray<unknown>,
+  LayoutCustomProps extends InPropsObject,
+  ComponentIncludeProps extends IncludedProps<
+    ScopedComponentAvailableProps<
+      Resources,
+      InProps,
+      Composables,
+      LayoutCustomProps
+    >
+  >,
+  ComponentCustomProps extends InPropsObject,
+> = BaseComponent<
+  string,
+  ScopedResourceComponentProps<
+    Resources,
+    InProps,
+    Composables,
+    LayoutCustomProps,
+    ComponentIncludeProps,
+    ComponentCustomProps
+  >
+> & {
+  <
+    const ResourceComponent extends ScopedTargetResourceComponent<
+      SelectedLayoutResources<Resources, Arguments>
+    > = ScopedTargetResourceComponent<
+      SelectedLayoutResources<Resources, Arguments>
+    >,
+  >(
+    props: ScopedResourceComponentProps<
+      Resources,
+      InProps,
+      Composables,
+      LayoutCustomProps,
+      ComponentIncludeProps,
+      ComponentCustomProps
+    >,
+  ): JSX.Element;
+};
+
+type ScopedCreateComponent<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  InProps extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  Arguments extends ReadonlyArray<unknown>,
+  LayoutCustomProps extends InPropsObject,
+> = <
+  const ComponentIncludeProps extends IncludedProps<
+    ScopedComponentAvailableProps<
+      Resources,
+      InProps,
+      Composables,
+      LayoutCustomProps
+    >
+  > = {},
+  ComponentCustomProps extends InPropsObject = {},
+>(options: {
+  props?: {
+    /** Props from the resource layout definition to expose to the component. */
+    include?: ComponentIncludeProps;
+    /** Additional props accepted by the component. */
+    custom?: ComponentCustomProps;
+  };
+  /** Renders the scoped component. `children` is always available and optional. */
+  render: (
+    props: ScopedResourceComponentProps<
+      Resources,
+      InProps,
+      Composables,
+      LayoutCustomProps,
+      ComponentIncludeProps,
+      ComponentCustomProps
+    >,
+  ) => JSX.Element;
+}) => ScopedResourceComponent<
+  Resources,
+  InProps,
+  Composables,
+  Arguments,
+  LayoutCustomProps,
+  ComponentIncludeProps,
+  ComponentCustomProps
+>;
+
 type ScopedCreateResourceLayoutFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
@@ -329,6 +458,33 @@ type ScopedCreateResourceLayoutFn<
   Arguments,
   CustomProps
 > & {
+  /**
+   * Creates a component shared by the target resources. Included layout props
+   * become component props, and `children` is always available as an optional
+   * prop in both the render callback and at the call site.
+   *
+   * @example
+   * const Directory = createDirectoryLayout.createComponent({
+   *   props: { include: { title: true, actions: 'optional' } },
+   *   render: ({ actions, children, title }) => (
+   *     <Page title={title} actions={actions}>
+   *       {children}
+   *     </Page>
+   *   ),
+   * })
+   *
+   * <Directory<typeof UsersPage> title='Users' />
+   *
+   * @param options The props configuration and component render function.
+   * @returns A component scoped to the selected resources.
+   */
+  createComponent: ScopedCreateComponent<
+    Resources,
+    InProps,
+    Composables,
+    Arguments,
+    CustomProps
+  >;
   forResource: ScopedCreateLayoutForResource<
     Resources,
     InProps,
@@ -336,6 +492,14 @@ type ScopedCreateResourceLayoutFn<
     Arguments,
     CustomProps
   >;
+  /**
+   * Type-only property containing the target resource union. This property is
+   * `undefined` at runtime and exists solely for extracting the scoped type.
+   *
+   * @example
+   * type AccountResource = typeof createAccountLayout.resources;
+   */
+  readonly resources: SelectedLayoutResources<Resources, Arguments>;
 } & ([keyof Composables] extends [never]
     ? {}
     : {
@@ -389,9 +553,12 @@ export type CreateResourceLayoutForResourcesFn<
    * @param options The resources to expose without configured default names.
    * @returns A layout factory scoped to the selected resources.
    */
-  <const ResourceKeys extends ReadonlyArray<LayoutResourceKey<Resources>>>(
-    options: { resources: ResourceKeys; name?: never },
-  ): ScopedCreateResourceLayoutFn<
+  <
+    const ResourceKeys extends ReadonlyArray<LayoutResourceKey<Resources>>,
+  >(options: {
+    resources: ResourceKeys;
+    name?: never;
+  }): ScopedCreateResourceLayoutFn<
     Resources,
     InProps,
     Composables,
@@ -440,19 +607,13 @@ export type CreateResourceLayoutForResourcesFn<
           >
         >;
     } & {
-      name: Names &
-        Record<Exclude<keyof Names, ResourceKeys[number]>, never>;
+      name: Names & Record<Exclude<keyof Names, ResourceKeys[number]>, never>;
     },
   ): ScopedCreateResourceLayoutFn<
     Resources,
     InProps,
     Composables,
-    MappedResourceLayoutArguments<
-      Resources,
-      ResourceKeys,
-      Names,
-      CallbackName
-    >,
+    MappedResourceLayoutArguments<Resources, ResourceKeys, Names, CallbackName>,
     CustomProps
   >;
 
@@ -476,9 +637,7 @@ export type CreateResourceLayoutForResourcesFn<
   >(
     options: {
       resources: ReadonlyArray<LayoutResourceKey<Resources>>;
-      name: (
-        resource: CapitalizedResource<ResourceKeys[number]>,
-      ) => Name;
+      name: (resource: CapitalizedResource<ResourceKeys[number]>) => Name;
     } & { resources: ResourceKeys },
   ): ScopedCreateResourceLayoutFn<
     Resources,
@@ -510,10 +669,7 @@ export type CreateResourceLayoutForResourcesFn<
       Partial<
         Record<Exclude<'resources', LayoutResourceKey<Resources>>, never>
       > &
-      Record<
-        Exclude<keyof Selection, LayoutResourceKey<Resources>>,
-        never
-      >,
+      Record<Exclude<keyof Selection, LayoutResourceKey<Resources>>, never>,
   ): ScopedCreateResourceLayoutFn<
     Resources,
     InProps,
@@ -534,6 +690,9 @@ type CreateForResourcesOptions<
     options: Record<string, unknown>,
   ) => unknown;
   createResourceLayout: (options: Record<string, unknown>) => unknown;
+  getComponentPropDefinitions: (
+    resource: LayoutResourceKey<Resources>,
+  ) => Record<string, AnyBuiltPropDefinition>;
 };
 
 export function createForResources<
@@ -546,6 +705,7 @@ export function createForResources<
   createLayoutForResource,
   createMakeComposableLayout,
   createResourceLayout,
+  getComponentPropDefinitions,
 }: CreateForResourcesOptions<Resources>) {
   return ((...resourcesOrOptions: Array<unknown>) => {
     const firstArgument = resourcesOrOptions[0];
@@ -583,9 +743,7 @@ export function createForResources<
             name?:
               | string
               | ((
-                  resource: CapitalizedResource<
-                    LayoutResourceKey<Resources>
-                  >,
+                  resource: CapitalizedResource<LayoutResourceKey<Resources>>,
                 ) => string);
           }),
           resource: resource as LayoutResourceKey<Resources>,
@@ -625,10 +783,80 @@ export function createForResources<
       );
     }
 
+    function createComponent(componentOptions: {
+      props?: {
+        include?: Record<string, true | 'optional'>;
+        custom?: Record<string, AnyBuiltPropDefinition>;
+      };
+      render: (props: Record<string, unknown>) => JSX.Element;
+    }) {
+      const include = componentOptions.props?.include ?? {};
+      const custom = componentOptions.props?.custom ?? {};
+
+      function Component(componentProps: Record<string, unknown>) {
+        const componentResource = resourceOptions[0]?.resource;
+
+        if (!componentResource) {
+          throw new Error(
+            'createComponent requires at least one scoped resource',
+          );
+        }
+
+        const availableDefinitions =
+          getComponentPropDefinitions(componentResource);
+        const definitionsToValidate: Record<string, AnyBuiltPropDefinition> =
+          {};
+
+        for (const [key, inclusion] of Object.entries(include)) {
+          const definition = availableDefinitions[key];
+
+          if (!definition) {
+            continue;
+          }
+
+          const propKey =
+            'type' in definition && definition.type === 'JSX.Element'
+              ? capitalize(key)
+              : key;
+
+          if (inclusion === true || propKey in componentProps) {
+            definitionsToValidate[propKey] = definition;
+          }
+        }
+
+        for (const [key, definition] of Object.entries(custom)) {
+          if (key === 'children') {
+            continue;
+          }
+
+          const propKey =
+            'type' in definition && definition.type === 'JSX.Element'
+              ? capitalize(key)
+              : key;
+          definitionsToValidate[propKey] = definition;
+        }
+
+        validateProps(definitionsToValidate, componentProps);
+
+        return componentOptions.render(componentProps);
+      }
+
+      return Object.assign(Component, {
+        displayName: 'ScopedResourceComponent',
+        props: undefined,
+      });
+    }
+
     const scopedExtras: {
+      createComponent: typeof createComponent;
       forResource: typeof scopedForResource;
       makeComposable?: (options: Record<string, unknown>) => unknown;
-    } = { forResource: scopedForResource };
+      resources: undefined;
+    } = {
+      createComponent,
+      forResource: scopedForResource,
+      resources: undefined,
+    };
 
     if (createMakeComposableLayout) {
       const makeComposableLayout = createMakeComposableLayout();
@@ -644,7 +872,7 @@ export function createForResources<
     }
 
     return Object.assign(scopedCreateResourceLayout, scopedExtras);
-  }) as CreateResourceLayoutForResourcesFn<
+  }) as unknown as CreateResourceLayoutForResourcesFn<
     Resources,
     InProps,
     Composables,

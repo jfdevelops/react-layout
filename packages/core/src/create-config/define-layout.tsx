@@ -263,9 +263,15 @@ export type ResourceLayoutComponent<
   Name extends string,
   Props extends InPropsObject = {},
   Composables extends ComposableComponents = {},
+  Resource extends string = string,
 > = ResourceLayoutComposition<Name, Composables> &
   BaseComponent<Name, ResolveProps<Props>> & {
     (props: Show<ResolveProps<Props>>): JSX.Element;
+    /**
+     * A type-only property containing the resource associated with this
+     * component. This property is `undefined` at runtime.
+     */
+    readonly resource: Resource;
   };
 
 export type LayoutPropsForResource<
@@ -294,7 +300,7 @@ type CreateResourceLayoutFnImpl<
     Resource,
     Props
   >,
-) => ResourceLayoutComponent<Name, CustomProps, Composables>;
+) => ResourceLayoutComponent<Name, CustomProps, Composables, Resource>;
 
 export type CreateResourceLayoutMakeComposableOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -547,8 +553,23 @@ export function defineResourceLayout<
         }
       }
 
+      const requiredIncludedPropDefinitions = Object.fromEntries(
+        Object.entries(includedPropDefinitions).filter(
+          ([key]) => includeLayoutProps?.[key] === true,
+        ),
+      );
+      const optionalIncludedPropDefinitions = Object.fromEntries(
+        Object.entries(includedPropDefinitions).filter(
+          ([key]) =>
+            includeLayoutProps?.[key] === 'optional' &&
+            includedPropValues[key] !== undefined,
+        ),
+      );
       const validatedIncludedProps = validateProps(
-        includedPropDefinitions as Record<string, AnyBuiltPropDefinition>,
+        {
+          ...requiredIncludedPropDefinitions,
+          ...optionalIncludedPropDefinitions,
+        } as Record<string, AnyBuiltPropDefinition>,
         includedPropValues,
       );
       const layoutRenderIncludedProps = Object.fromEntries(
@@ -603,6 +624,7 @@ export function defineResourceLayout<
     return Object.assign(Component, {
       displayName: name,
       props: undefined as unknown as ResolveProps<CustomProps>,
+      resource: undefined as unknown as Resource,
       ...createComposition({
         components: resolvedComposables as Composables | undefined,
         name,
@@ -632,6 +654,40 @@ export function defineResourceLayout<
     };
   };
 
+  function getComponentPropDefinitions(
+    resource: LayoutResourceKey<Resources>,
+  ) {
+    const componentName = 'ScopedResourceComponent';
+    const rawResolvedOptions =
+      typeof inProps === 'function'
+        ? inProps({
+            resource: resourcesEnum,
+            name: createProp.string().literal(componentName),
+          })
+        : inProps;
+    const { resolvedInProps } = splitLayoutInProps(
+      rawResolvedOptions as Record<string, unknown>,
+    );
+    const resolvedComposables = layout.composables
+      ? resolveLayoutComposables(layout.composables, {
+          resource,
+          name: componentName,
+          capitalize,
+        })
+      : undefined;
+
+    for (const {
+      props: presetPropDefinitions,
+    } of collectComposablePresetEntries(resolvedComposables)) {
+      Object.assign(resolvedInProps, presetPropDefinitions);
+    }
+
+    return {
+      ...resolvedInProps,
+      ...layout.props?.custom,
+    };
+  }
+
   const { createLayoutForResourceBuilder, forResource } = createForResource<
     Resources,
     InProps,
@@ -654,6 +710,7 @@ export function defineResourceLayout<
       ? { createMakeComposableLayout: createTopLevelMakeComposable }
       : {}),
     createResourceLayout: definedResourceLayout as never,
+    getComponentPropDefinitions,
   });
 
   const createResourceLayoutExtras: {

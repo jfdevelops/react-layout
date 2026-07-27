@@ -40,8 +40,30 @@ export type MergedLayoutInProps<
  * A map of props to include in the layout.
  */
 export type IncludedProps<T extends object> = {
-  [K in keyof T & string]?: true;
+  [K in keyof T & string]?: true | 'optional';
 };
+
+type RequiredIncludedPropKeys<IncludeProps extends object> = {
+  [Key in keyof IncludeProps]: IncludeProps[Key] extends true ? Key : never;
+}[keyof IncludeProps];
+
+type OptionalIncludedPropKeys<IncludeProps extends object> = {
+  [Key in keyof IncludeProps]: IncludeProps[Key] extends 'optional'
+    ? Key
+    : never;
+}[keyof IncludeProps];
+
+export type ResolvedIncludedProps<
+  Props extends InPropsObject,
+  IncludeProps extends IncludedProps<Props>,
+> = ResolveLayoutProps<
+  Pick<Props, RequiredIncludedPropKeys<IncludeProps> & keyof Props>
+> &
+  Partial<
+    ResolveLayoutProps<
+      Pick<Props, OptionalIncludedPropKeys<IncludeProps> & keyof Props>
+    >
+  >;
 export type LayoutRenderProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
@@ -52,10 +74,8 @@ export type LayoutRenderProps<
   CustomProps extends InPropsObject = {},
 > = Show<
   ResolveProps<CustomProps> &
-    ResolveLayoutProps<
-      Pick<
-        MergedLayoutInProps<Resources, Options, Composables>,
-        keyof IncludeProps & string
-      >
+    ResolvedIncludedProps<
+      MergedLayoutInProps<Resources, Options, Composables>,
+      IncludeProps
     >
 >;

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { createProp, defineResourceLayout } from '../../src';
 
 const { createResourceLayout } = defineResourceLayout({
@@ -156,6 +157,95 @@ createResourceLayout.forResources({
 });
 createResourceLayout.forResources({ users: { name: 'UsersPage' } });
 
+const { createResourceLayout: createComponentResourceLayout } =
+  defineResourceLayout({
+    resources: ['users', 'admins', 'posts'],
+    options: {
+      description: createProp.string(),
+      title: createProp.string(),
+    },
+    layout: {
+      props: {
+        custom: {
+          actions: createProp.component({ type: 'ReactNode' }),
+        },
+      },
+      render: () => null as never,
+    },
+  });
+const createDirectoryLayout =
+  createComponentResourceLayout.forResources('users', 'admins');
+const targetResource = null as unknown as typeof createDirectoryLayout.resources;
+const selectedTargetResource: 'users' | 'admins' = targetResource;
+const UsersResourcePage = createDirectoryLayout({
+  description: 'Manage users',
+  name: 'UsersPage',
+  resource: 'users',
+  title: 'Users',
+});
+const AdminsResourcePage = createDirectoryLayout({
+  description: 'Manage admins',
+  name: 'AdminsPage',
+  resource: 'admins',
+  title: 'Admins',
+});
+const PostsResourcePage = createComponentResourceLayout({
+  description: 'Manage posts',
+  name: 'PostsPage',
+  resource: 'posts',
+  title: 'Posts',
+});
+const usersResourcePageResource: 'users' = UsersResourcePage.resource;
+const Directory = createDirectoryLayout.createComponent({
+  props: {
+    include: {
+      actions: 'optional',
+      description: 'optional',
+      title: true,
+    },
+    custom: {
+      eyebrow: createProp.string().optional(),
+    },
+  },
+  render: (props) => {
+    const actions: ReactNode | undefined = props.actions;
+    const children: ReactNode | undefined = props.children;
+    const description: string | undefined = props.description;
+    const title: string = props.title;
+
+    void actions;
+    void children;
+    void description;
+    void title;
+    return null as never;
+  },
+});
+
+Directory<typeof UsersResourcePage>({ title: 'Users' });
+Directory<typeof AdminsResourcePage>({
+  actions: null,
+  children: null,
+  description: 'Manage admins',
+  eyebrow: 'Directory',
+  title: 'Admins',
+});
+// @ts-expect-error required included props remain required at the call site
+Directory<typeof UsersResourcePage>({});
+// @ts-expect-error resource components outside the scope cannot be used
+Directory<typeof PostsResourcePage>({ title: 'Posts' });
+// @ts-expect-error include only accepts props from the layout definition
+createDirectoryLayout.createComponent({ props: { include: { missing: true } }, render: () => null as never });
+
+const ComponentWithoutProps = createDirectoryLayout.createComponent({
+  render: (props) => {
+    const children: ReactNode | undefined = props.children;
+
+    void children;
+    return null as never;
+  },
+});
+ComponentWithoutProps<typeof UsersResourcePage>({});
+
 // @ts-expect-error the resources-array form no longer accepts a shared string
 createResourceLayout.forResources({ resources: ['users'], name: 'UsersPage' });
 // @ts-expect-error name maps only accept selected resource keys
@@ -209,3 +299,5 @@ void capitalizedSharedUsersName;
 void resourceOptionsUsersName;
 void mappedUsersName;
 void mappedAdminsName;
+void selectedTargetResource;
+void usersResourcePageResource;
