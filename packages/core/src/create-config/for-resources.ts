@@ -360,16 +360,10 @@ type ScopedResourceComponentProps<
   }
 >;
 
-type ScopedTargetResourceComponent<Resource extends string> = {
-  (props: any): JSX.Element;
-  readonly resource: Resource;
-};
-
-type ScopedResourceComponentRenderOptions<
+type ScopedComponentResourceEntry<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
-  Arguments extends ReadonlyArray<unknown>,
   LayoutCustomProps extends InPropsObject,
   ComponentIncludeProps extends IncludedProps<
     ScopedComponentAvailableProps<
@@ -380,29 +374,73 @@ type ScopedResourceComponentRenderOptions<
     >
   >,
   ComponentCustomProps extends InPropsObject,
-> = {
-  [Resource in SelectedLayoutResources<Resources, Arguments>]?: {
-    render: (
-      props: ScopedResourceComponentProps<
-        Resources,
-        InProps,
-        Composables,
-        LayoutCustomProps,
-        ComponentIncludeProps,
-        ComponentCustomProps,
-        Resource
-      >,
-    ) => JSX.Element;
-  };
+  Resource extends string,
+> = LayoutPropsForResource<Resources, InProps, Composables> & {
+  /**
+   * Overrides the layout name used by `context.Root` for this resource.
+   * Defaults to the scope's configured name, then the capitalized resource.
+   */
+  name?: string;
+  /** Renders this resource's content inside the shared render function. */
+  render: (
+    props: ScopedResourceComponentProps<
+      Resources,
+      InProps,
+      Composables,
+      LayoutCustomProps,
+      ComponentIncludeProps,
+      ComponentCustomProps,
+      Resource
+    >,
+  ) => JSX.Element;
 };
 
 type ScopedResourceComponentRenderContext<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  Arguments extends ReadonlyArray<unknown>,
+  DefinedResources extends string,
+  LayoutCustomProps extends InPropsObject,
 > = {
-  [Resource in SelectedLayoutResources<Resources, Arguments> as Capitalize<
+  /**
+   * The resource layout for the component's current `resource`, created
+   * internally from that resource's entry options. Accepts the layout's
+   * custom props.
+   */
+  Root: (props: Show<ResolveProps<LayoutCustomProps>>) => JSX.Element;
+} & {
+  [Resource in DefinedResources as Capitalize<Resource>]: () => JSX.Element;
+};
+
+/**
+ * The per-resource entries of a `createComponent` options object.
+ *
+ * Mapping over `DefinedResources` — a bare type parameter with no sibling keys
+ * in this position — is what lets TypeScript recover the defined resources as
+ * a union while still contextually typing each entry's `render`.
+ */
+type ScopedComponentResourceEntries<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  InProps extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  LayoutCustomProps extends InPropsObject,
+  ComponentIncludeProps extends IncludedProps<
+    ScopedComponentAvailableProps<
+      Resources,
+      InProps,
+      Composables,
+      LayoutCustomProps
+    >
+  >,
+  ComponentCustomProps extends InPropsObject,
+  DefinedResources extends string,
+> = {
+  [Resource in DefinedResources]: ScopedComponentResourceEntry<
+    Resources,
+    InProps,
+    Composables,
+    LayoutCustomProps,
+    ComponentIncludeProps,
+    ComponentCustomProps,
     Resource
-  >]: () => JSX.Element;
+  >;
 };
 
 type ScopedResourceComponent<
@@ -432,13 +470,11 @@ type ScopedResourceComponent<
     SelectedLayoutResources<Resources, Arguments>
   >
 > & {
-  <
-    const ResourceComponent extends ScopedTargetResourceComponent<
-      SelectedLayoutResources<Resources, Arguments>
-    > = ScopedTargetResourceComponent<
-      SelectedLayoutResources<Resources, Arguments>
-    >,
-  >(
+  /**
+   * The `resource` prop drives the generic, so it is inferred from the call
+   * site. Explicit type arguments are never needed.
+   */
+  <const Resource extends SelectedLayoutResources<Resources, Arguments>>(
     props: ScopedResourceComponentProps<
       Resources,
       InProps,
@@ -446,7 +482,7 @@ type ScopedResourceComponent<
       LayoutCustomProps,
       ComponentIncludeProps,
       ComponentCustomProps,
-      ResourceComponent['resource']
+      Resource
     >,
   ): JSX.Element;
 };
@@ -467,6 +503,10 @@ type ScopedCreateComponent<
     >
   > = {},
   ComponentCustomProps extends InPropsObject = {},
+  const DefinedResources extends SelectedLayoutResources<
+    Resources,
+    Arguments
+  > = never,
 >(options: {
   props?: {
     /** Props from the resource layout definition to expose to the component. */
@@ -475,9 +515,23 @@ type ScopedCreateComponent<
     custom?: ComponentCustomProps;
   };
   /**
+   * Per-resource content, keyed by resource. Each entry holds that resource's
+   * create-time layout options alongside its `render`, and adds a capitalized
+   * component to the render context.
+   */
+  resources?: ScopedComponentResourceEntries<
+    Resources,
+    InProps,
+    Composables,
+    LayoutCustomProps,
+    ComponentIncludeProps,
+    ComponentCustomProps,
+    DefinedResources
+  >;
+  /**
    * Renders the scoped component. `children` and `resource` are always
-   * available. The context contains capitalized components for the selected
-   * resources.
+   * available. The context contains `Root`, the layout for the current
+   * resource, plus a capitalized component per defined resource.
    */
   render: (
     props: ScopedResourceComponentProps<
@@ -489,18 +543,12 @@ type ScopedCreateComponent<
       ComponentCustomProps,
       SelectedLayoutResources<Resources, Arguments>
     >,
-    context: ScopedResourceComponentRenderContext<Resources, Arguments>,
+    context: ScopedResourceComponentRenderContext<
+      DefinedResources,
+      LayoutCustomProps
+    >,
   ) => JSX.Element;
-} &
-  ScopedResourceComponentRenderOptions<
-    Resources,
-    InProps,
-    Composables,
-    Arguments,
-    LayoutCustomProps,
-    ComponentIncludeProps,
-    ComponentCustomProps
-  >) => ScopedResourceComponent<
+}) => ScopedResourceComponent<
   Resources,
   InProps,
   Composables,
@@ -528,27 +576,36 @@ type ScopedCreateResourceLayoutFn<
    * become component props, and `children` is always available as an optional
    * prop in both the render callback and at the call site.
    *
+   * Each key of `resources` holds that resource's create-time layout options
+   * alongside its `render`. The render context exposes `Root` — the layout for
+   * the current resource, built from those options — and one capitalized
+   * component per key present in `resources`.
+   *
    * @example
    * const Directory = createDirectoryLayout.createComponent({
    *   props: { include: { title: true, actions: 'optional' } },
-   *   users: {
-   *     render: ({ resource }) => <span>{resource}</span>,
+   *   resources: {
+   *     users: {
+   *       title: 'Users',
+   *       render: ({ resource }) => <span>{resource}</span>,
+   *     },
+   *     admins: {
+   *       title: 'Admins',
+   *       render: ({ resource }) => <span>{resource}</span>,
+   *     },
    *   },
-   *   render: ({ actions, children, resource, title }, context) => {
-   *     const ResourceRender = context.Users
-   *
-   *     return (
-   *       <Page resource={resource} title={title} actions={actions}>
-   *         {children}
-   *         <ResourceRender />
-   *       </Page>
-   *     )
-   *   },
+   *   render: ({ actions, children, resource }, context) => (
+   *     <context.Root actions={actions}>
+   *       {children}
+   *       {resource === 'users' ? <context.Users /> : <context.Admins />}
+   *     </context.Root>
+   *   ),
    * })
    *
-   * <Directory<typeof UsersPage> resource='users' title='Users' />
+   * <Directory resource='users' title='Users' />
    *
-   * @param options The props configuration and component render function.
+   * @param options The props configuration, per-resource entries, and the
+   * shared component render function.
    * @returns A component scoped to the selected resources.
    */
   createComponent: ScopedCreateComponent<
@@ -856,15 +913,21 @@ export function createForResources<
       );
     }
 
+    type ScopedComponentEntry = {
+      [option: string]: unknown;
+      name?: string;
+      render: (props: Record<string, unknown>) => JSX.Element;
+    };
+
     function createComponent(componentOptions: {
-      [resource: string]: unknown;
       props?: {
         include?: Record<string, true | 'optional'>;
         custom?: Record<string, AnyBuiltPropDefinition>;
       };
+      resources?: Record<string, ScopedComponentEntry>;
       render: (
         props: Record<string, unknown>,
-        context: Record<string, () => JSX.Element>,
+        context: Record<string, (props: never) => JSX.Element>,
       ) => JSX.Element;
     }) {
       const include = componentOptions.props?.include ?? {};
@@ -875,44 +938,120 @@ export function createForResources<
       const componentPropsContext = createContext<
         Record<string, unknown> | undefined
       >(undefined);
+      const definedEntries = new Map<
+        LayoutResourceKey<Resources>,
+        ScopedComponentEntry
+      >();
+
+      for (const [key, entry] of Object.entries(
+        componentOptions.resources ?? {},
+      )) {
+        const resource = key as LayoutResourceKey<Resources>;
+
+        if (!selectedResources.has(resource)) {
+          throw new Error(
+            `Resource "${key}" is not available in this scoped component`,
+          );
+        }
+
+        definedEntries.set(resource, entry);
+      }
+
       const contextResources = new Map<string, LayoutResourceKey<Resources>>();
-      const renderContext = Object.fromEntries(
-        resourceOptions.map(({ resource }) => {
-          const contextKey = capitalize(resource);
-          const existingResource = contextResources.get(contextKey);
+      const renderContext: Record<string, (props: never) => JSX.Element> =
+        Object.fromEntries(
+          [...definedEntries].map(([resource, entry]) => {
+            const contextKey = capitalize(resource);
 
-          if (existingResource !== undefined) {
-            throw new Error(
-              `Resources "${existingResource}" and "${resource}" both map to render context key "${contextKey}"`,
-            );
-          }
-
-          contextResources.set(contextKey, resource);
-
-          const resourceRenderOptions = componentOptions[resource] as
-            | {
-                render: (props: Record<string, unknown>) => JSX.Element;
-              }
-            | undefined;
-
-          function ResourceRender() {
-            const componentProps = useContext(componentPropsContext);
-
-            if (componentProps === undefined) {
+            if (contextKey === 'Root') {
               throw new Error(
-                `Render context component "${contextKey}" must be rendered inside its scoped component`,
+                `Resource "${resource}" maps to the reserved render context key "Root"`,
               );
             }
 
-            return resourceRenderOptions?.render({
-              ...componentProps,
-              resource,
-            }) ?? (null as unknown as JSX.Element);
+            const existingResource = contextResources.get(contextKey);
+
+            if (existingResource !== undefined) {
+              throw new Error(
+                `Resources "${existingResource}" and "${resource}" both map to render context key "${contextKey}"`,
+              );
+            }
+
+            contextResources.set(contextKey, resource);
+
+            function ResourceRender() {
+              const componentProps = useContext(componentPropsContext);
+
+              if (componentProps === undefined) {
+                throw new Error(
+                  `Render context component "${contextKey}" must be rendered inside its scoped component`,
+                );
+              }
+
+              return entry.render({ ...componentProps, resource });
+            }
+
+            return [contextKey, ResourceRender];
+          }),
+        );
+
+      /**
+       * Layouts are created once per resource and cached. Creating one during
+       * render would hand React a new component type on every pass, remounting
+       * the whole subtree.
+       */
+      const roots = new Map<
+        LayoutResourceKey<Resources>,
+        (props: Record<string, unknown>) => JSX.Element
+      >();
+
+      function getRoot(resource: LayoutResourceKey<Resources>) {
+        let root = roots.get(resource);
+
+        if (root === undefined) {
+          const entry = definedEntries.get(resource);
+
+          if (entry === undefined) {
+            // Without an entry there are no create-time layout options, so a
+            // layout with required props would fail validation deep inside
+            // its own render. Fail here instead, naming the fix.
+            throw new Error(
+              `Render context component "Root" requires a "resources.${resource}" entry to build the layout for resource "${resource}"`,
+            );
           }
 
-          return [contextKey, ResourceRender];
-        }),
-      );
+          const { render: _render, ...layoutOptions } = entry;
+
+          root = scopedCreateResourceLayout({
+            ...layoutOptions,
+            name:
+              layoutOptions.name ??
+              defaultNames.get(resource) ??
+              capitalize(resource),
+            resource,
+          }) as (props: Record<string, unknown>) => JSX.Element;
+          roots.set(resource, root);
+        }
+
+        return root;
+      }
+
+      function Root(rootProps: Record<string, unknown>) {
+        const componentProps = useContext(componentPropsContext);
+
+        if (componentProps === undefined) {
+          throw new Error(
+            'Render context component "Root" must be rendered inside its scoped component',
+          );
+        }
+
+        return createElement(
+          getRoot(componentProps.resource as LayoutResourceKey<Resources>),
+          rootProps,
+        );
+      }
+
+      renderContext.Root = Root;
 
       function Component(componentProps: Record<string, unknown>) {
         const componentResource =

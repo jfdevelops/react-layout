@@ -1,12 +1,66 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { useState } from 'react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { Component, useState, type JSX, type ReactNode } from 'react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createProp,
   createComposableComponent,
   defineComposableComponent,
   defineResourceLayout,
 } from '../../src';
+
+class RenderErrorBoundary extends Component<
+  { children?: ReactNode; onError: (error: Error) => void },
+  { failed: boolean }
+> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: Error) {
+    this.props.onError(error);
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
+/**
+ * Renders `element` and returns the error it threw during render.
+ *
+ * Letting the error propagate out of `render` leaves it uncaught, which jsdom
+ * reports to its virtual console — full stacks in otherwise passing output.
+ * Three things are needed to keep it quiet: the boundary contains the error,
+ * the spy silences React's own `console.error`, and the listener cancels the
+ * synthetic window error event React dispatches in development so browsers
+ * still report caught render errors.
+ */
+function renderCapturingError(element: ReactNode) {
+  let captured: Error | undefined;
+  const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+  const suppressWindowError = (event: ErrorEvent) => event.preventDefault();
+
+  window.addEventListener('error', suppressWindowError);
+
+  try {
+    render(
+      <RenderErrorBoundary
+        onError={(error) => {
+          captured = error;
+        }}
+      >
+        {element}
+      </RenderErrorBoundary>,
+    );
+  } finally {
+    window.removeEventListener('error', suppressWindowError);
+    consoleError.mockRestore();
+  }
+
+  return captured;
+}
 
 function createTestResourceLayout() {
   return defineResourceLayout({
@@ -705,11 +759,17 @@ describe('defineResourceLayout', () => {
           eyebrow: createProp.string().optional(),
         },
       },
-      users: {
-        render: ({ resource }) => <span>{`custom:${resource}`}</span>,
-      },
-      admins: {
-        render: ({ resource }) => <span>{`custom:${resource}`}</span>,
+      resources: {
+        users: {
+          description: 'Manage users',
+          title: 'Users',
+          render: ({ resource }) => <span>{`custom:${resource}`}</span>,
+        },
+        admins: {
+          description: 'Manage admins',
+          title: 'Admins',
+          render: ({ resource }) => <span>{`custom:${resource}`}</span>,
+        },
       },
       render: (
         { actions, children, description, eyebrow, resource, title },
@@ -732,7 +792,7 @@ describe('defineResourceLayout', () => {
     });
 
     render(
-      <Directory<typeof UsersPage>
+      <Directory
         actions={<button type='button'>Create user</button>}
         eyebrow='Directory'
         resource='users'
@@ -786,8 +846,11 @@ describe('defineResourceLayout', () => {
           title: true,
         },
       },
-      users: {
-        render: () => <StatefulResourceContent />,
+      resources: {
+        users: {
+          title: 'Users',
+          render: () => <StatefulResourceContent />,
+        },
       },
       render: ({ title }, context) => (
         <section>
@@ -797,19 +860,269 @@ describe('defineResourceLayout', () => {
       ),
     });
     const view = render(
-      <Directory<typeof UsersPage> resource='users' title='Users' />,
+      <Directory resource='users' title='Users' />,
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Count: 0' }));
     expect(screen.getByRole('button', { name: 'Count: 1' })).toBeInTheDocument();
 
     view.rerender(
-      <Directory<typeof UsersPage> resource='users' title='Updated users' />,
+      <Directory resource='users' title='Updated users' />,
     );
 
     expect(
       screen.getByRole('heading', { name: 'Updated users' }),
     ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Count: 1' })).toBeInTheDocument();
+  });
+
+  it('renders the current resource layout through the render context root', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users', 'admins'],
+      options: {
+        title: createProp.string(),
+      },
+      layout: {
+        props: {
+          include: { title: true },
+          custom: {
+            actions: createProp.component({ type: 'ReactNode' }).optional(),
+            children: createProp.component({ type: 'ReactNode' }).optional(),
+          },
+        },
+        render: ({ actions, children, title }) => (
+          <section>
+            <h1>{title}</h1>
+            {actions}
+            {children}
+          </section>
+        ),
+      },
+    });
+    const createDirectoryLayout = createResourceLayout.forResources(
+      'users',
+      'admins',
+    );
+    const UsersPage = createDirectoryLayout({
+      name: 'UsersPage',
+      resource: 'users',
+      title: 'Users',
+    });
+    const Directory = createDirectoryLayout.createComponent({
+      resources: {
+        users: {
+          title: 'Users directory',
+          render: ({ resource }) => <span>{`content:${resource}`}</span>,
+        },
+        admins: {
+          title: 'Admins directory',
+          render: ({ resource }) => <span>{`content:${resource}`}</span>,
+        },
+      },
+      render: ({ resource }, context) => (
+        <context.Root actions={<button type='button'>Create</button>}>
+          {resource === 'users' ? <context.Users /> : <context.Admins />}
+        </context.Root>
+      ),
+    });
+
+    render(<Directory resource='users' />);
+
+    expect(
+      screen.getByRole('heading', { name: 'Users directory' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create' })).toBeInTheDocument();
+    expect(screen.getByText('content:users')).toBeInTheDocument();
+  });
+
+  it('uses per-resource layout options for the render context root', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users', 'admins'],
+      options: {
+        title: createProp.string(),
+      },
+      layout: {
+        props: {
+          include: { title: true },
+          custom: {
+            children: createProp.component({ type: 'ReactNode' }).optional(),
+          },
+        },
+        render: ({ children, title }, context) => (
+          <section>
+            <h1>{`${context.resource}/${context.name}: ${title}`}</h1>
+            {children}
+          </section>
+        ),
+      },
+    });
+    const createDirectoryLayout = createResourceLayout.forResources({
+      resources: ['users', 'admins'],
+      name: (resource) => `${resource}Page`,
+    });
+    const AdminsPage = createDirectoryLayout({
+      resource: 'admins',
+      title: 'Admins',
+    });
+    const Directory = createDirectoryLayout.createComponent({
+      resources: {
+        users: {
+          title: 'Users directory',
+          render: () => <span>users</span>,
+        },
+        admins: {
+          title: 'Admins directory',
+          render: () => <span>admins</span>,
+        },
+      },
+      render: (_props, context) => (
+        <context.Root>
+          <span>body</span>
+        </context.Root>
+      ),
+    });
+
+    render(<Directory resource='admins' />);
+
+    expect(
+      screen.getByRole('heading', { name: 'admins/AdminsPage: Admins directory' }),
+    ).toBeInTheDocument();
+  });
+
+  it('throws when the render context root is rendered outside its component', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users'],
+      options: {},
+      layout: {
+        props: {
+          custom: {
+            children: createProp.component({ type: 'ReactNode' }).optional(),
+          },
+        },
+        render: ({ children }) => <section>{children}</section>,
+      },
+    });
+    const createDirectoryLayout = createResourceLayout.forResources('users');
+    let EscapedRoot: (props: { children?: ReactNode }) => JSX.Element =
+      null as never;
+    const Directory = createDirectoryLayout.createComponent({
+      resources: {
+        users: { render: () => <span>users</span> },
+      },
+      render: (_props, context) => {
+        EscapedRoot = context.Root;
+
+        return <span>captured</span>;
+      },
+    });
+
+    render(<Directory resource='users' />);
+
+    expect(renderCapturingError(<EscapedRoot />)?.message).toBe(
+      'Render context component "Root" must be rendered inside its scoped component',
+    );
+  });
+
+  it('throws when the render context root has no entry for the resource', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users', 'admins'],
+      options: {
+        title: createProp.string(),
+      },
+      layout: {
+        props: {
+          include: { title: true },
+        },
+        render: ({ title }) => <h1>{title}</h1>,
+      },
+    });
+    const createDirectoryLayout = createResourceLayout.forResources(
+      'users',
+      'admins',
+    );
+    const Directory = createDirectoryLayout.createComponent({
+      resources: {
+        users: { title: 'Users', render: () => <span>users</span> },
+      },
+      render: (_props, context) => <context.Root />,
+    });
+
+    expect(
+      renderCapturingError(<Directory resource='admins' />)?.message,
+    ).toBe(
+      'Render context component "Root" requires a "resources.admins" entry to build the layout for resource "admins"',
+    );
+  });
+
+  it('preserves render context root state when the scoped component rerenders', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users'],
+      options: {
+        title: createProp.string(),
+      },
+      layout: {
+        props: {
+          include: { title: true },
+          custom: {
+            children: createProp.component({ type: 'ReactNode' }).optional(),
+          },
+        },
+        render: ({ children, title }) => (
+          <section>
+            <h1>{title}</h1>
+            {children}
+          </section>
+        ),
+      },
+    });
+    const createDirectoryLayout = createResourceLayout.forResources('users');
+    const UsersPage = createDirectoryLayout({
+      name: 'UsersPage',
+      resource: 'users',
+      title: 'Users',
+    });
+
+    function StatefulResourceContent() {
+      const [count, setCount] = useState(0);
+
+      return (
+        <button type='button' onClick={() => setCount((value) => value + 1)}>
+          {`Count: ${count}`}
+        </button>
+      );
+    }
+
+    const Directory = createDirectoryLayout.createComponent({
+      props: {
+        custom: {
+          eyebrow: createProp.string().optional(),
+        },
+      },
+      resources: {
+        users: {
+          title: 'Users directory',
+          render: () => <StatefulResourceContent />,
+        },
+      },
+      render: ({ eyebrow }, context) => (
+        <context.Root>
+          <span>{eyebrow}</span>
+          <context.Users />
+        </context.Root>
+      ),
+    });
+    const view = render(
+      <Directory eyebrow='First' resource='users' />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Count: 0' }));
+    expect(screen.getByRole('button', { name: 'Count: 1' })).toBeInTheDocument();
+
+    view.rerender(
+      <Directory eyebrow='Second' resource='users' />,
+    );
+
+    expect(screen.getByText('Second')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Count: 1' })).toBeInTheDocument();
   });
 
@@ -828,11 +1141,114 @@ describe('defineResourceLayout', () => {
 
     expect(() =>
       createDirectoryLayout.createComponent({
+        resources: {
+          users: { render: () => <section /> },
+          Users: { render: () => <section /> },
+        },
         render: () => <section />,
       }),
     ).toThrowError(
       'Resources "users" and "Users" both map to render context key "Users"',
     );
+  });
+
+  it('ignores capitalized collisions for resources without an entry', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users', 'Users'],
+      options: {},
+      layout: {
+        render: () => <section />,
+      },
+    });
+    const createDirectoryLayout = createResourceLayout.forResources(
+      'users',
+      'Users',
+    );
+
+    expect(() =>
+      createDirectoryLayout.createComponent({
+        resources: {
+          users: { render: () => <section /> },
+        },
+        render: () => <section />,
+      }),
+    ).not.toThrow();
+  });
+
+  it('rejects resources that collide with the reserved "Root" context key', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['root'],
+      options: {},
+      layout: {
+        render: () => <section />,
+      },
+    });
+    const createDirectoryLayout = createResourceLayout.forResources('root');
+
+    expect(() =>
+      createDirectoryLayout.createComponent({
+        resources: {
+          root: { render: () => <section /> },
+        },
+        render: () => <section />,
+      } as never),
+    ).toThrowError(
+      'Resource "root" maps to the reserved render context key "Root"',
+    );
+  });
+
+  it('allows resources named after scoped component option keys', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['render', 'props'],
+      options: {},
+      layout: {
+        render: ({ children }) => <section>{children}</section>,
+        props: {
+          custom: {
+            children: createProp.component({ type: 'ReactNode' }).optional(),
+          },
+        },
+      },
+    });
+    const createDirectoryLayout = createResourceLayout.forResources(
+      'render',
+      'props',
+    );
+    const Directory = createDirectoryLayout.createComponent({
+      resources: {
+        render: { render: () => <span>render content</span> },
+        props: { render: () => <span>props content</span> },
+      },
+      render: ({ resource }, context) => (
+        <context.Root>
+          {resource === 'render' ? <context.Render /> : <context.Props />}
+        </context.Root>
+      ),
+    });
+
+    render(<Directory resource='render' />);
+
+    expect(screen.getByText('render content')).toBeInTheDocument();
+  });
+
+  it('rejects resources outside the scope', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users', 'admins'],
+      options: {},
+      layout: {
+        render: () => <section />,
+      },
+    });
+    const createDirectoryLayout = createResourceLayout.forResources('users');
+
+    expect(() =>
+      createDirectoryLayout.createComponent({
+        resources: {
+          admins: { render: () => <section /> },
+        },
+        render: () => <section />,
+      } as never),
+    ).toThrowError('Resource "admins" is not available in this scoped component');
   });
 
   it('allows optional scoped component props to be omitted', () => {
@@ -862,7 +1278,7 @@ describe('defineResourceLayout', () => {
         ),
     });
 
-    render(<Directory<typeof UsersPage> resource='users' />);
+    render(<Directory resource='users' />);
 
     expect(screen.getByText('Empty directory')).toBeInTheDocument();
   });
