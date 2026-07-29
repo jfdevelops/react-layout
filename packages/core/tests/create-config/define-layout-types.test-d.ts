@@ -207,20 +207,26 @@ const Directory = createDirectoryLayout.createComponent({
       eyebrow: createProp.string().optional(),
     },
   },
-  users: {
-    render: (props) => {
-      const resource: 'users' = props.resource;
+  resources: {
+    users: {
+      description: 'Manage users',
+      title: 'Users',
+      render: (props) => {
+        const resource: 'users' = props.resource;
 
-      void resource;
-      return null as never;
+        void resource;
+        return null as never;
+      },
     },
-  },
-  admins: {
-    render: (props) => {
-      const resource: 'admins' = props.resource;
+    admins: {
+      description: 'Manage admins',
+      title: 'Admins',
+      render: (props) => {
+        const resource: 'admins' = props.resource;
 
-      void resource;
-      return null as never;
+        void resource;
+        return null as never;
+      },
     },
   },
   render: (props, context) => {
@@ -243,8 +249,9 @@ const Directory = createDirectoryLayout.createComponent({
   },
 });
 
-Directory<typeof UsersResourcePage>({ resource: 'users', title: 'Users' });
-Directory<typeof AdminsResourcePage>({
+// Call sites infer everything; no explicit type arguments are ever needed.
+Directory({ resource: 'users', title: 'Users' });
+Directory({
   actions: null,
   children: null,
   description: 'Manage admins',
@@ -253,15 +260,13 @@ Directory<typeof AdminsResourcePage>({
   title: 'Admins',
 });
 // @ts-expect-error required included props remain required at the call site
-Directory<typeof UsersResourcePage>({ resource: 'users' });
-// @ts-expect-error the resource must match the concrete resource component
-Directory<typeof UsersResourcePage>({ resource: 'admins', title: 'Admins' });
-// @ts-expect-error resource components outside the scope cannot be used
-Directory<typeof PostsResourcePage>({ resource: 'posts', title: 'Posts' });
+Directory({ resource: 'users' });
+// @ts-expect-error resources outside the scope are rejected by the resource prop
+Directory({ resource: 'posts', title: 'Posts' });
 // @ts-expect-error include only accepts props from the layout definition
 createDirectoryLayout.createComponent({ props: { include: { missing: true } }, render: () => null as never });
 // @ts-expect-error custom renders only accept selected resource keys
-createDirectoryLayout.createComponent({ posts: { render: () => null as never }, render: () => null as never });
+createDirectoryLayout.createComponent({ resources: { posts: { render: () => null as never } }, render: () => null as never });
 
 const ComponentWithoutProps = createDirectoryLayout.createComponent({
   render: (props) => {
@@ -273,7 +278,54 @@ const ComponentWithoutProps = createDirectoryLayout.createComponent({
     return null as never;
   },
 });
-ComponentWithoutProps<typeof UsersResourcePage>({ resource: 'users' });
+ComponentWithoutProps({ resource: 'users' });
+
+// The render context exposes only the resources defined in the options object.
+const PartialDirectory = createDirectoryLayout.createComponent({
+  props: { include: { title: true } },
+  resources: {
+    users: {
+      description: 'Manage users',
+      title: 'Users',
+      render: (props) => {
+        const resource: 'users' = props.resource;
+
+        void resource;
+        return null as never;
+      },
+    },
+  },
+  render: (props, context) => {
+    // The `resource` prop still accepts every resource in the scope.
+    const resource: 'users' | 'admins' = props.resource;
+    const Users: () => JSX.Element = context.Users;
+    const Root: (props: {
+      actions: ReactNode;
+      children?: ReactNode;
+    }) => JSX.Element = context.Root;
+
+    // @ts-expect-error admins has no entry, so it is absent from the context
+    context.Admins;
+
+    void resource;
+    void Root;
+    void Users;
+    return null as never;
+  },
+});
+PartialDirectory({
+  resource: 'admins',
+  title: 'Admins',
+});
+
+// @ts-expect-error resource entries reject unknown layout options
+createDirectoryLayout.createComponent({ resources: { users: { bogus: true, render: () => null as never } }, render: () => null as never });
+// @ts-expect-error resource entries require a render function
+createDirectoryLayout.createComponent({ resources: { users: { title: 'Users' } } , render: () => null as never });
+// @ts-expect-error the shared render function is required
+createDirectoryLayout.createComponent({ resources: { users: { render: () => null as never } } });
+// @ts-expect-error per-resource entries are nested under `resources`
+createDirectoryLayout.createComponent({ users: { render: () => null as never }, render: () => null as never });
 
 // @ts-expect-error the resources-array form no longer accepts a shared string
 createResourceLayout.forResources({ resources: ['users'], name: 'UsersPage' });
