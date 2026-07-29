@@ -443,6 +443,85 @@ type ScopedComponentResourceEntries<
   >;
 };
 
+/**
+ * Props of a resource-bound component. `resource` is supplied by the binding,
+ * so it is removed from the call site.
+ */
+type ScopedBoundResourceComponentProps<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  InProps extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  LayoutCustomProps extends InPropsObject,
+  ComponentIncludeProps extends IncludedProps<
+    ScopedComponentAvailableProps<
+      Resources,
+      InProps,
+      Composables,
+      LayoutCustomProps
+    >
+  >,
+  ComponentCustomProps extends InPropsObject,
+  Resource extends string,
+> = Show<
+  Omit<
+    ScopedResourceComponentProps<
+      Resources,
+      InProps,
+      Composables,
+      LayoutCustomProps,
+      ComponentIncludeProps,
+      ComponentCustomProps,
+      Resource
+    >,
+    'resource'
+  >
+>;
+
+type ScopedBoundResourceComponent<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  InProps extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  LayoutCustomProps extends InPropsObject,
+  ComponentIncludeProps extends IncludedProps<
+    ScopedComponentAvailableProps<
+      Resources,
+      InProps,
+      Composables,
+      LayoutCustomProps
+    >
+  >,
+  ComponentCustomProps extends InPropsObject,
+  Resource extends string,
+> = BaseComponent<
+  string,
+  ScopedBoundResourceComponentProps<
+    Resources,
+    InProps,
+    Composables,
+    LayoutCustomProps,
+    ComponentIncludeProps,
+    ComponentCustomProps,
+    Resource
+  >
+> & {
+  (
+    props: ScopedBoundResourceComponentProps<
+      Resources,
+      InProps,
+      Composables,
+      LayoutCustomProps,
+      ComponentIncludeProps,
+      ComponentCustomProps,
+      Resource
+    >,
+  ): JSX.Element;
+  /**
+   * Type-only property containing the bound resource. This property is
+   * `undefined` at runtime.
+   */
+  readonly resource: Resource;
+};
+
 type ScopedResourceComponent<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
@@ -485,6 +564,34 @@ type ScopedResourceComponent<
       Resource
     >,
   ): JSX.Element;
+  /**
+   * Returns a factory that binds the component to one resource. The bound
+   * component accepts every prop except `resource`, which the binding supplies.
+   *
+   * Each resource is bound once and cached, so the returned component type is
+   * stable across renders.
+   *
+   * @example
+   * const createDirectory = Directory.asHOF()
+   * const UsersDirectory = createDirectory('users')
+   *
+   * <UsersDirectory title='Users' />
+   *
+   * @returns A factory producing a component bound to the given resource.
+   */
+  asHOF(): <
+    const Resource extends SelectedLayoutResources<Resources, Arguments>,
+  >(
+    resource: Resource,
+  ) => ScopedBoundResourceComponent<
+    Resources,
+    InProps,
+    Composables,
+    LayoutCustomProps,
+    ComponentIncludeProps,
+    ComponentCustomProps,
+    Resource
+  >;
 };
 
 type ScopedCreateComponent<
@@ -1106,7 +1213,47 @@ export function createForResources<
         );
       }
 
+      /**
+       * Bound components are created once per resource and cached. Returning a
+       * fresh component from the factory would hand React a new component type
+       * whenever the caller rebinds, remounting the subtree.
+       */
+      const boundComponents = new Map<
+        LayoutResourceKey<Resources>,
+        (props: Record<string, unknown>) => JSX.Element
+      >();
+
+      function bindResource(resource: LayoutResourceKey<Resources>) {
+        if (!selectedResources.has(resource)) {
+          throw new Error(
+            `Resource "${resource}" is not available in this scoped component`,
+          );
+        }
+
+        let boundComponent = boundComponents.get(resource);
+
+        if (boundComponent === undefined) {
+          boundComponent = Object.assign(
+            (boundProps: Record<string, unknown>) =>
+              createElement(Component, { ...boundProps, resource }),
+            {
+              displayName: `ScopedResourceComponent(${resource})`,
+              props: undefined,
+              resource: undefined,
+            },
+          );
+          boundComponents.set(resource, boundComponent);
+        }
+
+        return boundComponent;
+      }
+
+      function asHOF() {
+        return bindResource;
+      }
+
       return Object.assign(Component, {
+        asHOF,
         displayName: 'ScopedResourceComponent',
         props: undefined,
       });
