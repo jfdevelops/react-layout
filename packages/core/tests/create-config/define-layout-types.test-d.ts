@@ -318,6 +318,28 @@ PartialDirectory({
   title: 'Admins',
 });
 
+// asHOF binds one resource; the bound component drops the `resource` prop.
+const createDirectory = Directory.asHOF();
+const UsersDirectory = createDirectory('users');
+const boundResource: 'users' = UsersDirectory.resource;
+
+UsersDirectory({ title: 'Users' });
+UsersDirectory({
+  actions: null,
+  children: null,
+  description: 'Manage users',
+  eyebrow: 'Directory',
+  title: 'Users',
+});
+// @ts-expect-error the bound component no longer accepts a resource prop
+UsersDirectory({ resource: 'users', title: 'Users' });
+// @ts-expect-error required included props remain required on the bound component
+UsersDirectory({});
+// @ts-expect-error resources outside the scope cannot be bound
+createDirectory('posts');
+
+void boundResource;
+
 // @ts-expect-error resource entries reject unknown layout options
 createDirectoryLayout.createComponent({ resources: { users: { bogus: true, render: () => null as never } }, render: () => null as never });
 // @ts-expect-error resource entries require a render function

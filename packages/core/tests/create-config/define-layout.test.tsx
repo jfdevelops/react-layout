@@ -876,6 +876,148 @@ describe('defineResourceLayout', () => {
     expect(screen.getByRole('button', { name: 'Count: 1' })).toBeInTheDocument();
   });
 
+  it('binds a resource with asHOF and accepts the remaining props', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users', 'admins'],
+      options: {
+        title: createProp.string(),
+      },
+      layout: {
+        props: {
+          include: { title: true },
+          custom: {
+            children: createProp.component({ type: 'ReactNode' }).optional(),
+          },
+        },
+        render: ({ children, title }) => (
+          <section>
+            <h1>{title}</h1>
+            {children}
+          </section>
+        ),
+      },
+    });
+    const createDirectoryLayout = createResourceLayout.forResources(
+      'users',
+      'admins',
+    );
+    const Directory = createDirectoryLayout.createComponent({
+      props: {
+        include: { title: true },
+        custom: { eyebrow: createProp.string().optional() },
+      },
+      resources: {
+        users: {
+          title: 'Users directory',
+          render: ({ resource }) => <span>{`content:${resource}`}</span>,
+        },
+        admins: {
+          title: 'Admins directory',
+          render: ({ resource }) => <span>{`content:${resource}`}</span>,
+        },
+      },
+      render: ({ eyebrow, resource, title }, context) => (
+        <context.Root>
+          <p>{`${eyebrow ?? ''}|${title}`}</p>
+          {resource === 'users' ? <context.Users /> : <context.Admins />}
+        </context.Root>
+      ),
+    });
+    const createDirectory = Directory.asHOF();
+    const UsersDirectory = createDirectory('users');
+
+    expect(UsersDirectory.resource).toBeUndefined();
+
+    render(<UsersDirectory eyebrow='Directory' title='Users' />);
+
+    expect(
+      screen.getByRole('heading', { name: 'Users directory' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Directory|Users')).toBeInTheDocument();
+    expect(screen.getByText('content:users')).toBeInTheDocument();
+  });
+
+  it('returns a stable bound component for each resource', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users', 'admins'],
+      options: {},
+      layout: {
+        props: {
+          custom: {
+            children: createProp.component({ type: 'ReactNode' }).optional(),
+          },
+        },
+        render: ({ children }) => <section>{children}</section>,
+      },
+    });
+    const createDirectoryLayout = createResourceLayout.forResources(
+      'users',
+      'admins',
+    );
+
+    function StatefulResourceContent() {
+      const [count, setCount] = useState(0);
+
+      return (
+        <button type='button' onClick={() => setCount((value) => value + 1)}>
+          {`Count: ${count}`}
+        </button>
+      );
+    }
+
+    const Directory = createDirectoryLayout.createComponent({
+      props: { custom: { eyebrow: createProp.string().optional() } },
+      resources: {
+        users: { render: () => <StatefulResourceContent /> },
+        admins: { render: () => <span>admins</span> },
+      },
+      render: ({ eyebrow }, context) => (
+        <context.Root>
+          <span>{eyebrow}</span>
+          <context.Users />
+        </context.Root>
+      ),
+    });
+    const createDirectory = Directory.asHOF();
+
+    expect(createDirectory('users')).toBe(createDirectory('users'));
+    expect(createDirectory('users')).not.toBe(createDirectory('admins'));
+    // A second asHOF() call must not mint a new component type.
+    expect(Directory.asHOF()('users')).toBe(createDirectory('users'));
+
+    const UsersDirectory = createDirectory('users');
+    const view = render(<UsersDirectory eyebrow='First' />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Count: 0' }));
+    expect(screen.getByRole('button', { name: 'Count: 1' })).toBeInTheDocument();
+
+    view.rerender(<UsersDirectory eyebrow='Second' />);
+
+    expect(screen.getByText('Second')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Count: 1' })).toBeInTheDocument();
+  });
+
+  it('rejects binding a resource outside the scope with asHOF', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users', 'admins'],
+      options: {},
+      layout: {
+        render: () => <section />,
+      },
+    });
+    const createDirectoryLayout = createResourceLayout.forResources('users');
+    const Directory = createDirectoryLayout.createComponent({
+      resources: {
+        users: { render: () => <span>users</span> },
+      },
+      render: (_props, context) => <context.Users />,
+    });
+
+    expect(() => Directory.asHOF()('admins' as never)).toThrowError(
+      'Resource "admins" is not available in this scoped component',
+    );
+  });
+
   it('renders the current resource layout through the render context root', () => {
     const { createResourceLayout } = defineResourceLayout({
       resources: ['users', 'admins'],
