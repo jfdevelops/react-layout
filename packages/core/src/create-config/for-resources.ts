@@ -1036,9 +1036,11 @@ export type CreateResourceLayoutForResourcesFn<
 /**
  * Names a scoped component cannot use. Scoped components are attached to
  * function objects, so they collide with the component's own statics and with
- * non-writable `Function.prototype` properties.
+ * non-writable `Function.prototype` properties. `__proto__` is reserved so
+ * assignment cannot hit the prototype setter on a normal object.
  */
 const reservedScopedComponentNames = new Set([
+  '__proto__',
   'apply',
   'arguments',
   'bind',
@@ -1051,27 +1053,6 @@ const reservedScopedComponentNames = new Set([
   'prototype',
   'resource',
 ]);
-
-/**
- * Copies own properties onto `target` with `defineProperty` so keys like
- * `__proto__` become own data properties instead of hitting the prototype
- * setter that `Object.assign` / `[[Set]]` would invoke on a normal object.
- */
-function assignOwnProperties<Target extends object>(
-  target: Target,
-  source: Record<string, unknown>,
-): Target {
-  for (const key of Object.keys(source)) {
-    Object.defineProperty(target, key, {
-      configurable: true,
-      enumerable: true,
-      value: source[key],
-      writable: true,
-    });
-  }
-
-  return target;
-}
 
 type CreateForResourcesOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -1267,7 +1248,7 @@ export function createForResources<
             const scopedComponents: Record<
               string,
               (props?: never) => JSX.Element
-            > = Object.create(null);
+            > = {};
 
             for (const [name, definition] of Object.entries(
               entry.components ?? {},
@@ -1321,10 +1302,7 @@ export function createForResources<
               );
             }
 
-            return [
-              contextKey,
-              assignOwnProperties(ResourceRender, scopedComponents),
-            ];
+            return [contextKey, Object.assign(ResourceRender, scopedComponents)];
           }),
         );
 
@@ -1451,16 +1429,14 @@ export function createForResources<
         let boundComponent = boundComponents.get(resource);
 
         if (boundComponent === undefined) {
-          boundComponent = assignOwnProperties(
-            Object.assign(
-              (boundProps: Record<string, unknown>) =>
-                createElement(Component, { ...boundProps, resource }),
-              {
-                displayName: `ScopedResourceComponent(${resource})`,
-                props: undefined,
-                resource: undefined,
-              },
-            ),
+          boundComponent = Object.assign(
+            (boundProps: Record<string, unknown>) =>
+              createElement(Component, { ...boundProps, resource }),
+            {
+              displayName: `ScopedResourceComponent(${resource})`,
+              props: undefined,
+              resource: undefined,
+            },
             resourceScopedComponents.get(resource) ?? {},
           );
           boundComponents.set(resource, boundComponent);

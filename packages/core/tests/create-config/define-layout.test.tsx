@@ -1026,58 +1026,20 @@ describe('defineResourceLayout', () => {
     ).toThrowError(
       'Scoped component "name" for resource "users" uses a reserved name',
     );
-  });
 
-  it('stores __proto__ scoped components as own properties', () => {
-    const { createResourceLayout } = defineResourceLayout({
-      resources: ['users'],
-      options: {},
-      layout: {
-        props: {
-          custom: {
-            children: createProp.component({ type: 'ReactNode' }).optional(),
+    expect(() =>
+      createDirectoryLayout.createComponent({
+        resources: {
+          users: {
+            components: { ['__proto__']: { render: () => <nav /> } },
+            render: () => <span>users</span>,
           },
         },
-        render: ({ children }) => <section>{children}</section>,
-      },
-    });
-    const createDirectoryLayout = createResourceLayout.forResources('users');
-    const Directory = createDirectoryLayout.createComponent({
-      resources: {
-        users: {
-          components: {
-            ['__proto__']: { render: () => <nav>proto</nav> },
-          },
-          render: (_props, components) => {
-            const Proto = components['__proto__'];
-            return <Proto />;
-          },
-        },
-      },
-      render: (_props, context) => {
-        const Proto = context.Users['__proto__'];
-        return (
-          <context.Root>
-            <context.Users />
-            <Proto />
-          </context.Root>
-        );
-      },
-    });
-
-    render(<Directory resource='users' />);
-    expect(screen.getAllByText('proto')).toHaveLength(2);
-
-    cleanup();
-
-    const UsersDirectory = Directory.asHOF()('users');
-    const Proto = UsersDirectory['__proto__'];
-    render(
-      <Directory resource='users'>
-        <Proto />
-      </Directory>,
+        render: () => <section />,
+      } as never),
+    ).toThrowError(
+      'Scoped component "__proto__" for resource "users" uses a reserved name',
     );
-    expect(screen.getAllByText('proto').length).toBeGreaterThan(0);
   });
 
   it('validates JSX.Element props on scoped components by their declared names', () => {
