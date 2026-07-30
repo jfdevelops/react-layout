@@ -340,6 +340,90 @@ createDirectory('posts');
 
 void boundResource;
 
+// Scoped components declared under a resource entry.
+const ScopedDirectory = createDirectoryLayout.createComponent({
+  props: { include: { title: true } },
+  resources: {
+    users: {
+      description: 'Manage users',
+      title: 'Users',
+      components: {
+        Toolbar: {
+          render: (props, components) => {
+            // Layout props and the narrowed resource are typed here.
+            const title: string = props.title;
+            const resource: 'users' = props.resource;
+            const Footer: (props: { label: string }) => JSX.Element =
+              components.Footer;
+            // @ts-expect-error a scoped component is omitted from its own siblings
+            components.Toolbar;
+
+            void title;
+            void resource;
+            void Footer;
+            return null as never;
+          },
+        },
+        Footer: {
+          props: { label: createProp.string() },
+          render: (props, components) => {
+            const label: string = props.label;
+            const Toolbar: () => JSX.Element = components.Toolbar;
+            // @ts-expect-error a scoped component is omitted from its own siblings
+            components.Footer;
+
+            void label;
+            void Toolbar;
+            return null as never;
+          },
+        },
+      },
+      render: (props, components) => {
+        const resource: 'users' = props.resource;
+        const Toolbar: () => JSX.Element = components.Toolbar;
+        const Footer: (props: { label: string }) => JSX.Element =
+          components.Footer;
+
+        void resource;
+        void Toolbar;
+        void Footer;
+        return null as never;
+      },
+    },
+    admins: {
+      description: 'Manage admins',
+      title: 'Admins',
+      render: (_props, components) => {
+        // @ts-expect-error admins declared no scoped components
+        components.Toolbar;
+        return null as never;
+      },
+    },
+  },
+  render: (props, context) => {
+    const resource: 'users' | 'admins' = props.resource;
+    const Toolbar: () => JSX.Element = context.Users.Toolbar;
+
+    // Declared props are precisely typed at the call site.
+    context.Users.Footer({ label: 'end' });
+    // @ts-expect-error Footer requires its declared label prop
+    context.Users.Footer({});
+    // @ts-expect-error admins declared no scoped components
+    context.Admins.Toolbar;
+
+    void resource;
+    void Toolbar;
+    return null as never;
+  },
+});
+
+// Scoped components are also statics on a bound component.
+const BoundUsers = ScopedDirectory.asHOF()('users');
+const boundToolbar: () => JSX.Element = BoundUsers.Toolbar;
+
+BoundUsers({ title: 'Users' });
+void boundToolbar;
+
 // @ts-expect-error resource entries reject unknown layout options
 createDirectoryLayout.createComponent({ resources: { users: { bogus: true, render: () => null as never } }, render: () => null as never });
 // @ts-expect-error resource entries require a render function
