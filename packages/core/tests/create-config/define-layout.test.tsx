@@ -876,6 +876,183 @@ describe('defineResourceLayout', () => {
     expect(screen.getByRole('button', { name: 'Count: 1' })).toBeInTheDocument();
   });
 
+  it('exposes scoped components on the resource render, context, and binding', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users', 'admins'],
+      options: {
+        title: createProp.string(),
+      },
+      layout: {
+        props: {
+          include: { title: true },
+          custom: {
+            children: createProp.component({ type: 'ReactNode' }).optional(),
+          },
+        },
+        render: ({ children, title }) => (
+          <section>
+            <h1>{title}</h1>
+            {children}
+          </section>
+        ),
+      },
+    });
+    const createDirectoryLayout = createResourceLayout.forResources(
+      'users',
+      'admins',
+    );
+    const Directory = createDirectoryLayout.createComponent({
+      props: { include: { title: true } },
+      resources: {
+        users: {
+          title: 'Users directory',
+          components: {
+            Toolbar: {
+              render: ({ title }) => <nav>{`toolbar:${title}`}</nav>,
+            },
+            Footer: {
+              props: { label: createProp.string() },
+              render: ({ label, resource }) => (
+                <footer>{`footer:${resource}:${label}`}</footer>
+              ),
+            },
+          },
+          // Scoped components reach this render through its second argument.
+          render: ({ resource }, components) => (
+            <div>
+              <components.Toolbar />
+              <span>{`content:${resource}`}</span>
+            </div>
+          ),
+        },
+        admins: {
+          title: 'Admins directory',
+          render: ({ resource }) => <span>{`content:${resource}`}</span>,
+        },
+      },
+      render: ({ resource }, context) => (
+        <context.Root>
+          {resource === 'users' ? <context.Users /> : <context.Admins />}
+          {/* And through the resource entry on the main render context. */}
+          {resource === 'users' ? <context.Users.Footer label='end' /> : null}
+        </context.Root>
+      ),
+    });
+
+    render(<Directory resource='users' title='Users' />);
+
+    expect(screen.getByText('toolbar:Users')).toBeInTheDocument();
+    expect(screen.getByText('content:users')).toBeInTheDocument();
+    expect(screen.getByText('footer:users:end')).toBeInTheDocument();
+
+    cleanup();
+
+    // And as statics on a bound component.
+    const UsersDirectory = Directory.asHOF()('users');
+
+    render(<UsersDirectory title='Users' />);
+    expect(screen.getByText('toolbar:Users')).toBeInTheDocument();
+
+    cleanup();
+
+    render(
+      <Directory resource='users' title='Users'>
+        <UsersDirectory.Toolbar />
+      </Directory>,
+    );
+    expect(screen.getAllByText('toolbar:Users').length).toBeGreaterThan(0);
+  });
+
+  it('validates the props declared by a scoped component', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users'],
+      options: {},
+      layout: {
+        props: {
+          custom: {
+            children: createProp.component({ type: 'ReactNode' }).optional(),
+          },
+        },
+        render: ({ children }) => <section>{children}</section>,
+      },
+    });
+    const createDirectoryLayout = createResourceLayout.forResources('users');
+    const Directory = createDirectoryLayout.createComponent({
+      resources: {
+        users: {
+          components: {
+            Badge: {
+              props: { label: createProp.string() },
+              render: ({ label }) => <span>{String(label)}</span>,
+            },
+          },
+          // Bypass the call-site type check to exercise runtime prop validation.
+          render: (_props, components) =>
+            (components.Badge as (props?: object) => JSX.Element)(),
+        },
+      },
+      render: (_props, context) => (
+        <context.Root>
+          <context.Users />
+        </context.Root>
+      ),
+    });
+
+    expect(
+      renderCapturingError(<Directory resource='users' />)?.message,
+    ).toContain('label');
+  });
+
+  it('rejects scoped components using reserved names', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users'],
+      options: {},
+      layout: {
+        render: () => <section />,
+      },
+    });
+    const createDirectoryLayout = createResourceLayout.forResources('users');
+
+    expect(() =>
+      createDirectoryLayout.createComponent({
+        resources: {
+          users: {
+            components: { name: { render: () => <nav /> } },
+            render: () => <span>users</span>,
+          },
+        },
+        render: () => <section />,
+      } as never),
+    ).toThrowError(
+      'Scoped component "name" for resource "users" uses a reserved name',
+    );
+  });
+
+  it('throws when a scoped component is rendered outside its component', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users'],
+      options: {},
+      layout: {
+        render: () => <section />,
+      },
+    });
+    const createDirectoryLayout = createResourceLayout.forResources('users');
+    const Directory = createDirectoryLayout.createComponent({
+      resources: {
+        users: {
+          components: { Toolbar: { render: () => <nav>toolbar</nav> } },
+          render: () => <span>users</span>,
+        },
+      },
+      render: (_props, context) => <context.Users />,
+    });
+    const EscapedToolbar = Directory.asHOF()('users').Toolbar;
+
+    expect(renderCapturingError(<EscapedToolbar />)?.message).toBe(
+      'Scoped component "Toolbar" must be rendered inside its scoped component',
+    );
+  });
+
   it('binds a resource with asHOF and accepts the remaining props', () => {
     const { createResourceLayout } = defineResourceLayout({
       resources: ['users', 'admins'],
