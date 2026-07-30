@@ -462,6 +462,7 @@ void PropsInferredDirectory;
 
 // When render returns a component type, call-site props and compound statics
 // are inferred from that return type — no helper and no explicit return type.
+// Runtime must also expose those statics (see withScopedCompoundStatics).
 const ComponentReturnDirectory = createDirectoryLayout.createComponent({
   props: { include: { title: true } },
   resources: {
@@ -512,6 +513,38 @@ const ComponentReturnDirectory = createDirectoryLayout.createComponent({
   },
 });
 void ComponentReturnDirectory;
+
+// Top-level createComponent render return type also feeds call-site props
+// (ScopedResourceComponentCallProps), same idea as scoped components.
+const TopLevelReturnDirectory = createDirectoryLayout.createComponent({
+  props: { include: { title: true } },
+  resources: {
+    users: {
+      description: 'Manage users',
+      title: 'Users',
+      render: () => null as never,
+    },
+  },
+  render: function DirectoryRender() {
+    function Shell(props: { requiredProp: string }) {
+      void props;
+      return null as never;
+    }
+    return Shell;
+  },
+});
+TopLevelReturnDirectory({
+  resource: 'users',
+  title: 'Users',
+  requiredProp: 'x',
+});
+// @ts-expect-error requiredProp comes from the returned component type
+TopLevelReturnDirectory({ resource: 'users', title: 'Users' });
+const BoundTopLevel = TopLevelReturnDirectory.asHOF()('users');
+BoundTopLevel({ title: 'Users', requiredProp: 'y' });
+// @ts-expect-error bound component still requires props from the returned type
+BoundTopLevel({ title: 'Users' });
+void BoundTopLevel;
 
 // createComponent props keep declared names — including JSX.Element slots.
 const { createResourceLayout: createJsxSlotLayout } = defineResourceLayout({

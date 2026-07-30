@@ -364,6 +364,49 @@ type ScopedResourceComponentProps<
 >;
 
 /**
+ * Call-site props for a createComponent result: declared include/custom props
+ * plus props of any component type returned from the top-level `render`.
+ *
+ * Mirrors scoped-component inference (`PropsFromScopedRender`), but for the
+ * outer component: `<Directory requiredProp="x" />` must type-check when
+ * `render` returns a component that requires `requiredProp`.
+ *
+ * These extras are applied only to the *external* call signature — not to the
+ * `render` `props` parameter — so inference stays non-circular (return type
+ * cannot depend on a props type that already includes that return).
+ *
+ * `children` / `resource` stay owned by the wrapper (not taken from the return).
+ */
+type ScopedResourceComponentCallProps<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  InProps extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  LayoutCustomProps extends InPropsObject,
+  ComponentIncludeProps extends IncludedProps<
+    ScopedComponentAvailableProps<
+      Resources,
+      InProps,
+      Composables,
+      LayoutCustomProps
+    >
+  >,
+  ComponentCustomProps extends InPropsObject,
+  Resource extends string,
+  RenderResult = never,
+> = Show<
+  ScopedResourceComponentProps<
+    Resources,
+    InProps,
+    Composables,
+    LayoutCustomProps,
+    ComponentIncludeProps,
+    ComponentCustomProps,
+    Resource
+  > &
+    Omit<PropsFromRenderResult<RenderResult>, 'children' | 'resource'>
+>;
+
+/**
  * Fields reverse-inferred from each scoped component declaration.
  *
  * `props` reverse-maps as-is. `render` cannot reverse-map as a full function
@@ -494,6 +537,10 @@ type ScopedComponentCompoundStaticKey =
 /**
  * Compound statics (e.g. `DataTable.Loading`) taken from a component type
  * returned by scoped `render`.
+ *
+ * Types alone are not enough: the runtime wrapper must expose the same keys
+ * (see `withScopedCompoundStatics`), otherwise `components.DataTable.Loading`
+ * type-checks but throws at runtime.
  */
 type ScopedComponentCompoundStatics<Result> = [Result] extends [never]
   ? {}
@@ -675,16 +722,18 @@ type ScopedBoundResourceComponentProps<
   >,
   ComponentCustomProps extends InPropsObject,
   Resource extends string,
+  RenderResult = never,
 > = Show<
   Omit<
-    ScopedResourceComponentProps<
+    ScopedResourceComponentCallProps<
       Resources,
       InProps,
       Composables,
       LayoutCustomProps,
       ComponentIncludeProps,
       ComponentCustomProps,
-      Resource
+      Resource,
+      RenderResult
     >,
     'resource'
   >
@@ -706,6 +755,7 @@ type ScopedBoundResourceComponent<
   ComponentCustomProps extends InPropsObject,
   ComponentsByResource,
   Resource extends string,
+  RenderResult = never,
 > = BaseComponent<
   string,
   ScopedBoundResourceComponentProps<
@@ -715,7 +765,8 @@ type ScopedBoundResourceComponent<
     LayoutCustomProps,
     ComponentIncludeProps,
     ComponentCustomProps,
-    Resource
+    Resource,
+    RenderResult
   >
 > &
   ResolvedScopedComponentsMap<
@@ -731,7 +782,8 @@ type ScopedBoundResourceComponent<
         LayoutCustomProps,
         ComponentIncludeProps,
         ComponentCustomProps,
-        Resource
+        Resource,
+        RenderResult
       >,
     ): JSX.Element;
     /**
@@ -757,16 +809,18 @@ type ScopedResourceComponent<
   >,
   ComponentCustomProps extends InPropsObject,
   ComponentsByResource,
+  RenderResult = never,
 > = BaseComponent<
   string,
-  ScopedResourceComponentProps<
+  ScopedResourceComponentCallProps<
     Resources,
     InProps,
     Composables,
     LayoutCustomProps,
     ComponentIncludeProps,
     ComponentCustomProps,
-    SelectedLayoutResources<Resources, Arguments>
+    SelectedLayoutResources<Resources, Arguments>,
+    RenderResult
   >
 > & {
   /**
@@ -774,14 +828,15 @@ type ScopedResourceComponent<
    * site. Explicit type arguments are never needed.
    */
   <const Resource extends SelectedLayoutResources<Resources, Arguments>>(
-    props: ScopedResourceComponentProps<
+    props: ScopedResourceComponentCallProps<
       Resources,
       InProps,
       Composables,
       LayoutCustomProps,
       ComponentIncludeProps,
       ComponentCustomProps,
-      Resource
+      Resource,
+      RenderResult
     >,
   ): JSX.Element;
   /**
@@ -811,7 +866,8 @@ type ScopedResourceComponent<
     ComponentIncludeProps,
     ComponentCustomProps,
     ComponentsByResource,
-    Resource
+    Resource,
+    RenderResult
   >;
 };
 
@@ -827,6 +883,13 @@ type ScopedCreateComponent<
   // default here would type every nested render as `any`. Inferred via a
   // reverse mapped type from each entry's `components` object.
   const ComponentsByResource,
+  // Captures the top-level `render` return type so call-site props (and only
+  // call-site props — not the render `props` parameter) can include props of a
+  // returned component type. Without this, `<Directory requiredProp />` is an
+  // excess-prop error even when the mounted return type requires it.
+  // No default: a default would contextually type the render return and erase
+  // the concrete component type (losing prop inference).
+  const RenderResult extends ScopedRenderResult,
   const ComponentIncludeProps extends IncludedProps<
     ScopedComponentAvailableProps<
       Resources,
@@ -861,6 +924,12 @@ type ScopedCreateComponent<
    * Renders the scoped component. `children` and `resource` are always
    * available. The context contains `Root`, the layout for the current
    * resource, plus a capitalized component per defined resource.
+   *
+   * May return a React node or a component type (mounted with the component
+   * props). When a component type is returned, its props are merged into the
+   * created component's call signature via `RenderResult` /
+   * `ScopedResourceComponentCallProps` — they are intentionally *not* added
+   * to this `props` parameter (that would circularly depend on the return).
    */
   render: (
     props: ScopedResourceComponentProps<
@@ -876,7 +945,7 @@ type ScopedCreateComponent<
       ComponentsByResource,
       LayoutCustomProps
     >,
-  ) => ScopedRenderResult;
+  ) => RenderResult;
 }) => ScopedResourceComponent<
   Resources,
   InProps,
@@ -885,7 +954,8 @@ type ScopedCreateComponent<
   LayoutCustomProps,
   ComponentIncludeProps,
   ComponentCustomProps,
-  ComponentsByResource
+  ComponentsByResource,
+  RenderResult
 >;
 
 type ScopedCreateResourceLayoutFn<
@@ -1179,12 +1249,35 @@ const reservedScopedComponentNames = new Set([
  * Alongside rendered nodes, a component type is allowed — the type constituent
  * of a React element — so factories like `createDataTable(columns)` can be
  * returned directly and mounted with the call-site props.
+ *
+ * At runtime, `resolveScopedRenderResult` distinguishes component types from
+ * nodes (including portals). Getting that wrong mounts a portal via
+ * `createElement` and blows up with an invalid-element-type error.
  */
 // Returned components declare their own props; a concrete props parameter would
 // be contravariant and reject the factories callers actually return.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see above
 type ScopedRenderResult = ReactNode | ComponentType<any>;
 
+/**
+ * `$$typeof` tags for object component wrappers that `createElement` accepts
+ * as `type` (forwardRef, memo, lazy).
+ *
+ * Do not treat "any object with `$$typeof`" as a component: portals also have
+ * `$$typeof` (`Symbol.for('react.portal')`) and `isValidElement(portal)` is
+ * false, so a naive check would mis-classify them.
+ */
+const reactForwardRefType = Symbol.for('react.forward_ref');
+const reactMemoType = Symbol.for('react.memo');
+const reactLazyType = Symbol.for('react.lazy');
+
+/**
+ * True when `value` can be passed as the `type` argument to `createElement`.
+ *
+ * Functions always qualify. Object wrappers qualify only for the forwardRef /
+ * memo / lazy tags above — not portals or other React nodes that happen to
+ * carry `$$typeof`.
+ */
 function isRenderableComponentType(
   value: unknown,
 ): value is ComponentType<Record<string, unknown>> {
@@ -1192,15 +1285,29 @@ function isRenderableComponentType(
     return true;
   }
 
+  if (
+    typeof value !== 'object' ||
+    value === null ||
+    Array.isArray(value) ||
+    isValidElement(value) ||
+    !('$$typeof' in value)
+  ) {
+    return false;
+  }
+
+  const typeTag = (value as { $$typeof: unknown }).$$typeof;
+
   return (
-    typeof value === 'object' &&
-    value !== null &&
-    !Array.isArray(value) &&
-    !isValidElement(value) &&
-    '$$typeof' in value
+    typeTag === reactForwardRefType ||
+    typeTag === reactMemoType ||
+    typeTag === reactLazyType
   );
 }
 
+/**
+ * If `render` returned a component type, mount it with `props`; otherwise
+ * return the node as-is (elements, portals, null, etc.).
+ */
 function resolveScopedRenderResult(
   result: ScopedRenderResult,
   props: Record<string, unknown> = {},
@@ -1210,6 +1317,69 @@ function resolveScopedRenderResult(
   }
 
   return result as JSX.Element;
+}
+
+/**
+ * Runtime counterpart of `ScopedComponentCompoundStaticKey` — keys that must
+ * not be treated as compound component statics on a scoped wrapper.
+ */
+const reservedScopedCompoundStaticKeys = new Set<PropertyKey>([
+  'apply',
+  'arguments',
+  'bind',
+  'call',
+  'caller',
+  'childContextTypes',
+  'contextTypes',
+  'defaultProps',
+  'displayName',
+  'length',
+  'name',
+  'propTypes',
+  'prototype',
+  'toLocaleString',
+  'toString',
+  'valueOf',
+  '$$typeof',
+]);
+
+type ScopedComponentWrapper = ((
+  props?: Record<string, unknown>,
+) => JSX.Element) &
+  Record<string, unknown>;
+
+/**
+ * Exposes compound statics (e.g. `DataTable.Loading`) on a scoped wrapper so
+ * runtime matches `ScopedComponentCompoundStatics`.
+ *
+ * Why a Proxy: JSX reads `components.DataTable.Loading` while building the
+ * element tree — before `DataTable` itself renders — so statics cannot be
+ * copied only after the first `render` call. Property access lazily creates a
+ * stable wrapper component that re-runs the scoped `render` under context and
+ * mounts the matching static from the returned component type.
+ */
+function withScopedCompoundStatics(
+  wrapper: (props?: Record<string, unknown>) => JSX.Element,
+  createCompoundStatic: (
+    staticName: string,
+  ) => (ownProps?: Record<string, unknown>) => JSX.Element,
+): ScopedComponentWrapper {
+  return new Proxy(wrapper as ScopedComponentWrapper, {
+    get(target, property, receiver) {
+      if (
+        typeof property === 'symbol' ||
+        reservedScopedCompoundStaticKeys.has(property) ||
+        property in target
+      ) {
+        return Reflect.get(target, property, receiver);
+      }
+
+      // Cache on the target so repeated `.Loading` access keeps one identity.
+      const CompoundStatic = createCompoundStatic(property);
+      target[property] = CompoundStatic;
+      return CompoundStatic;
+    },
+  });
 }
 
 type CreateForResourcesOptions<
@@ -1432,6 +1602,8 @@ export function createForResources<
 
                 validateProps(ownPropDefinitions, resolvedOwnProps);
 
+                // Mount a returned component type with call-site props; pass
+                // nodes (elements, portals, null) through unchanged.
                 return resolveScopedRenderResult(
                   definition.render(
                     { ...componentProps, ...resolvedOwnProps, resource },
@@ -1441,9 +1613,52 @@ export function createForResources<
                 );
               }
 
-              scopedComponents[name] = ScopedComponent as (
-                props?: never,
-              ) => JSX.Element;
+              // Types expose compound statics from the returned component
+              // (`DataTable.Loading`); attach matching runtime wrappers.
+              scopedComponents[name] = withScopedCompoundStatics(
+                ScopedComponent,
+                (staticName) => {
+                  function CompoundStatic(ownProps?: Record<string, unknown>) {
+                    const componentProps = useContext(componentPropsContext);
+
+                    if (componentProps === undefined) {
+                      throw new Error(
+                        `Scoped component "${name}.${staticName}" must be rendered inside its scoped component`,
+                      );
+                    }
+
+                    // Re-run render to read the static off the returned type.
+                    // Call-site props for Loading are Loading's own, not the
+                    // parent DataTable's — pass only layout context + resource.
+                    const result = definition.render(
+                      { ...componentProps, resource },
+                      scopedComponents,
+                    );
+
+                    if (!isRenderableComponentType(result)) {
+                      throw new Error(
+                        `Scoped component "${name}" must return a component type to use static "${staticName}"`,
+                      );
+                    }
+
+                    const staticComponent = (
+                      result as ComponentType<Record<string, unknown>> &
+                        Record<string, unknown>
+                    )[staticName];
+
+                    if (!isRenderableComponentType(staticComponent)) {
+                      throw new Error(
+                        `Scoped component "${name}" has no component static "${staticName}"`,
+                      );
+                    }
+
+                    return createElement(staticComponent, ownProps ?? {});
+                  }
+
+                  CompoundStatic.displayName = `${name}.${staticName}`;
+                  return CompoundStatic;
+                },
+              ) as (props?: never) => JSX.Element;
             }
 
             resourceScopedComponents.set(resource, scopedComponents);
@@ -1457,6 +1672,8 @@ export function createForResources<
                 );
               }
 
+              // Same as scoped components: mount returned component types, keep
+              // nodes (including portals) intact. No call-site props here.
               return resolveScopedRenderResult(
                 entry.render(
                   { ...componentProps, resource },
@@ -1565,6 +1782,8 @@ export function createForResources<
 
         validateProps(definitionsToValidate, componentProps);
 
+        // Top-level render may return a component type; mount it with the full
+        // component props (include/custom + inferred return-type props).
         return createElement(
           componentPropsContext.Provider,
           { value: componentProps },

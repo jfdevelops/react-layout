@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { Component, useState, type JSX, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createProp,
@@ -1015,7 +1016,6 @@ describe('defineResourceLayout', () => {
           title: 'Users',
           components: {
             DataTable: {
-              // props: { caption: createProp.string().optional() },
               render: function UsersDataTable() {
                 return createUsersTable();
               },
@@ -1031,6 +1031,7 @@ describe('defineResourceLayout', () => {
               return (
                 <div>
                   <components.DataTable caption='listed' />
+                  <components.DataTable.Loading />
                   <components.DataTableEmpty />
                 </div>
               );
@@ -1043,6 +1044,7 @@ describe('defineResourceLayout', () => {
           return (
             <context.Root>
               <context.Users />
+              <context.Users.DataTable.Loading />
             </context.Root>
           );
         };
@@ -1053,6 +1055,60 @@ describe('defineResourceLayout', () => {
 
     expect(screen.getByRole('caption', { name: 'listed' })).toBeInTheDocument();
     expect(screen.getByText('no-users')).toBeInTheDocument();
+    expect(screen.getAllByText('loading-table')).toHaveLength(2);
+  });
+
+  it('preserves portals returned from scoped render instead of treating them as components', () => {
+    // Portals have $$typeof but are not valid elements — they must not be
+    // passed to createElement as a component type.
+    const portalRoot = document.createElement('div');
+    document.body.appendChild(portalRoot);
+
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users'],
+      options: {},
+      layout: {
+        props: {
+          custom: {
+            children: createProp.component({ type: 'ReactNode' }).optional(),
+          },
+        },
+        render: ({ children }) => <section>{children}</section>,
+      },
+    });
+    const createDirectoryLayout = createResourceLayout.forResources('users');
+    const Directory = createDirectoryLayout.createComponent({
+      resources: {
+        users: {
+          components: {
+            PortalBadge: {
+              render: function UsersPortalBadge() {
+                return createPortal(<p>ported-badge</p>, portalRoot);
+              },
+            },
+          },
+          render: (_props, components) => (
+            <div>
+              <components.PortalBadge />
+            </div>
+          ),
+        },
+      },
+      render: (_props, context) => (
+        <context.Root>
+          <context.Users />
+        </context.Root>
+      ),
+    });
+
+    try {
+      render(<Directory resource='users' />);
+
+      expect(portalRoot).toHaveTextContent('ported-badge');
+      expect(screen.queryByText('ported-badge')).toBeInTheDocument();
+    } finally {
+      portalRoot.remove();
+    }
   });
 
   it('validates the props declared by a scoped component', () => {
