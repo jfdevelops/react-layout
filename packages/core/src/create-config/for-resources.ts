@@ -1036,16 +1036,14 @@ export type CreateResourceLayoutForResourcesFn<
 /**
  * Names a scoped component cannot use. Scoped components are attached to
  * function objects, so they collide with the component's own statics and with
- * non-writable `Function.prototype` properties, where `Object.assign` throws.
+ * non-writable `Function.prototype` properties.
  */
 const reservedScopedComponentNames = new Set([
-  '__proto__',
   'apply',
   'arguments',
   'bind',
   'call',
   'caller',
-  'constructor',
   'displayName',
   'length',
   'name',
@@ -1053,6 +1051,27 @@ const reservedScopedComponentNames = new Set([
   'prototype',
   'resource',
 ]);
+
+/**
+ * Copies own properties onto `target` with `defineProperty` so keys like
+ * `__proto__` become own data properties instead of hitting the prototype
+ * setter that `Object.assign` / `[[Set]]` would invoke on a normal object.
+ */
+function assignOwnProperties<Target extends object>(
+  target: Target,
+  source: Record<string, unknown>,
+): Target {
+  for (const key of Object.keys(source)) {
+    Object.defineProperty(target, key, {
+      configurable: true,
+      enumerable: true,
+      value: source[key],
+      writable: true,
+    });
+  }
+
+  return target;
+}
 
 type CreateForResourcesOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -1243,8 +1262,7 @@ export function createForResources<
             /**
              * Built once per resource so every scoped component keeps a stable
              * identity, and shared by the resource render, the render context,
-             * and any component bound through `asHOF()`. Null prototype so a
-             * name like `__proto__` cannot hit `Object.prototype`.
+             * and any component bound through `asHOF()`.
              */
             const scopedComponents: Record<
               string,
@@ -1262,9 +1280,7 @@ export function createForResources<
 
               const ownPropDefinitions = definition.props ?? {};
 
-              scopedComponents[name] = function ScopedComponent(
-                ownProps?: Record<string, unknown>,
-              ) {
+              function ScopedComponent(ownProps?: Record<string, unknown>) {
                 const componentProps = useContext(componentPropsContext);
 
                 if (componentProps === undefined) {
@@ -1281,7 +1297,11 @@ export function createForResources<
                   { ...componentProps, ...resolvedOwnProps, resource },
                   scopedComponents,
                 );
-              } as (props?: never) => JSX.Element;
+              }
+
+              scopedComponents[name] = ScopedComponent as (
+                props?: never,
+              ) => JSX.Element;
             }
 
             resourceScopedComponents.set(resource, scopedComponents);
@@ -1301,7 +1321,10 @@ export function createForResources<
               );
             }
 
-            return [contextKey, Object.assign(ResourceRender, scopedComponents)];
+            return [
+              contextKey,
+              assignOwnProperties(ResourceRender, scopedComponents),
+            ];
           }),
         );
 
@@ -1436,14 +1459,16 @@ export function createForResources<
         let boundComponent = boundComponents.get(resource);
 
         if (boundComponent === undefined) {
-          boundComponent = Object.assign(
-            (boundProps: Record<string, unknown>) =>
-              createElement(Component, { ...boundProps, resource }),
-            {
-              displayName: `ScopedResourceComponent(${resource})`,
-              props: undefined,
-              resource: undefined,
-            },
+          boundComponent = assignOwnProperties(
+            Object.assign(
+              (boundProps: Record<string, unknown>) =>
+                createElement(Component, { ...boundProps, resource }),
+              {
+                displayName: `ScopedResourceComponent(${resource})`,
+                props: undefined,
+                resource: undefined,
+              },
+            ),
             resourceScopedComponents.get(resource) ?? {},
           );
           boundComponents.set(resource, boundComponent);
