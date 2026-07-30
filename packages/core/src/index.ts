@@ -42,7 +42,9 @@ export type {
   AnyBuiltPropDefinition,
   ExtractDefinitionValue,
   ResolveLayoutProps,
+  ResolveLayoutPropsAsDefined,
   ResolveProps,
+  ResolvedBuiltPropShape,
 } from '@jfdevelops/react-layout-validator';
 export type {
   IncludedProps,
@@ -54,6 +56,7 @@ export type {
   LayoutRenderProps,
   MergedLayoutInProps,
   ResolvedIncludedProps,
+  ResolvedIncludedPropsAsDefined,
 } from './props';
 export { normalizeResource, normalizeResources, toResourceEnum } from './resource';
 export type {

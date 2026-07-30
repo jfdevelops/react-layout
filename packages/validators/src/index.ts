@@ -43,6 +43,7 @@ export {
   type PropVisibility,
   type ResolveBuiltPropValue,
   type ResolveLayoutProps,
+  type ResolveLayoutPropsAsDefined,
   type ResolveProps,
   type ResolvedBuiltPropShape,
 } from './types';

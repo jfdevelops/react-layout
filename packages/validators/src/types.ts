@@ -131,3 +131,19 @@ export type ResolveLayoutProps<
     ? never
     : ResolvedPropKey<K, Shape[K]>]?: ExtractLayoutDefinitionValue<Shape[K]>;
 };
+
+/**
+ * Like {@link ResolveLayoutProps}, but keeps every prop key exactly as it was
+ * declared — `JSX.Element` slots are not renamed to their capitalized form.
+ */
+export type ResolveLayoutPropsAsDefined<
+  Shape extends Record<string, AnyBuiltPropDefinition>,
+> = {
+  [K in keyof Shape & string as Shape[K]['visibility'] extends 'required'
+    ? K
+    : never]: ExtractLayoutDefinitionValue<Shape[K]>;
+} & {
+  [K in keyof Shape & string as Shape[K]['visibility'] extends 'required'
+    ? never
+    : K]?: ExtractLayoutDefinitionValue<Shape[K]>;
+};

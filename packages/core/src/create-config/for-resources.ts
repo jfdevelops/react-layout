@@ -20,7 +20,7 @@ import type {
   InPropsDefinition,
   InPropsObject,
   MergedLayoutInProps,
-  ResolvedIncludedProps,
+  ResolvedIncludedPropsAsDefined,
 } from '../props';
 import type { LayoutResourceKey, ResourceDefinition } from '../resource';
 import { capitalize } from '../utils/capitalize';
@@ -344,7 +344,7 @@ type ScopedResourceComponentProps<
   Resource extends string,
 > = Show<
   Omit<
-    ResolvedIncludedProps<
+    ResolvedIncludedPropsAsDefined<
       ScopedComponentAvailableProps<
         Resources,
         InProps,
@@ -353,7 +353,7 @@ type ScopedResourceComponentProps<
       >,
       ComponentIncludeProps
     > &
-      ResolveProps<ComponentCustomProps>,
+      ResolvedBuiltPropShape<ComponentCustomProps>,
     'children' | 'resource'
   > & {
     children?: ReactNode;
@@ -1408,13 +1408,9 @@ export function createForResources<
             continue;
           }
 
-          const propKey =
-            'type' in definition && definition.type === 'JSX.Element'
-              ? capitalize(key)
-              : key;
-
-          if (inclusion === true || propKey in componentProps) {
-            definitionsToValidate[propKey] = definition;
+          // Keep declared keys as-is — do not capitalize JSX.Element props.
+          if (inclusion === true || key in componentProps) {
+            definitionsToValidate[key] = definition;
           }
         }
 
@@ -1423,11 +1419,7 @@ export function createForResources<
             continue;
           }
 
-          const propKey =
-            'type' in definition && definition.type === 'JSX.Element'
-              ? capitalize(key)
-              : key;
-          definitionsToValidate[propKey] = definition;
+          definitionsToValidate[key] = definition;
         }
 
         validateProps(definitionsToValidate, componentProps);

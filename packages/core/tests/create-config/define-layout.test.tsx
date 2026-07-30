@@ -1149,6 +1149,72 @@ describe('defineResourceLayout', () => {
     ).toContain('actions');
   });
 
+  it('keeps createComponent JSX.Element prop names as declared', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users'],
+      options: {
+        actions: createProp.component({ type: 'JSX.Element' }),
+        title: createProp.string(),
+      },
+      layout: {
+        props: {
+          include: { actions: true, title: true },
+          custom: {
+            children: createProp.component({ type: 'ReactNode' }).optional(),
+          },
+        },
+        render: ({ children, title }) => (
+          <section>
+            <h1>{title}</h1>
+            {children}
+          </section>
+        ),
+      },
+    });
+    const Directory = createResourceLayout.forResources('users').createComponent({
+      props: {
+        include: { actions: true, title: true },
+        custom: {
+          badge: createProp.component({ type: 'JSX.Element' }),
+        },
+      },
+      resources: {
+        users: {
+          title: 'Users',
+          Actions: () => <span>layout-actions</span>,
+          render: ({ actions, badge }) => (
+            <div>
+              {actions()}
+              {badge}
+            </div>
+          ),
+        },
+      },
+      render: ({ actions, badge, title }, context) => (
+        <context.Root>
+          <h2>{title}</h2>
+          {actions()}
+          {badge}
+          <context.Users />
+        </context.Root>
+      ),
+    });
+
+    render(
+      <Directory
+        resource='users'
+        title='Users'
+        actions={() => <button type='button'>Go</button>}
+        badge={<span>badge</span>}
+      />,
+    );
+
+    expect(screen.getAllByRole('button', { name: 'Go' }).length).toBeGreaterThan(
+      0,
+    );
+    expect(screen.getAllByText('badge').length).toBeGreaterThan(0);
+  });
+
   it('throws when a scoped component is rendered outside its component', () => {
     const { createResourceLayout } = defineResourceLayout({
       resources: ['users'],

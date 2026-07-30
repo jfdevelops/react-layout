@@ -424,6 +424,73 @@ const boundToolbar: () => JSX.Element = BoundUsers.Toolbar;
 BoundUsers({ title: 'Users' });
 void boundToolbar;
 
+// createComponent props keep declared names — including JSX.Element slots.
+const { createResourceLayout: createJsxSlotLayout } = defineResourceLayout({
+  resources: ['users'],
+  options: {
+    actions: createProp.component({ type: 'JSX.Element' }),
+    title: createProp.string(),
+  },
+  layout: {
+    props: {
+      include: { actions: true, title: true },
+    },
+    render: () => null as never,
+  },
+});
+const JsxSlotDirectory = createJsxSlotLayout.forResources('users').createComponent({
+  props: {
+    include: { actions: true, title: true },
+    custom: {
+      badge: createProp.component({ type: 'JSX.Element' }),
+    },
+  },
+  resources: {
+    users: {
+      title: 'Users',
+      Actions: () => null as never,
+      render: (props) => {
+        const actions: () => JSX.Element = props.actions;
+        const badge: JSX.Element = props.badge;
+        // @ts-expect-error declared keys are not capitalized
+        props.Actions;
+        // @ts-expect-error declared keys are not capitalized
+        props.Badge;
+
+        void actions;
+        void badge;
+        return null as never;
+      },
+    },
+  },
+  render: (props, context) => {
+    const actions: () => JSX.Element = props.actions;
+    const badge: JSX.Element = props.badge;
+    // @ts-expect-error declared keys are not capitalized
+    props.Actions;
+    // @ts-expect-error declared keys are not capitalized
+    props.Badge;
+
+    void actions;
+    void badge;
+    void context;
+    return null as never;
+  },
+});
+JsxSlotDirectory({
+  resource: 'users',
+  title: 'Users',
+  actions: () => null as never,
+  badge: null as never,
+});
+JsxSlotDirectory({
+  resource: 'users',
+  title: 'Users',
+  // @ts-expect-error call site uses the declared key, not Actions
+  Actions: () => null as never,
+  badge: null as never,
+});
+
 // @ts-expect-error resource entries reject unknown layout options
 createDirectoryLayout.createComponent({ resources: { users: { bogus: true, render: () => null as never } }, render: () => null as never });
 // @ts-expect-error resource entries require a render function
