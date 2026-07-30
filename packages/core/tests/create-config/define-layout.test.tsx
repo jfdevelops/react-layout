@@ -1026,6 +1026,89 @@ describe('defineResourceLayout', () => {
     ).toThrowError(
       'Scoped component "name" for resource "users" uses a reserved name',
     );
+
+    expect(() =>
+      createDirectoryLayout.createComponent({
+        resources: {
+          users: {
+            components: { ['__proto__']: { render: () => <nav /> } },
+            render: () => <span>users</span>,
+          },
+        },
+        render: () => <section />,
+      } as never),
+    ).toThrowError(
+      'Scoped component "__proto__" for resource "users" uses a reserved name',
+    );
+  });
+
+  it('validates capitalized JSX.Element props on scoped components', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users'],
+      options: {},
+      layout: {
+        props: {
+          custom: {
+            children: createProp.component({ type: 'ReactNode' }).optional(),
+          },
+        },
+        render: ({ children }) => <section>{children}</section>,
+      },
+    });
+    const createDirectoryLayout = createResourceLayout.forResources('users');
+    const Directory = createDirectoryLayout.createComponent({
+      resources: {
+        users: {
+          components: {
+            Widget: {
+              props: {
+                actions: createProp.component({ type: 'JSX.Element' }),
+              },
+              render: ({ Actions }) => <div>{Actions}</div>,
+            },
+          },
+          render: (_props, components) => (
+            <components.Widget Actions={<button type='button'>Go</button>} />
+          ),
+        },
+      },
+      render: (_props, context) => (
+        <context.Root>
+          <context.Users />
+        </context.Root>
+      ),
+    });
+
+    render(<Directory resource='users' />);
+    expect(screen.getByRole('button', { name: 'Go' })).toBeInTheDocument();
+
+    cleanup();
+
+    const MissingActions = createDirectoryLayout.createComponent({
+      resources: {
+        users: {
+          components: {
+            Widget: {
+              props: {
+                actions: createProp.component({ type: 'JSX.Element' }),
+              },
+              render: ({ Actions }) => <div>{Actions}</div>,
+            },
+          },
+          render: (_props, components) =>
+            (components.Widget as (props?: object) => JSX.Element)(),
+        },
+      },
+      render: (_props, context) => (
+        <context.Root>
+          <context.Users />
+        </context.Root>
+      ),
+    });
+
+    expect(
+      renderCapturingError(<MissingActions resource='users' />)?.message,
+    ).toContain('Actions');
   });
 
   it('throws when a scoped component is rendered outside its component', () => {

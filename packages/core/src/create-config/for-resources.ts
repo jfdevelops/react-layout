@@ -1038,11 +1038,13 @@ export type CreateResourceLayoutForResourcesFn<
  * non-writable `Function.prototype` properties, where `Object.assign` throws.
  */
 const reservedScopedComponentNames = new Set([
+  '__proto__',
   'apply',
   'arguments',
   'bind',
   'call',
   'caller',
+  'constructor',
   'displayName',
   'length',
   'name',
@@ -1240,12 +1242,13 @@ export function createForResources<
             /**
              * Built once per resource so every scoped component keeps a stable
              * identity, and shared by the resource render, the render context,
-             * and any component bound through `asHOF()`.
+             * and any component bound through `asHOF()`. Null prototype so a
+             * name like `__proto__` cannot hit `Object.prototype`.
              */
             const scopedComponents: Record<
               string,
               (props?: never) => JSX.Element
-            > = {};
+            > = Object.create(null);
 
             for (const [name, definition] of Object.entries(
               entry.components ?? {},
@@ -1257,6 +1260,24 @@ export function createForResources<
               }
 
               const ownPropDefinitions = definition.props ?? {};
+              const definitionsToValidate: Record<
+                string,
+                AnyBuiltPropDefinition
+              > = {};
+
+              for (const [key, propDefinition] of Object.entries(
+                ownPropDefinitions,
+              )) {
+                // JSX.Element props are called with a capitalized key
+                // (`actions` → `Actions`), matching ResolveProps / the parent
+                // component validation path.
+                const propKey =
+                  'type' in propDefinition &&
+                  propDefinition.type === 'JSX.Element'
+                    ? capitalize(key)
+                    : key;
+                definitionsToValidate[propKey] = propDefinition;
+              }
 
               scopedComponents[name] = function ScopedComponent(
                 ownProps?: Record<string, unknown>,
@@ -1271,7 +1292,7 @@ export function createForResources<
 
                 const resolvedOwnProps = ownProps ?? {};
 
-                validateProps(ownPropDefinitions, resolvedOwnProps);
+                validateProps(definitionsToValidate, resolvedOwnProps);
 
                 return definition.render(
                   { ...componentProps, ...resolvedOwnProps, resource },
