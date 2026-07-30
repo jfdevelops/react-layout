@@ -1,6 +1,8 @@
 import {
   createContext,
   createElement,
+  isValidElement,
+  type ComponentType,
   type JSX,
   type ReactNode,
   useContext,
@@ -362,22 +364,31 @@ type ScopedResourceComponentProps<
 >;
 
 /**
- * Fields reverse-inferred from each scoped component declaration. Only `props`
- * belongs here — putting `render` in the reverse map makes TypeScript infer it
- * as `unknown` (function types don't reverse-map cleanly). `render` is supplied
- * by the constraint intersection instead, like the playground's `transform`.
+ * Fields reverse-inferred from each scoped component declaration.
+ *
+ * `props` reverse-maps as-is. `render` cannot reverse-map as a full function
+ * type (that becomes `unknown`), so only its return type is preserved via
+ * `(...args: any) => Return`. Call-site props and compound statics are then
+ * read from that return type on the inferred generic.
  */
 type ScopedComponentShape = {
   props?: InPropsObject;
+  render?: (...args: never[]) => unknown;
 };
 
 /**
  * Homomorphic pick of reverse-mapped scoped-component fields. Paired with a
  * mapped type over the components object, this lets each entry's inferred
- * `props` flow into sibling render signatures.
+ * `props` and `render` return type flow into sibling / context signatures.
  */
 type JustScopedComponent<T> = {
-  [Key in keyof T & keyof ScopedComponentShape]: T[Key];
+  [Key in keyof T & keyof ScopedComponentShape]: Key extends 'render'
+    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any -- open args; preserve Return only
+      T[Key] extends (...args: any) => infer Return
+      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any -- open args
+        (...args: any) => Return
+      : unknown
+    : T[Key];
 };
 
 /**
@@ -400,6 +411,56 @@ type ScopedComponentOwnProps<Definition> = Definition extends {
   : {};
 
 /**
+ * True when a scoped `render` returned a component type (callable), not a
+ * React node like `null` / an element.
+ */
+type IsScopedRenderableComponentType<Result> = [Result] extends [never]
+  ? false
+  : [Result] extends [
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- open args
+        (...args: any) => any,
+      ]
+    ? true
+    : [Result] extends [ComponentType<any>]
+      ? true
+      : false;
+
+/**
+ * Props of a component type returned from a scoped `render`. Empty when the
+ * render returns a node (or a component with no props).
+ */
+type PropsFromRenderResult<Result> = [Result] extends [never]
+  ? {}
+  : IsScopedRenderableComponentType<Result> extends true
+    ? Result extends (props: infer Props) => any
+      ? unknown extends Props
+        ? {}
+        : Props extends object
+          ? Props
+          : {}
+      : [Result] extends [ComponentType<infer Props>]
+        ? Props
+        : {}
+    : {};
+
+/** Call-site props inferred from a scoped component's `render` return type. */
+type PropsFromScopedRender<Definition> = Definition extends {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- open args
+  render: (...args: any) => infer Result;
+}
+  ? PropsFromRenderResult<Result>
+  : {};
+
+/**
+ * Call-site props for a scoped component: declared `props` plus props of any
+ * component type returned from `render`.
+ */
+type ScopedComponentCallProps<Definition> = Show<
+  ResolvedBuiltPropShape<ScopedComponentOwnProps<Definition>> &
+    PropsFromScopedRender<Definition>
+>;
+
+/**
  * A scoped component's call signature. Components that declare no props are
  * callable with no arguments.
  */
@@ -408,16 +469,70 @@ type ScopedComponentSignature<Props> = {} extends Props
   : (props: Props) => JSX.Element;
 
 /**
+ * Function-prototype / React statics that must not appear as compound
+ * component keys on a scoped component resolved from a returned component type.
+ */
+type ScopedComponentCompoundStaticKey =
+  | 'apply'
+  | 'arguments'
+  | 'bind'
+  | 'call'
+  | 'caller'
+  | 'childContextTypes'
+  | 'contextTypes'
+  | 'defaultProps'
+  | 'displayName'
+  | 'length'
+  | 'name'
+  | 'propTypes'
+  | 'prototype'
+  | 'toLocaleString'
+  | 'toString'
+  | 'valueOf'
+  | '$$typeof';
+
+/**
+ * Compound statics (e.g. `DataTable.Loading`) taken from a component type
+ * returned by scoped `render`.
+ */
+type ScopedComponentCompoundStatics<Result> = [Result] extends [never]
+  ? {}
+  : IsScopedRenderableComponentType<Result> extends true
+    ? {
+        [Key in keyof Result as Key extends ScopedComponentCompoundStaticKey
+          ? never
+          : // eslint-disable-next-line @typescript-eslint/no-explicit-any -- open args
+            Result[Key] extends (...args: any) => any
+            ? Key & string
+            : never]: Result[Key] extends (props: infer Props) => any
+          ? ScopedComponentSignature<Props extends object ? Props : {}>
+          : never;
+      }
+    : {};
+
+/**
+ * A resolved scoped component: call signature from declared + returned-component
+ * props, plus any compound statics on the returned component type.
+ */
+type ResolvedScopedComponent<Definition> = ScopedComponentSignature<
+  ScopedComponentCallProps<Definition>
+> &
+  ScopedComponentCompoundStatics<
+    Definition extends {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- open args
+      render: (...args: any) => infer Result;
+    }
+      ? Result
+      : never
+  >;
+
+/**
  * The sibling / context components for one resource, keyed by their declared
- * names with call-site prop types.
+ * names with call-site prop types (and compound statics when applicable).
  */
 type ResolvedScopedComponentsMap<Components> = {
-  [Name in keyof NormalizeScopedComponentsMap<Components>]: ScopedComponentSignature<
-    Show<
-      ResolvedBuiltPropShape<
-        ScopedComponentOwnProps<NormalizeScopedComponentsMap<Components>[Name]>
-      >
-    >
+  [Name in keyof NormalizeScopedComponentsMap<Components>]: ResolvedScopedComponent<
+    NormalizeScopedComponentsMap<Components>[Name]
   >;
 };
 
@@ -492,6 +607,10 @@ type ScopedComponentResourceEntries<
          * Renders this component. Receives the scoped component's props plus
          * this component's own props, and the other components for this
          * resource (excluding itself).
+         *
+         * May return a React node or a component type (mounted with the
+         * call-site props). Props and compound statics of a returned component
+         * type are inferred at call sites from the render return type.
          */
         render: (
           props: ScopedResourceComponentProps<
@@ -512,7 +631,7 @@ type ScopedComponentResourceEntries<
             ResolvedScopedComponentsMap<ComponentsByResource[Resource]>,
             Name
           >,
-        ) => JSX.Element;
+        ) => ScopedRenderResult;
       };
     };
     /** Renders this resource's content inside the shared render function. */
@@ -527,7 +646,7 @@ type ScopedComponentResourceEntries<
         Resource & string
       >,
       components: ResolvedScopedComponentsMap<ComponentsByResource[Resource]>,
-    ) => JSX.Element;
+    ) => ScopedRenderResult;
   };
 } & Record<
   Exclude<
@@ -757,7 +876,7 @@ type ScopedCreateComponent<
       ComponentsByResource,
       LayoutCustomProps
     >,
-  ) => JSX.Element;
+  ) => ScopedRenderResult;
 }) => ScopedResourceComponent<
   Resources,
   InProps,
@@ -1054,6 +1173,45 @@ const reservedScopedComponentNames = new Set([
   'resource',
 ]);
 
+/**
+ * Values a createComponent / scoped-component `render` may return.
+ *
+ * Alongside rendered nodes, a component type is allowed — the type constituent
+ * of a React element — so factories like `createDataTable(columns)` can be
+ * returned directly and mounted with the call-site props.
+ */
+// Returned components declare their own props; a concrete props parameter would
+// be contravariant and reject the factories callers actually return.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- see above
+type ScopedRenderResult = ReactNode | ComponentType<any>;
+
+function isRenderableComponentType(
+  value: unknown,
+): value is ComponentType<Record<string, unknown>> {
+  if (typeof value === 'function') {
+    return true;
+  }
+
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    !isValidElement(value) &&
+    '$$typeof' in value
+  );
+}
+
+function resolveScopedRenderResult(
+  result: ScopedRenderResult,
+  props: Record<string, unknown> = {},
+): JSX.Element {
+  if (isRenderableComponentType(result)) {
+    return createElement(result, props);
+  }
+
+  return result as JSX.Element;
+}
+
 type CreateForResourcesOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
 > = {
@@ -1161,7 +1319,7 @@ export function createForResources<
     type ScopedComponentRenderFn = (
       props: Record<string, unknown>,
       components: Record<string, (props?: never) => JSX.Element>,
-    ) => JSX.Element;
+    ) => ScopedRenderResult;
 
     type ScopedResourceScopedComponentDefinition = {
       props?: Record<string, AnyBuiltPropDefinition>;
@@ -1184,7 +1342,7 @@ export function createForResources<
       render: (
         props: Record<string, unknown>,
         context: Record<string, (props: never) => JSX.Element>,
-      ) => JSX.Element;
+      ) => ScopedRenderResult;
     }) {
       const include = componentOptions.props?.include ?? {};
       const custom = componentOptions.props?.custom ?? {};
@@ -1274,9 +1432,12 @@ export function createForResources<
 
                 validateProps(ownPropDefinitions, resolvedOwnProps);
 
-                return definition.render(
-                  { ...componentProps, ...resolvedOwnProps, resource },
-                  scopedComponents,
+                return resolveScopedRenderResult(
+                  definition.render(
+                    { ...componentProps, ...resolvedOwnProps, resource },
+                    scopedComponents,
+                  ),
+                  resolvedOwnProps,
                 );
               }
 
@@ -1296,9 +1457,11 @@ export function createForResources<
                 );
               }
 
-              return entry.render(
-                { ...componentProps, resource },
-                scopedComponents,
+              return resolveScopedRenderResult(
+                entry.render(
+                  { ...componentProps, resource },
+                  scopedComponents,
+                ),
               );
             }
 
@@ -1405,7 +1568,10 @@ export function createForResources<
         return createElement(
           componentPropsContext.Provider,
           { value: componentProps },
-          componentOptions.render(componentProps, renderContext),
+          resolveScopedRenderResult(
+            componentOptions.render(componentProps, renderContext),
+            componentProps,
+          ),
         );
       }
 

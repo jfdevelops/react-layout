@@ -460,6 +460,59 @@ const PropsInferredDirectory = createDirectoryLayout.createComponent({
 });
 void PropsInferredDirectory;
 
+// When render returns a component type, call-site props and compound statics
+// are inferred from that return type — no helper and no explicit return type.
+const ComponentReturnDirectory = createDirectoryLayout.createComponent({
+  props: { include: { title: true } },
+  resources: {
+    users: {
+      description: 'Manage users',
+      title: 'Users',
+      components: {
+        DataTable: {
+          render: function UsersDataTable() {
+            function Table(props: { caption: string; rows: number }) {
+              void props;
+              return null as never;
+            }
+            Table.Loading = function Loading() {
+              return null as never;
+            };
+            return Table;
+          },
+        },
+        DataTableEmpty: {
+          render: function UsersDataTableEmpty() {
+            return function Empty() {
+              return null as never;
+            };
+          },
+        },
+      },
+      render: function UsersContent(_props, components) {
+        components.DataTable({ caption: 'listed', rows: 1 });
+        // @ts-expect-error DataTable requires props from the returned component
+        components.DataTable({});
+        const loading: () => JSX.Element = components.DataTable.Loading;
+        components.DataTable.Loading();
+        components.DataTableEmpty();
+
+        void loading;
+        return null as never;
+      },
+    },
+  },
+  render: function DirectoryRender(_props, context) {
+    context.Users.DataTable({ caption: 'x', rows: 2 });
+    // @ts-expect-error DataTable requires props from the returned component
+    context.Users.DataTable({});
+    context.Users.DataTable.Loading();
+    context.Users.DataTableEmpty();
+    return null as never;
+  },
+});
+void ComponentReturnDirectory;
+
 // createComponent props keep declared names — including JSX.Element slots.
 const { createResourceLayout: createJsxSlotLayout } = defineResourceLayout({
   resources: ['users'],

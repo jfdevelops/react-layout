@@ -963,6 +963,98 @@ describe('defineResourceLayout', () => {
     expect(screen.getAllByText('toolbar:Users').length).toBeGreaterThan(0);
   });
 
+  it('mounts component types returned from scoped and resource renders', () => {
+    function createUsersTable() {
+      function UsersTable(props: { caption?: string }) {
+        return (
+          <table>
+            <caption>{props.caption ?? 'users-table'}</caption>
+          </table>
+        );
+      }
+
+      UsersTable.displayName = 'UsersTable';
+      UsersTable.Loading = function UsersTableLoading() {
+        return <p>loading-table</p>;
+      };
+
+      return UsersTable;
+    }
+
+    function createEmptyGrid(message: string) {
+      return function EmptyGrid() {
+        return <p>{message}</p>;
+      };
+    }
+
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users'],
+      options: {
+        title: createProp.string(),
+      },
+      layout: {
+        props: {
+          include: { title: true },
+          custom: {
+            children: createProp.component({ type: 'ReactNode' }).optional(),
+          },
+        },
+        render: ({ children, title }) => (
+          <section>
+            <h1>{title}</h1>
+            {children}
+          </section>
+        ),
+      },
+    });
+    const createDirectoryLayout = createResourceLayout.forResources('users');
+    const Directory = createDirectoryLayout.createComponent({
+      props: { include: { title: true } },
+      resources: {
+        users: {
+          title: 'Users',
+          components: {
+            DataTable: {
+              // props: { caption: createProp.string().optional() },
+              render: function UsersDataTable() {
+                return createUsersTable();
+              },
+            },
+            DataTableEmpty: {
+              render: function UsersDataTableEmpty() {
+                return createEmptyGrid('no-users');
+              },
+            },
+          },
+          render: function UsersContent(_props, components) {
+            return function UsersPanel() {
+              return (
+                <div>
+                  <components.DataTable caption='listed' />
+                  <components.DataTableEmpty />
+                </div>
+              );
+            };
+          },
+        },
+      },
+      render: function DirectoryRender(_props, context) {
+        return function DirectoryShell() {
+          return (
+            <context.Root>
+              <context.Users />
+            </context.Root>
+          );
+        };
+      },
+    });
+
+    render(<Directory resource='users' title='Users' />);
+
+    expect(screen.getByRole('caption', { name: 'listed' })).toBeInTheDocument();
+    expect(screen.getByText('no-users')).toBeInTheDocument();
+  });
+
   it('validates the props declared by a scoped component', () => {
     const { createResourceLayout } = defineResourceLayout({
       resources: ['users'],
@@ -986,9 +1078,9 @@ describe('defineResourceLayout', () => {
               render: ({ label }) => <span>{String(label)}</span>,
             },
           },
-          // Bypass the call-site type check to exercise runtime prop validation.
           render: (_props, components) =>
-            (components.Badge as (props?: object) => JSX.Element)(),
+          // @ts-expect-error - we're testing for missing props
+            <components.Badge />,
         },
       },
       render: (_props, context) => (
