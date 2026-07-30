@@ -424,6 +424,42 @@ const boundToolbar: () => JSX.Element = BoundUsers.Toolbar;
 BoundUsers({ title: 'Users' });
 void boundToolbar;
 
+// Components with declared props reverse-infer the props object (not
+// `render: unknown`), so call-site signatures stay precise.
+const PropsInferredDirectory = createDirectoryLayout.createComponent({
+  props: { include: { title: true } },
+  resources: {
+    users: {
+      description: 'Manage users',
+      title: 'Users',
+      components: {
+        Widget: {
+          props: { label: createProp.string() },
+          render: ({ label }) => {
+            const typedLabel: string = label;
+            void typedLabel;
+            return null as never;
+          },
+        },
+      },
+      render: (_props, components) => {
+        const Widget: (props: { label: string }) => JSX.Element =
+          components.Widget;
+        // @ts-expect-error Widget requires its declared label prop
+        components.Widget({});
+
+        void Widget;
+        return null as never;
+      },
+    },
+  },
+  render: (_props, context) => {
+    context.Users.Widget({ label: 'ok' });
+    return null as never;
+  },
+});
+void PropsInferredDirectory;
+
 // createComponent props keep declared names — including JSX.Element slots.
 const { createResourceLayout: createJsxSlotLayout } = defineResourceLayout({
   resources: ['users'],

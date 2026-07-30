@@ -362,19 +362,19 @@ type ScopedResourceComponentProps<
 >;
 
 /**
- * Shape of a scoped component definition. Used with a reverse mapped type so
- * TypeScript can infer each component's full declaration (including `props`)
- * while still constraining known fields.
+ * Fields reverse-inferred from each scoped component declaration. Only `props`
+ * belongs here — putting `render` in the reverse map makes TypeScript infer it
+ * as `unknown` (function types don't reverse-map cleanly). `render` is supplied
+ * by the constraint intersection instead, like the playground's `transform`.
  */
 type ScopedComponentShape = {
   props?: InPropsObject;
-  render?: unknown;
 };
 
 /**
- * Homomorphic pick of known scoped-component fields. Paired with a reverse
- * mapped type over the components object, this lets each entry's inferred type
- * flow into sibling render signatures (see TypeScript's reverse mapped types).
+ * Homomorphic pick of reverse-mapped scoped-component fields. Paired with a
+ * mapped type over the components object, this lets each entry's inferred
+ * `props` flow into sibling render signatures.
  */
 type JustScopedComponent<T> = {
   [Key in keyof T & keyof ScopedComponentShape]: T[Key];

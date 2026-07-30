@@ -859,21 +859,21 @@ describe('defineResourceLayout', () => {
         </section>
       ),
     });
-    const view = render(
-      <Directory resource='users' title='Users' />,
-    );
+    const view = render(<Directory resource='users' title='Users' />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Count: 0' }));
-    expect(screen.getByRole('button', { name: 'Count: 1' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Count: 1' }),
+    ).toBeInTheDocument();
 
-    view.rerender(
-      <Directory resource='users' title='Updated users' />,
-    );
+    view.rerender(<Directory resource='users' title='Updated users' />);
 
     expect(
       screen.getByRole('heading', { name: 'Updated users' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Count: 1' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Count: 1' }),
+    ).toBeInTheDocument();
   });
 
   it('exposes scoped components on the resource render, context, and binding', () => {
@@ -1095,8 +1095,10 @@ describe('defineResourceLayout', () => {
               render: ({ actions }) => <div>{actions}</div>,
             },
           },
-          render: (_props, components) =>
-            (components.Widget as (props?: object) => JSX.Element)(),
+          render: (_props, components) => (
+            // @ts-expect-error - we're testing for missing props
+            <components.Widget />
+          ),
         },
       },
       render: (_props, context) => (
@@ -1133,34 +1135,36 @@ describe('defineResourceLayout', () => {
         ),
       },
     });
-    const Directory = createResourceLayout.forResources('users').createComponent({
-      props: {
-        include: { actions: true, title: true },
-        custom: {
-          badge: createProp.component({ type: 'JSX.Element' }),
+    const Directory = createResourceLayout
+      .forResources('users')
+      .createComponent({
+        props: {
+          include: { actions: true, title: true },
+          custom: {
+            badge: createProp.component({ type: 'JSX.Element' }),
+          },
         },
-      },
-      resources: {
-        users: {
-          title: 'Users',
-          Actions: () => <span>layout-actions</span>,
-          render: ({ actions, badge }) => (
-            <div>
-              {actions()}
-              {badge}
-            </div>
-          ),
+        resources: {
+          users: {
+            title: 'Users',
+            Actions: () => <span>layout-actions</span>,
+            render: ({ actions, badge }) => (
+              <div>
+                {actions()}
+                {badge}
+              </div>
+            ),
+          },
         },
-      },
-      render: ({ actions, badge, title }, context) => (
-        <context.Root>
-          <h2>{title}</h2>
-          {actions()}
-          {badge}
-          <context.Users />
-        </context.Root>
-      ),
-    });
+        render: ({ actions, badge, title }, context) => (
+          <context.Root>
+            <h2>{title}</h2>
+            {actions()}
+            {badge}
+            <context.Users />
+          </context.Root>
+        ),
+      });
 
     render(
       <Directory
@@ -1171,9 +1175,9 @@ describe('defineResourceLayout', () => {
       />,
     );
 
-    expect(screen.getAllByRole('button', { name: 'Go' }).length).toBeGreaterThan(
-      0,
-    );
+    expect(
+      screen.getAllByRole('button', { name: 'Go' }).length,
+    ).toBeGreaterThan(0);
     expect(screen.getAllByText('badge').length).toBeGreaterThan(0);
   });
 
@@ -1315,12 +1319,16 @@ describe('defineResourceLayout', () => {
     const view = render(<UsersDirectory eyebrow='First' />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Count: 0' }));
-    expect(screen.getByRole('button', { name: 'Count: 1' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Count: 1' }),
+    ).toBeInTheDocument();
 
     view.rerender(<UsersDirectory eyebrow='Second' />);
 
     expect(screen.getByText('Second')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Count: 1' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Count: 1' }),
+    ).toBeInTheDocument();
   });
 
   it('rejects binding a resource outside the scope with asHOF', () => {
@@ -1453,7 +1461,9 @@ describe('defineResourceLayout', () => {
     render(<Directory resource='admins' />);
 
     expect(
-      screen.getByRole('heading', { name: 'admins/AdminsPage: Admins directory' }),
+      screen.getByRole('heading', {
+        name: 'admins/AdminsPage: Admins directory',
+      }),
     ).toBeInTheDocument();
   });
 
@@ -1515,9 +1525,7 @@ describe('defineResourceLayout', () => {
       render: (_props, context) => <context.Root />,
     });
 
-    expect(
-      renderCapturingError(<Directory resource='admins' />)?.message,
-    ).toBe(
+    expect(renderCapturingError(<Directory resource='admins' />)?.message).toBe(
       'Render context component "Root" requires a "resources.admins" entry to build the layout for resource "admins"',
     );
   });
@@ -1579,19 +1587,19 @@ describe('defineResourceLayout', () => {
         </context.Root>
       ),
     });
-    const view = render(
-      <Directory eyebrow='First' resource='users' />,
-    );
+    const view = render(<Directory eyebrow='First' resource='users' />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Count: 0' }));
-    expect(screen.getByRole('button', { name: 'Count: 1' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Count: 1' }),
+    ).toBeInTheDocument();
 
-    view.rerender(
-      <Directory eyebrow='Second' resource='users' />,
-    );
+    view.rerender(<Directory eyebrow='Second' resource='users' />);
 
     expect(screen.getByText('Second')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Count: 1' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Count: 1' }),
+    ).toBeInTheDocument();
   });
 
   it('rejects colliding capitalized resource render keys', () => {
@@ -1716,7 +1724,9 @@ describe('defineResourceLayout', () => {
         },
         render: () => <section />,
       } as never),
-    ).toThrowError('Resource "admins" is not available in this scoped component');
+    ).toThrowError(
+      'Resource "admins" is not available in this scoped component',
+    );
   });
 
   it('allows optional scoped component props to be omitted', () => {
@@ -1736,14 +1746,14 @@ describe('defineResourceLayout', () => {
       resource: 'users',
     });
     const Directory = createDirectoryLayout.createComponent({
-        props: {
-          include: {
-            description: 'optional',
-          },
+      props: {
+        include: {
+          description: 'optional',
         },
-        render: ({ children, description }) => (
-          <section>{description ?? children ?? 'Empty directory'}</section>
-        ),
+      },
+      render: ({ children, description }) => (
+        <section>{description ?? children ?? 'Empty directory'}</section>
+      ),
     });
 
     render(<Directory resource='users' />);
@@ -1813,9 +1823,7 @@ describe('defineResourceLayout', () => {
 
     render(<UsersPage />);
 
-    expect(
-      screen.getByText('users:usersTest:Directory'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('users:usersTest:Directory')).toBeInTheDocument();
   });
 
   it('allows overriding the default name for a resource-bound layout', () => {
