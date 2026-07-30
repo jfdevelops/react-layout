@@ -4,6 +4,7 @@ import {
   EnumWrappedProp,
   LiteralWrappedProp,
   ResolveLayoutProps,
+  ResolveLayoutPropsAsDefined,
   ResolveProps,
 } from '@jfdevelops/react-layout-validator';
 import { ResourceDefinition, ResourceEnum } from './resource';
@@ -61,6 +62,22 @@ export type ResolvedIncludedProps<
 > &
   Partial<
     ResolveLayoutProps<
+      Pick<Props, OptionalIncludedPropKeys<IncludeProps> & keyof Props>
+    >
+  >;
+
+/**
+ * Like {@link ResolvedIncludedProps}, but keeps included prop keys exactly as
+ * declared (no `JSX.Element` capitalization).
+ */
+export type ResolvedIncludedPropsAsDefined<
+  Props extends InPropsObject,
+  IncludeProps extends IncludedProps<Props>,
+> = ResolveLayoutPropsAsDefined<
+  Pick<Props, RequiredIncludedPropKeys<IncludeProps> & keyof Props>
+> &
+  Partial<
+    ResolveLayoutPropsAsDefined<
       Pick<Props, OptionalIncludedPropKeys<IncludeProps> & keyof Props>
     >
   >;

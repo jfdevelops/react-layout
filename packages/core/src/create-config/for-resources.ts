@@ -12,6 +12,7 @@ import type {
 import {
   type AnyBuiltPropDefinition,
   type ResolveProps,
+  type ResolvedBuiltPropShape,
   validateProps,
 } from '@jfdevelops/react-layout-validator';
 import type {
@@ -19,7 +20,7 @@ import type {
   InPropsDefinition,
   InPropsObject,
   MergedLayoutInProps,
-  ResolvedIncludedProps,
+  ResolvedIncludedPropsAsDefined,
 } from '../props';
 import type { LayoutResourceKey, ResourceDefinition } from '../resource';
 import { capitalize } from '../utils/capitalize';
@@ -343,7 +344,7 @@ type ScopedResourceComponentProps<
   Resource extends string,
 > = Show<
   Omit<
-    ResolvedIncludedProps<
+    ResolvedIncludedPropsAsDefined<
       ScopedComponentAvailableProps<
         Resources,
         InProps,
@@ -352,7 +353,7 @@ type ScopedResourceComponentProps<
       >,
       ComponentIncludeProps
     > &
-      ResolveProps<ComponentCustomProps>,
+      ResolvedBuiltPropShape<ComponentCustomProps>,
     'children' | 'resource'
   > & {
     children?: ReactNode;
@@ -361,19 +362,19 @@ type ScopedResourceComponentProps<
 >;
 
 /**
- * Shape of a scoped component definition. Used with a reverse mapped type so
- * TypeScript can infer each component's full declaration (including `props`)
- * while still constraining known fields.
+ * Fields reverse-inferred from each scoped component declaration. Only `props`
+ * belongs here — putting `render` in the reverse map makes TypeScript infer it
+ * as `unknown` (function types don't reverse-map cleanly). `render` is supplied
+ * by the constraint intersection instead, like the playground's `transform`.
  */
 type ScopedComponentShape = {
   props?: InPropsObject;
-  render?: unknown;
 };
 
 /**
- * Homomorphic pick of known scoped-component fields. Paired with a reverse
- * mapped type over the components object, this lets each entry's inferred type
- * flow into sibling render signatures (see TypeScript's reverse mapped types).
+ * Homomorphic pick of reverse-mapped scoped-component fields. Paired with a
+ * mapped type over the components object, this lets each entry's inferred
+ * `props` flow into sibling render signatures.
  */
 type JustScopedComponent<T> = {
   [Key in keyof T & keyof ScopedComponentShape]: T[Key];
@@ -413,7 +414,7 @@ type ScopedComponentSignature<Props> = {} extends Props
 type ResolvedScopedComponentsMap<Components> = {
   [Name in keyof NormalizeScopedComponentsMap<Components>]: ScopedComponentSignature<
     Show<
-      ResolveProps<
+      ResolvedBuiltPropShape<
         ScopedComponentOwnProps<NormalizeScopedComponentsMap<Components>[Name]>
       >
     >
@@ -503,7 +504,7 @@ type ScopedComponentResourceEntries<
             Resource & string
           > &
             Show<
-              ResolveProps<
+              ResolvedBuiltPropShape<
                 ScopedComponentOwnProps<ComponentsByResource[Resource][Name]>
               >
             >,
@@ -1035,9 +1036,11 @@ export type CreateResourceLayoutForResourcesFn<
 /**
  * Names a scoped component cannot use. Scoped components are attached to
  * function objects, so they collide with the component's own statics and with
- * non-writable `Function.prototype` properties, where `Object.assign` throws.
+ * non-writable `Function.prototype` properties. `__proto__` is reserved so
+ * assignment cannot hit the prototype setter on a normal object.
  */
 const reservedScopedComponentNames = new Set([
+  '__proto__',
   'apply',
   'arguments',
   'bind',
@@ -1258,9 +1261,7 @@ export function createForResources<
 
               const ownPropDefinitions = definition.props ?? {};
 
-              scopedComponents[name] = function ScopedComponent(
-                ownProps?: Record<string, unknown>,
-              ) {
+              function ScopedComponent(ownProps?: Record<string, unknown>) {
                 const componentProps = useContext(componentPropsContext);
 
                 if (componentProps === undefined) {
@@ -1277,7 +1278,11 @@ export function createForResources<
                   { ...componentProps, ...resolvedOwnProps, resource },
                   scopedComponents,
                 );
-              } as (props?: never) => JSX.Element;
+              }
+
+              scopedComponents[name] = ScopedComponent as (
+                props?: never,
+              ) => JSX.Element;
             }
 
             resourceScopedComponents.set(resource, scopedComponents);
@@ -1381,13 +1386,9 @@ export function createForResources<
             continue;
           }
 
-          const propKey =
-            'type' in definition && definition.type === 'JSX.Element'
-              ? capitalize(key)
-              : key;
-
-          if (inclusion === true || propKey in componentProps) {
-            definitionsToValidate[propKey] = definition;
+          // Keep declared keys as-is — do not capitalize JSX.Element props.
+          if (inclusion === true || key in componentProps) {
+            definitionsToValidate[key] = definition;
           }
         }
 
@@ -1396,11 +1397,7 @@ export function createForResources<
             continue;
           }
 
-          const propKey =
-            'type' in definition && definition.type === 'JSX.Element'
-              ? capitalize(key)
-              : key;
-          definitionsToValidate[propKey] = definition;
+          definitionsToValidate[key] = definition;
         }
 
         validateProps(definitionsToValidate, componentProps);
