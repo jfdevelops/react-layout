@@ -1,5 +1,12 @@
 # @jfdevelops/react-layout
 
+## 0.15.1
+
+### Patch Changes
+
+- 29f757d: Fix scoped component reverse-mapping so declarations with `props` no longer
+  infer `render` as `unknown`.
+
 ## 0.15.0
 
 ### Minor Changes
