@@ -1042,7 +1042,7 @@ describe('defineResourceLayout', () => {
     );
   });
 
-  it('validates capitalized JSX.Element props on scoped components', () => {
+  it('validates JSX.Element props on scoped components by their declared names', () => {
     const { createResourceLayout } = defineResourceLayout({
       resources: ['users'],
       options: {},
@@ -1064,11 +1064,11 @@ describe('defineResourceLayout', () => {
               props: {
                 actions: createProp.component({ type: 'JSX.Element' }),
               },
-              render: ({ Actions }) => <div>{Actions}</div>,
+              render: ({ actions }) => <div>{actions}</div>,
             },
           },
           render: (_props, components) => (
-            <components.Widget Actions={<button type='button'>Go</button>} />
+            <components.Widget actions={<button type='button'>Go</button>} />
           ),
         },
       },
@@ -1092,7 +1092,7 @@ describe('defineResourceLayout', () => {
               props: {
                 actions: createProp.component({ type: 'JSX.Element' }),
               },
-              render: ({ Actions }) => <div>{Actions}</div>,
+              render: ({ actions }) => <div>{actions}</div>,
             },
           },
           render: (_props, components) =>
@@ -1108,7 +1108,7 @@ describe('defineResourceLayout', () => {
 
     expect(
       renderCapturingError(<MissingActions resource='users' />)?.message,
-    ).toContain('Actions');
+    ).toContain('actions');
   });
 
   it('throws when a scoped component is rendered outside its component', () => {
