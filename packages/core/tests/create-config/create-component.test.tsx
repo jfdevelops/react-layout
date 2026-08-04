@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { useState, type ReactNode } from 'react';
+import { useState, type JSX, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createProp, defineResourceLayout } from '../../src';
@@ -300,12 +300,17 @@ describe('createComponent', () => {
             },
           },
           render: function UsersContent(_props, components) {
+            type DataTableWithLoading = typeof components.DataTable & {
+              Loading: () => JSX.Element;
+            };
+            const DataTable = components.DataTable as DataTableWithLoading;
+
             return function UsersPanel(props: { heading: string }) {
               return (
                 <div>
                   <h2>{props.heading}</h2>
-                  <components.DataTable variant='b' />
-                  <components.DataTable.Loading />
+                  <DataTable variant='b' />
+                  <DataTable.Loading />
                 </div>
               );
             };
@@ -313,10 +318,14 @@ describe('createComponent', () => {
         },
       },
       render: function DirectoryRender(_props, context) {
+        type UsersWithHeading = typeof context.Users &
+          ((props: { heading: string }) => JSX.Element);
+        const Users = context.Users as UsersWithHeading;
+
         return function DirectoryShell() {
           return (
             <context.Root>
-              <context.Users heading='Directory users' />
+              <Users heading='Directory users' />
             </context.Root>
           );
         };
