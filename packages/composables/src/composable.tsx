@@ -6,6 +6,7 @@ import {
 } from 'react';
 import {
   AnyBuiltPropDefinition,
+  type PropValidationContext,
   ResolveLayoutProps,
   ResolveProps,
   resolvePropDefinitionValues,
@@ -77,6 +78,7 @@ export function collectComposablePresetEntries(
 export function resolveComposablePresetProps(
   composables: ComposableComponents | undefined,
   layoutOptions: Record<string, unknown>,
+  context?: PropValidationContext,
 ) {
   const resolved: ComposablePresetProps = {};
 
@@ -95,6 +97,7 @@ export function resolveComposablePresetProps(
     resolved[key] = validateProps(
       props as Record<string, AnyBuiltPropDefinition>,
       values,
+      context,
     );
   }
 

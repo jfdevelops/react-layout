@@ -253,7 +253,13 @@ export function createForResources<
                 const resolvedOwnProps = ownProps ?? {};
                 cachedOwnProps = resolvedOwnProps;
 
-                validateProps(ownPropDefinitions, resolvedOwnProps);
+                validateProps(ownPropDefinitions, resolvedOwnProps, {
+                  layoutName:
+                    entry.name ??
+                    defaultNames.get(resource) ??
+                    capitalize(resource),
+                  resource,
+                });
 
                 // Mount a returned component type with call-site props; pass
                 // nodes (elements, portals, null) through unchanged.
@@ -456,7 +462,13 @@ export function createForResources<
           definitionsToValidate[key] = definition;
         }
 
-        validateProps(definitionsToValidate, componentProps);
+        validateProps(definitionsToValidate, componentProps, {
+          layoutName:
+            definedEntries.get(componentResource)?.name ??
+            defaultNames.get(componentResource) ??
+            capitalize(componentResource),
+          resource: componentResource,
+        });
 
         // Top-level render may return a component type; mount it with the full
         // component props (include/custom + inferred return-type props).

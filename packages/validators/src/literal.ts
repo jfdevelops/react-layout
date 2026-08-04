@@ -22,7 +22,7 @@ export class LiteralProp<
 
   validate(value: unknown) {
     if (value !== this.value) {
-      throw this.error;
+      throw this.createError(value);
     }
   }
 

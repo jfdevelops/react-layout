@@ -1,4 +1,9 @@
 import type { BasePropOptions, PropType, PropVisibility } from './types';
+import {
+  createMismatchedPropMessage,
+  getPropValueType,
+  PropError,
+} from './prop-error';
 
 export const primitiveTypes = {
   string: 'string',
@@ -13,18 +18,6 @@ export const primitiveTypes = {
   bigint: 'bigint',
 };
 
-function createInvalidPropValueMessage(type: string) {
-  return `"value" is not of type "${type}".`;
-}
-
-export class InvalidPropValueError<Type extends string> extends Error {
-  constructor(type: Type) {
-    super(createInvalidPropValueMessage(type));
-
-    this.name = 'InvalidPropValueError';
-  }
-}
-
 export abstract class BaseProp<
   Type extends PropType,
   Visibility extends PropVisibility,
@@ -34,15 +27,27 @@ export abstract class BaseProp<
   readonly visibility: Visibility;
   readonly value?: Value;
 
-  protected error: InvalidPropValueError<Type>;
-
   constructor(options: BasePropOptions<Type, Visibility, Value>) {
     const { type, visibility, value } = options;
 
     this.type = type;
     this.visibility = visibility;
     this.value = value;
-    this.error = new InvalidPropValueError(type);
+  }
+
+  protected createError(value: unknown) {
+    const received = getPropValueType(value);
+
+    return new PropError({
+      received,
+      expected: this.type,
+      message: createMismatchedPropMessage({
+        path: 'value',
+        received,
+        expected: this.type,
+      }),
+      path: 'value',
+    });
   }
 
   abstract validate(value: unknown): void;

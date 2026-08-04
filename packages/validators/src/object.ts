@@ -5,6 +5,11 @@ import type {
   ResolvedBuiltPropShape,
 } from './types';
 import { BaseProp } from './base';
+import {
+  createMismatchedPropMessage,
+  createMissingPropMessage,
+  PropError,
+} from './prop-error';
 
 export class ObjectProp<
   const Shape extends BuiltPropShape,
@@ -29,7 +34,7 @@ export class ObjectProp<
     const validatedObject = {} as ResolvedBuiltPropShape<Shape>;
 
     if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-      throw this.error;
+      throw this.createError(value);
     }
 
     const objectValue = value as Record<string, unknown>;
@@ -40,13 +45,39 @@ export class ObjectProp<
 
       if (propertyValue === undefined) {
         if (prop.visibility !== 'optional') {
-          throw new TypeError(`"${key}" is required.`);
+          throw new PropError({
+            path: key,
+            received: Object.keys(objectValue),
+            expected: Object.keys(this.properties),
+            message: createMissingPropMessage({ path: key }),
+          });
         }
 
         continue;
       }
 
-      prop(propertyValue);
+      try {
+        prop(propertyValue);
+      } catch (error) {
+        if (!(error instanceof PropError)) {
+          throw error;
+        }
+
+        const path = error.path === 'value' ? key : `${key}.${error.path}`;
+
+        throw new PropError({
+          path,
+          received: error.received,
+          expected: error.expected,
+          message: error.message.startsWith('Invalid prop')
+            ? createMismatchedPropMessage({
+                path,
+                received: error.received,
+                expected: error.expected,
+              })
+            : createMissingPropMessage({ path }),
+        });
+      }
       (validatedObject as Record<string, ExtractDefinitionValue<Shape[string]>>)[
         key
       ] = propertyValue as ExtractDefinitionValue<Shape[typeof key]>;

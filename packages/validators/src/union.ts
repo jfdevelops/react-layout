@@ -21,7 +21,7 @@ export class UnionProp<
       if (member.allows(value)) return;
     }
 
-    throw this.error;
+    throw this.createError(value);
   }
 
   allows(value: unknown): value is ExtractPropValue<Members[number]> {

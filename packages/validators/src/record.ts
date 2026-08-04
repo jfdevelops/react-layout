@@ -48,7 +48,7 @@ export class RecordProp<
 
   validate(value: unknown) {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-      throw this.error;
+      throw this.createError(value);
     }
 
     const recordValue = value as Record<string, unknown>;

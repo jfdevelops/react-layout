@@ -29,7 +29,7 @@ export class StringProp<Visibility extends PropVisibility> extends BaseProp<
 
   validate(value: unknown) {
     if (typeof value !== 'string') {
-      throw this.error;
+      throw this.createError(value);
     }
   }
 
@@ -61,7 +61,7 @@ export class NumberProp<Visibility extends PropVisibility> extends BaseProp<
 
   validate(value: unknown) {
     if (typeof value !== 'number') {
-      throw this.error;
+      throw this.createError(value);
     }
   }
 
@@ -93,7 +93,7 @@ export class BooleanProp<Visibility extends PropVisibility> extends BaseProp<
 
   validate(value: unknown) {
     if (typeof value !== 'boolean') {
-      throw this.error;
+      throw this.createError(value);
     }
   }
 

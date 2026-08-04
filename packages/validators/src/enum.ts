@@ -24,7 +24,7 @@ export class EnumProp<
 
   validate(value: unknown) {
     if (typeof value !== primitiveTypes[this.type]) {
-      throw this.error;
+      throw this.createError(value);
     }
 
     if (
@@ -32,7 +32,7 @@ export class EnumProp<
         value as PrimitiveTypesMap[Type],
       )
     ) {
-      throw this.error;
+      throw this.createError(value);
     }
   }
 
