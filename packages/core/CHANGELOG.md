@@ -1,5 +1,12 @@
 # @jfdevelops/react-layout
 
+## 0.17.0
+
+### Minor Changes
+
+- 43a8435: Ship the `build-react-layouts` agent skill with architecture, factory, routing,
+  and navigation best practices.
+
 ## 0.16.0
 
 ### Minor Changes
