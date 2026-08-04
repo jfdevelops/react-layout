@@ -16,7 +16,6 @@ describe('getComponent', () => {
       },
       'groups',
     ],
-    options: {},
     layout: {
       render: () => <></>,
     },

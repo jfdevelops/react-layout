@@ -15,6 +15,9 @@ export type UnionToIntersection<Union> = (
   ? Intersection
   : never;
 export type Updater<T> = T | ((prev: T) => T);
+export type OptionalRecord<K extends string, V = unknown> = {
+  [key in K]?: V;
+};
 
 export interface BaseComponent<Name extends string, Props = {}> {
   /**

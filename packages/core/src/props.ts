@@ -11,6 +11,39 @@ import { ResourceDefinition, ResourceEnum } from './resource';
 import { Show } from './utils';
 
 export type { InPropsObject };
+
+/**
+ * Two-argument `render(props, context)` used by createComponent and scoped
+ * resource components. `Context` is sibling components (scoped) or the
+ * resource render context (top-level).
+ */
+export type PropsContextRender<
+  RenderProps,
+  Context,
+  Result = unknown,
+> = (props: RenderProps, context: Context) => Result;
+
+/**
+ * Shared `{ props?, render }` shape used by createComponent, scoped
+ * components, and anywhere else a value declares props and a two-arg render.
+ *
+ * @typeParam Props - Declared on the entry (`props`). Often an
+ *   {@link InPropsObject}, or a layout include/custom bag.
+ * @typeParam RenderProps - First argument to `render` (defaults to
+ *   {@link ResolveProps}<Props> when Props is an {@link InPropsObject})
+ * @typeParam Result - `render` return type
+ * @typeParam Context - Second argument to `render`
+ */
+export interface PropsRenderDefinition<
+  Props = InPropsObject,
+  RenderProps = Props extends InPropsObject ? ResolveProps<Props> : unknown,
+  Result = unknown,
+  Context = unknown,
+> {
+  props?: Props;
+  render: PropsContextRender<RenderProps, Context, Result>;
+}
+
 export type InPropsOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Name extends string,

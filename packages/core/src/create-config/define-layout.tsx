@@ -63,7 +63,7 @@ export type LayoutIncludeProps<
   Composables extends ComposableComponents,
 > = IncludedProps<MergedLayoutInProps<Resources, Options, Composables>>;
 
-type LayoutProps<
+export type LayoutProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
@@ -203,7 +203,7 @@ function resolveLayoutOptionDefaults(
 
 type CreateViewMapOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  Options extends InPropsDefinition<Resources>,
+  Options extends InPropsDefinition<Resources> = {},
   Composables extends ComposableComponents = {},
   IncludeProps extends LayoutIncludeProps<Resources, Options, Composables> = {},
   CustomProps extends InPropsObject = {},
@@ -215,7 +215,7 @@ type CreateViewMapOptions<
   /**
    * The options that are passed into the created resource layout.
    */
-  options: Options;
+  options?: Options;
   layout: {
     /**
      * The props to pass to the layout.
@@ -425,9 +425,10 @@ type DefinedResourceLayout<
   createResourceLinks: CreateResourceLinksFn<Resources>;
 };
 
-export function defineResourceLayout<
+
+function defineResourceLayoutImpl<
   const Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
+  InProps extends InPropsDefinition<Resources> = {},
   Composables extends ComposableComponents = {},
   const IncludeProps extends LayoutIncludeProps<
     Resources,
@@ -443,8 +444,14 @@ export function defineResourceLayout<
     IncludeProps,
     CustomProps
   >,
-) {
-  const { options: inProps, resources, layout } = options;
+): DefinedResourceLayout<
+  Resources,
+  InProps,
+  Composables,
+  IncludeProps,
+  CustomProps
+> {
+  const { options: inProps = {} as InProps, resources, layout } = options;
   const normalizedResources = normalizeResources(resources);
   const resourcesEnum = createPrimitivePropBuilder('string').enum(
     toResourceEnum(normalizedResources),
@@ -654,9 +661,7 @@ export function defineResourceLayout<
     };
   };
 
-  function getComponentPropDefinitions(
-    resource: LayoutResourceKey<Resources>,
-  ) {
+  function getComponentPropDefinitions(resource: LayoutResourceKey<Resources>) {
     const componentName = 'ScopedResourceComponent';
     const rawResolvedOptions =
       typeof inProps === 'function'
@@ -763,3 +768,134 @@ export function defineResourceLayout<
     CustomProps
   >;
 }
+
+type DefineResourceLayoutForResourcesOptions<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  InProps extends InPropsDefinition<Resources> = {},
+  Composables extends ComposableComponents = {},
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
+  CustomProps extends InPropsObject = {},
+  ExtraResources extends ReadonlyArray<ResourceDefinition> = [],
+> = Omit<
+  CreateViewMapOptions<
+    Resources,
+    InProps,
+    Composables,
+    IncludeProps,
+    CustomProps
+  >,
+  'resources'
+> & {
+  /**
+   * Additional resources to merge with those bound by
+   * {@link defineResourceLayout.forResources}.
+   */
+  resources?: ExtraResources;
+};
+
+type NonEmptyResourceDefinitions = readonly [
+  ResourceDefinition,
+  ...ResourceDefinition[],
+];
+
+/**
+ * Factory returned by {@link DefineResourceLayout.forResources}.
+ */
+export type DefineResourceLayoutForResourcesFactory<
+  BaseResources extends NonEmptyResourceDefinitions,
+> = <
+  const ExtraResources extends ReadonlyArray<ResourceDefinition> = [],
+  InProps extends InPropsDefinition<[...BaseResources, ...ExtraResources]> = {},
+  Composables extends ComposableComponents = {},
+  const IncludeProps extends LayoutIncludeProps<
+    [...BaseResources, ...ExtraResources],
+    InProps,
+    Composables
+  > = {},
+  CustomProps extends InPropsObject = {},
+>(
+  options: DefineResourceLayoutForResourcesOptions<
+    [...BaseResources, ...ExtraResources],
+    InProps,
+    Composables,
+    IncludeProps,
+    CustomProps,
+    ExtraResources
+  >,
+) => DefinedResourceLayout<
+  [...BaseResources, ...ExtraResources],
+  InProps,
+  Composables,
+  IncludeProps,
+  CustomProps
+>;
+
+/**
+ * Binds one or more resources, then accepts the remaining
+ * {@link defineResourceLayout} options (with optional extra `resources`).
+ */
+export type DefineResourceLayoutForResources = <
+  const Resources extends NonEmptyResourceDefinitions,
+>(
+  ...resources: Resources
+) => DefineResourceLayoutForResourcesFactory<Resources>;
+
+/**
+ * Creates a resource layout definition for a set of resources.
+ */
+export type DefineResourceLayoutFn = {
+  <
+    const Resources extends ReadonlyArray<ResourceDefinition>,
+    InProps extends InPropsDefinition<Resources> = {},
+    Composables extends ComposableComponents = {},
+    const IncludeProps extends LayoutIncludeProps<
+      Resources,
+      InProps,
+      Composables
+    > = {},
+    CustomProps extends InPropsObject = {},
+  >(
+    options: CreateViewMapOptions<
+      Resources,
+      InProps,
+      Composables,
+      IncludeProps,
+      CustomProps
+    >,
+  ): DefinedResourceLayout<
+    Resources,
+    InProps,
+    Composables,
+    IncludeProps,
+    CustomProps
+  >;
+};
+
+export type DefineResourceLayout = DefineResourceLayoutFn & {
+  forResources: DefineResourceLayoutForResources;
+};
+
+function defineResourceLayoutForResources<
+  const Resources extends NonEmptyResourceDefinitions,
+>(
+  ...baseResources: Resources
+): DefineResourceLayoutForResourcesFactory<Resources> {
+  return ((options) => {
+    const { resources: extraResources, ...rest } = options;
+    const resources = extraResources
+      ? [...baseResources, ...extraResources]
+      : [...baseResources];
+
+    return defineResourceLayoutImpl({
+      ...rest,
+      resources,
+    } as never);
+  }) as DefineResourceLayoutForResourcesFactory<Resources>;
+}
+
+export const defineResourceLayout: DefineResourceLayout = Object.assign(
+  defineResourceLayoutImpl as DefineResourceLayoutFn,
+  {
+    forResources: defineResourceLayoutForResources,
+  },
+);
