@@ -762,13 +762,9 @@ describe('defineResourceLayout', () => {
       },
       resources: {
         users: {
-          description: 'Manage users',
-          title: 'Users',
           render: ({ resource }) => <span>{`custom:${resource}`}</span>,
         },
         admins: {
-          description: 'Manage admins',
-          title: 'Admins',
           render: ({ resource }) => <span>{`custom:${resource}`}</span>,
         },
       },
@@ -786,7 +782,7 @@ describe('defineResourceLayout', () => {
             {description ? <p>{description}</p> : null}
             {actions}
             {children}
-            <ResourceRender />
+            <ResourceRender title={title} />
           </section>
         );
       },
@@ -849,14 +845,13 @@ describe('defineResourceLayout', () => {
       },
       resources: {
         users: {
-          title: 'Users',
           render: () => <StatefulResourceContent />,
         },
       },
       render: ({ title }, context) => (
         <section>
           <h1>{title}</h1>
-          <context.Users />
+          <context.Users title={title} />
         </section>
       ),
     });
@@ -906,7 +901,6 @@ describe('defineResourceLayout', () => {
       props: { include: { title: true } },
       resources: {
         users: {
-          title: 'Users directory',
           components: {
             Toolbar: {
               render: ({ title }) => <nav>{`toolbar:${title}`}</nav>,
@@ -927,13 +921,16 @@ describe('defineResourceLayout', () => {
           ),
         },
         admins: {
-          title: 'Admins directory',
           render: ({ resource }) => <span>{`content:${resource}`}</span>,
         },
       },
-      render: ({ resource }, context) => (
+      render: ({ resource, title }, context) => (
         <context.Root>
-          {resource === 'users' ? <context.Users /> : <context.Admins />}
+          {resource === 'users' ? (
+            <context.Users title={title} />
+          ) : (
+            <context.Admins title={title} />
+          )}
           {/* And through the resource entry on the main render context. */}
           {resource === 'users' ? <context.Users.Footer label='end' /> : null}
         </context.Root>
@@ -964,30 +961,7 @@ describe('defineResourceLayout', () => {
     expect(screen.getAllByText('toolbar:Users').length).toBeGreaterThan(0);
   });
 
-  it('mounts component types returned from scoped and resource renders', () => {
-    function createUsersTable() {
-      function UsersTable(props: { caption?: string }) {
-        return (
-          <table>
-            <caption>{props.caption ?? 'users-table'}</caption>
-          </table>
-        );
-      }
-
-      UsersTable.displayName = 'UsersTable';
-      UsersTable.Loading = function UsersTableLoading() {
-        return <p>loading-table</p>;
-      };
-
-      return UsersTable;
-    }
-
-    function createEmptyGrid(message: string) {
-      return function EmptyGrid() {
-        return <p>{message}</p>;
-      };
-    }
-
+  it('mounts returned component types with call-site props and compound statics', () => {
     const { createResourceLayout } = defineResourceLayout({
       resources: ['users'],
       options: {
@@ -1010,29 +984,43 @@ describe('defineResourceLayout', () => {
     });
     const createDirectoryLayout = createResourceLayout.forResources('users');
     const Directory = createDirectoryLayout.createComponent({
-      props: { include: { title: true } },
+      props: {
+        include: {
+          title: true,
+        },
+      },
       resources: {
         users: {
-          title: 'Users',
           components: {
             DataTable: {
-              render: function UsersDataTable() {
-                return createUsersTable();
+              props: {
+                variant: createProp
+                  .string()
+                  .literal('a')
+                  .or(createProp.string().literal('b')),
               },
-            },
-            DataTableEmpty: {
-              render: function UsersDataTableEmpty() {
-                return createEmptyGrid('no-users');
+              render: function UsersDataTable({ variant }) {
+                function VariantTable() {
+                  return <p>{`table-${variant}`}</p>;
+                }
+
+                function VariantTableLoading() {
+                  return <p>{`loading-${variant}`}</p>;
+                }
+
+                return Object.assign(VariantTable, {
+                  Loading: VariantTableLoading,
+                });
               },
             },
           },
           render: function UsersContent(_props, components) {
-            return function UsersPanel() {
+            return function UsersPanel(props: { heading: string }) {
               return (
                 <div>
-                  <components.DataTable caption='listed' />
+                  <h2>{props.heading}</h2>
+                  <components.DataTable variant='b' />
                   <components.DataTable.Loading />
-                  <components.DataTableEmpty />
                 </div>
               );
             };
@@ -1043,8 +1031,7 @@ describe('defineResourceLayout', () => {
         return function DirectoryShell() {
           return (
             <context.Root>
-              <context.Users />
-              <context.Users.DataTable.Loading />
+              <context.Users heading='Directory users' />
             </context.Root>
           );
         };
@@ -1053,9 +1040,12 @@ describe('defineResourceLayout', () => {
 
     render(<Directory resource='users' title='Users' />);
 
-    expect(screen.getByRole('caption', { name: 'listed' })).toBeInTheDocument();
-    expect(screen.getByText('no-users')).toBeInTheDocument();
-    expect(screen.getAllByText('loading-table')).toHaveLength(2);
+    expect(
+      screen.getByRole('heading', { name: 'Directory users' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('table-b')).toBeInTheDocument();
+    expect(screen.getByText('loading-b')).toBeInTheDocument();
+    expect(screen.queryByText('loading-a')).not.toBeInTheDocument();
   });
 
   it('preserves portals returned from scoped render instead of treating them as components', () => {
@@ -1134,9 +1124,10 @@ describe('defineResourceLayout', () => {
               render: ({ label }) => <span>{String(label)}</span>,
             },
           },
-          render: (_props, components) =>
-          // @ts-expect-error - we're testing for missing props
-            <components.Badge />,
+          render: (_props, components) => (
+            // @ts-expect-error - we're testing for missing props
+            <components.Badge />
+          ),
         },
       },
       render: (_props, context) => (
@@ -1294,8 +1285,6 @@ describe('defineResourceLayout', () => {
         },
         resources: {
           users: {
-            title: 'Users',
-            Actions: () => <span>layout-actions</span>,
             render: ({ actions, badge }) => (
               <div>
                 {actions()}
@@ -1309,7 +1298,7 @@ describe('defineResourceLayout', () => {
             <h2>{title}</h2>
             {actions()}
             {badge}
-            <context.Users />
+            <context.Users title={title} actions={actions} badge={badge} />
           </context.Root>
         ),
       });
@@ -1386,18 +1375,20 @@ describe('defineResourceLayout', () => {
       },
       resources: {
         users: {
-          title: 'Users directory',
           render: ({ resource }) => <span>{`content:${resource}`}</span>,
         },
         admins: {
-          title: 'Admins directory',
           render: ({ resource }) => <span>{`content:${resource}`}</span>,
         },
       },
       render: ({ eyebrow, resource, title }, context) => (
         <context.Root>
           <p>{`${eyebrow ?? ''}|${title}`}</p>
-          {resource === 'users' ? <context.Users /> : <context.Admins />}
+          {resource === 'users' ? (
+            <context.Users title={title} />
+          ) : (
+            <context.Admins title={title} />
+          )}
         </context.Root>
       ),
     });
@@ -1408,9 +1399,7 @@ describe('defineResourceLayout', () => {
 
     render(<UsersDirectory eyebrow='Directory' title='Users' />);
 
-    expect(
-      screen.getByRole('heading', { name: 'Users directory' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Users' })).toBeInTheDocument();
     expect(screen.getByText('Directory|Users')).toBeInTheDocument();
     expect(screen.getByText('content:users')).toBeInTheDocument();
   });
@@ -1533,24 +1522,27 @@ describe('defineResourceLayout', () => {
       title: 'Users',
     });
     const Directory = createDirectoryLayout.createComponent({
+      props: { include: { title: true } },
       resources: {
         users: {
-          title: 'Users directory',
           render: ({ resource }) => <span>{`content:${resource}`}</span>,
         },
         admins: {
-          title: 'Admins directory',
           render: ({ resource }) => <span>{`content:${resource}`}</span>,
         },
       },
-      render: ({ resource }, context) => (
+      render: ({ resource, title }, context) => (
         <context.Root actions={<button type='button'>Create</button>}>
-          {resource === 'users' ? <context.Users /> : <context.Admins />}
+          {resource === 'users' ? (
+            <context.Users title={title} />
+          ) : (
+            <context.Admins title={title} />
+          )}
         </context.Root>
       ),
     });
 
-    render(<Directory resource='users' />);
+    render(<Directory resource='users' title='Users directory' />);
 
     expect(
       screen.getByRole('heading', { name: 'Users directory' }),
@@ -1559,7 +1551,7 @@ describe('defineResourceLayout', () => {
     expect(screen.getByText('content:users')).toBeInTheDocument();
   });
 
-  it('uses per-resource layout options for the render context root', () => {
+  it('uses call-site layout options for the render context root', () => {
     const { createResourceLayout } = defineResourceLayout({
       resources: ['users', 'admins'],
       options: {
@@ -1589,13 +1581,12 @@ describe('defineResourceLayout', () => {
       title: 'Admins',
     });
     const Directory = createDirectoryLayout.createComponent({
+      props: { include: { title: true } },
       resources: {
         users: {
-          title: 'Users directory',
           render: () => <span>users</span>,
         },
         admins: {
-          title: 'Admins directory',
           render: () => <span>admins</span>,
         },
       },
@@ -1606,7 +1597,7 @@ describe('defineResourceLayout', () => {
       ),
     });
 
-    render(<Directory resource='admins' />);
+    render(<Directory resource='admins' title='Admins directory' />);
 
     expect(
       screen.getByRole('heading', {
@@ -1668,7 +1659,7 @@ describe('defineResourceLayout', () => {
     );
     const Directory = createDirectoryLayout.createComponent({
       resources: {
-        users: { title: 'Users', render: () => <span>users</span> },
+        users: { render: () => <span>users</span> },
       },
       render: (_props, context) => <context.Root />,
     });
@@ -1718,31 +1709,35 @@ describe('defineResourceLayout', () => {
 
     const Directory = createDirectoryLayout.createComponent({
       props: {
+        include: { title: true },
         custom: {
           eyebrow: createProp.string().optional(),
         },
       },
       resources: {
         users: {
-          title: 'Users directory',
           render: () => <StatefulResourceContent />,
         },
       },
-      render: ({ eyebrow }, context) => (
+      render: ({ eyebrow, title }, context) => (
         <context.Root>
           <span>{eyebrow}</span>
-          <context.Users />
+          <context.Users title={title} />
         </context.Root>
       ),
     });
-    const view = render(<Directory eyebrow='First' resource='users' />);
+    const view = render(
+      <Directory eyebrow='First' resource='users' title='Users directory' />,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Count: 0' }));
     expect(
       screen.getByRole('button', { name: 'Count: 1' }),
     ).toBeInTheDocument();
 
-    view.rerender(<Directory eyebrow='Second' resource='users' />);
+    view.rerender(
+      <Directory eyebrow='Second' resource='users' title='Users directory' />,
+    );
 
     expect(screen.getByText('Second')).toBeInTheDocument();
     expect(

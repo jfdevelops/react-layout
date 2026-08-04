@@ -63,7 +63,7 @@ export type LayoutIncludeProps<
   Composables extends ComposableComponents,
 > = IncludedProps<MergedLayoutInProps<Resources, Options, Composables>>;
 
-type LayoutProps<
+export type LayoutProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,

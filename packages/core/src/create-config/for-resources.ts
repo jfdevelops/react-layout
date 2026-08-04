@@ -22,6 +22,9 @@ import type {
   InPropsDefinition,
   InPropsObject,
   MergedLayoutInProps,
+  PropsContextRender,
+  PropsRenderDefinition,
+  ResolvedIncludedProps,
   ResolvedIncludedPropsAsDefined,
 } from '../props';
 import type { LayoutResourceKey, ResourceDefinition } from '../resource';
@@ -29,6 +32,7 @@ import { capitalize } from '../utils/capitalize';
 import type { BaseComponent, Show } from '../utils';
 import type {
   LayoutIncludeProps,
+  LayoutProps,
   LayoutPropsForResource,
   ResourceLayoutComponent,
 } from './define-layout';
@@ -412,7 +416,8 @@ type ScopedResourceComponentCallProps<
  * `props` reverse-maps as-is. `render` cannot reverse-map as a full function
  * type (that becomes `unknown`), so only its return type is preserved via
  * `(...args: any) => Return`. Call-site props and compound statics are then
- * read from that return type on the inferred generic.
+ * read from that return type — prefer the raw capture intersection on entries
+ * when both `props` and a returned component type must survive together.
  */
 type ScopedComponentShape = {
   props?: InPropsObject;
@@ -422,7 +427,7 @@ type ScopedComponentShape = {
 /**
  * Homomorphic pick of reverse-mapped scoped-component fields. Paired with a
  * mapped type over the components object, this lets each entry's inferred
- * `props` and `render` return type flow into sibling / context signatures.
+ * `props` (and render return when inference succeeds) flow into signatures.
  */
 type JustScopedComponent<T> = {
   [Key in keyof T & keyof ScopedComponentShape]: Key extends 'render'
@@ -433,6 +438,7 @@ type JustScopedComponent<T> = {
       : unknown
     : T[Key];
 };
+
 
 /**
  * Resources with no `components` reverse-infer as `unknown`. Treat that as an
@@ -486,7 +492,9 @@ type PropsFromRenderResult<Result> = [Result] extends [never]
         : {}
     : {};
 
-/** Call-site props inferred from a scoped component's `render` return type. */
+/**
+ * Call-site props inferred from a scoped component's `render` return type.
+ */
 type PropsFromScopedRender<Definition> = Definition extends {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- open args
   render: (...args: any) => infer Result;
@@ -583,9 +591,55 @@ type ResolvedScopedComponentsMap<Components> = {
   >;
 };
 
-type ScopedResourceComponentRenderContext<
-  ComponentsByResource,
+/**
+ * Call-site props for `context.<Resource>`: outermost createComponent
+ * include/custom props (minus `resource`).
+ */
+type ScopedResourceContextCallProps<
+  ResourceDefinitions extends ReadonlyArray<ResourceDefinition>,
+  InProps extends InPropsDefinition<ResourceDefinitions>,
+  Composables extends ComposableComponents,
   LayoutCustomProps extends InPropsObject,
+  ComponentIncludeProps extends IncludedProps<
+    ScopedComponentAvailableProps<
+      ResourceDefinitions,
+      InProps,
+      Composables,
+      LayoutCustomProps
+    >
+  >,
+  ComponentCustomProps extends InPropsObject,
+  Resource extends string,
+> = Show<
+  Omit<
+    ScopedResourceComponentProps<
+      ResourceDefinitions,
+      InProps,
+      Composables,
+      LayoutCustomProps,
+      ComponentIncludeProps,
+      ComponentCustomProps,
+      Resource
+    >,
+    'resource'
+  >
+>;
+
+type ScopedResourceComponentRenderContext<
+  ResourceDefinitions extends ReadonlyArray<ResourceDefinition>,
+  InProps extends InPropsDefinition<ResourceDefinitions>,
+  Composables extends ComposableComponents,
+  LayoutCustomProps extends InPropsObject,
+  ComponentIncludeProps extends IncludedProps<
+    ScopedComponentAvailableProps<
+      ResourceDefinitions,
+      InProps,
+      Composables,
+      LayoutCustomProps
+    >
+  >,
+  ComponentCustomProps extends InPropsObject,
+  ComponentsByResource,
 > = {
   /**
    * The resource layout for the component's current `resource`, created
@@ -596,7 +650,17 @@ type ScopedResourceComponentRenderContext<
 } & {
   [Resource in keyof ComponentsByResource as Capitalize<
     Resource & string
-  >]-?: (() => JSX.Element) &
+  >]-?: ScopedComponentSignature<
+    ScopedResourceContextCallProps<
+      ResourceDefinitions,
+      InProps,
+      Composables,
+      LayoutCustomProps,
+      ComponentIncludeProps,
+      ComponentCustomProps,
+      Resource & string
+    >
+  > &
     ResolvedScopedComponentsMap<ComponentsByResource[Resource]>;
 };
 
@@ -611,16 +675,25 @@ type ScopedResourceComponentRenderContext<
  * The parameter must not carry a default: TypeScript contextually types from a
  * parameter's default when it has one, and `{}` would silently degrade every
  * nested render to `any`.
+ *
+ * Entry keys are only `name`, `components`, and `render`. Layout option values
+ * like `title` are excess-property errors here — they belong on
+ * `context.<Resource>` / the outer component call site.
+ *
+ * Each scoped component is `JustScopedComponent<Captured> & Precise & Captured`:
+ * the homomorphic pick reverse-infers `props`, the precise `render`
+ * contextually types parameters, and the raw capture keeps the literal for
+ * call-site resolution.
  */
 type ScopedComponentResourceEntries<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
+  ResourceDefinitions extends ReadonlyArray<ResourceDefinition>,
+  InProps extends InPropsDefinition<ResourceDefinitions>,
   Composables extends ComposableComponents,
   Arguments extends ReadonlyArray<unknown>,
   LayoutCustomProps extends InPropsObject,
   ComponentIncludeProps extends IncludedProps<
     ScopedComponentAvailableProps<
-      Resources,
+      ResourceDefinitions,
       InProps,
       Composables,
       LayoutCustomProps
@@ -629,11 +702,7 @@ type ScopedComponentResourceEntries<
   ComponentCustomProps extends InPropsObject,
   ComponentsByResource,
 > = {
-  [Resource in keyof ComponentsByResource]: LayoutPropsForResource<
-    Resources,
-    InProps,
-    Composables
-  > & {
+  [Resource in keyof ComponentsByResource]: {
     /**
      * Overrides the layout name used by `context.Root` for this resource.
      * Defaults to the scope's configured name, then the capitalized resource.
@@ -647,9 +716,7 @@ type ScopedComponentResourceEntries<
     components?: {
       [Name in keyof ComponentsByResource[Resource]]: JustScopedComponent<
         ComponentsByResource[Resource][Name]
-      > & {
-        /** Props accepted by this component, validated at its call site. */
-        props?: InPropsObject;
+      > &
         /**
          * Renders this component. Receives the scoped component's props plus
          * this component's own props, and the other components for this
@@ -659,9 +726,10 @@ type ScopedComponentResourceEntries<
          * call-site props). Props and compound statics of a returned component
          * type are inferred at call sites from the render return type.
          */
-        render: (
-          props: ScopedResourceComponentProps<
-            Resources,
+        PropsRenderDefinition<
+          InPropsObject,
+          ScopedResourceComponentProps<
+            ResourceDefinitions,
             InProps,
             Composables,
             LayoutCustomProps,
@@ -674,17 +742,18 @@ type ScopedComponentResourceEntries<
                 ScopedComponentOwnProps<ComponentsByResource[Resource][Name]>
               >
             >,
-          components: Omit<
+          ScopedRenderResult,
+          Omit<
             ResolvedScopedComponentsMap<ComponentsByResource[Resource]>,
             Name
-          >,
-        ) => ScopedRenderResult;
-      };
+          >
+        > &
+        ComponentsByResource[Resource][Name];
     };
     /** Renders this resource's content inside the shared render function. */
-    render: (
-      props: ScopedResourceComponentProps<
-        Resources,
+    render: PropsContextRender<
+      ScopedResourceComponentProps<
+        ResourceDefinitions,
         InProps,
         Composables,
         LayoutCustomProps,
@@ -692,13 +761,14 @@ type ScopedComponentResourceEntries<
         ComponentCustomProps,
         Resource & string
       >,
-      components: ResolvedScopedComponentsMap<ComponentsByResource[Resource]>,
-    ) => ScopedRenderResult;
+      ResolvedScopedComponentsMap<ComponentsByResource[Resource]>,
+      ScopedRenderResult
+    >;
   };
 } & Record<
   Exclude<
     keyof ComponentsByResource,
-    SelectedLayoutResources<Resources, Arguments>
+    SelectedLayoutResources<ResourceDefinitions, Arguments>
   >,
   never
 >;
@@ -708,13 +778,13 @@ type ScopedComponentResourceEntries<
  * so it is removed from the call site.
  */
 type ScopedBoundResourceComponentProps<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
+  ResourceDefinitions extends ReadonlyArray<ResourceDefinition>,
+  InProps extends InPropsDefinition<ResourceDefinitions>,
   Composables extends ComposableComponents,
   LayoutCustomProps extends InPropsObject,
   ComponentIncludeProps extends IncludedProps<
     ScopedComponentAvailableProps<
-      Resources,
+      ResourceDefinitions,
       InProps,
       Composables,
       LayoutCustomProps
@@ -726,7 +796,7 @@ type ScopedBoundResourceComponentProps<
 > = Show<
   Omit<
     ScopedResourceComponentCallProps<
-      Resources,
+      ResourceDefinitions,
       InProps,
       Composables,
       LayoutCustomProps,
@@ -740,13 +810,13 @@ type ScopedBoundResourceComponentProps<
 >;
 
 type ScopedBoundResourceComponent<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
+  ResourceDefinitions extends ReadonlyArray<ResourceDefinition>,
+  InProps extends InPropsDefinition<ResourceDefinitions>,
   Composables extends ComposableComponents,
   LayoutCustomProps extends InPropsObject,
   ComponentIncludeProps extends IncludedProps<
     ScopedComponentAvailableProps<
-      Resources,
+      ResourceDefinitions,
       InProps,
       Composables,
       LayoutCustomProps
@@ -759,7 +829,7 @@ type ScopedBoundResourceComponent<
 > = BaseComponent<
   string,
   ScopedBoundResourceComponentProps<
-    Resources,
+    ResourceDefinitions,
     InProps,
     Composables,
     LayoutCustomProps,
@@ -776,7 +846,7 @@ type ScopedBoundResourceComponent<
   > & {
     (
       props: ScopedBoundResourceComponentProps<
-        Resources,
+        ResourceDefinitions,
         InProps,
         Composables,
         LayoutCustomProps,
@@ -794,14 +864,14 @@ type ScopedBoundResourceComponent<
   };
 
 type ScopedResourceComponent<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
+  ResourceDefinitions extends ReadonlyArray<ResourceDefinition>,
+  InProps extends InPropsDefinition<ResourceDefinitions>,
   Composables extends ComposableComponents,
   Arguments extends ReadonlyArray<unknown>,
   LayoutCustomProps extends InPropsObject,
   ComponentIncludeProps extends IncludedProps<
     ScopedComponentAvailableProps<
-      Resources,
+      ResourceDefinitions,
       InProps,
       Composables,
       LayoutCustomProps
@@ -813,13 +883,13 @@ type ScopedResourceComponent<
 > = BaseComponent<
   string,
   ScopedResourceComponentCallProps<
-    Resources,
+    ResourceDefinitions,
     InProps,
     Composables,
     LayoutCustomProps,
     ComponentIncludeProps,
     ComponentCustomProps,
-    SelectedLayoutResources<Resources, Arguments>,
+    SelectedLayoutResources<ResourceDefinitions, Arguments>,
     RenderResult
   >
 > & {
@@ -827,9 +897,14 @@ type ScopedResourceComponent<
    * The `resource` prop drives the generic, so it is inferred from the call
    * site. Explicit type arguments are never needed.
    */
-  <const Resource extends SelectedLayoutResources<Resources, Arguments>>(
+  <
+    const Resource extends SelectedLayoutResources<
+      ResourceDefinitions,
+      Arguments
+    >,
+  >(
     props: ScopedResourceComponentCallProps<
-      Resources,
+      ResourceDefinitions,
       InProps,
       Composables,
       LayoutCustomProps,
@@ -855,11 +930,14 @@ type ScopedResourceComponent<
    * @returns A factory producing a component bound to the given resource.
    */
   asHOF(): <
-    const Resource extends SelectedLayoutResources<Resources, Arguments>,
+    const Resource extends SelectedLayoutResources<
+      ResourceDefinitions,
+      Arguments
+    >,
   >(
     resource: Resource,
   ) => ScopedBoundResourceComponent<
-    Resources,
+    ResourceDefinitions,
     InProps,
     Composables,
     LayoutCustomProps,
@@ -871,9 +949,82 @@ type ScopedResourceComponent<
   >;
 };
 
+/**
+ * Options for {@link ScopedCreateComponent}. Extends the shared
+ * `{ props?, render }` shape; `props` is the layout include/custom bag, and
+ * `render` receives component props plus the resource context (`Root` and
+ * capitalized per-resource components).
+ *
+ * May return a React node or a component type (mounted with the component
+ * props). When a component type is returned, its props are merged into the
+ * created component's call signature via `RenderResult` /
+ * `ScopedResourceComponentCallProps` — they are intentionally *not* added
+ * to the `render` `props` parameter (that would circularly depend on the
+ * return).
+ */
+interface ScopedCreateComponentOptions<
+  ResourceDefinitions extends ReadonlyArray<ResourceDefinition>,
+  InProps extends InPropsDefinition<ResourceDefinitions>,
+  Composables extends ComposableComponents,
+  Arguments extends ReadonlyArray<unknown>,
+  LayoutCustomProps extends InPropsObject,
+  ComponentIncludeProps extends LayoutIncludeProps<
+    ResourceDefinitions,
+    InProps,
+    Composables
+  >,
+  ComponentCustomProps extends InPropsObject,
+  ComponentsByResource,
+  RenderResult extends ScopedRenderResult,
+> extends PropsRenderDefinition<
+  LayoutProps<
+    ResourceDefinitions,
+    InProps,
+    Composables,
+    ComponentIncludeProps,
+    ComponentCustomProps
+  >,
+  ScopedResourceComponentProps<
+    ResourceDefinitions,
+    InProps,
+    Composables,
+    LayoutCustomProps,
+    ComponentIncludeProps,
+    ComponentCustomProps,
+    SelectedLayoutResources<ResourceDefinitions, Arguments>
+  >,
+  RenderResult,
+  ScopedResourceComponentRenderContext<
+    ResourceDefinitions,
+    InProps,
+    Composables,
+    LayoutCustomProps,
+    ComponentIncludeProps,
+    ComponentCustomProps,
+    ComponentsByResource
+  >
+> {
+  /**
+   * Per-resource content, keyed by resource. Each entry holds that resource's
+   * scoped `components` and its `render` — not layout option values like
+   * `title` (those are call-site props on `context.<Resource>` / the outer
+   * component).
+   */
+  resources?: ScopedComponentResourceEntries<
+    ResourceDefinitions,
+    InProps,
+    Composables,
+    Arguments,
+    LayoutCustomProps,
+    ComponentIncludeProps,
+    ComponentCustomProps,
+    ComponentsByResource
+  >;
+}
+
 type ScopedCreateComponent<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
+  ResourceDefinitions extends ReadonlyArray<ResourceDefinition>,
+  InProps extends InPropsDefinition<ResourceDefinitions>,
   Composables extends ComposableComponents,
   Arguments extends ReadonlyArray<unknown>,
   LayoutCustomProps extends InPropsObject,
@@ -890,64 +1041,26 @@ type ScopedCreateComponent<
   // No default: a default would contextually type the render return and erase
   // the concrete component type (losing prop inference).
   const RenderResult extends ScopedRenderResult,
-  const ComponentIncludeProps extends IncludedProps<
-    ScopedComponentAvailableProps<
-      Resources,
-      InProps,
-      Composables,
-      LayoutCustomProps
-    >
+  const ComponentIncludeProps extends LayoutIncludeProps<
+    ResourceDefinitions,
+    InProps,
+    Composables
   > = {},
   ComponentCustomProps extends InPropsObject = {},
->(options: {
-  props?: {
-    /** Props from the resource layout definition to expose to the component. */
-    include?: ComponentIncludeProps;
-    /** Additional props accepted by the component. */
-    custom?: ComponentCustomProps;
-  };
-  /**
-   * Per-resource content, keyed by resource. Each entry holds that resource's
-   * create-time layout options, its scoped `components`, and its `render`.
-   */
-  resources?: ScopedComponentResourceEntries<
-    Resources,
+>(
+  options: ScopedCreateComponentOptions<
+    ResourceDefinitions,
     InProps,
     Composables,
     Arguments,
     LayoutCustomProps,
     ComponentIncludeProps,
     ComponentCustomProps,
-    ComponentsByResource
-  >;
-  /**
-   * Renders the scoped component. `children` and `resource` are always
-   * available. The context contains `Root`, the layout for the current
-   * resource, plus a capitalized component per defined resource.
-   *
-   * May return a React node or a component type (mounted with the component
-   * props). When a component type is returned, its props are merged into the
-   * created component's call signature via `RenderResult` /
-   * `ScopedResourceComponentCallProps` — they are intentionally *not* added
-   * to this `props` parameter (that would circularly depend on the return).
-   */
-  render: (
-    props: ScopedResourceComponentProps<
-      Resources,
-      InProps,
-      Composables,
-      LayoutCustomProps,
-      ComponentIncludeProps,
-      ComponentCustomProps,
-      SelectedLayoutResources<Resources, Arguments>
-    >,
-    context: ScopedResourceComponentRenderContext<
-      ComponentsByResource,
-      LayoutCustomProps
-    >,
-  ) => RenderResult;
-}) => ScopedResourceComponent<
-  Resources,
+    ComponentsByResource,
+    RenderResult
+  >,
+) => ScopedResourceComponent<
+  ResourceDefinitions,
   InProps,
   Composables,
   Arguments,
@@ -976,10 +1089,11 @@ type ScopedCreateResourceLayoutFn<
    * become component props, and `children` is always available as an optional
    * prop in both the render callback and at the call site.
    *
-   * Each key of `resources` holds that resource's create-time layout options
-   * alongside its `render`. The render context exposes `Root` — the layout for
-   * the current resource, built from those options — and one capitalized
-   * component per key present in `resources`.
+   * Each key of `resources` holds that resource's scoped `components` and
+   * `render`. Layout option values like `title` are call-site props on
+   * `context.<Resource>` / the outer component — not fields on the entry.
+   * The render context exposes `Root` and one capitalized component per key
+   * present in `resources`.
    *
    * Each entry may also declare `components` — components scoped to that
    * resource, available to the entry's own `render`, on `context.<Resource>`,
@@ -990,7 +1104,6 @@ type ScopedCreateResourceLayoutFn<
    *   props: { include: { title: true, actions: 'optional' } },
    *   resources: {
    *     users: {
-   *       title: 'Users',
    *       components: {
    *         Toolbar: { render: ({ title }) => <nav>{title}</nav> },
    *       },
@@ -1002,14 +1115,17 @@ type ScopedCreateResourceLayoutFn<
    *       ),
    *     },
    *     admins: {
-   *       title: 'Admins',
    *       render: ({ resource }) => <span>{resource}</span>,
    *     },
    *   },
    *   render: ({ actions, children, resource }, context) => (
    *     <context.Root actions={actions}>
    *       {children}
-   *       {resource === 'users' ? <context.Users /> : <context.Admins />}
+   *       {resource === 'users' ? (
+   *         <context.Users title="Users" />
+   *       ) : (
+   *         <context.Admins title="Admins" />
+   *       )}
    *       <context.Users.Toolbar />
    *     </context.Root>
    *   ),
@@ -1588,6 +1704,13 @@ export function createForResources<
               }
 
               const ownPropDefinitions = definition.props ?? {};
+              // Last call-site own-props / returned component for this scoped
+              // entry. Compound statics re-run `render` with these so
+              // `<DataTable variant="b" />` then `<DataTable.Loading />` sees "b".
+              let cachedOwnProps: Record<string, unknown> = {};
+              let cachedReturnedComponent:
+                | ComponentType<Record<string, unknown>>
+                | undefined;
 
               function ScopedComponent(ownProps?: Record<string, unknown>) {
                 const componentProps = useContext(componentPropsContext);
@@ -1599,18 +1722,24 @@ export function createForResources<
                 }
 
                 const resolvedOwnProps = ownProps ?? {};
+                cachedOwnProps = resolvedOwnProps;
 
                 validateProps(ownPropDefinitions, resolvedOwnProps);
 
                 // Mount a returned component type with call-site props; pass
                 // nodes (elements, portals, null) through unchanged.
-                return resolveScopedRenderResult(
-                  definition.render(
-                    { ...componentProps, ...resolvedOwnProps, resource },
-                    scopedComponents,
-                  ),
-                  resolvedOwnProps,
+                const result = definition.render(
+                  { ...componentProps, ...resolvedOwnProps, resource },
+                  scopedComponents,
                 );
+
+                if (isRenderableComponentType(result)) {
+                  cachedReturnedComponent = result as ComponentType<
+                    Record<string, unknown>
+                  >;
+                }
+
+                return resolveScopedRenderResult(result, resolvedOwnProps);
               }
 
               // Types expose compound statics from the returned component
@@ -1627,13 +1756,21 @@ export function createForResources<
                       );
                     }
 
-                    // Re-run render to read the static off the returned type.
-                    // Call-site props for Loading are Loading's own, not the
-                    // parent DataTable's — pass only layout context + resource.
-                    const result = definition.render(
-                      { ...componentProps, resource },
-                      scopedComponents,
-                    );
+                    // Prefer the component from the last parent call (same
+                    // closure as that call's own-props). Fall back to re-running
+                    // render with cached parent props when needed.
+                    let result: unknown = cachedReturnedComponent;
+
+                    if (!isRenderableComponentType(result)) {
+                      result = definition.render(
+                        {
+                          ...componentProps,
+                          ...cachedOwnProps,
+                          resource,
+                        },
+                        scopedComponents,
+                      );
+                    }
 
                     if (!isRenderableComponentType(result)) {
                       throw new Error(
@@ -1652,6 +1789,7 @@ export function createForResources<
                       );
                     }
 
+                    // Loading's props — those mount the static itself.
                     return createElement(staticComponent, ownProps ?? {});
                   }
 
@@ -1663,7 +1801,7 @@ export function createForResources<
 
             resourceScopedComponents.set(resource, scopedComponents);
 
-            function ResourceRender() {
+            function ResourceRender(ownProps?: Record<string, unknown>) {
               const componentProps = useContext(componentPropsContext);
 
               if (componentProps === undefined) {
@@ -1672,17 +1810,19 @@ export function createForResources<
                 );
               }
 
-              // Same as scoped components: mount returned component types, keep
-              // nodes (including portals) intact. No call-site props here.
+              // Call-site props on `context.Users({ title, heading })` merge into
+              // the resource render props and mount a returned component type.
+              const callProps = { ...componentProps, ...ownProps, resource };
               return resolveScopedRenderResult(
-                entry.render(
-                  { ...componentProps, resource },
-                  scopedComponents,
-                ),
+                entry.render(callProps, scopedComponents),
+                ownProps,
               );
             }
 
-            return [contextKey, Object.assign(ResourceRender, scopedComponents)];
+            return [
+              contextKey,
+              Object.assign(ResourceRender, scopedComponents),
+            ];
           }),
         );
 
@@ -1696,37 +1836,6 @@ export function createForResources<
         (props: Record<string, unknown>) => JSX.Element
       >();
 
-      function getRoot(resource: LayoutResourceKey<Resources>) {
-        let root = roots.get(resource);
-
-        if (root === undefined) {
-          const entry = definedEntries.get(resource);
-
-          if (entry === undefined) {
-            // Without an entry there are no create-time layout options, so a
-            // layout with required props would fail validation deep inside
-            // its own render. Fail here instead, naming the fix.
-            throw new Error(
-              `Render context component "Root" requires a "resources.${resource}" entry to build the layout for resource "${resource}"`,
-            );
-          }
-
-          const { render: _render, ...layoutOptions } = entry;
-
-          root = scopedCreateResourceLayout({
-            ...layoutOptions,
-            name:
-              layoutOptions.name ??
-              defaultNames.get(resource) ??
-              capitalize(resource),
-            resource,
-          }) as (props: Record<string, unknown>) => JSX.Element;
-          roots.set(resource, root);
-        }
-
-        return root;
-      }
-
       function Root(rootProps: Record<string, unknown>) {
         const componentProps = useContext(componentPropsContext);
 
@@ -1736,10 +1845,48 @@ export function createForResources<
           );
         }
 
-        return createElement(
-          getRoot(componentProps.resource as LayoutResourceKey<Resources>),
-          rootProps,
-        );
+        const resource =
+          componentProps.resource as LayoutResourceKey<Resources>;
+        let root = roots.get(resource);
+
+        if (root === undefined) {
+          const entry = definedEntries.get(resource);
+
+          if (entry === undefined) {
+            throw new Error(
+              `Render context component "Root" requires a "resources.${resource}" entry to build the layout for resource "${resource}"`,
+            );
+          }
+
+          // Layout option values come from the outer component call site
+          // (`<Directory title="…" />`), not from the resource entry.
+          const availableDefinitions =
+            getComponentPropDefinitions(resource);
+          const layoutOptions: Record<string, unknown> = {};
+
+          for (const key of Object.keys(availableDefinitions)) {
+            if (key in componentProps) {
+              layoutOptions[key] = componentProps[key];
+            }
+
+            const capitalized = capitalize(key);
+            if (capitalized in componentProps) {
+              layoutOptions[capitalized] = componentProps[capitalized];
+            }
+          }
+
+          root = scopedCreateResourceLayout({
+            ...layoutOptions,
+            name:
+              entry.name ??
+              defaultNames.get(resource) ??
+              capitalize(resource),
+            resource,
+          }) as (props: Record<string, unknown>) => JSX.Element;
+          roots.set(resource, root);
+        }
+
+        return createElement(root, rootProps);
       }
 
       renderContext.Root = Root;

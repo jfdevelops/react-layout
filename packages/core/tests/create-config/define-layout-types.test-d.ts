@@ -209,8 +209,6 @@ const Directory = createDirectoryLayout.createComponent({
   },
   resources: {
     users: {
-      description: 'Manage users',
-      title: 'Users',
       render: (props) => {
         const resource: 'users' = props.resource;
 
@@ -219,8 +217,6 @@ const Directory = createDirectoryLayout.createComponent({
       },
     },
     admins: {
-      description: 'Manage admins',
-      title: 'Admins',
       render: (props) => {
         const resource: 'admins' = props.resource;
 
@@ -235,8 +231,20 @@ const Directory = createDirectoryLayout.createComponent({
     const description: string | undefined = props.description;
     const resource: 'users' | 'admins' = props.resource;
     const title: string = props.title;
-    const Users: () => JSX.Element = context.Users;
-    const Admins: () => JSX.Element = context.Admins;
+    const Users: (props: {
+      title: string;
+      description?: string;
+      actions?: ReactNode;
+      eyebrow?: string;
+      children?: ReactNode;
+    }) => JSX.Element = context.Users;
+    const Admins: (props: {
+      title: string;
+      description?: string;
+      actions?: ReactNode;
+      eyebrow?: string;
+      children?: ReactNode;
+    }) => JSX.Element = context.Admins;
 
     void actions;
     void Admins;
@@ -285,8 +293,6 @@ const PartialDirectory = createDirectoryLayout.createComponent({
   props: { include: { title: true } },
   resources: {
     users: {
-      description: 'Manage users',
-      title: 'Users',
       render: (props) => {
         const resource: 'users' = props.resource;
 
@@ -298,7 +304,7 @@ const PartialDirectory = createDirectoryLayout.createComponent({
   render: (props, context) => {
     // The `resource` prop still accepts every resource in the scope.
     const resource: 'users' | 'admins' = props.resource;
-    const Users: () => JSX.Element = context.Users;
+    const Users: (props: { title: string }) => JSX.Element = context.Users;
     const Root: (props: {
       actions: ReactNode;
       children?: ReactNode;
@@ -345,8 +351,6 @@ const ScopedDirectory = createDirectoryLayout.createComponent({
   props: { include: { title: true } },
   resources: {
     users: {
-      description: 'Manage users',
-      title: 'Users',
       components: {
         Toolbar: {
           render: (props, components) => {
@@ -391,8 +395,6 @@ const ScopedDirectory = createDirectoryLayout.createComponent({
       },
     },
     admins: {
-      description: 'Manage admins',
-      title: 'Admins',
       render: (_props, components) => {
         // @ts-expect-error admins declared no scoped components
         components.Toolbar;
@@ -430,8 +432,6 @@ const PropsInferredDirectory = createDirectoryLayout.createComponent({
   props: { include: { title: true } },
   resources: {
     users: {
-      description: 'Manage users',
-      title: 'Users',
       components: {
         Widget: {
           props: { label: createProp.string() },
@@ -467,8 +467,6 @@ const ComponentReturnDirectory = createDirectoryLayout.createComponent({
   props: { include: { title: true } },
   resources: {
     users: {
-      description: 'Manage users',
-      title: 'Users',
       components: {
         DataTable: {
           render: function UsersDataTable() {
@@ -476,17 +474,10 @@ const ComponentReturnDirectory = createDirectoryLayout.createComponent({
               void props;
               return null as never;
             }
-            Table.Loading = function Loading() {
+            function Loading() {
               return null as never;
-            };
-            return Table;
-          },
-        },
-        DataTableEmpty: {
-          render: function UsersDataTableEmpty() {
-            return function Empty() {
-              return null as never;
-            };
+            }
+            return Object.assign(Table, { Loading });
           },
         },
       },
@@ -494,11 +485,7 @@ const ComponentReturnDirectory = createDirectoryLayout.createComponent({
         components.DataTable({ caption: 'listed', rows: 1 });
         // @ts-expect-error DataTable requires props from the returned component
         components.DataTable({});
-        const loading: () => JSX.Element = components.DataTable.Loading;
         components.DataTable.Loading();
-        components.DataTableEmpty();
-
-        void loading;
         return null as never;
       },
     },
@@ -508,11 +495,68 @@ const ComponentReturnDirectory = createDirectoryLayout.createComponent({
     // @ts-expect-error DataTable requires props from the returned component
     context.Users.DataTable({});
     context.Users.DataTable.Loading();
-    context.Users.DataTableEmpty();
     return null as never;
   },
 });
 void ComponentReturnDirectory;
+
+// Declared `props` and render-return compound statics infer independently.
+const ComponentReturnWithDeclaredPropsDirectory =
+  createDirectoryLayout.createComponent({
+    props: { include: { title: true } },
+    resources: {
+      users: {
+        components: {
+          DataTable: {
+            props: {
+              variant: createProp
+                .string()
+                .literal('a')
+                .or(createProp.string().literal('b')),
+            },
+            render: function UsersDataTable({ variant }) {
+              const typedVariant: 'a' | 'b' = variant;
+              void typedVariant;
+              function Table() {
+                return null as never;
+              }
+              function Loading() {
+                return null as never;
+              }
+              return Object.assign(Table, { Loading });
+            },
+          },
+        },
+        render: function UsersContent(_props, components) {
+          components.DataTable({ variant: 'b' });
+          components.DataTable.Loading();
+          // @ts-expect-error DataTable requires its declared variant prop
+          components.DataTable({});
+          return null as never;
+        },
+      },
+    },
+    render: function DirectoryRender(_props, context) {
+      context.Users.DataTable({ variant: 'a' });
+      context.Users.DataTable.Loading();
+      // @ts-expect-error DataTable requires its declared variant prop
+      context.Users.DataTable({});
+      return null as never;
+    },
+  });
+const BoundUsersWithDeclaredProps =
+  ComponentReturnWithDeclaredPropsDirectory.asHOF()('users');
+const preciseDataTable: ((props: {
+  readonly variant: 'a' | 'b';
+}) => JSX.Element) & {
+  Loading: () => JSX.Element;
+} = BoundUsersWithDeclaredProps.DataTable;
+BoundUsersWithDeclaredProps.DataTable({ variant: 'a' });
+BoundUsersWithDeclaredProps.DataTable.Loading();
+// @ts-expect-error DataTable requires its declared variant prop on asHOF()
+BoundUsersWithDeclaredProps.DataTable({});
+void preciseDataTable;
+void ComponentReturnWithDeclaredPropsDirectory;
 
 // Top-level createComponent render return type also feeds call-site props
 // (ScopedResourceComponentCallProps), same idea as scoped components.
@@ -520,8 +564,6 @@ const TopLevelReturnDirectory = createDirectoryLayout.createComponent({
   props: { include: { title: true } },
   resources: {
     users: {
-      description: 'Manage users',
-      title: 'Users',
       render: () => null as never,
     },
   },
@@ -569,8 +611,6 @@ const JsxSlotDirectory = createJsxSlotLayout.forResources('users').createCompone
   },
   resources: {
     users: {
-      title: 'Users',
-      Actions: () => null as never,
       render: (props) => {
         const actions: () => JSX.Element = props.actions;
         const badge: JSX.Element = props.badge;
@@ -615,8 +655,10 @@ JsxSlotDirectory({
 
 // @ts-expect-error resource entries reject unknown layout options
 createDirectoryLayout.createComponent({ resources: { users: { bogus: true, render: () => null as never } }, render: () => null as never });
+// @ts-expect-error resource entries reject layout option fields like title
+createDirectoryLayout.createComponent({ resources: { users: { title: 'Users', render: () => null as never } }, render: () => null as never });
 // @ts-expect-error resource entries require a render function
-createDirectoryLayout.createComponent({ resources: { users: { title: 'Users' } } , render: () => null as never });
+createDirectoryLayout.createComponent({ resources: { users: { name: 'Users' } } , render: () => null as never });
 // @ts-expect-error the shared render function is required
 createDirectoryLayout.createComponent({ resources: { users: { render: () => null as never } } });
 // @ts-expect-error per-resource entries are nested under `resources`

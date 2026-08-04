@@ -55,6 +55,8 @@ export type {
   InPropsOptions,
   LayoutRenderProps,
   MergedLayoutInProps,
+  PropsContextRender,
+  PropsRenderDefinition,
   ResolvedIncludedProps,
   ResolvedIncludedPropsAsDefined,
 } from './props';
