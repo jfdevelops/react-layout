@@ -35,12 +35,14 @@ export {
   createProp,
   createPrimitivePropBuilder,
   isPropDefinitionShape,
+  PropError,
   resolvePropDefinitionValues,
   validateProps,
 } from '@jfdevelops/react-layout-validator';
 export type {
   AnyBuiltPropDefinition,
   ExtractDefinitionValue,
+  PropErrorOptions,
   ResolveLayoutProps,
   ResolveLayoutPropsAsDefined,
   ResolveProps,

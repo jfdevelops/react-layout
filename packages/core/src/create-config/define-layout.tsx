@@ -512,6 +512,10 @@ function defineResourceLayoutImpl<
       name,
       capitalize,
     };
+    const validationContext = {
+      layoutName: name,
+      resource: layoutContext.resource,
+    };
     const resolvedComposables = composables
       ? resolveLayoutComposables(composables, layoutContext)
       : undefined;
@@ -526,6 +530,7 @@ function defineResourceLayoutImpl<
     const composablePresetProps = resolveComposablePresetProps(
       resolvedComposables,
       layoutOptionProps as Record<string, unknown>,
+      validationContext,
     );
     const mergedRenderContext = {
       composables: resolvedComposables as LayoutRenderComposables<Composables>,
@@ -535,7 +540,9 @@ function defineResourceLayoutImpl<
     } as LayoutRenderContext<Resources, Composables>;
 
     function Component(props: Show<ResolveProps<CustomProps>>) {
-      const validatedProps = validateProps(resolvedLayoutProps, props);
+      const validatedProps = validateProps(resolvedLayoutProps, props, {
+        ...validationContext,
+      });
       const includedPropKeys = Object.keys(includeLayoutProps ?? {});
       const includedPropDefinitions = pick(
         mergedResolvedInProps,
@@ -578,6 +585,7 @@ function defineResourceLayoutImpl<
           ...optionalIncludedPropDefinitions,
         } as Record<string, AnyBuiltPropDefinition>,
         includedPropValues,
+        validationContext,
       );
       const layoutRenderIncludedProps = Object.fromEntries(
         includedPropKeys.flatMap((key) => {

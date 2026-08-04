@@ -1,4 +1,5 @@
-export { BaseProp, InvalidPropValueError, primitiveTypes } from './base';
+export { BaseProp, primitiveTypes } from './base';
+export { PropError, type PropErrorOptions } from './prop-error';
 export {
   createPrimitivePropBuilder,
   createProp,
@@ -48,7 +49,10 @@ export {
   type ResolvedBuiltPropShape,
 } from './types';
 export { UnionProp } from './union';
-export { MissingRequiredPropError, validateProps } from './validate-props';
+export {
+  type PropValidationContext,
+  validateProps,
+} from './validate-props';
 export {
   isPropDefinitionShape,
   resolvePropDefinitionValues,

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
-import { createPrimitivePropBuilder, createProp, validateProps } from '../src';
+import {
+  createPrimitivePropBuilder,
+  createProp,
+  PropError,
+  validateProps,
+} from '../src';
 
 describe('create-value', () => {
   it('validates literal and enum primitive props', () => {
@@ -10,9 +15,11 @@ describe('create-value', () => {
     expect(literalProp('users')).toBeUndefined();
     expect(enumProp(2)).toBeUndefined();
     expect(() => literalProp('teams')).toThrow(
-      '"value" is not of type "string".',
+      'Invalid prop "value": expected "string", received "string".',
     );
-    expect(() => enumProp(4)).toThrow('"value" is not of type "number".');
+    expect(() => enumProp(4)).toThrow(
+      'Invalid prop "value": expected "number", received "number".',
+    );
   });
 
   it('validates nested objects and optional props', () => {
@@ -46,8 +53,88 @@ describe('create-value', () => {
     };
 
     expect(() => validateProps(shape, {})).toThrow(
-      'Property "title" is required but not provided.',
+      'Missing required prop "title".',
     );
+  });
+
+  it('exposes structured details without expanding the message', () => {
+    const shape = {
+      segments: createProp.record(createProp.string()),
+    };
+    let error: PropError | undefined;
+
+    try {
+      validateProps(
+        shape,
+        { title: 'Contacts' },
+        {
+          layoutName: 'ContactsPage',
+          resource: 'contacts',
+        },
+      );
+    } catch (caught) {
+      error = caught as PropError;
+    }
+
+    expect(error).toMatchObject({
+      name: 'PropError',
+      layoutName: 'ContactsPage',
+      path: 'segments',
+      resource: 'contacts',
+      received: ['title'],
+      expected: ['segments'],
+      message:
+        'Missing required prop "segments" in layout "ContactsPage" (resource: "contacts").',
+    });
+  });
+
+  it('creates prop errors from an options object', () => {
+    const error = new PropError({
+      layoutName: 'ContactsPage',
+      path: 'segments',
+      resource: 'contacts',
+      received: ['title'],
+      expected: ['segments'],
+      message:
+        'Missing required prop "segments" in layout "ContactsPage" (resource: "contacts").',
+    });
+
+    expect(error.name).toBe('PropError');
+    expect(error.message).toBe(
+      'Missing required prop "segments" in layout "ContactsPage" (resource: "contacts").',
+    );
+  });
+
+  it('uses PropError for props with the wrong type', () => {
+    const shape = {
+      count: createProp.number(),
+    };
+    let error: PropError | undefined;
+
+    try {
+      validateProps(
+        shape,
+        { count: 'three' },
+        {
+          layoutName: 'ContactsPage',
+          resource: 'contacts',
+        },
+      );
+    } catch (caught) {
+      error = caught as PropError;
+    }
+
+    expect(error).toBeInstanceOf(PropError);
+    expect(error).toMatchObject({
+      name: 'PropError',
+      layoutName: 'ContactsPage',
+      path: 'count',
+      resource: 'contacts',
+      received: 'string',
+      expected: 'number',
+      message:
+        'Invalid prop "count" in layout "ContactsPage" (resource: "contacts"): expected "number", received "string".',
+    });
   });
 
   it('supports union props and JSX element props', () => {
@@ -57,11 +144,13 @@ describe('create-value', () => {
 
     expect(unionProp('users')).toBeUndefined();
     expect(unionProp(42)).toBeUndefined();
-    expect(() => unionProp(false)).toThrow('"value" is not of type "union".');
+    expect(() => unionProp(false)).toThrow(
+      'Invalid prop "value": expected "union", received "boolean".',
+    );
 
     expect(elementProp(element)).toBeUndefined();
     expect(() => elementProp('not-an-element')).toThrow(
-      '"value" is not of type "JSX.Element".',
+      'Invalid prop "value": expected "JSX.Element", received "string".',
     );
   });
 
@@ -102,7 +191,9 @@ describe('create-value', () => {
       segments({
         contacts: 42,
       }),
-    ).toThrow('"value" is not of type "union".');
+    ).toThrow(
+      'Invalid prop "value": expected "union", received "number".',
+    );
     const strictSegments = createProp.record({
       value: createProp.string(),
       key: createProp

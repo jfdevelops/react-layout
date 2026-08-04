@@ -7,6 +7,27 @@ import type {
 } from './types';
 import { BaseProp } from './base';
 
+function isReactNode(value: unknown): boolean {
+  if (
+    value === null ||
+    value === undefined ||
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'bigint' ||
+    typeof value === 'boolean'
+  ) {
+    return true;
+  }
+
+  if (Array.isArray(value)) {
+    return value.every(isReactNode);
+  }
+
+  return (
+    typeof value === 'object' && value !== null && '$$typeof' in value
+  );
+}
+
 export class ComponentProp<
   Type extends ComponentPropType,
   Visibility extends PropVisibility,
@@ -26,8 +47,14 @@ export class ComponentProp<
         typeof value !== 'object' ||
         !('$$typeof' in value)
       ) {
-        throw this.error;
+        throw this.createError(value);
       }
+
+      return;
+    }
+
+    if (!isReactNode(value)) {
+      throw this.createError(value);
     }
   }
 
@@ -36,7 +63,7 @@ export class ComponentProp<
       return value !== null && typeof value === 'object' && '$$typeof' in value;
     }
 
-    return true;
+    return isReactNode(value);
   }
 }
 
@@ -67,8 +94,14 @@ export class ComponentPropWithPropertiesProp<
         typeof value !== 'object' ||
         !('$$typeof' in value)
       ) {
-        throw this.error;
+        throw this.createError(value);
       }
+
+      return;
+    }
+
+    if (!isReactNode(value)) {
+      throw this.createError(value);
     }
   }
 
@@ -77,7 +110,7 @@ export class ComponentPropWithPropertiesProp<
       return value !== null && typeof value === 'object' && '$$typeof' in value;
     }
 
-    return true;
+    return isReactNode(value);
   }
 }
 
@@ -115,7 +148,7 @@ export class RenderChildrenProp<
 
   validate(value: unknown) {
     if (typeof value !== 'function') {
-      throw this.error;
+      throw this.createError(value);
     }
 
     return value as (

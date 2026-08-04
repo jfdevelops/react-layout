@@ -677,6 +677,32 @@ describe('defineResourceLayout', () => {
     );
   });
 
+  it('identifies the composable preset, layout, and resource for missing props', () => {
+    const { createResourceLayout } = createContactsComposableLayout();
+    let error: Error | undefined;
+
+    try {
+      createResourceLayout({
+        resource: 'contacts',
+        name: 'ContactsPage',
+        title: 'Single Male Records',
+      } as never);
+    } catch (caught) {
+      error = caught as Error;
+    }
+
+    expect(error).toMatchObject({
+      name: 'PropError',
+      layoutName: 'ContactsPage',
+      path: 'segments',
+      resource: 'contacts',
+      received: [],
+      expected: ['segments'],
+      message:
+        'Missing required prop "segments" in layout "ContactsPage" (resource: "contacts").',
+    });
+  });
+
   describe('createResourceLayout.makeComposable', () => {
     it('returns a ComposableResourceLayout with the layout name and composables', () => {
       const { createResourceLayout } = createContactsComposableLayout();
