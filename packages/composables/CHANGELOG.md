@@ -1,5 +1,13 @@
 # @jfdevelops/react-layout-composables
 
+## 0.2.4
+
+### Patch Changes
+
+- acc2ae3: Use one structured `PropError` with precise prop paths, layout names, and resources for missing or invalid props.
+- Updated dependencies [acc2ae3]
+  - @jfdevelops/react-layout-validator@0.2.4
+
 ## 0.2.3
 
 ### Patch Changes
