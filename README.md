@@ -70,3 +70,43 @@ pnpm test             # run tests
 ```bash
 pnpm add @jfdevelops/react-layout
 ```
+
+## Agent skill
+
+The package includes a `build-react-layouts` skill that teaches compatible
+coding agents the library's recommended architecture and factory patterns.
+
+After installing the package, install the bundled skill into the current
+project's detected agents:
+
+```bash
+npx skills add ./node_modules/@jfdevelops/react-layout/skills/build-react-layouts
+```
+
+The command prompts for the target agents and whether to copy or link the
+skill. Verify the installation with:
+
+```bash
+npx skills list
+```
+
+Package installation alone does not guarantee activation because agents use
+different skill directories.
+
+Projects that want dependency-provided skills synchronized after dependency
+installation can opt into [`skills-npm`](https://github.com/antfu/skills-npm):
+
+```bash
+pnpm add --save-dev skills-npm
+```
+
+```json
+{
+  "scripts": {
+    "prepare": "skills-npm --yes"
+  }
+}
+```
+
+This synchronization belongs in the consuming application so each project can
+choose which agents and skill directories it supports.

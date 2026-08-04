@@ -1,0 +1,4 @@
+interface:
+  display_name: "Build React Layouts"
+  short_description: "Build typed resource-driven React layouts"
+  default_prompt: "Use $build-react-layouts to build or refactor a typed resource-based React application layout."
