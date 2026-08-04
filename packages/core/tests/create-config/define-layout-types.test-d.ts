@@ -1,9 +1,40 @@
 import type { JSX, ReactNode } from 'react';
 import { createProp, defineResourceLayout } from '../../src';
+import { testResourceLayout } from './helpers';
 
-const { createResourceLayout } = defineResourceLayout({
-  resources: ['users', 'admins', 'posts'],
-  options: {},
+// @ts-expect-error forResources requires at least one resource
+defineResourceLayout.forResources();
+
+const { createResourceLayout: sharedCreateResourceLayout } = testResourceLayout({
+  layout: {
+    render: () => null as never,
+  },
+});
+
+const BoundSharedUsersPage = sharedCreateResourceLayout.forResource('users')();
+const sharedUsersResource: 'users' = BoundSharedUsersPage.resource;
+
+const { createResourceLayout: extendedCreateResourceLayout } = testResourceLayout(
+  {
+    resources: ['admins'],
+    layout: {
+      render: () => null as never,
+    },
+  },
+);
+
+const ExtendedAdminsPage =
+  extendedCreateResourceLayout.forResource('admins')();
+const extendedAdminsResource: 'admins' = ExtendedAdminsPage.resource;
+const ExtendedUsersPage = extendedCreateResourceLayout.forResource('users')();
+const extendedUsersResource: 'users' = ExtendedUsersPage.resource;
+
+void sharedUsersResource;
+void extendedAdminsResource;
+void extendedUsersResource;
+
+const { createResourceLayout } = testResourceLayout({
+  resources: ['admins'],
   layout: {
     render: () => null as never,
   },
@@ -158,8 +189,8 @@ createResourceLayout.forResources({
 createResourceLayout.forResources({ users: { name: 'UsersPage' } });
 
 const { createResourceLayout: createComponentResourceLayout } =
-  defineResourceLayout({
-    resources: ['users', 'admins', 'posts'],
+  testResourceLayout({
+    resources: ['admins'],
     options: {
       description: createProp.string(),
       title: createProp.string(),
@@ -589,8 +620,7 @@ BoundTopLevel({ title: 'Users' });
 void BoundTopLevel;
 
 // createComponent props keep declared names — including JSX.Element slots.
-const { createResourceLayout: createJsxSlotLayout } = defineResourceLayout({
-  resources: ['users'],
+const { createResourceLayout: createJsxSlotLayout } = testResourceLayout({
   options: {
     actions: createProp.component({ type: 'JSX.Element' }),
     title: createProp.string(),
@@ -677,8 +707,7 @@ createResourceLayout.forResources({ resources: ['users'], name: () => 123 });
 createResourceLayout.forResources({ users: { name: () => 123 } });
 
 const { createResourceLayout: createResourceLayoutWithRequiredProps } =
-  defineResourceLayout({
-    resources: ['users'],
+  testResourceLayout({
     options: {
       title: createProp.string(),
     },
@@ -699,6 +728,74 @@ const createRequiredUsersPage =
 // @ts-expect-error required layout props still require an options argument
 createRequiredUsersPage();
 createRequiredUsersPage({ title: 'Users' });
+
+const createSharedDirectory = createDirectoryLayout.createComponent.setProps({
+  include: {
+    title: true,
+  },
+  custom: {
+    heading: createProp.string(),
+  },
+});
+const sharedUsersEntry = createSharedDirectory.createResourceComponents({
+  resource: 'users',
+  props: {
+    include: {
+      description: 'optional',
+    },
+  },
+  render: (props) => {
+    const title: string = props.title;
+    const heading: string = props.heading;
+    const description: string | undefined = props.description;
+    // @ts-expect-error title is string (not any) — any would allow this call
+    props.title.definitelyNotAMethod();
+
+    void title;
+    void heading;
+    void description;
+    return null as never;
+  },
+});
+createSharedDirectory.createResourceComponents({
+  resource: 'users',
+  // @ts-expect-error setProps already defined title
+  props: { include: { title: true } },
+  render: () => null as never,
+});
+const SharedDirectory = createSharedDirectory({
+  props: {
+    include: {
+      description: 'optional',
+    },
+  },
+  resources: {
+    users: sharedUsersEntry,
+  },
+  render: (props, context) => {
+    const title: string = props.title;
+    const heading: string = props.heading;
+    const Users: (props: {
+      title: string;
+      heading: string;
+      description?: string;
+      children?: ReactNode;
+    }) => JSX.Element = context.Users;
+
+    void title;
+    void heading;
+    void Users;
+    return null as never;
+  },
+});
+SharedDirectory({ resource: 'users', title: 'Users', heading: 'Team' });
+// @ts-expect-error heading from setProps custom remains required
+SharedDirectory({ resource: 'users', title: 'Users' });
+createSharedDirectory({
+  // @ts-expect-error setProps already defined title on the thunk
+  props: { include: { title: true } },
+  render: () => null as never,
+});
 
 // @ts-expect-error unknown resource argument
 createResourceLayout.forResources('comments');

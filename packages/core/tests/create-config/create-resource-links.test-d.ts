@@ -1,12 +1,6 @@
-import { defineResourceLayout } from '../../src';
+import { testResourceLayoutWithRender } from './helpers';
 
-const { createResourceLinks } = defineResourceLayout({
-  resources: ['users', 'posts'],
-  options: {},
-  layout: {
-    render: () => null!,
-  },
-});
+const { createResourceLinks } = testResourceLayoutWithRender;
 
 const _withGroups = createResourceLinks.withGroups;
 

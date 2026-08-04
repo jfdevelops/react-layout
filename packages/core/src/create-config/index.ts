@@ -2,6 +2,10 @@ export { defineResourceLayout } from './define-layout';
 export type {
   CreateResourceLayoutFn,
   CreateResourceLayoutMakeComposableOptions,
+  DefineResourceLayout,
+  DefineResourceLayoutFn,
+  DefineResourceLayoutForResources,
+  DefineResourceLayoutForResourcesFactory,
 } from './define-layout';
 export type {
   CreatedResourceHref,
