@@ -1,5 +1,15 @@
 # @jfdevelops/react-layout
 
+## 0.16.0
+
+### Minor Changes
+
+- b020b5b: Add `defineResourceLayout.forResources(...resources)` to bind resources before layout options (with optional extra `resources`), make `options` optional on `defineResourceLayout`, and add `createComponent.setProps` so shared include/custom props can be fixed once and merged into resource components / call sites.
+
+### Patch Changes
+
+- 7a2de5f: Allow scoped/createComponent render to return a component type; infer call-site props (including top-level createComponent) and compound statics from that return type.
+
 ## 0.15.1
 
 ### Patch Changes
