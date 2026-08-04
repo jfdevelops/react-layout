@@ -8,7 +8,8 @@
   },
   "type": "module",
   "files": [
-    "dist"
+    "dist",
+    "skills"
   ],
   "sideEffects": false,
   "main": "./dist/index.cjs",
