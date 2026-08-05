@@ -1,4 +1,7 @@
-import type { ComposableComponents, MergePresetProps } from '@jfdevelops/react-layout-composables';
+import type {
+  ComposableComponents,
+  MergePresetProps,
+} from '@jfdevelops/react-layout-composables';
 import type { InPropsObject } from '@jfdevelops/react-layout-composables';
 import {
   EnumWrappedProp,
@@ -17,11 +20,10 @@ export type { InPropsObject };
  * resource components. `Context` is sibling components (scoped) or the
  * resource render context (top-level).
  */
-export type PropsContextRender<
-  RenderProps,
-  Context,
-  Result = unknown,
-> = (props: RenderProps, context: Context) => Result;
+export type PropsContextRender<RenderProps, Context, Result = unknown> = (
+  props: RenderProps,
+  context: Context,
+) => Result;
 
 /**
  * Shared `{ props?, render }` shape used by createComponent, scoped
@@ -67,36 +69,46 @@ export type MergedLayoutInProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
-> = InferredInProps<Resources, Options> extends InPropsObject
-  ? InferredInProps<Resources, Options> & MergePresetProps<Composables>
-  : never;
+> =
+  InferredInProps<Resources, Options> extends InPropsObject
+    ? InferredInProps<Resources, Options> & MergePresetProps<Composables>
+    : never;
+export type RequiredVariant = true | 'required';
+/**
+ * @typeParam RequiredVariant How the required props are selected. In application code,
+ * it will always be `true`, but internally we need to support `'required'` as well.
+ */
+type PropsType<Variant extends RequiredVariant = true> = Variant | 'optional';
+type InternalPropsType = PropsType<'required'>;
 /**
  * A map of props to include in the layout.
  */
 export type IncludedProps<T extends object> = {
-  [K in keyof T & string]?: true | 'optional';
+  [K in keyof T & string]?: PropsType;
 };
 
-type RequiredIncludedPropKeys<IncludeProps extends object> = {
-  [Key in keyof IncludeProps]: IncludeProps[Key] extends true ? Key : never;
+type PropsKeys<Props extends InPropsObject, T> = T & keyof Props;
+type GetPropsKey<IncludeProps extends object, Type extends PropsType = true> = {
+  [key in keyof IncludeProps]: IncludeProps[key] extends Type ? key : never;
 }[keyof IncludeProps];
-
-type OptionalIncludedPropKeys<IncludeProps extends object> = {
-  [Key in keyof IncludeProps]: IncludeProps[Key] extends 'optional'
-    ? Key
-    : never;
-}[keyof IncludeProps];
+type SelectedIncludedProps<
+  Props extends InPropsObject,
+  IncludeProps extends IncludedProps<Props>,
+  Type extends InternalPropsType,
+> = Pick<
+  Props,
+  PropsKeys<
+    Props,
+    GetPropsKey<IncludeProps, Type extends 'required' ? true : 'optional'>
+  >
+>;
 
 export type ResolvedIncludedProps<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,
-> = ResolveLayoutProps<
-  Pick<Props, RequiredIncludedPropKeys<IncludeProps> & keyof Props>
-> &
+> = ResolveLayoutProps<SelectedIncludedProps<Props, IncludeProps, 'required'>> &
   Partial<
-    ResolveLayoutProps<
-      Pick<Props, OptionalIncludedPropKeys<IncludeProps> & keyof Props>
-    >
+    ResolveLayoutProps<SelectedIncludedProps<Props, IncludeProps, 'optional'>>
   >;
 
 /**
@@ -107,11 +119,11 @@ export type ResolvedIncludedPropsAsDefined<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,
 > = ResolveLayoutPropsAsDefined<
-  Pick<Props, RequiredIncludedPropKeys<IncludeProps> & keyof Props>
+  SelectedIncludedProps<Props, IncludeProps, 'required'>
 > &
   Partial<
     ResolveLayoutPropsAsDefined<
-      Pick<Props, OptionalIncludedPropKeys<IncludeProps> & keyof Props>
+      SelectedIncludedProps<Props, IncludeProps, 'optional'>
     >
   >;
 export type LayoutRenderProps<
