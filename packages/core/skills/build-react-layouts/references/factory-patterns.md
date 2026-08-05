@@ -86,19 +86,18 @@ need distinct render implementations:
 const createCalendarPage = createResourceLayout
   .forResources('appointments', 'availability')
   .createComponent({
+    props: {
+      include: {
+        segments: true,
+      },
+    },
     resources: {
       appointments: {
-        segments: {
-          title: 'Appointments',
-        },
         render: function AppointmentsRender() {
           return <AppointmentsView />;
         },
       },
       availability: {
-        segments: {
-          title: 'Availability',
-        },
         render: function AvailabilityRender() {
           return <AvailabilityView />;
         },
@@ -121,6 +120,9 @@ const createCalendarPage = createResourceLayout
 
 export const AppointmentsPage = createCalendarPage('appointments');
 export const AvailabilityPage = createCalendarPage('availability');
+
+<AppointmentsPage segments={{ title: 'Appointments' }} />;
+<AvailabilityPage segments={{ title: 'Availability' }} />;
 ```
 
 Use this pattern only when the resources share meaningful behavior, controls,

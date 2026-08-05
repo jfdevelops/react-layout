@@ -45,6 +45,7 @@ export type BasePropOptions<
 };
 
 export type AnyBaseProp = BaseProp<PropType, PropVisibility, unknown>;
+export type SafeKeyOf<T extends object> = keyof T & string;
 
 export type ExtractPropValue<Prop extends AnyBaseProp> =
   Prop extends BaseProp<any, any, infer V> ? V : never;
@@ -90,11 +91,11 @@ type ResolvedPropKey<K extends string, D extends AnyBuiltPropDefinition> =
 
 export type ResolveProps<Shape extends Record<string, AnyBuiltPropDefinition>> =
   {
-    [K in keyof Shape & string as Shape[K]['visibility'] extends 'required'
+    [K in SafeKeyOf<Shape> as Shape[K]['visibility'] extends 'required'
       ? ResolvedPropKey<K, Shape[K]>
       : never]: ExtractDefinitionValue<Shape[K]>;
   } & {
-    [K in keyof Shape & string as Shape[K]['visibility'] extends 'required'
+    [K in SafeKeyOf<Shape> as Shape[K]['visibility'] extends 'required'
       ? never
       : ResolvedPropKey<K, Shape[K]>]?: ExtractDefinitionValue<Shape[K]>;
   };
@@ -120,17 +121,44 @@ type ExtractLayoutDefinitionValue<D extends AnyBuiltPropDefinition> =
         ? ExtractLayoutMemberValue<Members[number]>
         : ExtractDefinitionValue<D>;
 
-export type ResolveLayoutProps<
+type RequiredLayoutPropKeys<
   Shape extends Record<string, AnyBuiltPropDefinition>,
 > = {
-  [K in keyof Shape & string as Shape[K]['visibility'] extends 'required'
-    ? ResolvedPropKey<K, Shape[K]>
-    : never]: ExtractLayoutDefinitionValue<Shape[K]>;
+  [K in SafeKeyOf<Shape>]: Shape[K]['visibility'] extends 'required'
+    ? K
+    : never;
+}[SafeKeyOf<Shape>];
+
+type OptionalLayoutPropKeys<
+  Shape extends Record<string, AnyBuiltPropDefinition>,
+> = Exclude<SafeKeyOf<Shape>, RequiredLayoutPropKeys<Shape>>;
+
+type LayoutPropKey<
+  Key extends string,
+  Definition extends AnyBuiltPropDefinition,
+  KeyMode extends 'resolved' | 'declared',
+> = KeyMode extends 'declared' ? Key : ResolvedPropKey<Key, Definition>;
+
+type ResolveLayoutPropsWithKeyMode<
+  Shape extends Record<string, AnyBuiltPropDefinition>,
+  KeyMode extends 'resolved' | 'declared',
+> = {
+  [Key in RequiredLayoutPropKeys<Shape> as LayoutPropKey<
+    Key,
+    Shape[Key],
+    KeyMode
+  >]: ExtractLayoutDefinitionValue<Shape[Key]>;
 } & {
-  [K in keyof Shape & string as Shape[K]['visibility'] extends 'required'
-    ? never
-    : ResolvedPropKey<K, Shape[K]>]?: ExtractLayoutDefinitionValue<Shape[K]>;
+  [Key in OptionalLayoutPropKeys<Shape> as LayoutPropKey<
+    Key,
+    Shape[Key],
+    KeyMode
+  >]?: ExtractLayoutDefinitionValue<Shape[Key]>;
 };
+
+export type ResolveLayoutProps<
+  Shape extends Record<string, AnyBuiltPropDefinition>,
+> = ResolveLayoutPropsWithKeyMode<Shape, 'resolved'>;
 
 /**
  * Like {@link ResolveLayoutProps}, but keeps every prop key exactly as it was
@@ -138,12 +166,4 @@ export type ResolveLayoutProps<
  */
 export type ResolveLayoutPropsAsDefined<
   Shape extends Record<string, AnyBuiltPropDefinition>,
-> = {
-  [K in keyof Shape & string as Shape[K]['visibility'] extends 'required'
-    ? K
-    : never]: ExtractLayoutDefinitionValue<Shape[K]>;
-} & {
-  [K in keyof Shape & string as Shape[K]['visibility'] extends 'required'
-    ? never
-    : K]?: ExtractLayoutDefinitionValue<Shape[K]>;
-};
+> = ResolveLayoutPropsWithKeyMode<Shape, 'declared'>;
