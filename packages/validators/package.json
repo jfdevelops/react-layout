@@ -1,6 +1,6 @@
 {
   "name": "@jfdevelops/react-layout-validator",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Prop validators for react-layout.",
   "repository": {
     "type": "git",
