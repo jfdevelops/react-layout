@@ -1,5 +1,5 @@
-export type Show<T> = T extends (...args: infer A) => infer R
-  ? (...args: A) => R
+export type Show<T> = T extends (...args: infer Arguments) => infer Result
+  ? ((...args: Arguments) => Result) & { [Key in keyof T]: T[Key] }
   : { [K in keyof T]: T[K] } & {};
 export type MergeIntersection<T> = {
   [Key in keyof T]: T[Key];
