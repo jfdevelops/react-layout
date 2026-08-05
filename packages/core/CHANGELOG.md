@@ -1,5 +1,14 @@
 # @jfdevelops/react-layout
 
+## 0.17.3
+
+### Patch Changes
+
+- bf71123: Add unified include, custom, and defined props to resource component entries, including direct creation from forResources.
+- Updated dependencies [bf71123]
+  - @jfdevelops/react-layout-validator@0.2.6
+  - @jfdevelops/react-layout-composables@0.2.6
+
 ## 0.17.2
 
 ### Patch Changes
