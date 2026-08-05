@@ -422,11 +422,99 @@ describe('createComponent types', () => {
       SharedDirectory({ resource: 'users', title: 'Users' });
     };
     () => {
+      // @ts-expect-error setProps already defined title on the thunk
       createSharedDirectory({
-        // @ts-expect-error setProps already defined title on the thunk
         props: { include: { title: true } },
         render: () => null as never,
       });
     };
   });
+
+  it('optionalizes defined props from setProps resource entries', () => {
+    const createWithTitle = createDirectoryLayout.createComponent.setProps({
+      include: { title: true },
+    });
+    const usersEntry = createWithTitle.createResourceComponents({
+      resource: 'users',
+      props: { defined: { title: 'Users' } },
+      render: ({ title }) => {
+        expectTypeOf(title).toEqualTypeOf<string>();
+        return null as never;
+      },
+    });
+    expectTypeOf(usersEntry.props).toEqualTypeOf<{
+      readonly defined: { readonly title: 'Users' };
+    }>();
+    const Users = createWithTitle({
+      resources: { users: usersEntry },
+      render: (_props, context) => context.Users({}),
+    }).asHOF()('users');
+
+    () => {
+      Users({});
+      Users({ title: 'Override' });
+    };
+  });
+
+  it('types resource entry props, defaults, and direct entry creation', () => {
+    const usersEntry = createDirectoryLayout.createResourceComponents({
+      resource: 'users',
+      props: {
+        defined: { title: 'Users' },
+      },
+      render: (props) => {
+        expectTypeOf(props.title).toEqualTypeOf<string>();
+        return null as never;
+      },
+    });
+    const DefinedDirectory = createDirectoryLayout.createComponent({
+      resources: {
+        users: usersEntry,
+      },
+      render: ({ title }, context) => {
+        expectTypeOf(title).toEqualTypeOf<string>();
+        expectTypeOf(context.Users).toBeCallableWith({});
+        expectTypeOf(context.Users).toBeCallableWith({ title: 'Override' });
+        return null as never;
+      },
+    });
+    const DefinedUsers = DefinedDirectory.asHOF()('users');
+
+    () => {
+      DefinedDirectory({ resource: 'users' });
+      DefinedUsers({});
+      DefinedUsers({ title: 'Override' });
+    };
+
+    () => {
+      createDirectoryLayout.createResourceComponents({
+        // @ts-expect-error resource is outside the forResources selection
+        resource: 'posts',
+        render: () => null as never,
+      });
+    };
+    () => {
+      createDirectoryLayout.createResourceComponents({
+        resource: 'users',
+        props: {
+          // @ts-expect-error defined keys must be available layout props
+          defined: { missing: 'nope' },
+        },
+        render: () => null as never,
+      });
+    };
+    () => {
+      createDirectoryLayout.createComponent({
+        resources: {
+          users: {
+            // @ts-expect-error layout values belong under props.defined
+            title: 'Users',
+            render: () => null as never,
+          },
+        },
+        render: () => null as never,
+      });
+    };
+  });
+
 });

@@ -610,8 +610,9 @@ describe('createComponent', () => {
         },
       },
       render: (_props, context) => <context.Users />,
-    });
-    const EscapedToolbar = Directory.asHOF()('users').Toolbar;
+    }).asHOF();
+    const UsersDirectory = Directory('users');
+    const EscapedToolbar = UsersDirectory.Toolbar;
 
     expect(renderCapturingError(<EscapedToolbar />)?.message).toBe(
       'Scoped component "Toolbar" must be rendered inside its scoped component',
@@ -1268,5 +1269,65 @@ describe('createComponent', () => {
 
     expect(screen.getByRole('heading', { name: 'Admins' })).toBeInTheDocument();
     expect(screen.getByText('admins:Staff:Admins')).toBeInTheDocument();
+  });
+
+  it('applies resource entry defaults and lets call-site props override them', () => {
+    const { createResourceLayout } = testResourceLayout({
+      options: {
+        title: createProp.string(),
+      },
+      layout: {
+        props: {
+          include: { title: true },
+          custom: {
+            children: createProp.component({ type: 'ReactNode' }).optional(),
+          },
+        },
+        render: ({ children, title }) => (
+          <section>
+            <h1>{title}</h1>
+            {children}
+          </section>
+        ),
+      },
+    });
+    const createDirectoryLayout =
+      createResourceLayout.forResources('users');
+    const usersEntry = createDirectoryLayout.createResourceComponents({
+      resource: 'users',
+      props: {
+        defined: { title: 'Default users' },
+      },
+      render: ({ title }) => <p>{`entry:${title}`}</p>,
+    });
+    const createDirectory = createDirectoryLayout.createComponent({
+      resources: { users: usersEntry },
+      render: ({ children }, context) => (
+        <context.Root>{children ?? <context.Users />}</context.Root>
+      ),
+    }).asHOF();
+    const createOverrideDirectory = createDirectoryLayout.createComponent({
+      resources: { users: usersEntry },
+      render: ({ children }, context) => (
+        <context.Root>{children ?? <context.Users />}</context.Root>
+      ),
+    }).asHOF();
+    const UsersDirectory = createDirectory('users');
+    const OverrideUsersDirectory = createOverrideDirectory('users');
+
+    const { unmount } = render(<UsersDirectory />);
+
+    expect(
+      screen.getByRole('heading', { name: 'Default users' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('entry:Default users')).toBeInTheDocument();
+
+    unmount();
+    render(<OverrideUsersDirectory title='Override users' />);
+
+    expect(
+      screen.getByRole('heading', { name: 'Override users' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('entry:Override users')).toBeInTheDocument();
   });
 });

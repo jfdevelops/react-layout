@@ -15,7 +15,10 @@ import type {
   CreateResourceLayoutOptionsBase,
   SetDefaultPropForResourceFn,
 } from '../for-resource';
-import type { ScopedCreateComponent } from './create-component';
+import type {
+  ScopedCreateComponent,
+  ScopedCreateResourceComponents,
+} from './create-component';
 import type {
   AtLeastOneResourceLayoutNameKey,
   AtLeastOneResourceLayoutSelection,
@@ -190,6 +193,16 @@ export type ScopedCreateResourceLayoutFn<
     Composables,
     Arguments,
     CustomProps
+  >;
+  /** Builds one reusable entry for the selected resources. */
+  createResourceComponents: ScopedCreateResourceComponents<
+    Resources,
+    InProps,
+    Composables,
+    Arguments,
+    CustomProps,
+    {},
+    {}
   >;
   forResource: ScopedCreateLayoutForResource<
     Resources,

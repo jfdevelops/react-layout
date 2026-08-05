@@ -84,24 +84,33 @@ need distinct render implementations:
 
 ```tsx
 const createCalendarPage = createResourceLayout
-  .forResources('appointments', 'availability')
+  .forResources('appointments', 'availability');
+
+const appointments = createCalendarPage.createResourceComponents({
+  resource: 'appointments',
+  props: {
+    defined: { segments: { title: 'Appointments' } },
+  },
+  render: function AppointmentsRender() {
+    return <AppointmentsView />;
+  },
+});
+
+const availability = createCalendarPage.createResourceComponents({
+  resource: 'availability',
+  props: {
+    defined: { segments: { title: 'Availability' } },
+  },
+  render: function AvailabilityRender() {
+    return <AvailabilityView />;
+  },
+});
+
+const createCalendarResourcePage = createCalendarPage
   .createComponent({
-    props: {
-      include: {
-        segments: true,
-      },
-    },
     resources: {
-      appointments: {
-        render: function AppointmentsRender() {
-          return <AppointmentsView />;
-        },
-      },
-      availability: {
-        render: function AvailabilityRender() {
-          return <AvailabilityView />;
-        },
-      },
+      appointments,
+      availability,
     },
     render: function Render({ resource, children }, context) {
       return (
@@ -118,12 +127,20 @@ const createCalendarPage = createResourceLayout
   })
   .asHOF();
 
-export const AppointmentsPage = createCalendarPage('appointments');
-export const AvailabilityPage = createCalendarPage('availability');
+export const AppointmentsPage = createCalendarResourcePage('appointments');
+export const AvailabilityPage = createCalendarResourcePage('availability');
 
-<AppointmentsPage segments={{ title: 'Appointments' }} />;
-<AvailabilityPage segments={{ title: 'Availability' }} />;
+<AppointmentsPage />;
+<AppointmentsPage segments={{ title: 'Override' }} />;
+<AvailabilityPage />;
 ```
+
+Resource entries use one optional `props` bag: `include` exposes layout props
+without defaults, `custom` declares additional props, and `defined` bakes
+values into that resource. Every `defined` key is included automatically and
+becomes optional at the bound call site. When a caller supplies the same prop,
+the call-site value wins. Keep layout values inside `props.defined`, not beside
+`render` on the entry.
 
 Use this pattern only when the resources share meaningful behavior, controls,
 or state transitions. The outer renderer should own behavior shared by the
