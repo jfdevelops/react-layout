@@ -144,9 +144,34 @@ export function createForResources<
     type ScopedComponentEntry = {
       [option: string]: unknown;
       name?: string;
+      props?: CreateComponentPropsBag;
       components?: Record<string, ScopedResourceScopedComponentDefinition>;
       render: ScopedComponentRenderFn;
     };
+
+    type CreateComponentPropsBag = {
+      include?: Record<string, true | 'optional'>;
+      custom?: Record<string, AnyBuiltPropDefinition>;
+      defined?: Record<string, unknown>;
+    };
+
+    function mergeCreateComponentProps(
+      ...bags: Array<CreateComponentPropsBag | undefined>
+    ): CreateComponentPropsBag {
+      const include: Record<string, true | 'optional'> = {};
+      const custom: Record<string, AnyBuiltPropDefinition> = {};
+
+      for (const bag of bags) {
+        Object.assign(include, bag?.include);
+        Object.assign(custom, bag?.custom);
+
+        for (const key of Object.keys(bag?.defined ?? {})) {
+          include[key] = true;
+        }
+      }
+
+      return { include, custom };
+    }
 
     function createComponent(componentOptions: {
       props?: {
@@ -159,8 +184,14 @@ export function createForResources<
         context: Record<string, (props: never) => JSX.Element>,
       ) => ScopedRenderResult;
     }) {
-      const include = componentOptions.props?.include ?? {};
-      const custom = componentOptions.props?.custom ?? {};
+      const mergedProps = mergeCreateComponentProps(
+        componentOptions.props,
+        ...Object.values(componentOptions.resources ?? {}).map(
+          (entry) => entry.props,
+        ),
+      );
+      const include = mergedProps.include ?? {};
+      const custom = mergedProps.custom ?? {};
       const selectedResources = new Set(
         resourceOptions.map(({ resource }) => resource),
       );
@@ -398,13 +429,22 @@ export function createForResources<
           const availableDefinitions =
             getComponentPropDefinitions(resource);
           const layoutOptions: Record<string, unknown> = {};
+          const defined = entry.props?.defined ?? {};
 
           for (const key of Object.keys(availableDefinitions)) {
+            if (key in defined) {
+              layoutOptions[key] = defined[key];
+            }
+
+            const capitalized = capitalize(key);
+            if (capitalized in defined) {
+              layoutOptions[capitalized] = defined[capitalized];
+            }
+
             if (key in componentProps) {
               layoutOptions[key] = componentProps[key];
             }
 
-            const capitalized = capitalize(key);
             if (capitalized in componentProps) {
               layoutOptions[capitalized] = componentProps[capitalized];
             }
@@ -421,7 +461,18 @@ export function createForResources<
           roots.set(resource, root);
         }
 
-        return createElement(root, rootProps);
+        const entry = definedEntries.get(resource);
+        const definedCustom: Record<string, unknown> = {};
+
+        for (const [key, value] of Object.entries(
+          entry?.props?.defined ?? {},
+        )) {
+          if (key in custom) {
+            definedCustom[key] = value;
+          }
+        }
+
+        return createElement(root, { ...definedCustom, ...rootProps });
       }
 
       renderContext.Root = Root;
@@ -436,6 +487,9 @@ export function createForResources<
           );
         }
 
+        const defined =
+          definedEntries.get(componentResource)?.props?.defined ?? {};
+        const resolvedComponentProps = { ...defined, ...componentProps };
         const availableDefinitions =
           getComponentPropDefinitions(componentResource);
         const definitionsToValidate: Record<string, AnyBuiltPropDefinition> =
@@ -449,7 +503,7 @@ export function createForResources<
           }
 
           // Keep declared keys as-is — do not capitalize JSX.Element props.
-          if (inclusion === true || key in componentProps) {
+          if (inclusion === true || key in resolvedComponentProps) {
             definitionsToValidate[key] = definition;
           }
         }
@@ -462,7 +516,7 @@ export function createForResources<
           definitionsToValidate[key] = definition;
         }
 
-        validateProps(definitionsToValidate, componentProps, {
+        validateProps(definitionsToValidate, resolvedComponentProps, {
           layoutName:
             definedEntries.get(componentResource)?.name ??
             defaultNames.get(componentResource) ??
@@ -474,10 +528,10 @@ export function createForResources<
         // component props (include/custom + inferred return-type props).
         return createElement(
           componentPropsContext.Provider,
-          { value: componentProps },
+          { value: resolvedComponentProps },
           resolveScopedRenderResult(
-            componentOptions.render(componentProps, renderContext),
-            componentProps,
+            componentOptions.render(resolvedComponentProps, renderContext),
+            resolvedComponentProps,
           ),
         );
       }
@@ -529,30 +583,6 @@ export function createForResources<
       });
     }
 
-    type CreateComponentPropsBag = {
-      include?: Record<string, true | 'optional'>;
-      custom?: Record<string, AnyBuiltPropDefinition>;
-    };
-
-    const createResourceComponentExtras = new WeakMap<
-      object,
-      CreateComponentPropsBag
-    >();
-
-    function mergeCreateComponentProps(
-      ...bags: Array<CreateComponentPropsBag | undefined>
-    ): CreateComponentPropsBag {
-      const include: Record<string, true | 'optional'> = {};
-      const custom: Record<string, AnyBuiltPropDefinition> = {};
-
-      for (const bag of bags) {
-        Object.assign(include, bag?.include);
-        Object.assign(custom, bag?.custom);
-      }
-
-      return { include, custom };
-    }
-
     function createComponentSetProps(baseProps: CreateComponentPropsBag) {
       function createWithProps(componentOptions: {
         props?: CreateComponentPropsBag;
@@ -562,49 +592,37 @@ export function createForResources<
           context: Record<string, (props: never) => JSX.Element>,
         ) => ScopedRenderResult;
       }) {
-        const fromEntries = mergeCreateComponentProps(
-          ...Object.values(componentOptions.resources ?? {}).map(
-            (entry) => createResourceComponentExtras.get(entry),
-          ),
-        );
-
         return createComponent({
           ...componentOptions,
-          props: mergeCreateComponentProps(
-            baseProps,
-            fromEntries,
-            componentOptions.props,
-          ),
+          props: mergeCreateComponentProps(baseProps, componentOptions.props),
         });
       }
 
-      createWithProps.createResourceComponents = (options: {
-        resource: LayoutResourceKey<Resources>;
-        props?: CreateComponentPropsBag;
-        name?: string;
-        components?: Record<string, ScopedResourceScopedComponentDefinition>;
-        render: ScopedComponentRenderFn;
-      }) => {
-        const { resource, props, ...entry } = options;
-
-        if (
-          !resourceOptions.some(
-            (resourceOption) => resourceOption.resource === resource,
-          )
-        ) {
-          throw new Error(
-            `Resource "${resource}" is not available in this scoped component`,
-          );
-        }
-
-        if (props !== undefined) {
-          createResourceComponentExtras.set(entry, props);
-        }
-
-        return entry;
-      };
+      createWithProps.createResourceComponents = createResourceComponents;
 
       return createWithProps;
+    }
+
+    function createResourceComponents(options: {
+      resource: LayoutResourceKey<Resources>;
+      props?: CreateComponentPropsBag;
+      name?: string;
+      components?: Record<string, ScopedResourceScopedComponentDefinition>;
+      render: ScopedComponentRenderFn;
+    }) {
+      const { resource, props, ...entry } = options;
+
+      if (
+        !resourceOptions.some(
+          (resourceOption) => resourceOption.resource === resource,
+        )
+      ) {
+        throw new Error(
+          `Resource "${resource}" is not available in this scoped component`,
+        );
+      }
+
+      return { ...entry, props: props ?? {} };
     }
 
     Object.assign(createComponent, {
@@ -613,11 +631,13 @@ export function createForResources<
 
     const scopedExtras: {
       createComponent: typeof createComponent;
+      createResourceComponents: typeof createResourceComponents;
       forResource: typeof scopedForResource;
       makeComposable?: (options: Record<string, unknown>) => unknown;
       resources: undefined;
     } = {
       createComponent,
+      createResourceComponents,
       forResource: scopedForResource,
       resources: undefined,
     };

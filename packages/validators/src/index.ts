@@ -47,6 +47,7 @@ export {
   type ResolveLayoutPropsAsDefined,
   type ResolveProps,
   type ResolvedBuiltPropShape,
+  type SafeKeyOf,
 } from './types';
 export { UnionProp } from './union';
 export {
