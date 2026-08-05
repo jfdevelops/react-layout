@@ -1,5 +1,17 @@
 # @jfdevelops/react-layout
 
+## 0.17.2
+
+### Patch Changes
+
+- 54f9024: Add regression coverage for named props on `createComponent` components bound
+  with `asHOF`, and correct the factory-pattern guidance for included layout
+  props. Reuse shared required and optional helpers across the layout and
+  included prop resolvers.
+- Updated dependencies [54f9024]
+  - @jfdevelops/react-layout-validator@0.2.5
+  - @jfdevelops/react-layout-composables@0.2.5
+
 ## 0.17.1
 
 ### Patch Changes
