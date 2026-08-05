@@ -787,24 +787,28 @@ export type ScopedResourceComponent<
     >,
   >(
     resource: Resource,
-  ) => ScopedBoundResourceComponent<
-    ScopedBoundResourceComponentProps<
-      ResourceDefinitions,
-      InProps,
-      Composables,
-      LayoutCustomProps,
-      ComponentIncludeProps,
-      ComponentCustomProps,
+  ) => Show<
+    ScopedBoundResourceComponent<
+      ScopedBoundResourceComponentProps<
+        ResourceDefinitions,
+        InProps,
+        Composables,
+        LayoutCustomProps,
+        ComponentIncludeProps,
+        ComponentCustomProps,
+        Resource,
+        RenderResult,
+        ResourceEntryDefined<
+          Resource extends keyof PropsByResource
+            ? PropsByResource[Resource]
+            : {}
+        >
+      >,
       Resource,
-      RenderResult,
-      ResourceEntryDefined<
-        Resource extends keyof PropsByResource ? PropsByResource[Resource] : {}
-      >
-    >,
-    Resource,
-    Resource extends keyof ComponentsByResource
-      ? ComponentsByResource[Resource]
-      : {}
+      Resource extends keyof ComponentsByResource
+        ? ComponentsByResource[Resource]
+        : {}
+    >
   >;
 };
 
