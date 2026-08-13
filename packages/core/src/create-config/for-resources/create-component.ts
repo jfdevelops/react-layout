@@ -279,6 +279,16 @@ export type NormalizeScopedComponentsMap<Components> =
       ? Components
       : {};
 
+declare const scopedReusableResourceEntryBrand: unique symbol;
+
+/** A resource entry whose props and component map were captured for reuse. */
+export type ScopedReusableResourceEntry<Props, Components> = {
+  readonly [scopedReusableResourceEntryBrand]: {
+    props: Props;
+    components: NormalizeScopedComponentsMap<Components>;
+  };
+};
+
 /** Extracts the prop definitions declared on a scoped component. */
 export type ScopedComponentOwnProps<Definition> = Definition extends {
   props: infer Props;
@@ -947,7 +957,9 @@ export type ScopedCreateResourceComponents<
   props: Props;
   /** Type-only metadata preserving the exact captured props bag. */
   readonly resourceComponentProps: Props;
-};
+  /** Type-only metadata preserving the exact captured components map. */
+  readonly resourceComponents: NormalizeScopedComponentsMap<Components>;
+} & ScopedReusableResourceEntry<Props, Components>;
 
 /**
  * Options for {@link ScopedCreateComponent}. Extends the shared
@@ -1135,7 +1147,9 @@ type ComponentsForResourceProps<PropsByResource, ComponentsByResource> = {
 
 type PropsFromCreatedResourceEntries<EntriesByResource> = {
   [Resource in keyof EntriesByResource]: EntriesByResource[Resource] extends {
-    readonly resourceComponentProps: infer Props extends object;
+    readonly [scopedReusableResourceEntryBrand]: {
+      props: infer Props extends object;
+    };
   }
     ? Props
     : {};
@@ -1143,7 +1157,9 @@ type PropsFromCreatedResourceEntries<EntriesByResource> = {
 
 type ComponentsFromCreatedResourceEntries<EntriesByResource> = {
   [Resource in keyof EntriesByResource]: EntriesByResource[Resource] extends {
-    components?: infer Components;
+    readonly [scopedReusableResourceEntryBrand]: {
+      components: infer Components;
+    };
   }
     ? NormalizeScopedComponentsMap<Components>
     : {};
@@ -1187,9 +1203,8 @@ type ScopedCreateComponentWithCreatedEntriesFn<
     'resources'
   > & {
     resources: {
-      [Resource in keyof EntriesByResource]: EntriesByResource[Resource] & {
-        readonly resourceComponentProps: object;
-      };
+      [Resource in keyof EntriesByResource]: EntriesByResource[Resource] &
+        ScopedReusableResourceEntry<object, unknown>;
     };
   },
 ) => ScopedResourceComponent<
@@ -1434,6 +1449,13 @@ export type ScopedCreateComponent<
   Arguments,
   LayoutCustomProps
 > &
+  ScopedCreateComponentWithCreatedEntriesFn<
+    ResourceDefinitions,
+    InProps,
+    Composables,
+    Arguments,
+    LayoutCustomProps
+  > &
   ScopedCreateComponentWithResourcePropsFn<
     ResourceDefinitions,
     InProps,

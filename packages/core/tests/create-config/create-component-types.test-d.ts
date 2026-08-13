@@ -47,3 +47,49 @@ const hasStringIndex: string extends keyof AppointmentsPageProps ? true : false 
 void propsAreAny;
 void titleIsString;
 void hasStringIndex;
+
+const calendarResourceLayout =
+  createResourceLayout.forResources('appointments');
+const appointmentsEntry = calendarResourceLayout.createResourceComponents({
+  resource: 'appointments',
+  props: {
+    defined: { title: 'Default appointments' },
+  },
+  components: {
+    Content: {
+      render: () => () => null,
+    },
+  },
+  render: ({ title }) => {
+    void title;
+    return null as never;
+  },
+});
+
+const ReusableCalendarPage = calendarResourceLayout.createComponent({
+  resources: {
+    appointments: appointmentsEntry,
+  },
+  render: () => null as never,
+});
+const ReusableAppointmentsPage =
+  ReusableCalendarPage.asHOF()('appointments');
+
+type ReusableAppointmentsPageProps = ComponentProps<
+  typeof ReusableAppointmentsPage
+>;
+type ReusableContentProps = ComponentProps<
+  typeof ReusableAppointmentsPage.Content
+>;
+
+const reusablePropsAreAny: IsAny<ReusableAppointmentsPageProps> = false;
+const reusableTitleIsOptional: undefined extends ReusableAppointmentsPageProps[
+  'title'
+]
+  ? true
+  : false = true;
+const reusableContentPropsAreAny: IsAny<ReusableContentProps> = false;
+
+void reusablePropsAreAny;
+void reusableTitleIsOptional;
+void reusableContentPropsAreAny;
