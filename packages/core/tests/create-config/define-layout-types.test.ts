@@ -232,10 +232,10 @@ describe('createComponent types', () => {
     });
 
     () => {
+      // @ts-expect-error resource entries reject layout option fields like title
       createDirectoryLayout.createComponent({
         resources: {
           users: {
-            // @ts-expect-error resource entries reject layout option fields like title
             title: 'Users',
             render: () => null as never,
           },
@@ -504,10 +504,10 @@ describe('createComponent types', () => {
       });
     };
     () => {
+      // @ts-expect-error layout values belong under props.defined
       createDirectoryLayout.createComponent({
         resources: {
           users: {
-            // @ts-expect-error layout values belong under props.defined
             title: 'Users',
             render: () => null as never,
           },
