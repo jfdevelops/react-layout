@@ -2,6 +2,8 @@ import type { ComposableComponents } from '@jfdevelops/react-layout-composables'
 import type {
   InPropsDefinition,
   InPropsObject,
+  MergedLayoutInProps,
+  OptionalIncludedCallProps,
 } from '../props';
 import type {
   LayoutResourceKey,
@@ -49,10 +51,11 @@ export type CreateResourceLayoutOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   Name extends string,
   Resource extends LayoutResourceKey<Resources>,
   Props extends InPropsObject = {},
-> = LayoutPropsForResource<Resources, InProps, Composables> &
+> = LayoutPropsForResource<Resources, InProps, Composables, IncludeProps> &
   CreateResourceLayoutOptionsBase<Resources, Name, Resource, Props>;
 
 export type CreateLayoutForResourceOptions<
@@ -68,10 +71,11 @@ type CreatedLayoutForResourceOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   Props extends InPropsObject = {},
   Defaults extends LayoutPropDefaults = {},
 > = ResolveLayoutPropsWithDefaults<
-  LayoutPropsForResource<Resources, InProps, Composables>,
+  LayoutPropsForResource<Resources, InProps, Composables, IncludeProps>,
   Defaults
 > & {
   props?: Props;
@@ -81,6 +85,7 @@ type CreatedLayoutForResourceCallOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   OverrideName extends string,
   Props extends InPropsObject,
   Defaults extends LayoutPropDefaults,
@@ -88,6 +93,7 @@ type CreatedLayoutForResourceCallOptions<
   Resources,
   InProps,
   Composables,
+  IncludeProps,
   Props,
   Defaults
 > & {
@@ -98,6 +104,7 @@ export type CreatedLayoutForResource<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   Name extends string,
   Resource extends LayoutResourceKey<Resources>,
   CustomProps extends InPropsObject = {},
@@ -107,6 +114,7 @@ export type CreatedLayoutForResource<
     Resources,
     InProps,
     Composables,
+    IncludeProps,
     OverrideName,
     Props,
     Defaults
@@ -115,6 +123,7 @@ export type CreatedLayoutForResource<
         Resources,
         InProps,
         Composables,
+        IncludeProps,
         OverrideName,
         Props,
         Defaults
@@ -123,6 +132,7 @@ export type CreatedLayoutForResource<
         Resources,
         InProps,
         Composables,
+        IncludeProps,
         OverrideName,
         Props,
         Defaults
@@ -131,33 +141,53 @@ export type CreatedLayoutForResource<
   OverrideName,
   CustomProps,
   Composables,
-  Resource
+  Resource,
+  OptionalIncludedCallProps<
+    MergedLayoutInProps<Resources, InProps, Composables>,
+    IncludeProps
+  >
 >;
 
 type SetDefaultPropsForResource<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents = {},
-> = Partial<LayoutPropsForResource<Resources, InProps, Composables>>;
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
+> = Partial<
+  LayoutPropsForResource<Resources, InProps, Composables, IncludeProps>
+>;
 
 type ResolvedSetDefaultProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
-  Defaults extends SetDefaultPropsForResource<Resources, InProps, Composables>,
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
+  Defaults extends SetDefaultPropsForResource<
+    Resources,
+    InProps,
+    Composables,
+    IncludeProps
+  >,
 > = {
   [Key in keyof Defaults &
     keyof LayoutPropsForResource<
       Resources,
       InProps,
-      Composables
-    >]: LayoutPropsForResource<Resources, InProps, Composables>[Key];
+      Composables,
+      IncludeProps
+    >]: LayoutPropsForResource<
+      Resources,
+      InProps,
+      Composables,
+      IncludeProps
+    >[Key];
 };
 
 export type SetDefaultPropForResourceFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   Name extends string,
   Resource extends LayoutResourceKey<Resources>,
   CustomProps extends InPropsObject = {},
@@ -165,7 +195,8 @@ export type SetDefaultPropForResourceFn<
   const Defaults extends SetDefaultPropsForResource<
     Resources,
     InProps,
-    Composables
+    Composables,
+    IncludeProps
   >,
 >(
   /** Default values for layout props. Each prop can only be set once. */
@@ -174,10 +205,17 @@ export type SetDefaultPropForResourceFn<
   Resources,
   InProps,
   Composables,
+  IncludeProps,
   Name,
   Resource,
   CustomProps,
-  ResolvedSetDefaultProps<Resources, InProps, Composables, Defaults>
+  ResolvedSetDefaultProps<
+    Resources,
+    InProps,
+    Composables,
+    IncludeProps,
+    Defaults
+  >
 >;
 
 type CapitalizedResource<Resource extends string> =
@@ -240,6 +278,7 @@ type ResourceLayoutBuilder<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   Name extends string,
   Resource extends LayoutResourceKey<Resources>,
   CustomProps extends InPropsObject,
@@ -247,6 +286,7 @@ type ResourceLayoutBuilder<
   Resources,
   InProps,
   Composables,
+  IncludeProps,
   Name,
   Resource,
   CustomProps
@@ -256,6 +296,7 @@ type ResourceLayoutBuilder<
     Resources,
     InProps,
     Composables,
+    IncludeProps,
     Name,
     Resource,
     CustomProps
@@ -319,6 +360,7 @@ type ResourceLayoutNameMapFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   CustomProps extends InPropsObject,
   Resource extends LayoutResourceKey<Resources>,
 > = <const CallbackName extends string, const Names>(
@@ -346,6 +388,7 @@ type ResourceLayoutNameMapFn<
   Resources,
   InProps,
   Composables,
+  IncludeProps,
   MappedResourceName<Names, CallbackName, Resource>,
   Resource,
   CustomProps
@@ -355,6 +398,7 @@ type ResourceLayoutNameMapFns<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   CustomProps extends InPropsObject,
 > = UnionToIntersection<
   {
@@ -362,6 +406,7 @@ type ResourceLayoutNameMapFns<
       Resources,
       InProps,
       Composables,
+      IncludeProps,
       CustomProps,
       Resource
     >;
@@ -390,6 +435,7 @@ export type CreateLayoutForResource<
     Resources,
     InProps,
     Composables,
+    IncludeProps,
     string,
     Resource,
     CustomProps
@@ -419,6 +465,7 @@ export type CreateLayoutForResource<
     Resources,
     InProps,
     Composables,
+    IncludeProps,
     NormalizeCapitalizedResourceName<Name, Resource>,
     Resource,
     CustomProps
@@ -445,6 +492,7 @@ export type CreateLayoutForResource<
     Resources,
     InProps,
     Composables,
+    IncludeProps,
     Name,
     Resource,
     CustomProps
@@ -473,6 +521,7 @@ export type CreateLayoutForResource<
     Resources,
     InProps,
     Composables,
+    IncludeProps,
     SelectedResourceName<
       Selection,
       keyof Selection & LayoutResourceKey<Resources>
@@ -484,6 +533,7 @@ export type CreateLayoutForResource<
   Resources,
   InProps,
   Composables,
+  IncludeProps,
   CustomProps
 >;
 
@@ -529,6 +579,7 @@ export function createForResource<
       Resources,
       InProps,
       Composables,
+      IncludeProps,
       Name,
       Resource,
       CustomProps,
@@ -550,6 +601,7 @@ export function createForResource<
       Resources,
       InProps,
       Composables,
+      IncludeProps,
       Name,
       Resource,
       CustomProps

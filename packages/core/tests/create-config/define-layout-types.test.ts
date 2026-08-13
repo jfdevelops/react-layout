@@ -1,6 +1,10 @@
 import type { JSX, ReactNode } from 'react';
 import { describe, expectTypeOf, it } from 'vitest';
-import { createProp, defineResourceLayout } from '../../src';
+import {
+  createProp,
+  defineComposableComponent,
+  defineResourceLayout,
+} from '../../src';
 import { testResourceLayout } from './helpers';
 
 const { createResourceLayout } = testResourceLayout({
@@ -92,6 +96,68 @@ describe('defineResourceLayout types', () => {
 
     expectTypeOf(AdminsPage.resource).toEqualTypeOf<'admins'>();
     expectTypeOf(UsersPage.resource).toEqualTypeOf<'users'>();
+  });
+
+  it('forwards optional includes from the factory to the call site', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['detail', 'create'],
+      options: {
+        title: createProp.string(),
+      },
+      layout: {
+        composables: () => {
+          const Breadcrumb = defineComposableComponent({
+            name: 'Breadcrumb',
+            props: {
+              segments: createProp.record({
+                value: createProp.string(),
+                key: createProp.string(),
+              }),
+            },
+          })(() => null as never);
+
+          return { ...Breadcrumb };
+        },
+        props: {
+          include: {
+            title: true,
+            segments: 'optional',
+          },
+          custom: {
+            children: createProp.component({ type: 'ReactNode' }),
+          },
+        },
+        render: (props) => {
+          expectTypeOf(props.title).toEqualTypeOf<string>();
+          expectTypeOf(props.segments).toEqualTypeOf<
+            Record<string, string> | undefined
+          >();
+          return null as never;
+        },
+      },
+    });
+
+    const DetailPane = createResourceLayout.forResource({
+      resource: 'detail',
+    })({
+      name: 'DetailPane',
+      title: 'Appointment',
+    });
+
+    expectTypeOf(DetailPane).toBeCallableWith({
+      children: null as never,
+    });
+    expectTypeOf(DetailPane).toBeCallableWith({
+      children: null as never,
+      segments: { name: 'Test Test' },
+    });
+
+    () => {
+      // @ts-expect-error title remains required at the factory
+      createResourceLayout.forResource({ resource: 'detail' })({
+        name: 'MissingTitle',
+      });
+    };
   });
 });
 
