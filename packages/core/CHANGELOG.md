@@ -1,5 +1,12 @@
 # @jfdevelops/react-layout
 
+## 0.17.4
+
+### Patch Changes
+
+- 4090203: Preserve captured props and scoped components when reusable resource entries are passed to createComponent.
+- 3d4d7ce: Preserve callable properties when Show expands function intersection types.
+
 ## 0.17.3
 
 ### Patch Changes
