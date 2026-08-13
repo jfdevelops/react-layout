@@ -6,7 +6,7 @@ import type {
   InPropsDefinition,
   InPropsObject,
   MergedLayoutInProps,
-  OptionalIncludedCallProps,
+  ResolvedIncludedComponentProps,
 } from '../../props';
 import type { LayoutResourceKey, ResourceDefinition } from '../../resource';
 import type {
@@ -82,7 +82,7 @@ export type ScopedCreateResourceLayoutFnImpl<
   CustomProps,
   Composables,
   Resource,
-  OptionalIncludedCallProps<
+  ResolvedIncludedComponentProps<
     MergedLayoutInProps<Resources, InProps, Composables>,
     IncludeProps
   >

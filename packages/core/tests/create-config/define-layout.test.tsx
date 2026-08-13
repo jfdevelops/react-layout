@@ -750,6 +750,60 @@ describe('defineResourceLayout', () => {
     expect(screen.queryByLabelText('Breadcrumb')).not.toBeInTheDocument();
   });
 
+  it('forwards included props from their configured passthrough', () => {
+    const createBreadcrumbComposable = defineComposableComponent({
+      name: 'Breadcrumbs',
+      props: {
+        segments: createProp.record({
+          value: createProp.string(),
+          key: createProp.string(),
+        }),
+      },
+    });
+    const Breadcrumbs = createBreadcrumbComposable(() => null);
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['contacts'],
+      options: {
+        configLabel: createProp.string(),
+      },
+      layout: {
+        composables: () => ({ ...Breadcrumbs }),
+        props: {
+          include: {
+            segments: {
+              visibility: 'optional',
+              passthrough: 'component',
+            },
+            configLabel: {
+              visibility: 'optional',
+              passthrough: 'config',
+            },
+          },
+        },
+        render: ({ segments, configLabel }) => (
+          <dl>
+            <dt>Component</dt>
+            <dd>{segments?.contacts ?? 'None'}</dd>
+            <dt>Config</dt>
+            <dd>{configLabel ?? 'None'}</dd>
+          </dl>
+        ),
+      },
+    });
+    const createContactsPane =
+      createResourceLayout.forResources('contacts');
+    const ContactsPane = createContactsPane({
+      resource: 'contacts',
+      name: 'ContactsPane',
+      configLabel: 'Factory value',
+    });
+
+    render(<ContactsPane segments={{ contacts: 'Call-site value' }} />);
+
+    expect(screen.getByText('Call-site value')).toBeInTheDocument();
+    expect(screen.getByText('Factory value')).toBeInTheDocument();
+  });
+
   it('identifies the composable preset, layout, and resource for missing props', () => {
     const { createResourceLayout } = createContactsComposableLayout();
     let error: Error | undefined;
