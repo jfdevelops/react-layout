@@ -50,6 +50,7 @@ export type {
 } from '@jfdevelops/react-layout-validator';
 export type {
   IncludedProps,
+  IncludedPropBehavior,
   InferredInProps,
   InPropsDefinition,
   InPropsFunction,
@@ -60,6 +61,8 @@ export type {
   PropsContextRender,
   PropsRenderDefinition,
   ResolvedIncludedProps,
+  ResolvedIncludedComponentProps,
+  ResolvedIncludedConfigProps,
   ResolvedIncludedPropsAsDefined,
 } from './props';
 export { normalizeResource, normalizeResources, toResourceEnum } from './resource';

@@ -80,41 +80,91 @@ export type RequiredVariant = true | 'required';
  */
 type PropsType<Variant extends RequiredVariant = true> = Variant | 'optional';
 type InternalPropsType = PropsType<'required'>;
+/** Controls where an included layout prop is supplied and whether it is required there. */
+export type IncludedPropBehavior = {
+  visibility: 'optional' | 'required';
+  passthrough: 'component' | 'config';
+};
+
+type IncludedPropType = PropsType | IncludedPropBehavior;
 /**
  * A map of props to include in the layout.
  */
 export type IncludedProps<T extends object> = {
-  [K in keyof T & string]?: PropsType;
+  [K in keyof T & string]?: IncludedPropType;
 };
 
 type PropsKeys<Props extends InPropsObject, T> = T & keyof Props;
-type GetPropsKey<IncludeProps extends object, Type extends PropsType = true> = {
-  [key in keyof IncludeProps]: IncludeProps[key] extends Type ? key : never;
+type IncludedPropVisibility<Value> = Value extends IncludedPropBehavior
+  ? Value['visibility']
+  : Value extends true | 'required'
+    ? 'required'
+    : Value extends 'optional'
+      ? 'optional'
+      : never;
+type IncludedPropPassthrough<Value> = Value extends IncludedPropBehavior
+  ? Value['passthrough']
+  : Value extends true | 'required'
+    ? 'config'
+    : Value extends 'optional'
+      ? 'component' | 'config'
+      : never;
+type GetPropsKey<
+  IncludeProps extends object,
+  Visibility extends InternalPropsType,
+  Passthrough extends IncludedPropBehavior['passthrough'] | 'render' = 'render',
+> = {
+  [Key in keyof IncludeProps]: IncludedPropVisibility<
+    IncludeProps[Key]
+  > extends Visibility
+    ? Passthrough extends 'render'
+      ? Key
+      : Passthrough extends IncludedPropPassthrough<IncludeProps[Key]>
+        ? Key
+        : never
+    : never;
 }[keyof IncludeProps];
 type SelectedIncludedProps<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,
-  Type extends InternalPropsType,
+  Visibility extends InternalPropsType,
+  Passthrough extends IncludedPropBehavior['passthrough'] | 'render' = 'render',
 > = Pick<
   Props,
-  PropsKeys<
-    Props,
-    GetPropsKey<IncludeProps, Type extends 'required' ? true : 'optional'>
-  >
+  PropsKeys<Props, GetPropsKey<IncludeProps, Visibility, Passthrough>>
 >;
 
 export type ResolvedIncludedProps<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,
 > = ResolveLayoutProps<SelectedIncludedProps<Props, IncludeProps, 'required'>> &
-  OptionalIncludedCallProps<Props, IncludeProps>;
+  Partial<
+    ResolveLayoutProps<SelectedIncludedProps<Props, IncludeProps, 'optional'>>
+  >;
 
-export type OptionalIncludedCallProps<
+export type ResolvedIncludedConfigProps<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,
-> = Partial<
-  ResolveLayoutProps<SelectedIncludedProps<Props, IncludeProps, 'optional'>>
->;
+> = ResolveLayoutProps<
+  SelectedIncludedProps<Props, IncludeProps, 'required', 'config'>
+> &
+  Partial<
+    ResolveLayoutProps<
+      SelectedIncludedProps<Props, IncludeProps, 'optional', 'config'>
+    >
+  >;
+
+export type ResolvedIncludedComponentProps<
+  Props extends InPropsObject,
+  IncludeProps extends IncludedProps<Props>,
+> = ResolveLayoutProps<
+  SelectedIncludedProps<Props, IncludeProps, 'required', 'component'>
+> &
+  Partial<
+    ResolveLayoutProps<
+      SelectedIncludedProps<Props, IncludeProps, 'optional', 'component'>
+    >
+  >;
 
 /**
  * Like {@link ResolvedIncludedProps}, but keeps included prop keys exactly as

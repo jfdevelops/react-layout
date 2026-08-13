@@ -159,6 +159,97 @@ describe('defineResourceLayout types', () => {
       });
     };
   });
+
+  it('preserves include visibility and passthrough through scoped factories', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['detail', 'create'],
+      options: {
+        title: createProp.string(),
+        componentLabel: createProp.string(),
+        configLabel: createProp.string(),
+        requiredComponentLabel: createProp.string(),
+        requiredConfigLabel: createProp.string(),
+      },
+      layout: {
+        props: {
+          include: {
+            title: true,
+            componentLabel: {
+              visibility: 'optional',
+              passthrough: 'component',
+            },
+            configLabel: {
+              visibility: 'optional',
+              passthrough: 'config',
+            },
+            requiredComponentLabel: {
+              visibility: 'required',
+              passthrough: 'component',
+            },
+            requiredConfigLabel: {
+              visibility: 'required',
+              passthrough: 'config',
+            },
+          },
+        },
+        render: (props) => {
+          expectTypeOf(props.title).toEqualTypeOf<string>();
+          expectTypeOf(props.componentLabel).toEqualTypeOf<
+            string | undefined
+          >();
+          expectTypeOf(props.configLabel).toEqualTypeOf<string | undefined>();
+          expectTypeOf(props.requiredComponentLabel).toEqualTypeOf<string>();
+          expectTypeOf(props.requiredConfigLabel).toEqualTypeOf<string>();
+          return null as never;
+        },
+      },
+    });
+    const createPane = createResourceLayout.forResources('create', 'detail');
+    const Pane = createPane({
+      resource: 'create',
+      name: 'Pane',
+      title: 'Appointment',
+      requiredConfigLabel: 'Configured',
+    });
+
+    expectTypeOf(Pane).toBeCallableWith({
+      requiredComponentLabel: 'Rendered',
+    });
+    expectTypeOf(Pane).toBeCallableWith({
+      componentLabel: 'Optional render value',
+      requiredComponentLabel: 'Rendered',
+    });
+
+    () => {
+      // @ts-expect-error required component passthrough props stay required
+      Pane({});
+    };
+    () => {
+      Pane({
+        requiredComponentLabel: 'Rendered',
+        // @ts-expect-error config passthrough props are not component props
+        configLabel: 'Configured',
+      });
+    };
+    () => {
+      // @ts-expect-error required config passthrough props stay required
+      createPane({
+        resource: 'create',
+        name: 'MissingRequiredConfig',
+        title: 'Appointment',
+      });
+    };
+    () => {
+      createPane({
+        resource: 'create',
+        name: 'ComponentPropAtConfig',
+        title: 'Appointment',
+        requiredConfigLabel: 'Configured',
+        // @ts-expect-error component passthrough props are not config props
+        componentLabel: 'Rendered',
+      });
+    };
+  });
 });
 
 describe('createComponent types', () => {

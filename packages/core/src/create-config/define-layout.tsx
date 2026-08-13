@@ -23,12 +23,14 @@ import {
 } from '@jfdevelops/react-layout-validator';
 import {
   IncludedProps,
+  type IncludedPropBehavior,
   InferredInProps,
   InPropsDefinition,
   InPropsObject,
   LayoutRenderProps,
   MergedLayoutInProps,
-  OptionalIncludedCallProps,
+  ResolvedIncludedComponentProps,
+  ResolvedIncludedConfigProps,
   ResolvedIncludedProps,
 } from '../props';
 import {
@@ -153,6 +155,41 @@ function readLayoutOptionValue(
   }
 
   return undefined;
+}
+
+function getIncludedPropBehavior(value: unknown): IncludedPropBehavior | null {
+  if (
+    value !== null &&
+    typeof value === 'object' &&
+    'visibility' in value &&
+    'passthrough' in value
+  ) {
+    return value as IncludedPropBehavior;
+  }
+
+  return null;
+}
+
+function isIncludedPropRequired(value: unknown) {
+  return (
+    value === true ||
+    value === 'required' ||
+    getIncludedPropBehavior(value)?.visibility === 'required'
+  );
+}
+
+function allowsConfigPassthrough(value: unknown) {
+  const behavior = getIncludedPropBehavior(value);
+
+  return behavior ? behavior.passthrough === 'config' : true;
+}
+
+function allowsComponentPassthrough(value: unknown) {
+  const behavior = getIncludedPropBehavior(value);
+
+  return behavior
+    ? behavior.passthrough === 'component'
+    : value === 'optional';
 }
 
 function splitLayoutInProps(inProps: Record<string, unknown>) {
@@ -284,7 +321,7 @@ export type LayoutPropsForResource<
 > = [keyof IncludeProps] extends [never]
   ? ResolveLayoutProps<InferredInProps<Resources, InProps>> &
       RequiredPresetLayoutProps<Composables>
-  : ResolvedIncludedProps<
+  : ResolvedIncludedConfigProps<
       MergedLayoutInProps<Resources, InProps, Composables>,
       IncludeProps
     >;
@@ -314,7 +351,7 @@ type CreateResourceLayoutFnImpl<
   CustomProps,
   Composables,
   Resource,
-  OptionalIncludedCallProps<
+  ResolvedIncludedComponentProps<
     MergedLayoutInProps<Resources, InProps, Composables>,
     IncludeProps
   >
@@ -557,9 +594,16 @@ function defineResourceLayoutImpl<
           const presetPropEntries = Object.entries(presetPropDefinitions);
           const validatedDefinitions = Object.fromEntries(
             presetPropEntries.filter(
-              ([propKey]) =>
-                includeLayoutProps?.[propKey] !== 'optional' ||
-                layoutOptionValues[propKey] !== undefined,
+              ([propKey]) => {
+                const includeBehavior = includeLayoutProps?.[propKey];
+
+                return (
+                  includeBehavior === undefined ||
+                  (allowsConfigPassthrough(includeBehavior) &&
+                    (isIncludedPropRequired(includeBehavior) ||
+                      layoutOptionValues[propKey] !== undefined))
+                );
+              },
             ),
           );
           const presetPropValues = Object.fromEntries(
@@ -594,7 +638,7 @@ function defineResourceLayoutImpl<
     function Component(
       props: Show<
         ResolveProps<CustomProps> &
-          OptionalIncludedCallProps<
+          ResolvedIncludedComponentProps<
             MergedLayoutInProps<Resources, InProps, Composables>,
             IncludeProps
           >
@@ -614,16 +658,17 @@ function defineResourceLayoutImpl<
 
       for (const key of includedPropKeys) {
         const definition = mergedResolvedInProps[key];
-        const callSiteValue = readLayoutOptionValue(
-          key,
-          definition,
-          props as Record<string, unknown>,
-        );
-        const layoutOptionValue = readLayoutOptionValue(
-          key,
-          definition,
-          layoutOptionValues,
-        );
+        const includeBehavior = includeLayoutProps?.[key];
+        const callSiteValue = allowsComponentPassthrough(includeBehavior)
+          ? readLayoutOptionValue(
+              key,
+              definition,
+              props as Record<string, unknown>,
+            )
+          : undefined;
+        const layoutOptionValue = allowsConfigPassthrough(includeBehavior)
+          ? readLayoutOptionValue(key, definition, layoutOptionValues)
+          : undefined;
         const splitValue = key in splitInProps ? splitInProps[key] : undefined;
         const value = callSiteValue ?? layoutOptionValue ?? splitValue;
 
@@ -634,13 +679,13 @@ function defineResourceLayoutImpl<
 
       const requiredIncludedPropDefinitions = Object.fromEntries(
         Object.entries(includedPropDefinitions).filter(
-          ([key]) => includeLayoutProps?.[key] === true,
+          ([key]) => isIncludedPropRequired(includeLayoutProps?.[key]),
         ),
       );
       const optionalIncludedPropDefinitions = Object.fromEntries(
         Object.entries(includedPropDefinitions).filter(
           ([key]) =>
-            includeLayoutProps?.[key] === 'optional' &&
+            !isIncludedPropRequired(includeLayoutProps?.[key]) &&
             includedPropValues[key] !== undefined,
         ),
       );
@@ -705,7 +750,7 @@ function defineResourceLayoutImpl<
       displayName: name,
       props: undefined as unknown as Show<
         ResolveProps<CustomProps> &
-          OptionalIncludedCallProps<
+          ResolvedIncludedComponentProps<
             MergedLayoutInProps<Resources, InProps, Composables>,
             IncludeProps
           >
