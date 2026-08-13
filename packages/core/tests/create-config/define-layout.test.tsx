@@ -677,6 +677,79 @@ describe('defineResourceLayout', () => {
     );
   });
 
+  it('forwards optional included props from the call site', () => {
+    const createBreadcrumbComposable = defineComposableComponent({
+      name: 'Breadcrumbs',
+      props: {
+        segments: createProp.record({
+          value: createProp.string(),
+          key: createProp.string(),
+        }),
+      },
+    });
+    const Breadcrumbs = createBreadcrumbComposable((props) => (
+      <nav aria-label='Breadcrumb'>
+        {Object.values(props.segments).join(' / ')}
+      </nav>
+    ));
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['contacts'],
+      options: {
+        title: createProp.string(),
+      },
+      layout: {
+        composables: () => ({ ...Breadcrumbs }),
+        props: {
+          include: {
+            title: true,
+            segments: 'optional',
+          },
+        },
+        render: (props, { composables }) => (
+          <section>
+            {props.segments ? (
+              <composables.Breadcrumbs segments={props.segments} />
+            ) : null}
+            <h1>{props.title}</h1>
+          </section>
+        ),
+      },
+    });
+    const ContactsPage = createResourceLayout({
+      resource: 'contacts',
+      name: 'ContactsPage',
+      title: 'Contacts',
+    });
+    const DefaultContactsPage = createResourceLayout({
+      resource: 'contacts',
+      name: 'DefaultContactsPage',
+      title: 'Contacts',
+      segments: { contacts: 'Factory contacts' },
+    });
+
+    const { rerender } = render(
+      <ContactsPage segments={{ contacts: 'Call-site contacts' }} />,
+    );
+    expect(screen.getByLabelText('Breadcrumb')).toHaveTextContent(
+      'Call-site contacts',
+    );
+
+    rerender(<DefaultContactsPage />);
+    expect(screen.getByLabelText('Breadcrumb')).toHaveTextContent(
+      'Factory contacts',
+    );
+
+    rerender(
+      <DefaultContactsPage segments={{ contacts: 'Override contacts' }} />,
+    );
+    expect(screen.getByLabelText('Breadcrumb')).toHaveTextContent(
+      'Override contacts',
+    );
+
+    rerender(<ContactsPage />);
+    expect(screen.queryByLabelText('Breadcrumb')).not.toBeInTheDocument();
+  });
+
   it('identifies the composable preset, layout, and resource for missing props', () => {
     const { createResourceLayout } = createContactsComposableLayout();
     let error: Error | undefined;

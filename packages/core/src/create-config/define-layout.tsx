@@ -10,7 +10,6 @@ import {
   makeComposable,
   MakeComposableOptions,
   RequiredPresetLayoutProps,
-  resolveComposablePresetProps,
   resolveLayoutComposables,
 } from '@jfdevelops/react-layout-composables';
 import {
@@ -29,6 +28,8 @@ import {
   InPropsObject,
   LayoutRenderProps,
   MergedLayoutInProps,
+  OptionalIncludedCallProps,
+  ResolvedIncludedProps,
 } from '../props';
 import {
   normalizeResources,
@@ -264,9 +265,10 @@ export type ResourceLayoutComponent<
   Props extends InPropsObject = {},
   Composables extends ComposableComponents = {},
   Resource extends string = string,
+  IncludedCallProps extends object = {},
 > = ResourceLayoutComposition<Name, Composables> &
-  BaseComponent<Name, ResolveProps<Props>> & {
-    (props: Show<ResolveProps<Props>>): JSX.Element;
+  BaseComponent<Name, Show<ResolveProps<Props> & IncludedCallProps>> & {
+    (props: Show<ResolveProps<Props> & IncludedCallProps>): JSX.Element;
     /**
      * A type-only property containing the resource associated with this
      * component. This property is `undefined` at runtime.
@@ -278,8 +280,14 @@ export type LayoutPropsForResource<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents = {},
-> = ResolveLayoutProps<InferredInProps<Resources, InProps>> &
-  RequiredPresetLayoutProps<Composables>;
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
+> = [keyof IncludeProps] extends [never]
+  ? ResolveLayoutProps<InferredInProps<Resources, InProps>> &
+      RequiredPresetLayoutProps<Composables>
+  : ResolvedIncludedProps<
+      MergedLayoutInProps<Resources, InProps, Composables>,
+      IncludeProps
+    >;
 
 type CreateResourceLayoutFnImpl<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -296,11 +304,21 @@ type CreateResourceLayoutFnImpl<
     Resources,
     InProps,
     Composables,
+    IncludeProps,
     Name,
     Resource,
     Props
   >,
-) => ResourceLayoutComponent<Name, CustomProps, Composables, Resource>;
+) => ResourceLayoutComponent<
+  Name,
+  CustomProps,
+  Composables,
+  Resource,
+  OptionalIncludedCallProps<
+    MergedLayoutInProps<Resources, InProps, Composables>,
+    IncludeProps
+  >
+>;
 
 export type CreateResourceLayoutMakeComposableOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -309,8 +327,11 @@ export type CreateResourceLayoutMakeComposableOptions<
   Name extends string,
   Resource extends LayoutResourceKey<Resources>,
   Props extends InPropsObject = {},
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
 > = CreateResourceLayoutOptionsBase<Resources, Name, Resource, Props> &
-  Partial<LayoutPropsForResource<Resources, InProps, Composables>>;
+  Partial<
+    LayoutPropsForResource<Resources, InProps, Composables, IncludeProps>
+  >;
 
 type CreateResourceLayoutMakeComposableFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -329,7 +350,8 @@ type CreateResourceLayoutMakeComposableFn<
     Composables,
     Name,
     Resource,
-    Props
+    Props,
+    IncludeProps
   >,
 ) => ComposableResourceLayout<Composables, Name, any, any, any>;
 
@@ -465,6 +487,7 @@ function defineResourceLayoutImpl<
       Resources,
       InProps,
       Composables,
+      IncludeProps,
       Name,
       Resource,
       Props
@@ -501,6 +524,7 @@ function defineResourceLayoutImpl<
     const { composables, render, props: layoutProps } = layout;
     const customLayoutProps = layoutProps?.custom;
     const includeLayoutProps = layoutProps?.include;
+    const layoutOptionValues = layoutOptionProps as Record<string, unknown>;
     const resolvedLayoutProps = {
       ...customLayoutProps,
     };
@@ -527,10 +551,38 @@ function defineResourceLayoutImpl<
       Object.assign(mergedResolvedInProps, presetPropDefinitions);
     }
 
-    const composablePresetProps = resolveComposablePresetProps(
-      resolvedComposables,
-      layoutOptionProps as Record<string, unknown>,
-      validationContext,
+    const composablePresetProps = Object.fromEntries(
+      collectComposablePresetEntries(resolvedComposables).map(
+        ({ key, props: presetPropDefinitions }) => {
+          const presetPropEntries = Object.entries(presetPropDefinitions);
+          const validatedDefinitions = Object.fromEntries(
+            presetPropEntries.filter(
+              ([propKey]) =>
+                includeLayoutProps?.[propKey] !== 'optional' ||
+                layoutOptionValues[propKey] !== undefined,
+            ),
+          );
+          const presetPropValues = Object.fromEntries(
+            presetPropEntries.flatMap(([propKey]) =>
+              propKey in layoutOptionValues
+                ? [[propKey, layoutOptionValues[propKey]]]
+                : [],
+            ),
+          );
+
+          return [
+            key,
+            validateProps(
+              validatedDefinitions as Record<
+                string,
+                AnyBuiltPropDefinition
+              >,
+              presetPropValues,
+              validationContext,
+            ),
+          ];
+        },
+      ),
     );
     const mergedRenderContext = {
       composables: resolvedComposables as LayoutRenderComposables<Composables>,
@@ -539,7 +591,15 @@ function defineResourceLayoutImpl<
       inProps: splitInProps,
     } as LayoutRenderContext<Resources, Composables>;
 
-    function Component(props: Show<ResolveProps<CustomProps>>) {
+    function Component(
+      props: Show<
+        ResolveProps<CustomProps> &
+          OptionalIncludedCallProps<
+            MergedLayoutInProps<Resources, InProps, Composables>,
+            IncludeProps
+          >
+      >,
+    ) {
       const validatedProps = validateProps(resolvedLayoutProps, props, {
         ...validationContext,
       });
@@ -554,13 +614,18 @@ function defineResourceLayoutImpl<
 
       for (const key of includedPropKeys) {
         const definition = mergedResolvedInProps[key];
+        const callSiteValue = readLayoutOptionValue(
+          key,
+          definition,
+          props as Record<string, unknown>,
+        );
         const layoutOptionValue = readLayoutOptionValue(
           key,
           definition,
-          layoutOptionProps,
+          layoutOptionValues,
         );
         const splitValue = key in splitInProps ? splitInProps[key] : undefined;
-        const value = layoutOptionValue ?? splitValue;
+        const value = callSiteValue ?? layoutOptionValue ?? splitValue;
 
         if (value !== undefined) {
           includedPropValues[key] = value;
@@ -638,7 +703,13 @@ function defineResourceLayoutImpl<
 
     return Object.assign(Component, {
       displayName: name,
-      props: undefined as unknown as ResolveProps<CustomProps>,
+      props: undefined as unknown as Show<
+        ResolveProps<CustomProps> &
+          OptionalIncludedCallProps<
+            MergedLayoutInProps<Resources, InProps, Composables>,
+            IncludeProps
+          >
+      >,
       resource: undefined as unknown as Resource,
       ...createComposition({
         components: resolvedComposables as Composables | undefined,

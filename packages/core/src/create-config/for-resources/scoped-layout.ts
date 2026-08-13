@@ -2,7 +2,12 @@ import type {
   ComposableComponents,
   ComposableResourceLayout,
 } from '@jfdevelops/react-layout-composables';
-import type { InPropsDefinition, InPropsObject } from '../../props';
+import type {
+  InPropsDefinition,
+  InPropsObject,
+  MergedLayoutInProps,
+  OptionalIncludedCallProps,
+} from '../../props';
 import type { LayoutResourceKey, ResourceDefinition } from '../../resource';
 import type {
   LayoutIncludeProps,
@@ -38,11 +43,12 @@ export type ScopedCreateResourceLayoutOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   Arguments extends ReadonlyArray<unknown>,
   Name extends string,
   Resource extends SelectedLayoutResources<Resources, Arguments>,
   Props extends InPropsObject,
-> = LayoutPropsForResource<Resources, InProps, Composables> & {
+> = LayoutPropsForResource<Resources, InProps, Composables, IncludeProps> & {
   resource: Resource;
   props?: Props;
 } & (HasResourceLayoutName<Arguments, Resource> extends true
@@ -53,6 +59,7 @@ export type ScopedCreateResourceLayoutFnImpl<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   Arguments extends ReadonlyArray<unknown>,
   CustomProps extends InPropsObject,
 > = <
@@ -64,17 +71,28 @@ export type ScopedCreateResourceLayoutFnImpl<
     Resources,
     InProps,
     Composables,
+    IncludeProps,
     Arguments,
     Name,
     Resource,
     Props
   >,
-) => ResourceLayoutComponent<Name, CustomProps, Composables, Resource>;
+) => ResourceLayoutComponent<
+  Name,
+  CustomProps,
+  Composables,
+  Resource,
+  OptionalIncludedCallProps<
+    MergedLayoutInProps<Resources, InProps, Composables>,
+    IncludeProps
+  >
+>;
 
 export type ScopedCreateLayoutForResource<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   Arguments extends ReadonlyArray<unknown>,
   CustomProps extends InPropsObject,
 > = <
@@ -86,6 +104,7 @@ export type ScopedCreateLayoutForResource<
   Resources,
   InProps,
   Composables,
+  IncludeProps,
   Name,
   Resource,
   CustomProps
@@ -94,6 +113,7 @@ export type ScopedCreateLayoutForResource<
     Resources,
     InProps,
     Composables,
+    IncludeProps,
     Name,
     Resource,
     CustomProps
@@ -104,6 +124,7 @@ export type ScopedCreateResourceLayoutMakeComposableFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   Arguments extends ReadonlyArray<unknown>,
 > = <
   Resource extends SelectedLayoutResources<Resources, Arguments>,
@@ -114,7 +135,9 @@ export type ScopedCreateResourceLayoutMakeComposableFn<
     CreateResourceLayoutOptionsBase<Resources, Name, Resource>,
     'name'
   > &
-    Partial<LayoutPropsForResource<Resources, InProps, Composables>> & {
+    Partial<
+      LayoutPropsForResource<Resources, InProps, Composables, IncludeProps>
+    > & {
       props?: Props;
     } & (HasResourceLayoutName<Arguments, Resource> extends true
       ? { name?: Name }
@@ -125,12 +148,14 @@ export type ScopedCreateResourceLayoutFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
+  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   Arguments extends ReadonlyArray<unknown>,
   CustomProps extends InPropsObject,
 > = ScopedCreateResourceLayoutFnImpl<
   Resources,
   InProps,
   Composables,
+  IncludeProps,
   Arguments,
   CustomProps
 > & {
@@ -208,6 +233,7 @@ export type ScopedCreateResourceLayoutFn<
     Resources,
     InProps,
     Composables,
+    IncludeProps,
     Arguments,
     CustomProps
   >;
@@ -226,6 +252,7 @@ export type ScopedCreateResourceLayoutFn<
           Resources,
           InProps,
           Composables,
+          IncludeProps,
           Arguments
         >;
       });
@@ -259,6 +286,7 @@ export type CreateResourceLayoutForResourcesFn<
     Resources,
     InProps,
     Composables,
+    IncludeProps,
     ResourceKeys,
     CustomProps
   >;
@@ -281,6 +309,7 @@ export type CreateResourceLayoutForResourcesFn<
     Resources,
     InProps,
     Composables,
+    IncludeProps,
     readonly [{ resources: ResourceKeys }],
     CustomProps
   >;
@@ -332,6 +361,7 @@ export type CreateResourceLayoutForResourcesFn<
     Resources,
     InProps,
     Composables,
+    IncludeProps,
     MappedResourceLayoutArguments<Resources, ResourceKeys, Names, CallbackName>,
     CustomProps
   >;
@@ -362,6 +392,7 @@ export type CreateResourceLayoutForResourcesFn<
     Resources,
     InProps,
     Composables,
+    IncludeProps,
     SharedResourceLayoutArguments<Resources, ResourceKeys, Name>,
     CustomProps
   >;
@@ -393,6 +424,7 @@ export type CreateResourceLayoutForResourcesFn<
     Resources,
     InProps,
     Composables,
+    IncludeProps,
     SelectedResourceLayoutArguments<Selection>,
     CustomProps
   >;

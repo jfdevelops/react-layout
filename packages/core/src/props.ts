@@ -107,9 +107,14 @@ export type ResolvedIncludedProps<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,
 > = ResolveLayoutProps<SelectedIncludedProps<Props, IncludeProps, 'required'>> &
-  Partial<
-    ResolveLayoutProps<SelectedIncludedProps<Props, IncludeProps, 'optional'>>
-  >;
+  OptionalIncludedCallProps<Props, IncludeProps>;
+
+export type OptionalIncludedCallProps<
+  Props extends InPropsObject,
+  IncludeProps extends IncludedProps<Props>,
+> = Partial<
+  ResolveLayoutProps<SelectedIncludedProps<Props, IncludeProps, 'optional'>>
+>;
 
 /**
  * Like {@link ResolvedIncludedProps}, but keeps included prop keys exactly as
