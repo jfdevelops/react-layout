@@ -1,5 +1,13 @@
 # @jfdevelops/react-layout
 
+## 0.18.0
+
+### Minor Changes
+
+- aedeeff: Deepen `getComponent` for nested sub-resources. Sub-resources are keyed directly on their parent in `createResourceConfig` (the `subResources` wrapper is gone), nested `subResource` params use `{ value, subResource }`, and `getComponent` accepts both options and deep config path overloads. Add `ComponentTypes<T>` to infer the union of component selectors defined in a created resource config.
+- aedeeff: Add the `forPaths` API on created resource configs: `createGetComponent(path)`, `forPaths(...)`, `isSubResourceKey`, and `subResources`. Paths support `$resource` / `$subResource` / `$component` variables with a builder for `addPathParams`, `addComponentKeyParams`, `addParams`, `render`, `setDisplayName`, and `asHOF`.
+- 8263bf1: Add a typed `ReactLayoutError` hierarchy (`InvalidPathError`, `InvalidResourceError`, `InvalidSubResourceError`, `InvalidComponentError`, `MissingPathVariableError`, `InvalidConfigError`) so layout lookups fail with structured, actionable errors instead of bare `Error` strings.
+
 ## 0.17.5
 
 ### Patch Changes
