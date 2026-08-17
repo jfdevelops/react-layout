@@ -31,6 +31,21 @@ export type {
   ResolveLayoutComposables,
 } from '@jfdevelops/react-layout-composables';
 export { defineResourceLayout } from './create-config';
+export type {
+  ComponentTypes,
+  CreateGetComponentForPath,
+  CreatedResourceConfig,
+  ForPaths,
+  ForPathsRenderContext,
+  GetComponentForPath,
+  IsSubResourceKey,
+  ParameterizedResourcePath,
+  PathVariables,
+  RenderedPathComponent,
+  RenderedPathComponentHOF,
+  ResolvedPathValue,
+  TargetPathBuilder,
+} from './create-config';
 export {
   createReactLayoutError,
   InvalidComponentError,

@@ -27,6 +27,7 @@ export {
   createResourceConfig,
 } from './get-component';
 export type {
+  ComponentTypes,
   CreateResourceConfigFn,
   CreatedResourceConfig,
   GetComponent,
@@ -35,11 +36,68 @@ export type {
   GetComponentForResourceBound,
   GetComponentForResourceOptions,
   GetComponentOptions,
+  ResourceConfigPath,
   ResourceFromGetComponentBound,
   GetComponentOptionsForResource,
   SubResourceFromGetComponentBound,
   ValidateForResourceBound,
 } from './get-component';
+export {
+  createForPaths,
+  createGetComponentForPath,
+  createTargetPathBuilder,
+} from './for-paths';
+export type {
+  CreateGetComponentForPath,
+  ForPaths,
+  ForPathsRenderContext,
+  GetComponentForPath,
+  GetComponentForPathApi,
+  PathValueComponentGetter,
+  PathVariableGuards,
+  RenderedPathComponent,
+  RenderedPathComponentHOF,
+  ResolvedPathValue,
+  TargetPathBuilder,
+} from './for-paths';
+export { createIsSubResourceKey } from './is-sub-resource-key';
+export type {
+  IsSubResourceKey,
+  IsSubResourceKeyOptions,
+  IsSubResourceKeyResult,
+} from './is-sub-resource-key';
+export {
+  createPathVariable,
+  extractPathVariables,
+  generateResourceConfigPaths,
+  isPathVariableSegment,
+  PATH_VARIABLE_IDENTIFIER,
+  pathHasVariables,
+  readPathVariableName,
+  resolveParameterizedPath,
+} from './paths';
+export type {
+  ComponentPathVariable,
+  ConfigResourceKeys,
+  ConfigSubResourceKeys,
+  ExtractPathVariables,
+  ParameterizedEntryPath,
+  ParameterizedResourcePath,
+  PathComponentKeys,
+  PathHasVariables,
+  PathResourceCandidates,
+  PathSubResourceKeys,
+  PathVariable,
+  PathVariableName,
+  PathVariables,
+  PathVariablesForResource,
+  PathVariableValues,
+  ResolveParameterizedPathValue,
+  ResourcePathVariable,
+  ResourceSubResourceKeys,
+  SubResourceParamValue,
+  SubResourcePathVariable,
+} from './paths';
 export type {
   BaseResourceConfigComponents,
   ResourceComponentPathKey,

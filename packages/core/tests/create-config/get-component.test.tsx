@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { defineResourceLayout } from '../../src';
+import {
+  defineResourceLayout,
+  InvalidComponentError,
+  InvalidResourceError,
+  InvalidSubResourceError,
+} from '../../src';
 
 describe('getComponent', () => {
   const { createResourceConfig } = defineResourceLayout({
@@ -10,7 +15,19 @@ describe('getComponent', () => {
           'admins',
           {
             value: 'managers',
-            subResources: ['male', 'female'],
+            subResources: [
+              {
+                value: 'male',
+                subResources: [
+                  {
+                    value: 'wfh',
+                    subResources: ['domestic', 'international'],
+                  },
+                  'onsite',
+                ],
+              },
+              'female',
+            ],
           },
         ],
       },
@@ -36,11 +53,35 @@ describe('getComponent', () => {
     const config = createResourceConfig({
       users: {
         component: root,
-        subResources: {
-          managers: {
-            component: <div>managers</div>,
-            subResources: {
-              female: { component: female },
+        managers: {
+          component: <div>managers</div>,
+          female: {
+            component: female,
+          },
+        },
+      },
+    });
+
+    expect(
+      config.getComponent({
+        resource: 'users',
+        subResource: { value: 'managers', subResource: 'female' },
+      }),
+    ).toBe(female);
+  });
+
+  it('returns a sub-resource component many layers deep', () => {
+    const domestic = <div data-testid='domestic'>domestic</div>;
+    const config = createResourceConfig({
+      users: {
+        component: <div>users</div>,
+        managers: {
+          component: <div>managers</div>,
+          male: {
+            component: <div>male managers</div>,
+            wfh: {
+              component: <div>work from home</div>,
+              domestic: { component: domestic },
             },
           },
         },
@@ -50,9 +91,18 @@ describe('getComponent', () => {
     expect(
       config.getComponent({
         resource: 'users',
-        subResource: { resource: 'managers', subResource: 'female' },
+        subResource: {
+          value: 'managers',
+          subResource: {
+            value: 'male',
+            subResource: {
+              value: 'wfh',
+              subResource: 'domestic',
+            },
+          },
+        },
       }),
-    ).toBe(female);
+    ).toBe(domestic);
   });
 
   it('returns a flat sub-resource slug component', () => {
@@ -60,9 +110,7 @@ describe('getComponent', () => {
     const config = createResourceConfig({
       users: {
         component: <div>users</div>,
-        subResources: {
-          admins: { component: admins },
-        },
+        admins: { component: admins },
       },
     });
 
@@ -115,7 +163,10 @@ describe('getComponent', () => {
     });
 
     expect(() => config.getComponent({ resource: 'groups' })).toThrowError(
-      'Resource "groups" is not configured',
+      InvalidResourceError,
+    );
+    expect(() => config.getComponent({ resource: 'groups' })).toThrowError(
+      /"groups" is not available\. Available resources are users/,
     );
   });
 
@@ -129,7 +180,7 @@ describe('getComponent', () => {
         resource: 'users',
         subResource: 'admins',
       }),
-    ).toThrowError('Sub-resource "admins" is not configured');
+    ).toThrowError(InvalidSubResourceError);
   });
 
   it('throws when the requested component slot is missing', () => {
@@ -142,7 +193,13 @@ describe('getComponent', () => {
         resource: 'users',
         component: 'errorComponent',
       }),
-    ).toThrowError('Missing "errorComponent" configuration');
+    ).toThrowError(InvalidComponentError);
+    expect(() =>
+      config.getComponent({
+        resource: 'users',
+        component: 'errorComponent',
+      }),
+    ).toThrowError(/"errorComponent" is not configured/);
   });
 
   it('forResource returns a reusable getter bound to resource and subResource', () => {
@@ -151,12 +208,10 @@ describe('getComponent', () => {
     const config = createResourceConfig({
       users: {
         component: root,
-        subResources: {
-          managers: {
-            component: <div>managers</div>,
-            subResources: {
-              female: { component: female },
-            },
+        managers: {
+          component: <div>managers</div>,
+          female: {
+            component: female,
           },
         },
       },
@@ -165,7 +220,7 @@ describe('getComponent', () => {
     const getFemale = config.getComponent.forResource({
       resource: 'users',
       subResource: {
-        resource: 'managers',
+        value: 'managers',
         subResource: 'female',
       },
     });
@@ -198,5 +253,109 @@ describe('getComponent', () => {
     const getUsers = config.getComponent.forResource({ resource: 'users' });
 
     expect(getUsers({ component: 'errorComponent' })).toBe(error);
+  });
+});
+
+describe('getComponent with a sub-resource on a specific resource', () => {
+  const { createResourceConfig } = defineResourceLayout({
+    resources: [
+      {
+        value: 'templates',
+        subResources: [
+          {
+            value: 'deleted',
+            subResources: ['expired'],
+          },
+        ],
+      },
+      'appointments',
+    ],
+    layout: {
+      render: () => <></>,
+    },
+  });
+
+  it('returns the default component for the selected sub-resource', () => {
+    const deleted = <div data-testid='deleted-templates'>deleted</div>;
+    const config = createResourceConfig({
+      templates: {
+        component: <div>templates</div>,
+        detail: { component: <div>templates-detail</div> },
+        deleted: { component: deleted },
+      },
+    });
+
+    expect(
+      config.getComponent({
+        resource: 'templates',
+        subResource: 'deleted',
+      }),
+    ).toBe(deleted);
+  });
+
+  it('keeps component as an optional component-slot selector', () => {
+    const deletedError = <div data-testid='deleted-error'>deleted error</div>;
+    const config = createResourceConfig({
+      templates: {
+        component: <div>templates</div>,
+        deleted: {
+          component: <div>deleted</div>,
+          errorComponent: deletedError,
+        },
+      },
+    });
+
+    expect(
+      config.getComponent({
+        resource: 'templates',
+        subResource: 'deleted',
+        component: 'errorComponent',
+      }),
+    ).toBe(deletedError);
+  });
+
+  it('resolves nested sub-resources with value and subResource', () => {
+    const expired = <div data-testid='expired-templates'>expired</div>;
+    const config = createResourceConfig({
+      templates: {
+        component: <div>templates</div>,
+        deleted: {
+          component: <div>deleted</div>,
+          expired: { component: expired },
+        },
+      },
+    });
+
+    expect(
+      config.getComponent({
+        resource: 'templates',
+        subResource: {
+          value: 'deleted',
+          subResource: 'expired',
+        },
+      }),
+    ).toBe(expired);
+  });
+
+  it('gets a component from a deep config path', () => {
+    const expired = <div data-testid='expired'>expired</div>;
+    const expiredError = <div data-testid='expired-error'>expired error</div>;
+    const config = createResourceConfig({
+      templates: {
+        component: <div>templates</div>,
+        deleted: {
+          component: <div>deleted</div>,
+          expired: {
+            component: expired,
+            errorComponent: expiredError,
+          },
+        },
+      },
+    });
+
+    expect(config.getComponent('templates.deleted.expired')).toBe(expired);
+    expect(
+      config.getComponent('templates.deleted.expired.errorComponent'),
+    ).toBe(expiredError);
   });
 });

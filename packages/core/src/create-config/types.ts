@@ -35,7 +35,10 @@ export type ResourceConfigComponents = BaseResourceConfigComponents &
 
 export type ResourceConfigComponentKey = keyof ResourceConfigComponents;
 
-/** Config entry for one sub-resource node (recurses when the layout tree has children). */
+/**
+ * Config entry for one sub-resource node. Nested sub-resources are keyed directly by
+ * their layout slug (there is no `subResources` wrapper in the config).
+ */
 export type SubResourceConfigComponentsFor<
   Resources extends ReadonlyArray<ResourceDefinition>,
   SubDef extends ResourceDefinition,
@@ -44,12 +47,10 @@ export type SubResourceConfigComponentsFor<
     subResources: infer Nested extends ReadonlyArray<ResourceDefinition>;
   }
     ? {
-        subResources?: {
-          [K in LayoutResourceKey<Nested>]?: SubResourceConfigComponentsFor<
-            Resources,
-            ResourceDefinitionForKey<Nested, K>
-          >;
-        };
+        [K in LayoutResourceKey<Nested>]?: SubResourceConfigComponentsFor<
+          Resources,
+          ResourceDefinitionForKey<Nested, K>
+        >;
       }
     : {});
 
@@ -59,17 +60,15 @@ export type SubResourceConfig<
 > = [SubResourceDefinitionsFor<Resources, Resource>] extends [readonly []]
   ? {}
   : {
-      subResources?: {
-        [K in LayoutResourceKey<
-          SubResourceDefinitionsFor<Resources, Resource>
-        >]?: SubResourceConfigComponentsFor<
-          Resources,
-          ResourceDefinitionForKey<
-            SubResourceDefinitionsFor<Resources, Resource>,
-            K
-          >
-        >;
-      };
+      [K in LayoutResourceKey<
+        SubResourceDefinitionsFor<Resources, Resource>
+      >]?: SubResourceConfigComponentsFor<
+        Resources,
+        ResourceDefinitionForKey<
+          SubResourceDefinitionsFor<Resources, Resource>,
+          K
+        >
+      >;
     };
 
 export type ResourceConfig<
@@ -93,6 +92,7 @@ export type ResourceConfigMap<
   Resources extends ReadonlyArray<ResourceDefinition>,
 > = Partial<ResourceConfig<Resources>>;
 
+/** Runtime view of a config node: component slots plus arbitrary sub-resource keys. */
 export type ResourceConfigEntry = ResourceConfigComponents & {
-  subResources?: Record<string, ResourceConfigEntry | undefined>;
+  [subResource: string]: unknown;
 };

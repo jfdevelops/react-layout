@@ -31,7 +31,7 @@ type _AssertUserSubKeys = 'admins' | 'managers' extends _UserSubKeys
   : false;
 
 type _UserSubParam = SubResourceParamForResource<TestResources, 'users'>;
-type _AssertNestedSubParam = { resource: 'admins'; subResource: 'members' } extends _UserSubParam
+type _AssertNestedSubParam = { value: 'admins'; subResource: 'members' } extends _UserSubParam
   ? true
   : false;
 
