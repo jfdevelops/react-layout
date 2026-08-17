@@ -31,6 +31,44 @@ export type {
   ResolveLayoutComposables,
 } from '@jfdevelops/react-layout-composables';
 export { defineResourceLayout } from './create-config';
+export type {
+  ComponentTypes,
+  CreateGetComponentForPath,
+  CreatedResourceConfig,
+  ForPaths,
+  ForPathsRenderContext,
+  GetComponentForPath,
+  IsSubResourceKey,
+  ParameterizedResourcePath,
+  PathVariables,
+  RenderedPathComponent,
+  RenderedPathComponentHOF,
+  ResolvedPathValue,
+  TargetPathBuilder,
+} from './create-config';
+export {
+  createReactLayoutError,
+  InvalidComponentError,
+  InvalidConfigError,
+  InvalidPathError,
+  InvalidResourceError,
+  InvalidSubResourceError,
+  MissingPathVariableError,
+  ReactLayoutError,
+} from './errors';
+export type {
+  CreatedReactLayoutError,
+  CreateReactLayoutErrorOptions,
+  ErrorMessageRenderer,
+  InvalidComponentContext,
+  InvalidConfigContext,
+  InvalidPathContext,
+  InvalidResourceContext,
+  InvalidSubResourceContext,
+  MissingPathVariableContext,
+  ReactLayoutErrorContext,
+  ReactLayoutErrorRendererFactory,
+} from './errors';
 export {
   createProp,
   createPrimitivePropBuilder,

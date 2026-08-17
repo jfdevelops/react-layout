@@ -35,7 +35,68 @@ export type ResourceConfigComponents = BaseResourceConfigComponents &
 
 export type ResourceConfigComponentKey = keyof ResourceConfigComponents;
 
-/** Config entry for one sub-resource node (recurses when the layout tree has children). */
+/**
+ * Config keys that cannot be used as nested sub-resource slugs. They already
+ * name component slots (`component`, `errorComponent`, …) or shared branches
+ * (`detail`, `new`). Top-level resource names may still use these strings.
+ */
+type ReservedResourceSlug = ResourceConfigComponentKey;
+
+type ReservedResourceSlugMessage<Slug extends string> =
+  `The resource slug "${Slug}" is reserved for config keys`;
+
+type UnreservedResourceSlug<Slug extends string> = string extends Slug
+  ? Slug
+  : Slug extends ReservedResourceSlug
+    ? ReservedResourceSlugMessage<Slug>
+    : Slug;
+
+type AssertUnreservedSubResourceDefinition<Resource> = Resource extends string
+  ? UnreservedResourceSlug<Resource>
+  : Resource extends {
+        value: infer Value extends string;
+        subResources: infer Subs;
+      }
+    ? Omit<Resource, 'value' | 'subResources'> & {
+        value: UnreservedResourceSlug<Value>;
+        subResources: Subs extends ReadonlyArray<unknown>
+          ? {
+              [Index in keyof Subs]: AssertUnreservedSubResourceDefinition<
+                Subs[Index]
+              >;
+            }
+          : Subs;
+      }
+    : Resource;
+
+type AssertUnreservedResourceDefinition<Resource> = Resource extends string
+  ? Resource
+  : Resource extends {
+        subResources: infer Subs;
+      }
+    ? Omit<Resource, 'subResources'> & {
+        subResources: Subs extends ReadonlyArray<unknown>
+          ? {
+              [Index in keyof Subs]: AssertUnreservedSubResourceDefinition<
+                Subs[Index]
+              >;
+            }
+          : Subs;
+      }
+    : Resource;
+
+export type AssertUnreservedResources<
+  Resources extends ReadonlyArray<unknown>,
+> = {
+  [Index in keyof Resources]: AssertUnreservedResourceDefinition<
+    Resources[Index]
+  >;
+};
+
+/**
+ * Config entry for one sub-resource node. Nested sub-resources are keyed directly by
+ * their layout slug (there is no `subResources` wrapper in the config).
+ */
 export type SubResourceConfigComponentsFor<
   Resources extends ReadonlyArray<ResourceDefinition>,
   SubDef extends ResourceDefinition,
@@ -44,12 +105,10 @@ export type SubResourceConfigComponentsFor<
     subResources: infer Nested extends ReadonlyArray<ResourceDefinition>;
   }
     ? {
-        subResources?: {
-          [K in LayoutResourceKey<Nested>]?: SubResourceConfigComponentsFor<
-            Resources,
-            ResourceDefinitionForKey<Nested, K>
-          >;
-        };
+        [K in LayoutResourceKey<Nested>]?: SubResourceConfigComponentsFor<
+          Resources,
+          ResourceDefinitionForKey<Nested, K>
+        >;
       }
     : {});
 
@@ -59,17 +118,15 @@ export type SubResourceConfig<
 > = [SubResourceDefinitionsFor<Resources, Resource>] extends [readonly []]
   ? {}
   : {
-      subResources?: {
-        [K in LayoutResourceKey<
-          SubResourceDefinitionsFor<Resources, Resource>
-        >]?: SubResourceConfigComponentsFor<
-          Resources,
-          ResourceDefinitionForKey<
-            SubResourceDefinitionsFor<Resources, Resource>,
-            K
-          >
-        >;
-      };
+      [K in LayoutResourceKey<
+        SubResourceDefinitionsFor<Resources, Resource>
+      >]?: SubResourceConfigComponentsFor<
+        Resources,
+        ResourceDefinitionForKey<
+          SubResourceDefinitionsFor<Resources, Resource>,
+          K
+        >
+      >;
     };
 
 export type ResourceConfig<
@@ -93,6 +150,7 @@ export type ResourceConfigMap<
   Resources extends ReadonlyArray<ResourceDefinition>,
 > = Partial<ResourceConfig<Resources>>;
 
+/** Runtime view of a config node: component slots plus arbitrary sub-resource keys. */
 export type ResourceConfigEntry = ResourceConfigComponents & {
-  subResources?: Record<string, ResourceConfigEntry | undefined>;
+  [subResource: string]: unknown;
 };

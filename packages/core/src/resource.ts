@@ -142,7 +142,7 @@ type CanNestSubResourceParam<
 > = [...DepthAcc, unknown]['length'] extends MaxDepth ? false : true;
 
 /**
- * `subResource` route param: a slug at the current depth, or `{ resource, subResource }`
+ * `subResource` route param: a slug at the current depth, or `{ value, subResource }`
  * when that slug has nested `subResources` in the layout tree and `MaxDepth` allows it.
  */
 export type RecursiveSubResourceParam<
@@ -163,7 +163,7 @@ export type RecursiveSubResourceParam<
             :
                 | Key
                 | {
-                    resource: Key;
+                    value: Key;
                     subResource: RecursiveSubResourceParam<
                       Resources,
                       Nested,

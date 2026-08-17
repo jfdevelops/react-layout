@@ -1,11 +1,13 @@
 import type { JSX } from 'react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
+import { type ComponentTypes, defineResourceLayout } from '../../src';
 import type {
   GetComponentAtBound,
   GetComponentForResourceBound,
   GetComponentOptions,
   GetComponentOptionsForResource,
   ResourceConfigComponents,
+  ResourceConfigMap,
   ResourceFromGetComponentBound,
   SubResourceFromGetComponentBound,
   ValidateForResourceBound,
@@ -17,7 +19,16 @@ type TestResources = readonly [
     readonly value: 'users';
     readonly subResources: readonly [
       { readonly value: 'admins'; readonly subResources: readonly ['members'] },
-      { readonly value: 'managers'; readonly subResources: readonly ['male', 'female'] },
+      {
+        readonly value: 'managers';
+        readonly subResources: readonly [
+          {
+            readonly value: 'male';
+            readonly subResources: readonly ['wfh', 'onsite'];
+          },
+          'female',
+        ];
+      },
     ];
   },
   'groups',
@@ -41,7 +52,7 @@ type AssertFlatSlug = 'managers' extends NonNullable<UsersOptions['subResource']
   ? true
   : false;
 type AssertNestedSubResource = {
-  resource: 'managers';
+  value: 'managers';
   subResource: 'male';
 } extends NonNullable<UsersOptions['subResource']>
   ? true
@@ -84,7 +95,7 @@ type InvalidGroupsSubResourceBound = ValidateForResourceBound<
   TestResources,
   {
     resource: 'groups';
-    subResource: { resource: 'managers'; subResource: 'female' };
+    subResource: { value: 'managers'; subResource: 'female' };
   }
 >;
 type AssertGroupsSubResourceRejected = [
@@ -96,7 +107,7 @@ type AssertGroupsSubResourceRejected = [
 type BoundFemale = GetComponentAtBound<
   TestResources,
   'users',
-  { resource: 'managers'; subResource: 'female' }
+  { value: 'managers'; subResource: 'female' }
 >;
 type AssertBoundFemaleNoResource = 'resource' extends Parameters<BoundFemale>[0]
   ? false
@@ -157,7 +168,16 @@ describe('getComponent options types', () => {
             readonly subResources: readonly [
               {
                 readonly value: 'male';
-                readonly subResources: readonly ['wfh', 'onsite'];
+                readonly subResources: readonly [
+                  {
+                    readonly value: 'wfh';
+                    readonly subResources: readonly [
+                      'domestic',
+                      'international',
+                    ];
+                  },
+                  'onsite',
+                ];
               },
             ];
           },
@@ -168,19 +188,25 @@ describe('getComponent options types', () => {
       DeepResources,
       'users'
     >;
-    type AssertThreeDeep = {
-      resource: 'managers';
-      subResource: { resource: 'male'; subResource: 'wfh' };
+    type AssertFourDeep = {
+      value: 'managers';
+      subResource: {
+        value: 'male';
+        subResource: {
+          value: 'wfh';
+          subResource: 'domestic';
+        };
+      };
     } extends NonNullable<DeepUsersOptions['subResource']>
       ? true
       : false;
-    const threeDeep: AssertThreeDeep = true;
-    expect(threeDeep).toBe(true);
+    const fourDeep: AssertFourDeep = true;
+    expect(fourDeep).toBe(true);
   });
 
   it('matches full-tree subResource param for a resource', () => {
     type Full = SubResourceParamForResource<TestResources, 'users'>;
-    type AssertNested = { resource: 'managers'; subResource: 'male' } extends Full
+    type AssertNested = { value: 'managers'; subResource: 'male' } extends Full
       ? true
       : false;
     const nested: AssertNested = true;
@@ -204,15 +230,223 @@ describe('getComponent options types', () => {
   it('infers forResource binding from the bound argument', () => {
     type AssertInferred = ForResourceResult<{
       resource: 'users';
-      subResource: { resource: 'managers'; subResource: 'female' };
+      subResource: { value: 'managers'; subResource: 'female' };
     }> extends GetComponentAtBound<
       TestResources,
       'users',
-      { resource: 'managers'; subResource: 'female' }
+      { value: 'managers'; subResource: 'female' }
     >
       ? true
       : false;
     const inferred: AssertInferred = true;
     expect(inferred).toBe(true);
+  });
+});
+
+type TemplateResources = readonly [
+  {
+    readonly value: 'templates';
+    readonly subResources: readonly [
+      {
+        readonly value: 'deleted';
+        readonly subResources: readonly ['expired'];
+      },
+    ];
+  },
+  'appointments',
+];
+
+describe('getComponent types for resource-specific sub-resources', () => {
+  const { createResourceConfig } = defineResourceLayout({
+    resources: [
+      {
+        value: 'templates',
+        subResources: [
+          {
+            value: 'deleted',
+            subResources: ['expired'],
+          },
+        ],
+      },
+      'appointments',
+    ],
+    layout: {
+      render: () => null as never,
+    },
+  });
+
+  const config = createResourceConfig({
+    templates: {
+      component: null as never,
+      detail: { component: null as never },
+      deleted: {
+        component: null as never,
+        errorComponent: null as never,
+        expired: {
+          component: null as never,
+          pendingComponent: null as never,
+        },
+      },
+    },
+    appointments: {
+      component: null as never,
+    },
+  });
+
+  it('infers component types actually defined across the config', () => {
+    expectTypeOf<ComponentTypes<typeof config>>().toEqualTypeOf<
+      'component' | 'detail' | 'errorComponent' | 'pendingComponent'
+    >();
+  });
+
+  it('keys sub-resources directly on the resource, with no subResources wrapper', () => {
+    createResourceConfig({
+      templates: {
+        component: null as never,
+        deleted: {
+          component: null as never,
+          expired: { component: null as never },
+        },
+      },
+    });
+
+    type TemplatesEntry = NonNullable<
+      ResourceConfigMap<TemplateResources>['templates']
+    >;
+    type DeletedEntry = NonNullable<TemplatesEntry['deleted']>;
+    type AppointmentsEntry = NonNullable<
+      ResourceConfigMap<TemplateResources>['appointments']
+    >;
+
+    type AssertSubResourceIsDirectKey = 'deleted' extends keyof TemplatesEntry
+      ? true
+      : false;
+    type AssertNoSubResourcesWrapper =
+      'subResources' extends keyof TemplatesEntry ? false : true;
+    type AssertNestedSubResourceIsDirectKey =
+      'expired' extends keyof DeletedEntry ? true : false;
+    type AssertSubResourceKeysAreResourceSpecific =
+      'deleted' extends keyof AppointmentsEntry ? false : true;
+
+    const directKey: AssertSubResourceIsDirectKey = true;
+    const noWrapper: AssertNoSubResourcesWrapper = true;
+    const nestedDirectKey: AssertNestedSubResourceIsDirectKey = true;
+    const resourceSpecific: AssertSubResourceKeysAreResourceSpecific = true;
+    expect(directKey).toBe(true);
+    expect(noWrapper).toBe(true);
+    expect(nestedDirectKey).toBe(true);
+    expect(resourceSpecific).toBe(true);
+  });
+
+  it('accepts subResource only when declared for the selected resource', () => {
+    expectTypeOf(config.getComponent).toBeCallableWith({
+      resource: 'templates',
+      subResource: 'deleted',
+    });
+    expectTypeOf(config.getComponent).toBeCallableWith({
+      resource: 'templates',
+      subResource: {
+        value: 'deleted',
+        subResource: 'expired',
+      },
+      component: 'pendingComponent',
+    });
+    expectTypeOf(config.getComponent).toBeCallableWith({
+      resource: 'templates',
+    });
+    expectTypeOf(config.getComponent).toBeCallableWith({
+      resource: 'templates',
+      component: 'detail',
+    });
+  });
+
+  it('keeps component limited to component slots', () => {
+    () => {
+      // @ts-expect-error deleted is a sub-resource, not a component slot
+      config.getComponent({
+        resource: 'templates',
+        component: 'deleted',
+      });
+    };
+  });
+
+  it('rejects invalid sub-resources for the selected resource and depth', () => {
+    () => {
+      // @ts-expect-error archived is not a templates sub-resource
+      config.getComponent({
+        resource: 'templates',
+        subResource: 'archived',
+      });
+    };
+    () => {
+      // @ts-expect-error archived is not nested under deleted
+      config.getComponent({
+        resource: 'templates',
+        subResource: {
+          value: 'deleted',
+          subResource: 'archived',
+        },
+      });
+    };
+  });
+
+  it('omits subResource for resources without declared sub-resources', () => {
+    type AppointmentsOptions = GetComponentOptionsForResource<
+      TemplateResources,
+      'appointments'
+    >;
+    type AssertNoSubResourceOption =
+      'subResource' extends keyof AppointmentsOptions ? false : true;
+
+    const noSubResourceOption: AssertNoSubResourceOption = true;
+    expect(noSubResourceOption).toBe(true);
+  });
+
+  it('supports deeply typed config paths', () => {
+    expectTypeOf(config.getComponent).toBeCallableWith(
+      'templates.deleted.expired',
+    );
+    expectTypeOf(config.getComponent).toBeCallableWith(
+      'templates.deleted.expired.component',
+    );
+    expectTypeOf(config.getComponent).toBeCallableWith(
+      'templates.deleted.expired.pendingComponent',
+    );
+    expectTypeOf(config.getComponent).toBeCallableWith(
+      'appointments.component',
+    );
+
+    () => {
+      // @ts-expect-error deleted is not configured under appointments
+      config.getComponent('appointments.deleted.component');
+    };
+    () => {
+      // @ts-expect-error archived is not configured under deleted
+      config.getComponent('templates.deleted.archived.component');
+    };
+  });
+
+  it('forResource binds a recursive sub-resource path and leaves component optional', () => {
+    const getExpired = config.getComponent.forResource({
+      resource: 'templates',
+      subResource: {
+        value: 'deleted',
+        subResource: 'expired',
+      },
+    });
+
+    expectTypeOf(getExpired).toBeCallableWith();
+    expectTypeOf(getExpired).toBeCallableWith({
+      component: 'pendingComponent',
+    });
+
+    () => {
+      // @ts-expect-error resource is already bound
+      getExpired({ resource: 'templates' });
+    };
+    () => {
+      // @ts-expect-error subResource is already bound
+      getExpired({ subResource: 'expired' });
+    };
   });
 });

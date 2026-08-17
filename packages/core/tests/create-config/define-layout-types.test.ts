@@ -29,6 +29,43 @@ describe('defineResourceLayout types', () => {
     defineResourceLayout.forResources();
   });
 
+  it('rejects sub-resource slugs that collide with reserved config keys', () => {
+    () => {
+      defineResourceLayout({
+        resources: [
+          {
+            value: 'users',
+            // @ts-expect-error component is reserved for config slots
+            subResources: ['component'],
+          },
+        ],
+        layout: {
+          render: () => null as never,
+        },
+      });
+    };
+
+    () => {
+      defineResourceLayout({
+        resources: [
+          {
+            value: 'users',
+            subResources: [
+              {
+                // @ts-expect-error detail is reserved for shared branches
+                value: 'detail',
+                subResources: ['members'],
+              },
+            ],
+          },
+        ],
+        layout: {
+          render: () => null as never,
+        },
+      });
+    };
+  });
+
   it('types forResource names and rejects invalid selections', () => {
     const NamedUsersPage = createResourceLayout.forResource({
       resource: 'users',
