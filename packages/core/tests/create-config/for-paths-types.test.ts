@@ -351,6 +351,21 @@ describe('forPaths', () => {
     );
   });
 
+  it('keeps remaining params after chaining asHOF', () => {
+    const createResourceView = config
+      .forPaths('$resource.$component')
+      .addPathParams()
+      .render(({ params, getComponentForPath }) =>
+        getComponentForPath('$resource.$component')(params),
+      )
+      .asHOF({ args: { resource: true } });
+    const UsersError = createResourceView('users').asHOF({
+      args: { component: true },
+    })('errorComponent');
+
+    expectTypeOf<Parameters<typeof UsersError>[0]>().toEqualTypeOf<{}>();
+  });
+
   it('closes over an object when several params are bound', () => {
     const createResourceView = config
       .forPaths('$resource.$component')

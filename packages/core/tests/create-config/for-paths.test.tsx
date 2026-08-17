@@ -356,6 +356,21 @@ describe('forPaths', () => {
     expect(screen.getByTestId('users-error')).toBeDefined();
   });
 
+  it('keeps prior closures when asHOF is chained', () => {
+    const { forPaths } = createTestConfig();
+    const UsersError = forPaths('$resource.$component')
+      .addPathParams()
+      .render(({ params, getComponentForPath }) =>
+        getComponentForPath('$resource.$component')(params),
+      )
+      .asHOF({ args: { resource: true } })('users')
+      .asHOF({ args: { component: true } })('errorComponent');
+
+    render(<UsersError />);
+
+    expect(screen.getByTestId('users-error')).toBeDefined();
+  });
+
   it('binds several params through asHOF', () => {
     const { forPaths } = createTestConfig();
     const createResourceView = forPaths('$resource.$component')

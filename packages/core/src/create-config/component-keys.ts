@@ -63,7 +63,11 @@ export function readComponentKeys(
   );
 }
 
-/** Sub-resource keys configured on a node: branch values under a non-component key. */
+/**
+ * Sub-resource keys configured on a node: branch values under a non-component key.
+ * Reserved config keys are rejected as nested sub-resource slugs when the layout is
+ * defined, so `detail` / `new` / `component` here are always shared branches or slots.
+ */
 export function readSubResourceKeys(node: Record<string, unknown>): string[] {
   return Object.keys(node).filter(
     (key) => !isResourceConfigComponentKey(key) && isConfigNode(node[key]),

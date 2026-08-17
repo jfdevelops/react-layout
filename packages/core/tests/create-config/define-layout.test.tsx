@@ -60,6 +60,24 @@ describe('defineResourceLayout', () => {
     cleanup();
   });
 
+  it('rejects nested sub-resource slugs that collide with reserved config keys', () => {
+    expect(() =>
+      defineResourceLayout({
+        resources: [
+          {
+            value: 'users',
+            subResources: ['admins', 'new'],
+          },
+        ] as never,
+        layout: {
+          render: () => <section />,
+        },
+      }),
+    ).toThrowError(
+      'Sub-resource "new" under "users" collides with a reserved config key',
+    );
+  });
+
   it('binds resources via forResources and merges optional extras', () => {
     const { createResourceLayout } = testResourceLayout({
       resources: ['admins'],

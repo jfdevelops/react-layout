@@ -36,6 +36,64 @@ export type ResourceConfigComponents = BaseResourceConfigComponents &
 export type ResourceConfigComponentKey = keyof ResourceConfigComponents;
 
 /**
+ * Config keys that cannot be used as nested sub-resource slugs. They already
+ * name component slots (`component`, `errorComponent`, …) or shared branches
+ * (`detail`, `new`). Top-level resource names may still use these strings.
+ */
+type ReservedResourceSlug = ResourceConfigComponentKey;
+
+type ReservedResourceSlugMessage<Slug extends string> =
+  `The resource slug "${Slug}" is reserved for config keys`;
+
+type UnreservedResourceSlug<Slug extends string> = string extends Slug
+  ? Slug
+  : Slug extends ReservedResourceSlug
+    ? ReservedResourceSlugMessage<Slug>
+    : Slug;
+
+type AssertUnreservedSubResourceDefinition<Resource> = Resource extends string
+  ? UnreservedResourceSlug<Resource>
+  : Resource extends {
+        value: infer Value extends string;
+        subResources: infer Subs;
+      }
+    ? Omit<Resource, 'value' | 'subResources'> & {
+        value: UnreservedResourceSlug<Value>;
+        subResources: Subs extends ReadonlyArray<unknown>
+          ? {
+              [Index in keyof Subs]: AssertUnreservedSubResourceDefinition<
+                Subs[Index]
+              >;
+            }
+          : Subs;
+      }
+    : Resource;
+
+type AssertUnreservedResourceDefinition<Resource> = Resource extends string
+  ? Resource
+  : Resource extends {
+        subResources: infer Subs;
+      }
+    ? Omit<Resource, 'subResources'> & {
+        subResources: Subs extends ReadonlyArray<unknown>
+          ? {
+              [Index in keyof Subs]: AssertUnreservedSubResourceDefinition<
+                Subs[Index]
+              >;
+            }
+          : Subs;
+      }
+    : Resource;
+
+export type AssertUnreservedResources<
+  Resources extends ReadonlyArray<unknown>,
+> = {
+  [Index in keyof Resources]: AssertUnreservedResourceDefinition<
+    Resources[Index]
+  >;
+};
+
+/**
  * Config entry for one sub-resource node. Nested sub-resources are keyed directly by
  * their layout slug (there is no `subResources` wrapper in the config).
  */

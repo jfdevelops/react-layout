@@ -107,7 +107,7 @@ export interface RenderedPathComponent<
   _args: Params;
   /**
    * Splits the props into a closure and the remaining props, so shared params can be
-   * bound once and the component reused.
+   * bound once and the component reused. Chained `asHOF` calls keep prior closures.
    */
   asHOF<Args extends HOFArgSelection<Params> = {}>(options?: {
     /** Params to close over. Anything omitted stays a prop. */
@@ -350,17 +350,45 @@ function validateParams(
   }
 }
 
+function readClosureProps(
+  selected: string[],
+  closure: unknown,
+): Record<string, unknown> {
+  if (selected.length === 0) {
+    return {};
+  }
+
+  const [only] = selected;
+
+  if (selected.length === 1 && only !== undefined) {
+    return { [only]: closure };
+  }
+
+  if (
+    typeof closure === 'object' &&
+    closure !== null &&
+    !Array.isArray(closure)
+  ) {
+    return { ...(closure as Record<string, unknown>) };
+  }
+
+  return {};
+}
+
 function createRenderedComponent(
   runRenderer: (props: Record<string, unknown>) => JSX.Element,
-  paramTemplate: Record<string, unknown>,
+  paramTemplate: Record<string, unknown> | undefined,
   resolveDisplayName?: (props: Record<string, unknown>) => string,
+  boundProps: Record<string, unknown> = {},
 ) {
   function RenderedPathView(props: Record<string, unknown>): JSX.Element {
+    const merged = { ...boundProps, ...props };
+
     if (resolveDisplayName) {
-      RenderedPathView.displayName = resolveDisplayName(props);
+      RenderedPathView.displayName = resolveDisplayName(merged);
     }
 
-    return runRenderer(props);
+    return runRenderer(merged);
   }
 
   RenderedPathView.displayName = DEFAULT_DISPLAY_NAME;
@@ -371,40 +399,16 @@ function createRenderedComponent(
       .map(([key]) => key);
 
     function hof(closure: unknown) {
-      const closureProps: Record<string, unknown> = (() => {
-        if (selected.length === 0) {
-          return {};
-        }
+      const bound = createRenderedComponent(
+        runRenderer,
+        undefined,
+        resolveDisplayName,
+        { ...boundProps, ...readClosureProps(selected, closure) },
+      );
 
-        const [only] = selected;
+      bound.displayName = RenderedPathView.displayName;
 
-        if (selected.length === 1 && only !== undefined) {
-          return { [only]: closure };
-        }
-
-        return typeof closure === 'object' &&
-          closure !== null &&
-          !Array.isArray(closure)
-          ? { ...(closure as Record<string, unknown>) }
-          : {};
-      })();
-
-      function BoundPathView(props: Record<string, unknown>): JSX.Element {
-        const merged = { ...closureProps, ...props };
-
-        if (resolveDisplayName) {
-          BoundPathView.displayName = resolveDisplayName(merged);
-        }
-
-        return runRenderer(merged);
-      }
-
-      BoundPathView.displayName = RenderedPathView.displayName;
-
-      return Object.assign(BoundPathView, {
-        _args: undefined as never,
-        asHOF,
-      });
+      return bound;
     }
 
     return Object.assign(hof, { _args: undefined as never });

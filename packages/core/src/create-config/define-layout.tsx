@@ -41,10 +41,13 @@ import {
 } from '../resource';
 import { BaseComponent, functionalUpdate, pick, Show, Updater } from '../utils';
 import { capitalize } from '../utils/capitalize';
+import { InvalidConfigError } from '../errors';
+import { isResourceConfigComponentKey } from './component-keys';
 import {
   type CreateResourceConfigFn,
   createResourceConfig,
 } from './get-component';
+import type { AssertUnreservedResources } from './types';
 import {
   createResourceLinksFn,
   type CreateResourceLinksFn,
@@ -247,9 +250,10 @@ type CreateViewMapOptions<
   CustomProps extends InPropsObject = {},
 > = {
   /**
-   * An array of valid resource names to support.
+   * An array of valid resource names to support. Nested sub-resource slugs that
+   * collide with config keys (`component`, `detail`, `new`, …) are reserved.
    */
-  resources: Resources;
+  resources: AssertUnreservedResources<Resources>;
   /**
    * The options that are passed into the created resource layout.
    */
@@ -484,6 +488,28 @@ type DefinedResourceLayout<
   createResourceLinks: CreateResourceLinksFn<Resources>;
 };
 
+function readResourceSlug(resource: ResourceDefinition) {
+  return typeof resource === 'string' ? resource : resource.value;
+}
+
+function assertUnreservedResourceSlugs(
+  resources: ReadonlyArray<ResourceDefinition>,
+  owner?: string,
+) {
+  for (const resource of resources) {
+    const slug = readResourceSlug(resource);
+
+    if (owner !== undefined && isResourceConfigComponentKey(slug)) {
+      throw new InvalidConfigError({
+        reason: `Sub-resource "${slug}" under "${owner}" collides with a reserved config key`,
+      });
+    }
+
+    if (typeof resource !== 'string') {
+      assertUnreservedResourceSlugs(resource.subResources, slug);
+    }
+  }
+}
 
 function defineResourceLayoutImpl<
   const Resources extends ReadonlyArray<ResourceDefinition>,
@@ -511,6 +537,9 @@ function defineResourceLayoutImpl<
   CustomProps
 > {
   const { options: inProps = {} as InProps, resources, layout } = options;
+
+  assertUnreservedResourceSlugs(resources);
+
   const normalizedResources = normalizeResources(resources);
   const resourcesEnum = createPrimitivePropBuilder('string').enum(
     toResourceEnum(normalizedResources),
@@ -914,7 +943,7 @@ type DefineResourceLayoutForResourcesOptions<
    * Additional resources to merge with those bound by
    * {@link defineResourceLayout.forResources}.
    */
-  resources?: ExtraResources;
+  resources?: AssertUnreservedResources<ExtraResources>;
 };
 
 type NonEmptyResourceDefinitions = readonly [
