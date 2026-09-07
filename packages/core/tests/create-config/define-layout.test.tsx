@@ -822,6 +822,38 @@ describe('defineResourceLayout', () => {
     expect(screen.getByText('Factory value')).toBeInTheDocument();
   });
 
+  it('applies create-time defaults for optional component passthrough props', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['contacts'],
+      options: {
+        label: createProp.string().optional(),
+      },
+      layout: {
+        props: {
+          include: {
+            label: {
+              visibility: 'optional',
+              passthrough: 'component',
+            },
+          },
+        },
+        render: ({ label }) => <p>{label ?? 'None'}</p>,
+      },
+    });
+    const createContactsPane = createResourceLayout.forResources('contacts');
+    const ContactsPane = createContactsPane({
+      resource: 'contacts',
+      name: 'ContactsPane',
+      label: 'Factory default',
+    });
+
+    const { rerender } = render(<ContactsPane />);
+    expect(screen.getByText('Factory default')).toBeInTheDocument();
+
+    rerender(<ContactsPane label="Call-site override" />);
+    expect(screen.getByText('Call-site override')).toBeInTheDocument();
+  });
+
   it('identifies the composable preset, layout, and resource for missing props', () => {
     const { createResourceLayout } = createContactsComposableLayout();
     let error: Error | undefined;

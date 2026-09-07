@@ -184,7 +184,18 @@ function isIncludedPropRequired(value: unknown) {
 function allowsConfigPassthrough(value: unknown) {
   const behavior = getIncludedPropBehavior(value);
 
-  return behavior ? behavior.passthrough === 'config' : true;
+  if (!behavior) {
+    return true;
+  }
+
+  if (behavior.passthrough === 'config') {
+    return true;
+  }
+
+  // optional + component passthrough still accepts create-time defaults
+  return (
+    behavior.passthrough === 'component' && behavior.visibility === 'optional'
+  );
 }
 
 function allowsComponentPassthrough(value: unknown) {
