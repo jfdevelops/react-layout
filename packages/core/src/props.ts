@@ -103,7 +103,11 @@ type IncludedPropVisibility<Value> = Value extends IncludedPropBehavior
       ? 'optional'
       : never;
 type IncludedPropPassthrough<Value> = Value extends IncludedPropBehavior
-  ? Value['passthrough']
+  ? Value['passthrough'] extends 'component'
+    ? Value['visibility'] extends 'optional'
+      ? 'component' | 'config'
+      : 'component'
+    : Value['passthrough']
   : Value extends true | 'required'
     ? 'config'
     : Value extends 'optional'

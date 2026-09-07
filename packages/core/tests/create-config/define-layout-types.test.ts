@@ -277,13 +277,24 @@ describe('defineResourceLayout types', () => {
       });
     };
     () => {
+      // optional component passthrough still accepts a create-time default
       createPane({
         resource: 'create',
         name: 'ComponentPropAtConfig',
         title: 'Appointment',
         requiredConfigLabel: 'Configured',
-        // @ts-expect-error component passthrough props are not config props
         componentLabel: 'Rendered',
+      });
+    };
+    () => {
+      // required component passthrough stays absent from the factory options
+      createPane({
+        resource: 'create',
+        name: 'RequiredComponentPropAtConfig',
+        title: 'Appointment',
+        requiredConfigLabel: 'Configured',
+        // @ts-expect-error required component passthrough props are not config props
+        requiredComponentLabel: 'Rendered',
       });
     };
   });
