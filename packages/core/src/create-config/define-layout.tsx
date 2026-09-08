@@ -73,6 +73,7 @@ import {
   type CreateResourceLayoutForResourcesFn,
 } from './for-resources';
 import {
+  type ResourceLayoutShellPublisher,
   ResourceLayoutShellPublisherContext,
   useResourceLayoutShellPublisher,
 } from './shell-context';
@@ -761,6 +762,10 @@ function defineResourceLayoutImpl<
   CustomProps
 > {
   const { options: inProps = {} as InProps, resources, layout } = options;
+  // Internal, set only by `defineResourceLayout.withLayout`: the identity of the
+  // owning definition, forwarded when a page reports its resource so the shell
+  // can tell its own pages apart from ones belonging to another definition.
+  const shellId = (options as { shellId?: symbol }).shellId;
 
   assertUnreservedResourceSlugs(resources);
 
@@ -907,9 +912,9 @@ function defineResourceLayoutImpl<
       // leave one painted frame of stale shell chrome mid-navigation. Degrades
       // to a no-op when rendered without a `Shell` (context defaults to null).
       useLayoutEffect(() => {
-        publishResource?.(layoutContext.resource);
+        publishResource?.(layoutContext.resource, shellId);
 
-        return () => publishResource?.(undefined);
+        return () => publishResource?.(undefined, shellId);
       }, [publishResource, layoutContext.resource]);
 
       const validatedProps = validateProps(resolvedLayoutProps, props, {
@@ -1658,6 +1663,10 @@ type ShellLayoutRuntime = {
  * `composables.Layout` each render would remount wrapWith targets, sidebar
  * state, and the outlet. Display names are synced onto those stable functions
  * when the resource changes.
+ *
+ * @param shellId - Identity of the owning `withLayout` definition. The shell
+ *   only accepts resource reports tagged with this id, so a page or pane from a
+ *   different definition rendered in the outlet cannot corrupt its state.
  */
 function createResourceLayoutShellComponent(
   resources: ReadonlyArray<ResourceDefinition>,
@@ -1665,6 +1674,7 @@ function createResourceLayoutShellComponent(
     | InPropsObject
     | ((opts: Record<string, unknown>) => InPropsObject),
   shell: ShellLayoutRuntime,
+  shellId: symbol,
 ) {
   const shellName = shell.name ?? 'ResourceLayoutShell';
   // `resources` is the wide `ResourceDefinition[]` here (not the const generic
@@ -1741,9 +1751,19 @@ function createResourceLayoutShellComponent(
     const [reportedResource, setReportedResource] = useState<
       string | undefined
     >(undefined);
-    const publishResource = useCallback((resource: string | undefined) => {
-      setReportedResource(resource);
-    }, []);
+    const publishResource = useCallback<ResourceLayoutShellPublisher>(
+      (resource, ownerId) => {
+        // Ignore reports from components that belong to a different
+        // `defineResourceLayout` definition — they share this context but their
+        // resource is unrelated to this shell.
+        if (ownerId !== shellId) {
+          return;
+        }
+
+        setReportedResource(resource);
+      },
+      [],
+    );
     const resource = resourceProp ?? reportedResource;
 
     // The outlet subtree must not re-render when `reportedResource` changes —
@@ -2018,16 +2038,23 @@ function defineResourceLayoutWithLayoutImpl(
         ),
       };
 
+  // Ties the shell to the pages created by *its* `createResourceLayout`. Pages
+  // from other definitions rendered in the outlet carry a different id (or
+  // none) and are ignored by the shell's resource tracking.
+  const shellId = Symbol('resourceLayoutShell');
+
   const base = defineResourceLayoutImpl({
     resources,
     options: inProps,
     layout: resolvedLayout,
+    shellId,
   } as never) as Record<string, unknown>;
 
   const Shell = createResourceLayoutShellComponent(
     resources,
     (inProps ?? {}) as never,
     shell,
+    shellId,
   );
 
   return { ...base, Shell };

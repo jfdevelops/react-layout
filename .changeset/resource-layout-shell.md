@@ -15,7 +15,12 @@ mount and unmount inside it.
   `name`) plus `children` (the outlet), with `resource` / `resources.current`
   typed as possibly-`undefined`.
 - Pages created by `createResourceLayout` report their resource to an ancestor
-  `Shell` automatically, so resource-scoped shell composable names still resolve.
+  `Shell` automatically. Shell composables keep a stable identity across
+  navigation (their chrome is never remounted); their display names still track
+  the reported resource.
+- Resource reports are scoped to the owning definition, so a page or pane from a
+  different `defineResourceLayout` rendered in the outlet cannot change
+  `resources.current`.
 - `Shell` always accepts an optional `resource` prop that overrides the reported
   value — for tests, stories, or routes that render non-library content.
 - Under `withLayout`, the per-resource `layout.render` is optional: omit it and

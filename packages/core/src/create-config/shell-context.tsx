@@ -8,9 +8,14 @@ import { createContext, useContext } from 'react';
  * a route param down to it.
  *
  * @param resource - The mounted resource, or `undefined` on unmount.
+ * @param ownerId - Identity of the `defineResourceLayout` definition that
+ *   created the reporting component. The shell only accepts reports from its
+ *   own definition — a page or pane produced by a *different* definition shares
+ *   this context but its resource is unrelated, so the shell ignores it.
  */
 export type ResourceLayoutShellPublisher = (
   resource: string | undefined,
+  ownerId?: symbol,
 ) => void;
 
 /**

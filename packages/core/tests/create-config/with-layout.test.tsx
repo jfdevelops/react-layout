@@ -332,6 +332,53 @@ describe('defineResourceLayout.withLayout', () => {
     expect(screen.getByTestId('shell')).toHaveTextContent('slot content');
   });
 
+  it('ignores resource reports from a page belonging to a different definition', () => {
+    const outer = defineResourceLayout.withLayout({
+      resources: ['users', 'posts'],
+      shell: {
+        render: (_props, { resources, children }) => (
+          <div>
+            <span data-testid='current'>{resources.current ?? 'none'}</span>
+            {children}
+          </div>
+        ),
+      },
+    });
+    const other = defineResourceLayout({
+      resources: ['widgets'],
+      layout: {
+        props: {
+          custom: {
+            children: createProp.component({ type: 'ReactNode' }).optional(),
+          },
+        },
+        render: ({ children }) => <>{children}</>,
+      },
+    });
+
+    const UsersPage = outer.createResourceLayout.forResource({
+      resource: 'users',
+      name: 'UsersPage',
+    })();
+    // A page from an unrelated definition, nested inside the outer shell.
+    const WidgetPane = other.createResourceLayout.forResource({
+      resource: 'widgets',
+      name: 'WidgetPane',
+    })();
+
+    render(
+      <outer.Shell>
+        <UsersPage>
+          <WidgetPane>nested</WidgetPane>
+        </UsersPage>
+      </outer.Shell>,
+    );
+
+    // The nested widgets page does not overwrite the shell's resource.
+    expect(screen.getByTestId('current')).toHaveTextContent('users');
+    expect(screen.getByText('nested')).toBeInTheDocument();
+  });
+
   it('still exposes the base config helpers', () => {
     const defined = defineAdminLayout();
 
