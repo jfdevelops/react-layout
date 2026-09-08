@@ -2,15 +2,25 @@ export { defineResourceLayout } from './define-layout';
 export type {
   CreateResourceLayoutFn,
   CreateResourceLayoutMakeComposableOptions,
+  CreateResourceLayoutWithLayoutOptions,
   DefineResourceLayout,
   DefineResourceLayoutFn,
   DefineResourceLayoutForResources,
   DefineResourceLayoutForResourcesFactory,
+  DefineResourceLayoutWithLayoutFn,
+  DefinedResourceLayoutWithShell,
   DefineResourcesFn,
   LayoutRenderResourcesAccessor,
   LayoutResourcesAccessor,
+  ResourceLayoutShellComponent,
+  ResourceLayoutShellProps,
   ResourceSelection,
+  ShellLayoutDefinition,
+  ShellRenderContext,
 } from './define-layout';
+export type {
+  ResourceLayoutShellPublisher,
+} from './shell-context';
 export type {
   CreatedResourceHref,
   CreatedResourceLink,
