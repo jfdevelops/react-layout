@@ -98,12 +98,11 @@ type LayoutRenderContext<
    * the next major version.
    */
   resource: LayoutResourceKey<Resources>;
-  /** Narrows an unknown value to a resource key of this layout. */
-  isResource: (value: unknown) => value is LayoutResourceKey<Resources>;
   /**
    * Accessor for the resources bound to this definition. Read `resources.current`
    * for the resource this instance renders, call `resources()` for the raw
-   * value, or use `resources.pick(...)` / `resources.omit(...)` to filter.
+   * value, use `resources.pick(...)` / `resources.omit(...)` to filter, or
+   * `resources.isResource(...)` to narrow an unknown value.
    */
   resources: LayoutRenderResourcesAccessor<Resources>;
   name: string;
@@ -125,6 +124,7 @@ type OmitResourceDefinitions<
  * - `resources()` returns the raw resources.
  * - `resources.omit(...keys)` returns the resources except for the omitted ones.
  * - `resources.pick(...keys)` returns only the picked resources.
+ * - `resources.isResource(value)` narrows an unknown value to a resource key.
  */
 export type LayoutResourcesAccessor<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -134,6 +134,13 @@ export type LayoutResourcesAccessor<
    * exactly as declared.
    */
   (): Resources;
+  /**
+   * Narrows an unknown value to one of this definition's top-level resource
+   * keys.
+   *
+   * @param value - The value to test.
+   */
+  isResource(value: unknown): value is LayoutResourceKey<Resources>;
   /**
    * Returns the declared resources with the named ones removed, preserving the
    * order and shape of the remaining definitions.
@@ -170,6 +177,7 @@ function createLayoutResourcesAccessor<
 >(resources: Resources): LayoutResourcesAccessor<Resources> {
   const accessor = (() => resources) as LayoutResourcesAccessor<Resources>;
 
+  accessor.isResource = createIsValidResourceFn(resources);
   accessor.omit = ((...keys: string[]) =>
     resources.filter(
       (resource) => !keys.includes(readResourceSlug(resource)),
@@ -765,7 +773,6 @@ function defineResourceLayoutImpl<
     const mergedRenderContext = {
       composables: resolvedComposables as LayoutRenderComposables<Composables>,
       resource: layoutContext.resource,
-      isResource: createIsValidResourceFn(resources),
       resources: createLayoutRenderResourcesAccessor(
         resources as Resources,
         layoutContext.resource,

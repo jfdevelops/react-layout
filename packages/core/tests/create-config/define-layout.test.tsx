@@ -989,9 +989,11 @@ describe('defineResourceLayout', () => {
       expect(resources.omit('users')).toEqual([
         { value: 'posts', subResources: ['comments'] },
       ]);
+      expect(resources.isResource('posts')).toBe(true);
+      expect(resources.isResource('nope')).toBe(false);
     });
 
-    it('exposes resource, isResource, and the resources accessor on the render context', () => {
+    it('exposes resource and the resources accessor on the render context', () => {
       let captured:
         | {
             resource: string;
@@ -1010,8 +1012,8 @@ describe('defineResourceLayout', () => {
             captured = {
               resource: context.resource,
               current: context.resources.current,
-              isUsers: context.isResource('users'),
-              isNope: context.isResource('nope'),
+              isUsers: context.resources.isResource('users'),
+              isNope: context.resources.isResource('nope'),
               rawResources: context.resources(),
               picked: context.resources.pick('posts'),
             };
