@@ -35,6 +35,9 @@ export type {
   ComponentTypes,
   CreateGetComponentForPath,
   CreatedResourceConfig,
+  CreateResourceLayoutWithLayoutOptions,
+  DefinedResourceLayoutWithShell,
+  DefineResourceLayoutWithLayoutFn,
   DefineResourcesFn,
   ForPaths,
   ForPathsRenderContext,
@@ -47,7 +50,12 @@ export type {
   RenderedPathComponent,
   RenderedPathComponentHOF,
   ResolvedPathValue,
+  ResourceLayoutShellComponent,
+  ResourceLayoutShellProps,
+  ResourceLayoutShellPublisher,
   ResourceSelection,
+  ShellLayoutDefinition,
+  ShellRenderContext,
   TargetPathBuilder,
 } from './create-config';
 export {

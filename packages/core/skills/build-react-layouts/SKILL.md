@@ -69,6 +69,10 @@ not-found states.
   add a schema dependency solely to connect a route parameter to a resource.
 - Create a separate `defineResourceLayout` definition for a surface with a
   meaningfully different structural contract, such as a create or detail pane.
+- Reach for `defineResourceLayout.withLayout` when the shared chrome (sidebar,
+  header, subscriptions) must survive navigation between resources. Mount its
+  `Shell` once around the router outlet; keep per-resource structure in
+  `layout.render`, which becomes optional there.
 - Preserve inferred types. Do not use `any`, broad casts, or duplicated
   hand-written resource types to work around a layout mismatch.
 

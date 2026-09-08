@@ -779,4 +779,46 @@ describe('createComponent types', () => {
     };
   });
 
+  describe('withLayout', () => {
+    it('returns a Shell alongside the base helpers and makes layout.render optional', () => {
+      const defined = defineResourceLayout.withLayout({
+        resources: ['users', 'posts'],
+        shell: {
+          render: (_props, { children }) => children as never,
+        },
+        // no `layout` block at all — the page becomes a pure slot
+      });
+
+      expectTypeOf(defined).toHaveProperty('Shell');
+      expectTypeOf(defined).toHaveProperty('createResourceConfig');
+      expectTypeOf(defined).toHaveProperty('createResourceLinks');
+    });
+
+    it('types the Shell resource prop against the resource keys', () => {
+      const { Shell } = defineResourceLayout.withLayout({
+        resources: ['users', 'posts'],
+        shell: {
+          render: (_props, { children }) => children as never,
+        },
+      });
+
+      () => Shell({ resource: 'users', children: null });
+      // @ts-expect-error unknown resource key
+      () => Shell({ resource: 'nope', children: null });
+    });
+
+    it('exposes resources.current as possibly-undefined in the shell render', () => {
+      defineResourceLayout.withLayout({
+        resources: ['users'],
+        shell: {
+          render: (_props, { resource, resources }) => {
+            expectTypeOf(resource).toEqualTypeOf<'users' | undefined>();
+            expectTypeOf(resources.current).toEqualTypeOf<'users' | undefined>();
+
+            return null as never;
+          },
+        },
+      });
+    });
+  });
 });

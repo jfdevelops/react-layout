@@ -1,4 +1,11 @@
-import type { JSX } from 'react';
+import {
+  type JSX,
+  type ReactNode,
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from 'react';
 import {
   type ComposableComponents,
   type ComposableNameContext,
@@ -64,6 +71,10 @@ import {
   createForResources,
   type CreateResourceLayoutForResourcesFn,
 } from './for-resources';
+import {
+  ResourceLayoutShellPublisherContext,
+  useResourceLayoutShellPublisher,
+} from './shell-context';
 
 export type LayoutIncludeProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -434,6 +445,47 @@ function resolveLayoutOptionDefaults(
   return resolved;
 }
 
+/**
+ * The `layout` block of a {@link defineResourceLayout} call: the props, the
+ * composable map, and the render for a per-resource page component.
+ *
+ * Extracted so {@link defineResourceLayout.withLayout} can reuse the exact same
+ * shape while making `render` optional (see {@link ShellLayoutDefinition}).
+ */
+type LayoutDefinition<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
+  CustomProps extends InPropsObject,
+> = {
+  /**
+   * The props to pass to the layout.
+   */
+  props?: LayoutProps<Resources, Options, Composables, IncludeProps, CustomProps>;
+  /**
+   * Components used to compose the layout. Invoked per layout instance with
+   * a scoped `create` that resolves composable `name` callbacks using the
+   * layout's `resource` and `name`.
+   */
+  composables?: (
+    create: CreateLayoutComposable<LayoutResourceKey<Resources>>,
+  ) => Composables;
+  /**
+   * The render function for the layout.
+   */
+  render: (
+    props: LayoutRenderProps<
+      Resources,
+      Options,
+      Composables,
+      IncludeProps,
+      CustomProps
+    >,
+    context: LayoutRenderContext<Resources, Composables>,
+  ) => JSX.Element;
+};
+
 type CreateViewMapOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources> = {},
@@ -450,39 +502,13 @@ type CreateViewMapOptions<
    * The options that are passed into the created resource layout.
    */
   options?: Options;
-  layout: {
-    /**
-     * The props to pass to the layout.
-     */
-    props?: LayoutProps<
-      Resources,
-      Options,
-      Composables,
-      IncludeProps,
-      CustomProps
-    >;
-    /**
-     * Components used to compose the layout. Invoked per layout instance with
-     * a scoped `create` that resolves composable `name` callbacks using the
-     * layout's `resource` and `name`.
-     */
-    composables?: (
-      create: CreateLayoutComposable<LayoutResourceKey<Resources>>,
-    ) => Composables;
-    /**
-     * The render function for the layout.
-     */
-    render: (
-      props: LayoutRenderProps<
-        Resources,
-        Options,
-        Composables,
-        IncludeProps,
-        CustomProps
-      >,
-      context: LayoutRenderContext<Resources, Composables>,
-    ) => JSX.Element;
-  };
+  layout: LayoutDefinition<
+    Resources,
+    Options,
+    Composables,
+    IncludeProps,
+    CustomProps
+  >;
 };
 
 type ResourceLayoutComposition<
@@ -870,6 +896,21 @@ function defineResourceLayoutImpl<
           >
       >,
     ) {
+      const publishResource = useResourceLayoutShellPublisher();
+
+      // Report the resource this page renders for so an ancestor `Shell` (from
+      // `defineResourceLayout.withLayout`) can resolve `resources.current` for
+      // its own render without the consumer threading a route param down to it.
+      // A layout effect, not a passive one, so the shell reflects the new
+      // resource in the same commit the page mounts — a passive effect would
+      // leave one painted frame of stale shell chrome mid-navigation. Degrades
+      // to a no-op when rendered without a `Shell` (context defaults to null).
+      useLayoutEffect(() => {
+        publishResource?.(layoutContext.resource);
+
+        return () => publishResource?.(undefined);
+      }, [publishResource, layoutContext.resource]);
+
       const validatedProps = validateProps(resolvedLayoutProps, props, {
         ...validationContext,
       });
@@ -1246,6 +1287,18 @@ export type DefineResourceLayout = DefineResourceLayoutFn & {
    * (or `defineResourceLayout.forResources`) without an `as const` assertion.
    */
   defineResources: DefineResourcesFn;
+  /**
+   * Like {@link defineResourceLayout}, but also returns a `Shell` component.
+   *
+   * With plain `defineResourceLayout`, every page is wrapped in its own
+   * `createResourceLayout` component, so navigating between resources unmounts
+   * one page component and mounts another — the shared chrome the `render`
+   * produces (a sidebar, a header, subscriptions, observers) is rebuilt every
+   * time. `withLayout` splits that chrome into a `shell` that mounts once,
+   * above the router outlet, and stays mounted across navigation; pages mount
+   * and unmount inside it and report their resource up automatically.
+   */
+  withLayout: DefineResourceLayoutWithLayoutFn;
 };
 
 function defineResourceLayoutForResources<
@@ -1266,10 +1319,642 @@ function defineResourceLayoutForResources<
   }) as DefineResourceLayoutForResourcesFactory<Resources>;
 }
 
+/* -------------------------------------------------------------------------- */
+/*  defineResourceLayout.withLayout — a once-mounted application shell        */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Render context passed as the second argument to
+ * {@link ShellLayoutDefinition.render}.
+ *
+ * The same shape as a per-resource `render` context (`composables`,
+ * `resources`, `name`, `inProps`), with two differences that follow from the
+ * shell being mounted once above the router outlet rather than per page:
+ *
+ * - `resource` / `resources.current` are `LayoutResourceKey | undefined`. The
+ *   shell outlives any single page, so the current resource is whatever the
+ *   mounted page last reported (or the `resource` prop, or nothing yet).
+ * - `children` is the shell's content region. Render it where page content
+ *   belongs; it is already wrapped so mounted pages report their resource back.
+ */
+export type ShellRenderContext<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  ShellComposables extends ComposableComponents,
+> = {
+  composables: LayoutRenderComposables<ShellComposables>;
+  inProps: Record<string, unknown>;
+  /**
+   * The resource currently rendered in the outlet, or `undefined` when no
+   * per-resource page is mounted and no `resource` prop was passed.
+   */
+  resource: LayoutResourceKey<Resources> | undefined;
+  /**
+   * Resources accessor for this definition. `current` follows `resource` above
+   * and may be `undefined`.
+   */
+  resources: LayoutResourcesAccessor<Resources> & {
+    readonly current: LayoutResourceKey<Resources> | undefined;
+  };
+  name: string;
+  /**
+   * The shell's content region — typically a router `<Outlet />`. Render it
+   * where page content belongs.
+   */
+  children: ReactNode;
+};
+
+/**
+ * The `shell` block of a {@link defineResourceLayout.withLayout} call: the
+ * chrome that mounts once and stays mounted while pages navigate inside it.
+ *
+ * Mirrors {@link LayoutDefinition} (`props`, `composables`, `render`) so the
+ * two blocks read the same, plus an optional `name`.
+ */
+export type ShellLayoutDefinition<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  ShellComposables extends ComposableComponents,
+  ShellIncludeProps extends LayoutIncludeProps<
+    Resources,
+    Options,
+    ShellComposables
+  >,
+  ShellCustomProps extends InPropsObject,
+> = {
+  /**
+   * Stable name for the shell component (React DevTools) and the base for any
+   * resource-scoped composable names. Defaults to `'ResourceLayoutShell'`.
+   */
+  name?: string;
+  props?: LayoutProps<
+    Resources,
+    Options,
+    ShellComposables,
+    ShellIncludeProps,
+    ShellCustomProps
+  >;
+  composables?: (
+    create: CreateLayoutComposable<LayoutResourceKey<Resources>>,
+  ) => ShellComposables;
+  render: (
+    props: LayoutRenderProps<
+      Resources,
+      Options,
+      ShellComposables,
+      ShellIncludeProps,
+      ShellCustomProps
+    >,
+    context: ShellRenderContext<Resources, ShellComposables>,
+  ) => JSX.Element;
+};
+
+/**
+ * Props accepted by the `Shell` component from
+ * {@link defineResourceLayout.withLayout}.
+ */
+export type ResourceLayoutShellProps<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  ShellComposables extends ComposableComponents,
+  ShellIncludeProps extends LayoutIncludeProps<
+    Resources,
+    Options,
+    ShellComposables
+  >,
+  ShellCustomProps extends InPropsObject,
+> = Show<
+  ResolveProps<ShellCustomProps> &
+    ResolvedIncludedComponentProps<
+      MergedLayoutInProps<Resources, Options, ShellComposables>,
+      ShellIncludeProps
+    > & {
+      /**
+       * The resource the shell renders for. Overrides the value reported by the
+       * page mounted in `children`. Always available — pass it from tests,
+       * stories, or a route that renders non-library content but still wants
+       * the shell.
+       */
+      resource?: LayoutResourceKey<Resources>;
+      /** The shell's content region — typically a router `<Outlet />`. */
+      children: ReactNode;
+    }
+>;
+
+/**
+ * The once-mounted application shell returned from
+ * {@link defineResourceLayout.withLayout}. Wrap the router outlet with it.
+ */
+export type ResourceLayoutShellComponent<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  ShellComposables extends ComposableComponents = {},
+  ShellIncludeProps extends LayoutIncludeProps<
+    Resources,
+    Options,
+    ShellComposables
+  > = {},
+  ShellCustomProps extends InPropsObject = {},
+> = BaseComponent<
+  string,
+  ResourceLayoutShellProps<
+    Resources,
+    Options,
+    ShellComposables,
+    ShellIncludeProps,
+    ShellCustomProps
+  >
+> & {
+  (
+    props: ResourceLayoutShellProps<
+      Resources,
+      Options,
+      ShellComposables,
+      ShellIncludeProps,
+      ShellCustomProps
+    >,
+  ): JSX.Element;
+};
+
+/**
+ * Options for {@link defineResourceLayout.withLayout}: everything
+ * {@link defineResourceLayout} accepts, plus a required `shell`, and with the
+ * per-resource `layout.render` made optional.
+ */
+export type CreateResourceLayoutWithLayoutOptions<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources> = {},
+  Composables extends ComposableComponents = {},
+  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables> = {},
+  CustomProps extends InPropsObject = {},
+  ShellComposables extends ComposableComponents = {},
+  ShellIncludeProps extends LayoutIncludeProps<
+    Resources,
+    Options,
+    ShellComposables
+  > = {},
+  ShellCustomProps extends InPropsObject = {},
+> = {
+  /**
+   * An array of valid resource names to support. Nested sub-resource slugs that
+   * collide with config keys (`component`, `detail`, `new`, …) are reserved.
+   */
+  resources: AssertUnreservedResources<Resources>;
+  /**
+   * The options that are passed into the created resource layout. Shared by the
+   * shell and the per-resource layout, so an `include` on either side can draw
+   * from the same definitions.
+   */
+  options?: Options;
+  /**
+   * The once-mounted shell. The returned `Shell` wraps the router outlet and
+   * stays mounted across resource navigation, so its composables (a persistent
+   * sidebar, header, breadcrumb container, …) keep their state and DOM while
+   * pages mount and unmount inside it.
+   */
+  shell: ShellLayoutDefinition<
+    Resources,
+    Options,
+    ShellComposables,
+    ShellIncludeProps,
+    ShellCustomProps
+  >;
+  /**
+   * Per-resource content. Optional here: when the shell renders the whole
+   * chrome, a page is just a slot — omit `render` and the generated component
+   * renders its own `children` into the shell's outlet. Provide it to give a
+   * resource its own header, actions, or per-page structure.
+   */
+  layout?: Omit<
+    LayoutDefinition<Resources, Options, Composables, IncludeProps, CustomProps>,
+    'render'
+  > & {
+    render?: LayoutDefinition<
+      Resources,
+      Options,
+      Composables,
+      IncludeProps,
+      CustomProps
+    >['render'];
+  };
+};
+
+/**
+ * {@link DefinedResourceLayout} plus the once-mounted `Shell`.
+ */
+export type DefinedResourceLayoutWithShell<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents = {},
+  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables> = {},
+  CustomProps extends InPropsObject = {},
+  ShellComposables extends ComposableComponents = {},
+  ShellIncludeProps extends LayoutIncludeProps<
+    Resources,
+    Options,
+    ShellComposables
+  > = {},
+  ShellCustomProps extends InPropsObject = {},
+> = DefinedResourceLayout<
+  Resources,
+  Options,
+  Composables,
+  IncludeProps,
+  CustomProps
+> & {
+  /**
+   * The application shell. Mount it once, wrapping the router outlet:
+   *
+   * ```tsx
+   * function AdminRoute() {
+   *   const resource = Route.useParams({ select: (p) => p.resource });
+   *   return (
+   *     <Shell resource={resource}>
+   *       <Outlet />
+   *     </Shell>
+   *   );
+   * }
+   * ```
+   *
+   * Passing `resource` is optional: a page created by `createResourceLayout`
+   * reports its own resource to the shell automatically. Pass it for routes
+   * that render non-library content, or in tests and stories.
+   */
+  Shell: ResourceLayoutShellComponent<
+    Resources,
+    Options,
+    ShellComposables,
+    ShellIncludeProps,
+    ShellCustomProps
+  >;
+};
+
+/**
+ * Signature of {@link defineResourceLayout.withLayout}.
+ */
+export type DefineResourceLayoutWithLayoutFn = <
+  const Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources> = {},
+  Composables extends ComposableComponents = {},
+  const IncludeProps extends LayoutIncludeProps<
+    Resources,
+    Options,
+    Composables
+  > = {},
+  CustomProps extends InPropsObject = {},
+  ShellComposables extends ComposableComponents = {},
+  const ShellIncludeProps extends LayoutIncludeProps<
+    Resources,
+    Options,
+    ShellComposables
+  > = {},
+  ShellCustomProps extends InPropsObject = {},
+>(
+  options: CreateResourceLayoutWithLayoutOptions<
+    Resources,
+    Options,
+    Composables,
+    IncludeProps,
+    CustomProps,
+    ShellComposables,
+    ShellIncludeProps,
+    ShellCustomProps
+  >,
+) => DefinedResourceLayoutWithShell<
+  Resources,
+  Options,
+  Composables,
+  IncludeProps,
+  CustomProps,
+  ShellComposables,
+  ShellIncludeProps,
+  ShellCustomProps
+>;
+
+/**
+ * Loose runtime shape of a `shell` block, used by the impl below.
+ */
+type ShellLayoutRuntime = {
+  name?: string;
+  composables?: (create: unknown) => ComposableComponents;
+  props?: {
+    include?: Record<string, unknown>;
+    custom?: Record<string, unknown>;
+  };
+  render: (
+    props: Record<string, unknown>,
+    context: Record<string, unknown>,
+  ) => JSX.Element;
+};
+
+/**
+ * Builds the `Shell` component. Kept beside {@link defineResourceLayoutImpl} so
+ * it can reuse the same private prop-resolution helpers.
+ *
+ * Unlike a per-resource component, the shell re-resolves its composables and
+ * props on every render: the current resource is dynamic (reported by the
+ * mounted page) and resource-scoped composable names depend on it. That
+ * re-render is cheap and — crucially — not a remount: the shell keeps its
+ * component identity and tree position, so React reconciles its composables in
+ * place and their state (sidebar open/closed, observers, subscriptions) survives
+ * navigation.
+ */
+function createResourceLayoutShellComponent(
+  resources: ReadonlyArray<ResourceDefinition>,
+  inProps:
+    | InPropsObject
+    | ((opts: Record<string, unknown>) => InPropsObject),
+  shell: ShellLayoutRuntime,
+) {
+  const shellName = shell.name ?? 'ResourceLayoutShell';
+  // `resources` is the wide `ResourceDefinition[]` here (not the const generic
+  // that `defineResourceLayoutImpl` captures), so the normalize/enum types are
+  // erased to keep TS from trying to instantiate them structurally. Only the
+  // runtime key list matters — the shell validates against it, it does not
+  // surface it in a public type.
+  const resourceKeys = Object.keys(
+    normalizeResources(resources as never) as Record<string, unknown>,
+  );
+  const resourcesEnum = createPrimitivePropBuilder('string').enum(
+    resourceKeys as never,
+  );
+
+  // `options` may be a function of `{ resource, name }`. The shell has no single
+  // resource, so — like the component path in `defineResourceLayoutImpl` — the
+  // enum stands in for `resource` while resolving the definitions.
+  const rawResolvedOptions =
+    typeof inProps === 'function'
+      ? inProps({
+          resource: resourcesEnum,
+          name: createProp.string().literal(shellName),
+        })
+      : inProps;
+  const { resolvedInProps, splitInProps } = splitLayoutInProps(
+    rawResolvedOptions as Record<string, unknown>,
+  );
+
+  const includeShellProps = shell.props?.include;
+  const includeShellPropKeys = Object.keys(includeShellProps ?? {});
+  const shellCustomDefinitions = {
+    ...(shell.props?.custom ?? {}),
+  } as Record<string, AnyBuiltPropDefinition>;
+
+  function Shell(props: Record<string, unknown>) {
+    const { children: outlet, resource: resourceProp } = props as {
+      children: ReactNode;
+      resource?: string;
+    };
+
+    // Which resource is currently in the outlet. A per-resource page reports its
+    // own resource here on mount (see the layout effect in `Component`);
+    // `undefined` between pages or on a route with no per-resource layout. An
+    // explicit `resource` prop always wins.
+    const [reportedResource, setReportedResource] = useState<
+      string | undefined
+    >(undefined);
+    const publishResource = useCallback((resource: string | undefined) => {
+      setReportedResource(resource);
+    }, []);
+    const resource = resourceProp ?? reportedResource;
+
+    // The outlet subtree must not re-render when `reportedResource` changes —
+    // only the shell chrome should. Memoising the wrapped element lets React
+    // bail out of reconciling the page while, say, the breadcrumb label updates.
+    const shellChildren = useMemo(
+      () => (
+        <ResourceLayoutShellPublisherContext.Provider value={publishResource}>
+          {outlet}
+        </ResourceLayoutShellPublisherContext.Provider>
+      ),
+      [outlet, publishResource],
+    );
+
+    // Resource-scoped names (`AppointmentsShell`, …) still work even though the
+    // shell mounts once, because the name callbacks run here with the live
+    // resource. `capitalize('')` is `''`, so before any resource resolves the
+    // callbacks fall back to the base name.
+    const resolvedComposables = shell.composables
+      ? resolveLayoutComposables(shell.composables as never, {
+          resource: resource ?? '',
+          name: shellName,
+          capitalize,
+        } as never)
+      : undefined;
+    const validationContext = {
+      layoutName: shellName,
+      resource: resource ?? '',
+    };
+
+    const mergedResolvedInProps = { ...resolvedInProps } as Record<
+      string,
+      unknown
+    >;
+    for (const {
+      props: presetPropDefinitions,
+    } of collectComposablePresetEntries(resolvedComposables)) {
+      Object.assign(mergedResolvedInProps, presetPropDefinitions);
+    }
+
+    // Preset props: the shell has no create-time call, so the only value source
+    // is its own render-time props (component passthrough).
+    const composablePresetProps = Object.fromEntries(
+      collectComposablePresetEntries(resolvedComposables).map(
+        ({ key, props: presetPropDefinitions }) => {
+          const entries = Object.entries(presetPropDefinitions);
+          const validatedDefinitions = Object.fromEntries(
+            entries.filter(([propKey]) => {
+              const behavior = includeShellProps?.[propKey];
+
+              return (
+                behavior === undefined ||
+                isIncludedPropRequired(behavior) ||
+                allowsComponentPassthrough(behavior)
+              );
+            }),
+          );
+          const values = Object.fromEntries(
+            entries.flatMap(([propKey]) =>
+              propKey in props ? [[propKey, props[propKey]]] : [],
+            ),
+          );
+
+          return [
+            key,
+            validateProps(
+              validatedDefinitions as Record<string, AnyBuiltPropDefinition>,
+              values,
+              validationContext,
+            ),
+          ];
+        },
+      ),
+    );
+
+    const validatedCustomProps = validateProps(
+      shellCustomDefinitions,
+      props,
+      validationContext,
+    );
+
+    // Included props: definition-time defaults from `options`, overridden by
+    // anything passed to `<Shell>` (component passthrough).
+    const includedPropDefinitions = pick(
+      mergedResolvedInProps,
+      includeShellPropKeys,
+    ) as Record<string, unknown>;
+    const includedPropValues = {
+      ...resolvePropDefinitionValues(includedPropDefinitions),
+    } as Record<string, unknown>;
+
+    for (const key of includeShellPropKeys) {
+      const definition = mergedResolvedInProps[key];
+      const behavior = includeShellProps?.[key];
+      const callSiteValue = allowsComponentPassthrough(behavior)
+        ? readLayoutOptionValue(key, definition, props)
+        : undefined;
+      const splitValue = key in splitInProps ? splitInProps[key] : undefined;
+      const value = callSiteValue ?? splitValue;
+
+      if (value !== undefined) {
+        includedPropValues[key] = value;
+      }
+    }
+
+    const requiredIncludedDefinitions = Object.fromEntries(
+      Object.entries(includedPropDefinitions).filter(([key]) =>
+        isIncludedPropRequired(includeShellProps?.[key]),
+      ),
+    );
+    const optionalIncludedDefinitions = Object.fromEntries(
+      Object.entries(includedPropDefinitions).filter(
+        ([key]) =>
+          !isIncludedPropRequired(includeShellProps?.[key]) &&
+          includedPropValues[key] !== undefined,
+      ),
+    );
+    const validatedIncludedProps = validateProps(
+      {
+        ...requiredIncludedDefinitions,
+        ...optionalIncludedDefinitions,
+      } as Record<string, AnyBuiltPropDefinition>,
+      includedPropValues,
+      validationContext,
+    );
+    const renderIncludedProps = Object.fromEntries(
+      includeShellPropKeys.flatMap((key) =>
+        key in validatedIncludedProps
+          ? [
+              [
+                toLayoutRenderPropKey(key, mergedResolvedInProps[key]),
+                validatedIncludedProps[
+                  key as keyof typeof validatedIncludedProps
+                ],
+              ],
+            ]
+          : [],
+      ),
+    );
+
+    const renderProps = { ...validatedCustomProps, ...renderIncludedProps };
+    const renderContext = {
+      composables: resolvedComposables,
+      resource,
+      resources: createLayoutRenderResourcesAccessor(
+        resources as ReadonlyArray<ResourceDefinition>,
+        resource as never,
+      ),
+      name: shellName,
+      inProps: splitInProps,
+      children: shellChildren,
+    };
+
+    const rendered = shell.render(renderProps, renderContext);
+
+    return resolvedComposables ? (
+      <LayoutComposablePresetProvider value={composablePresetProps}>
+        {rendered}
+      </LayoutComposablePresetProvider>
+    ) : (
+      rendered
+    );
+  }
+
+  return Object.assign(Shell, {
+    displayName: shellName,
+    props: undefined as never,
+  });
+}
+
+/**
+ * Implementation of {@link defineResourceLayout.withLayout}. Delegates the
+ * config / links / `createResourceLayout` pieces to {@link defineResourceLayoutImpl}
+ * and adds the {@link createResourceLayoutShellComponent | Shell}.
+ */
+function defineResourceLayoutWithLayoutImpl(
+  options: Record<string, unknown>,
+): Record<string, unknown> {
+  const {
+    shell,
+    layout,
+    resources,
+    options: inProps,
+  } = options as {
+    shell: ShellLayoutRuntime;
+    layout?: {
+      composables?: unknown;
+      props?: { include?: unknown; custom?: Record<string, unknown> };
+      render?: (
+        props: Record<string, unknown>,
+        context: unknown,
+      ) => JSX.Element;
+    };
+    resources: ReadonlyArray<ResourceDefinition>;
+    options?:
+      | InPropsObject
+      | ((opts: Record<string, unknown>) => InPropsObject);
+  };
+
+  // The per-resource `render` is optional under `withLayout`. When omitted, the
+  // page is a pure content slot: give it a `children` prop (so
+  // `<UsersPage>{content}</UsersPage>` type-checks and works) and a render that
+  // drops that content into the shell's outlet. An explicit `render` is passed
+  // through untouched.
+  const resolvedLayout = layout?.render
+    ? layout
+    : {
+        ...layout,
+        props: {
+          ...layout?.props,
+          custom: {
+            children: createProp.component({ type: 'ReactNode' }).optional(),
+            ...(layout?.props?.custom ?? {}),
+          },
+        },
+        render: (pageProps: Record<string, unknown>) => (
+          <>{(pageProps.children as ReactNode) ?? null}</>
+        ),
+      };
+
+  const base = defineResourceLayoutImpl({
+    resources,
+    options: inProps,
+    layout: resolvedLayout,
+  } as never) as Record<string, unknown>;
+
+  const Shell = createResourceLayoutShellComponent(
+    resources,
+    (inProps ?? {}) as never,
+    shell,
+  );
+
+  return { ...base, Shell };
+}
+
 export const defineResourceLayout: DefineResourceLayout = Object.assign(
   defineResourceLayoutImpl as DefineResourceLayoutFn,
   {
     forResources: defineResourceLayoutForResources,
     defineResources,
+    withLayout:
+      defineResourceLayoutWithLayoutImpl as unknown as DefineResourceLayoutWithLayoutFn,
   },
 );
