@@ -965,4 +965,71 @@ describe('defineResourceLayout', () => {
       expect(UserDetailPage.Breadcrumbs.displayName).toBe('Breadcrumbs');
     });
   });
+
+  describe('resources accessor', () => {
+    const resourceDefs = [
+      'users',
+      { value: 'posts', subResources: ['comments'] },
+    ] as const;
+
+    it('exposes the raw resources and pick/omit helpers on the definition', () => {
+      const { resources } = defineResourceLayout({
+        resources: resourceDefs,
+        layout: { render: () => <section /> },
+      });
+
+      expect(resources()).toEqual(resourceDefs);
+      expect(resources.pick('users')).toEqual(['users']);
+      expect(resources.omit('users')).toEqual([
+        { value: 'posts', subResources: ['comments'] },
+      ]);
+    });
+
+    it('exposes currentResource, isResource, and resources on the render context', () => {
+      let captured:
+        | {
+            resource: string;
+            currentResource: string;
+            isUsers: boolean;
+            isNope: boolean;
+            rawResources: unknown;
+            picked: unknown;
+          }
+        | undefined;
+
+      const { createResourceLayout } = defineResourceLayout({
+        resources: resourceDefs,
+        layout: {
+          render: (_props, context) => {
+            captured = {
+              resource: context.resource,
+              currentResource: context.currentResource,
+              isUsers: context.isResource('users'),
+              isNope: context.isResource('nope'),
+              rawResources: context.resources(),
+              picked: context.resources.pick('posts'),
+            };
+
+            return <section />;
+          },
+        },
+      });
+
+      const UsersPage = createResourceLayout({
+        resource: 'users',
+        name: 'UsersPage',
+      });
+
+      render(<UsersPage />);
+
+      expect(captured).toEqual({
+        resource: 'users',
+        currentResource: 'users',
+        isUsers: true,
+        isNope: false,
+        rawResources: resourceDefs,
+        picked: [{ value: 'posts', subResources: ['comments'] }],
+      });
+    });
+  });
 });

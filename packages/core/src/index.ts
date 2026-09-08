@@ -39,6 +39,7 @@ export type {
   ForPathsRenderContext,
   GetComponentForPath,
   IsSubResourceKey,
+  LayoutResourcesAccessor,
   ParameterizedResourcePath,
   PathVariables,
   RenderedPathComponent,
