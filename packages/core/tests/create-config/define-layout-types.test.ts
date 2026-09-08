@@ -29,6 +29,18 @@ describe('defineResourceLayout types', () => {
     defineResourceLayout.forResources();
   });
 
+  it('defineResources preserves the literal tuple type', () => {
+    const resources = defineResourceLayout.defineResources('users', {
+      value: 'posts',
+      subResources: ['comments'],
+    });
+
+    expectTypeOf(resources).toHaveProperty('length').toEqualTypeOf<2>();
+    expectTypeOf(resources[0]).toEqualTypeOf<'users'>();
+    expectTypeOf(resources[1].value).toEqualTypeOf<'posts'>();
+    expectTypeOf(resources[1].subResources[0]).toEqualTypeOf<'comments'>();
+  });
+
   it('rejects sub-resource slugs that collide with reserved config keys', () => {
     () => {
       defineResourceLayout({

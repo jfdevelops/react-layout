@@ -35,6 +35,7 @@ export type {
   ComponentTypes,
   CreateGetComponentForPath,
   CreatedResourceConfig,
+  DefineResourcesFn,
   ForPaths,
   ForPathsRenderContext,
   GetComponentForPath,

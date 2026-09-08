@@ -967,10 +967,16 @@ describe('defineResourceLayout', () => {
   });
 
   describe('resources accessor', () => {
-    const resourceDefs = [
-      'users',
-      { value: 'posts', subResources: ['comments'] },
-    ] as const;
+    const resourceDefs = defineResourceLayout.defineResources('users', {
+      value: 'posts',
+      subResources: ['comments'],
+    });
+
+    it('defineResources returns its arguments as a resources array', () => {
+      expect(
+        defineResourceLayout.defineResources('users', 'posts'),
+      ).toEqual(['users', 'posts']);
+    });
 
     it('exposes the raw resources and pick/omit helpers on the definition', () => {
       const { resources } = defineResourceLayout({

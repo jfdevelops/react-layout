@@ -130,13 +130,29 @@ type OmitResourceDefinitions<
 export type LayoutResourcesAccessor<
   Resources extends ReadonlyArray<ResourceDefinition>,
 > = {
+  /**
+   * Returns the raw `resources` value passed to `defineResourceLayout`,
+   * exactly as declared.
+   */
   (): Resources;
+  /**
+   * Returns the declared resources with the named ones removed, preserving the
+   * order and shape of the remaining definitions.
+   *
+   * @param keys - Top-level resource names to exclude.
+   */
   omit<Keys extends LayoutResourceKey<Resources>>(
     ...keys: Keys[]
-  ): OmitResourceDefinitions<Resources, Keys>;
+  ): Show<OmitResourceDefinitions<Resources, Keys>>;
+  /**
+   * Returns only the declared resources matching the named ones, preserving the
+   * order and shape of the selected definitions.
+   *
+   * @param keys - Top-level resource names to keep.
+   */
   pick<Keys extends LayoutResourceKey<Resources>>(
     ...keys: Keys[]
-  ): PickResourceDefinitions<Resources, Keys>;
+  ): Show<PickResourceDefinitions<Resources, Keys>>;
 };
 
 function createLayoutResourcesAccessor<
@@ -261,9 +277,7 @@ function allowsConfigPassthrough(value: unknown) {
 function allowsComponentPassthrough(value: unknown) {
   const behavior = getIncludedPropBehavior(value);
 
-  return behavior
-    ? behavior.passthrough === 'component'
-    : value === 'optional';
+  return behavior ? behavior.passthrough === 'component' : value === 'optional';
 }
 
 function splitLayoutInProps(inProps: Record<string, unknown>) {
@@ -699,18 +713,16 @@ function defineResourceLayoutImpl<
         ({ key, props: presetPropDefinitions }) => {
           const presetPropEntries = Object.entries(presetPropDefinitions);
           const validatedDefinitions = Object.fromEntries(
-            presetPropEntries.filter(
-              ([propKey]) => {
-                const includeBehavior = includeLayoutProps?.[propKey];
+            presetPropEntries.filter(([propKey]) => {
+              const includeBehavior = includeLayoutProps?.[propKey];
 
-                return (
-                  includeBehavior === undefined ||
-                  (allowsConfigPassthrough(includeBehavior) &&
-                    (isIncludedPropRequired(includeBehavior) ||
-                      layoutOptionValues[propKey] !== undefined))
-                );
-              },
-            ),
+              return (
+                includeBehavior === undefined ||
+                (allowsConfigPassthrough(includeBehavior) &&
+                  (isIncludedPropRequired(includeBehavior) ||
+                    layoutOptionValues[propKey] !== undefined))
+              );
+            }),
           );
           const presetPropValues = Object.fromEntries(
             presetPropEntries.flatMap(([propKey]) =>
@@ -723,10 +735,7 @@ function defineResourceLayoutImpl<
           return [
             key,
             validateProps(
-              validatedDefinitions as Record<
-                string,
-                AnyBuiltPropDefinition
-              >,
+              validatedDefinitions as Record<string, AnyBuiltPropDefinition>,
               presetPropValues,
               validationContext,
             ),
@@ -787,8 +796,8 @@ function defineResourceLayoutImpl<
       }
 
       const requiredIncludedPropDefinitions = Object.fromEntries(
-        Object.entries(includedPropDefinitions).filter(
-          ([key]) => isIncludedPropRequired(includeLayoutProps?.[key]),
+        Object.entries(includedPropDefinitions).filter(([key]) =>
+          isIncludedPropRequired(includeLayoutProps?.[key]),
         ),
       );
       const optionalIncludedPropDefinitions = Object.fromEntries(
@@ -1105,8 +1114,30 @@ export type DefineResourceLayoutFn = {
   >;
 };
 
+/**
+ * Captures a `resources` array with its literal tuple type intact, so it can be
+ * declared separately from the `defineResourceLayout` call without needing an
+ * `as const` assertion.
+ */
+export type DefineResourcesFn = <
+  const Resources extends ReadonlyArray<ResourceDefinition>,
+>(
+  ...resources: Resources
+) => Resources;
+
+function defineResources<
+  const Resources extends ReadonlyArray<ResourceDefinition>,
+>(...resources: Resources): Resources {
+  return resources;
+}
+
 export type DefineResourceLayout = DefineResourceLayoutFn & {
   forResources: DefineResourceLayoutForResources;
+  /**
+   * Builds a strongly-typed `resources` array to pass to `defineResourceLayout`
+   * (or `defineResourceLayout.forResources`) without an `as const` assertion.
+   */
+  defineResources: DefineResourcesFn;
 };
 
 function defineResourceLayoutForResources<
@@ -1131,5 +1162,6 @@ export const defineResourceLayout: DefineResourceLayout = Object.assign(
   defineResourceLayoutImpl as DefineResourceLayoutFn,
   {
     forResources: defineResourceLayoutForResources,
+    defineResources,
   },
 );
