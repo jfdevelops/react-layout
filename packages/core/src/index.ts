@@ -47,6 +47,7 @@ export type {
   RenderedPathComponent,
   RenderedPathComponentHOF,
   ResolvedPathValue,
+  ResourceSelection,
   TargetPathBuilder,
 } from './create-config';
 export {
@@ -112,6 +113,7 @@ export type {
   NormalizeResource,
   NormalizeResources,
   ResourceDefinition,
+  ResourceDefinitionValue,
   ResourceEnum,
   ResourceLayoutComponentProps,
   ResourceTree,

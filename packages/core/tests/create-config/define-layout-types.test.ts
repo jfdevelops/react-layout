@@ -41,6 +41,51 @@ describe('defineResourceLayout types', () => {
     expectTypeOf(resources[1].subResources[0]).toEqualTypeOf<'comments'>();
   });
 
+  it('types pick/omit selections and requires at least one key', () => {
+    const { resources } = defineResourceLayout({
+      resources: defineResourceLayout.defineResources('users', {
+        value: 'posts',
+        subResources: ['comments'],
+      }),
+      layout: { render: () => null as never },
+    });
+
+    const picked = resources.pick('posts');
+    const pickedDefs = picked();
+    expectTypeOf(pickedDefs).toBeArray();
+    expectTypeOf(pickedDefs[0].value).toEqualTypeOf<'posts'>();
+    expectTypeOf(pickedDefs[0].subResources[0]).toEqualTypeOf<'comments'>();
+    expectTypeOf(picked.isResource).guards.toEqualTypeOf<'posts'>();
+
+    const omitted = resources.omit('posts');
+    expectTypeOf(omitted()).toEqualTypeOf<Array<'users'>>();
+    expectTypeOf(omitted.isResource).guards.toEqualTypeOf<'users'>();
+
+    () => {
+      // @ts-expect-error pick requires at least one key
+      resources.pick();
+    };
+    () => {
+      // @ts-expect-error omit requires at least one key
+      resources.omit();
+    };
+    () => {
+      // @ts-expect-error unknown resource key
+      resources.pick('nope');
+    };
+  });
+
+  it('keeps widened resource definitions on pick/omit', () => {
+    const widened: string[] = ['users', 'posts'];
+    const { resources } = defineResourceLayout({
+      resources: widened,
+      layout: { render: () => null as never },
+    });
+
+    expectTypeOf(resources.pick('users')()).toEqualTypeOf<string[]>();
+    expectTypeOf(resources.omit('users')()).toEqualTypeOf<string[]>();
+  });
+
   it('rejects sub-resource slugs that collide with reserved config keys', () => {
     () => {
       defineResourceLayout({

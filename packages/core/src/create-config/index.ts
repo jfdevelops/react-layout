@@ -9,6 +9,7 @@ export type {
   DefineResourcesFn,
   LayoutRenderResourcesAccessor,
   LayoutResourcesAccessor,
+  ResourceSelection,
 } from './define-layout';
 export type {
   CreatedResourceHref,

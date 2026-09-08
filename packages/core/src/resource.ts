@@ -104,7 +104,7 @@ export function createIsValidResourceFn<
   };
 }
 
-type ResourceDefinitionValue<Resource extends ResourceDefinition> =
+export type ResourceDefinitionValue<Resource extends ResourceDefinition> =
   Resource extends string
     ? Resource
     : Resource extends { value: infer Value extends string }
