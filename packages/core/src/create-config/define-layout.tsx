@@ -200,23 +200,29 @@ export type LayoutResourcesAccessor<
    * Selects every declared resource except the named ones. Requires at least
    * one key.
    *
-   * @param firstKey - A top-level resource name to exclude.
-   * @param restKeys - Further resource names to exclude.
+   * @param keys - Top-level resource names to exclude.
    */
-  omit<Keys extends LayoutResourceKey<Resources>>(
-    firstKey: Keys,
-    ...restKeys: Keys[]
-  ): ResourceSelection<OmitResourceDefinitions<Resources, Keys>>;
+  omit<
+    Keys extends [
+      LayoutResourceKey<Resources>,
+      ...LayoutResourceKey<Resources>[],
+    ],
+  >(
+    ...keys: Keys
+  ): ResourceSelection<OmitResourceDefinitions<Resources, Keys[number]>>;
   /**
    * Selects only the named resources. Requires at least one key.
    *
-   * @param firstKey - A top-level resource name to keep.
-   * @param restKeys - Further resource names to keep.
+   * @param keys - Top-level resource names to keep.
    */
-  pick<Keys extends LayoutResourceKey<Resources>>(
-    firstKey: Keys,
-    ...restKeys: Keys[]
-  ): ResourceSelection<PickResourceDefinitions<Resources, Keys>>;
+  pick<
+    Keys extends [
+      LayoutResourceKey<Resources>,
+      ...LayoutResourceKey<Resources>[],
+    ],
+  >(
+    ...keys: Keys
+  ): ResourceSelection<PickResourceDefinitions<Resources, Keys[number]>>;
 };
 
 /**
@@ -248,24 +254,18 @@ function createLayoutResourcesAccessor<
   const accessor = (() => resources) as LayoutResourcesAccessor<Resources>;
 
   accessor.isResource = createIsValidResourceFn(resources);
-  accessor.omit = ((firstKey: string, ...restKeys: string[]) => {
-    const keys = [firstKey, ...restKeys];
-
-    return createResourceSelection(
+  accessor.omit = ((...keys: string[]) =>
+    createResourceSelection(
       resources.filter(
         (resource) => !keys.includes(readResourceSlug(resource)),
       ),
-    );
-  }) as LayoutResourcesAccessor<Resources>['omit'];
-  accessor.pick = ((firstKey: string, ...restKeys: string[]) => {
-    const keys = [firstKey, ...restKeys];
-
-    return createResourceSelection(
+    )) as LayoutResourcesAccessor<Resources>['omit'];
+  accessor.pick = ((...keys: string[]) =>
+    createResourceSelection(
       resources.filter((resource) =>
         keys.includes(readResourceSlug(resource)),
       ),
-    );
-  }) as LayoutResourcesAccessor<Resources>['pick'];
+    )) as LayoutResourcesAccessor<Resources>['pick'];
 
   return accessor;
 }
