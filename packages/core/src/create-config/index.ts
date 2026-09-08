@@ -6,6 +6,9 @@ export type {
   DefineResourceLayoutFn,
   DefineResourceLayoutForResources,
   DefineResourceLayoutForResourcesFactory,
+  DefineResourcesFn,
+  LayoutRenderResourcesAccessor,
+  LayoutResourcesAccessor,
 } from './define-layout';
 export type {
   CreatedResourceHref,

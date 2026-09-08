@@ -965,4 +965,79 @@ describe('defineResourceLayout', () => {
       expect(UserDetailPage.Breadcrumbs.displayName).toBe('Breadcrumbs');
     });
   });
+
+  describe('resources accessor', () => {
+    const resourceDefs = defineResourceLayout.defineResources('users', {
+      value: 'posts',
+      subResources: ['comments'],
+    });
+
+    it('defineResources returns its arguments as a resources array', () => {
+      expect(
+        defineResourceLayout.defineResources('users', 'posts'),
+      ).toEqual(['users', 'posts']);
+    });
+
+    it('exposes the raw resources and pick/omit helpers on the definition', () => {
+      const { resources } = defineResourceLayout({
+        resources: resourceDefs,
+        layout: { render: () => <section /> },
+      });
+
+      expect(resources()).toEqual(resourceDefs);
+      expect(resources.pick('users')).toEqual(['users']);
+      expect(resources.omit('users')).toEqual([
+        { value: 'posts', subResources: ['comments'] },
+      ]);
+      expect(resources.isResource('posts')).toBe(true);
+      expect(resources.isResource('nope')).toBe(false);
+    });
+
+    it('exposes resource and the resources accessor on the render context', () => {
+      let captured:
+        | {
+            resource: string;
+            current: string;
+            isUsers: boolean;
+            isNope: boolean;
+            rawResources: unknown;
+            picked: unknown;
+          }
+        | undefined;
+
+      const { createResourceLayout } = defineResourceLayout({
+        resources: resourceDefs,
+        layout: {
+          render: (_props, context) => {
+            captured = {
+              resource: context.resource,
+              current: context.resources.current,
+              isUsers: context.resources.isResource('users'),
+              isNope: context.resources.isResource('nope'),
+              rawResources: context.resources(),
+              picked: context.resources.pick('posts'),
+            };
+
+            return <section />;
+          },
+        },
+      });
+
+      const UsersPage = createResourceLayout({
+        resource: 'users',
+        name: 'UsersPage',
+      });
+
+      render(<UsersPage />);
+
+      expect(captured).toEqual({
+        resource: 'users',
+        current: 'users',
+        isUsers: true,
+        isNope: false,
+        rawResources: resourceDefs,
+        picked: [{ value: 'posts', subResources: ['comments'] }],
+      });
+    });
+  });
 });
