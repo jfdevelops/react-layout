@@ -4,6 +4,7 @@ import {
   useCallback,
   useLayoutEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import {
@@ -1650,13 +1651,13 @@ type ShellLayoutRuntime = {
  * Builds the `Shell` component. Kept beside {@link defineResourceLayoutImpl} so
  * it can reuse the same private prop-resolution helpers.
  *
- * Unlike a per-resource component, the shell re-resolves its composables and
- * props on every render: the current resource is dynamic (reported by the
- * mounted page) and resource-scoped composable names depend on it. That
- * re-render is cheap and — crucially — not a remount: the shell keeps its
- * component identity and tree position, so React reconciles its composables in
- * place and their state (sidebar open/closed, observers, subscriptions) survives
- * navigation.
+ * Unlike a per-resource component, the shell re-reads the current resource on
+ * every render (reported by the mounted page) so resource-scoped composable
+ * *names* can update. Composable *component identities* are resolved once and
+ * kept stable: React reconciles by element type, so recreating
+ * `composables.Layout` each render would remount wrapWith targets, sidebar
+ * state, and the outlet. Display names are synced onto those stable functions
+ * when the resource changes.
  */
 function createResourceLayoutShellComponent(
   resources: ReadonlyArray<ResourceDefinition>,
@@ -1698,6 +1699,35 @@ function createResourceLayoutShellComponent(
     ...(shell.props?.custom ?? {}),
   } as Record<string, AnyBuiltPropDefinition>;
 
+  function syncShellComposableDisplayNames(
+    stable: ComposableComponents,
+    resource: string,
+  ) {
+    if (!shell.composables) {
+      return;
+    }
+
+    const named = resolveLayoutComposables(shell.composables as never, {
+      resource,
+      name: shellName,
+      capitalize,
+    } as never) as ComposableComponents;
+
+    for (const [key, component] of Object.entries(named)) {
+      const stableComponent = stable[key];
+
+      if (
+        typeof stableComponent === 'function' &&
+        typeof component === 'function' &&
+        'displayName' in component
+      ) {
+        (stableComponent as { displayName?: string }).displayName = (
+          component as { displayName?: string }
+        ).displayName;
+      }
+    }
+  }
+
   function Shell(props: Record<string, unknown>) {
     const { children: outlet, resource: resourceProp } = props as {
       children: ReactNode;
@@ -1728,17 +1758,32 @@ function createResourceLayoutShellComponent(
       [outlet, publishResource],
     );
 
-    // Resource-scoped names (`AppointmentsShell`, …) still work even though the
-    // shell mounts once, because the name callbacks run here with the live
-    // resource. `capitalize('')` is `''`, so before any resource resolves the
-    // callbacks fall back to the base name.
-    const resolvedComposables = shell.composables
-      ? resolveLayoutComposables(shell.composables as never, {
-          resource: resource ?? '',
-          name: shellName,
-          capitalize,
-        } as never)
-      : undefined;
+    // Resolve composables once so `<composables.Layout>` keeps a stable element
+    // type across Shell re-renders (including the layout-effect resource report).
+    // Re-resolving every render would allocate new component functions and React
+    // would remount the whole chrome tree. Names still track the live resource
+    // via {@link syncShellComposableDisplayNames}.
+    const composablesRef = useRef<ComposableComponents | undefined>(undefined);
+    if (shell.composables) {
+      const nameContextResource = resource ?? '';
+
+      if (!composablesRef.current) {
+        composablesRef.current = resolveLayoutComposables(
+          shell.composables as never,
+          {
+            resource: nameContextResource,
+            name: shellName,
+            capitalize,
+          } as never,
+        ) as ComposableComponents;
+      } else {
+        syncShellComposableDisplayNames(
+          composablesRef.current,
+          nameContextResource,
+        );
+      }
+    }
+    const resolvedComposables = composablesRef.current;
     const validationContext = {
       layoutName: shellName,
       resource: resource ?? '',
@@ -1754,8 +1799,43 @@ function createResourceLayoutShellComponent(
       Object.assign(mergedResolvedInProps, presetPropDefinitions);
     }
 
-    // Preset props: the shell has no create-time call, so the only value source
-    // is its own render-time props (component passthrough).
+    // Included props: definition-time defaults from `options`, overridden by
+    // anything passed to `<Shell>` (component passthrough). Computed before
+    // preset validation so config-passthrough includes can reuse the defaults.
+    const includedPropDefinitions = pick(
+      mergedResolvedInProps,
+      includeShellPropKeys,
+    ) as Record<string, unknown>;
+    const includedPropValues = {
+      ...resolvePropDefinitionValues(includedPropDefinitions),
+    } as Record<string, unknown>;
+
+    for (const key of includeShellPropKeys) {
+      const definition = mergedResolvedInProps[key];
+      const behavior = includeShellProps?.[key];
+      const callSiteValue = allowsComponentPassthrough(behavior)
+        ? readLayoutOptionValue(key, definition, props)
+        : undefined;
+      // Config passthrough has no create-time call on Shell; still honour
+      // literal / split defaults from `options` when present.
+      const configValue = allowsConfigPassthrough(behavior)
+        ? readLayoutOptionValue(key, definition, {
+            ...includedPropValues,
+            ...splitInProps,
+          })
+        : undefined;
+      const splitValue = key in splitInProps ? splitInProps[key] : undefined;
+      const value = callSiteValue ?? configValue ?? splitValue;
+
+      if (value !== undefined) {
+        includedPropValues[key] = value;
+      }
+    }
+
+    // Preset props: Shell has no create-time call. Component-passthrough values
+    // come from `<Shell>` props; config-passthrough values only from definition
+    // defaults. Required config includes without a default are omitted from
+    // validation — they are not typed on Shell and cannot be supplied.
     const composablePresetProps = Object.fromEntries(
       collectComposablePresetEntries(resolvedComposables).map(
         ({ key, props: presetPropDefinitions }) => {
@@ -1764,17 +1844,33 @@ function createResourceLayoutShellComponent(
             entries.filter(([propKey]) => {
               const behavior = includeShellProps?.[propKey];
 
-              return (
-                behavior === undefined ||
-                isIncludedPropRequired(behavior) ||
-                allowsComponentPassthrough(behavior)
-              );
+              if (behavior === undefined) {
+                return true;
+              }
+
+              if (allowsComponentPassthrough(behavior)) {
+                return true;
+              }
+
+              if (allowsConfigPassthrough(behavior)) {
+                return includedPropValues[propKey] !== undefined;
+              }
+
+              return false;
             }),
           );
           const values = Object.fromEntries(
-            entries.flatMap(([propKey]) =>
-              propKey in props ? [[propKey, props[propKey]]] : [],
-            ),
+            entries.flatMap(([propKey]) => {
+              if (propKey in props) {
+                return [[propKey, props[propKey]]];
+              }
+
+              if (includedPropValues[propKey] !== undefined) {
+                return [[propKey, includedPropValues[propKey]]];
+              }
+
+              return [];
+            }),
           );
 
           return [
@@ -1795,34 +1891,22 @@ function createResourceLayoutShellComponent(
       validationContext,
     );
 
-    // Included props: definition-time defaults from `options`, overridden by
-    // anything passed to `<Shell>` (component passthrough).
-    const includedPropDefinitions = pick(
-      mergedResolvedInProps,
-      includeShellPropKeys,
-    ) as Record<string, unknown>;
-    const includedPropValues = {
-      ...resolvePropDefinitionValues(includedPropDefinitions),
-    } as Record<string, unknown>;
-
-    for (const key of includeShellPropKeys) {
-      const definition = mergedResolvedInProps[key];
-      const behavior = includeShellProps?.[key];
-      const callSiteValue = allowsComponentPassthrough(behavior)
-        ? readLayoutOptionValue(key, definition, props)
-        : undefined;
-      const splitValue = key in splitInProps ? splitInProps[key] : undefined;
-      const value = callSiteValue ?? splitValue;
-
-      if (value !== undefined) {
-        includedPropValues[key] = value;
-      }
-    }
-
     const requiredIncludedDefinitions = Object.fromEntries(
-      Object.entries(includedPropDefinitions).filter(([key]) =>
-        isIncludedPropRequired(includeShellProps?.[key]),
-      ),
+      Object.entries(includedPropDefinitions).filter(([key]) => {
+        const behavior = includeShellProps?.[key];
+
+        if (!isIncludedPropRequired(behavior)) {
+          return false;
+        }
+
+        // Component passthrough stays required on `<Shell>` (and is typed there).
+        if (allowsComponentPassthrough(behavior)) {
+          return true;
+        }
+
+        // Config passthrough: only require when a definition-time value exists.
+        return includedPropValues[key] !== undefined;
+      }),
     );
     const optionalIncludedDefinitions = Object.fromEntries(
       Object.entries(includedPropDefinitions).filter(

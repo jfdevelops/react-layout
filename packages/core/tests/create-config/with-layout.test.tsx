@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createComposableComponent,
   createProp,
+  defineComposableComponent,
   defineResourceLayout,
 } from '../../src';
 
@@ -127,6 +128,118 @@ describe('defineResourceLayout.withLayout', () => {
     );
     expect(onSidebarMount).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId('current')).toHaveTextContent('posts');
+  });
+
+  it('keeps wrapWith chrome mounted across Shell re-renders and navigation', () => {
+    const onChromeMount = vi.fn();
+
+    function AppChrome({ children }: { children?: ReactNode }) {
+      const [mountedAt] = useState(() => Date.now());
+
+      useEffect(() => {
+        onChromeMount();
+      }, []);
+
+      return (
+        <div data-testid='chrome' data-mounted-at={mountedAt}>
+          {children}
+        </div>
+      );
+    }
+
+    const { createResourceLayout, Shell } = defineResourceLayout.withLayout({
+      resources: ['users', 'posts'],
+      shell: {
+        composables: (create) => ({
+          Layout: create({
+            name: ({ capitalize, resource }) =>
+              resource ? `${capitalize(resource)}Shell` : 'Shell',
+            wrapWith: AppChrome,
+          }),
+        }),
+        render: (_props, { composables, children }) => (
+          <composables.Layout>{children}</composables.Layout>
+        ),
+      },
+    });
+    const UsersPage = createResourceLayout.forResource({
+      resource: 'users',
+      name: 'UsersPage',
+    })();
+    const PostsPage = createResourceLayout.forResource({
+      resource: 'posts',
+      name: 'PostsPage',
+    })();
+
+    function App() {
+      const [resource, setResource] = useState<'users' | 'posts'>('users');
+
+      return (
+        <Shell>
+          <button type='button' onClick={() => setResource('posts')}>
+            go
+          </button>
+          {resource === 'users' ? (
+            <UsersPage>u</UsersPage>
+          ) : (
+            <PostsPage>p</PostsPage>
+          )}
+        </Shell>
+      );
+    }
+
+    render(<App />);
+    const chromeBefore = screen.getByTestId('chrome').getAttribute(
+      'data-mounted-at',
+    );
+
+    fireEvent.click(screen.getByText('go'));
+
+    expect(screen.getByTestId('chrome').getAttribute('data-mounted-at')).toBe(
+      chromeBefore,
+    );
+    expect(onChromeMount).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('p')).toBeInTheDocument();
+  });
+
+  it('does not require config-passthrough include props on Shell', () => {
+    const createBreadcrumbComposable = defineComposableComponent({
+      name: 'Breadcrumb',
+      props: {
+        segments: createProp.record({
+          value: createProp.string(),
+          key: createProp.string(),
+        }),
+      },
+    });
+    const Breadcrumb = createBreadcrumbComposable(({ segments }) => (
+      <nav>{Object.values(segments).join(' / ')}</nav>
+    ));
+
+    const { Shell } = defineResourceLayout.withLayout({
+      resources: ['users'],
+      shell: {
+        composables: (create) => ({
+          Layout: create({ name: 'Shell' }),
+          ...Breadcrumb,
+        }),
+        props: {
+          include: { segments: true },
+        },
+        render: (_props, { composables, children }) => (
+          <composables.Layout>{children}</composables.Layout>
+        ),
+      },
+    });
+
+    expect(() =>
+      render(
+        <Shell>
+          <p>content</p>
+        </Shell>,
+      ),
+    ).not.toThrow();
+    expect(screen.getByText('content')).toBeInTheDocument();
   });
 
   it('lets an explicit resource prop win over the reported resource', () => {

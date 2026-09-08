@@ -154,17 +154,10 @@ export const {
           resource ? `${capitalize(resource)}Shell` : 'Shell',
         wrapWith: AppLayout,
       }),
-      ...createBreadcrumbComposable(({ segments }) => (
-        <AppBreadcrumb segments={segments} />
-      )),
     }),
-    props: {
-      include: { segments: true },
-    },
-    render: ({ segments }, { composables, children }) => (
+    render: (_props, { composables, children }) => (
       <composables.Layout>
         <AppSidebar />
-        <composables.Breadcrumb segments={segments} />
         <main>{children}</main>
       </composables.Layout>
     ),
