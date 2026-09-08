@@ -985,12 +985,28 @@ describe('defineResourceLayout', () => {
       });
 
       expect(resources()).toEqual(resourceDefs);
-      expect(resources.pick('users')).toEqual(['users']);
-      expect(resources.omit('users')).toEqual([
-        { value: 'posts', subResources: ['comments'] },
-      ]);
       expect(resources.isResource('posts')).toBe(true);
       expect(resources.isResource('nope')).toBe(false);
+    });
+
+    it('returns a selection thunk from pick/omit with its own isResource guard', () => {
+      const { resources } = defineResourceLayout({
+        resources: resourceDefs,
+        layout: { render: () => <section /> },
+      });
+
+      const picked = resources.pick('users');
+      const omitted = resources.omit('users');
+
+      expect(picked()).toEqual(['users']);
+      expect(omitted()).toEqual([
+        { value: 'posts', subResources: ['comments'] },
+      ]);
+
+      expect(picked.isResource('users')).toBe(true);
+      expect(picked.isResource('posts')).toBe(false);
+      expect(omitted.isResource('posts')).toBe(true);
+      expect(omitted.isResource('users')).toBe(false);
     });
 
     it('exposes resource and the resources accessor on the render context', () => {
@@ -1015,7 +1031,7 @@ describe('defineResourceLayout', () => {
               isUsers: context.resources.isResource('users'),
               isNope: context.resources.isResource('nope'),
               rawResources: context.resources(),
-              picked: context.resources.pick('posts'),
+              picked: context.resources.pick('posts')(),
             };
 
             return <section />;

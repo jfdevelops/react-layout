@@ -39,6 +39,7 @@ import {
   toResourceEnum,
   type LayoutResourceKey,
   type ResourceDefinition,
+  type ResourceDefinitionValue,
 } from '../resource';
 import { BaseComponent, functionalUpdate, pick, Show, Updater } from '../utils';
 import { capitalize } from '../utils/capitalize';
@@ -108,23 +109,77 @@ type LayoutRenderContext<
   name: string;
 };
 
+/**
+ * A single {@link ResourceDefinition} kept by a `pick`, or `never` when it does
+ * not match. Widened definitions (`string`, `{ value: string }`) are always
+ * kept — the concrete keys are not known statically, so the runtime filter is
+ * the source of truth.
+ */
+type PickResourceDefinition<
+  Definition,
+  Keys extends string,
+> = Definition extends ResourceDefinition
+  ? string extends ResourceDefinitionValue<Definition>
+    ? Definition
+    : ResourceDefinitionValue<Definition> extends Keys
+      ? Definition
+      : never
+  : never;
+
 type PickResourceDefinitions<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Keys extends LayoutResourceKey<Resources>,
-> = Array<Extract<Resources[number], Keys | { value: Keys }>>;
+> = Array<PickResourceDefinition<Resources[number], Keys>>;
+
+/**
+ * A single {@link ResourceDefinition} kept by an `omit`, or `never` when it is
+ * one of the omitted keys. Widened definitions are always kept.
+ */
+type OmitResourceDefinition<
+  Definition,
+  Keys extends string,
+> = Definition extends ResourceDefinition
+  ? string extends ResourceDefinitionValue<Definition>
+    ? Definition
+    : ResourceDefinitionValue<Definition> extends Keys
+      ? never
+      : Definition
+  : never;
 
 type OmitResourceDefinitions<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Keys extends LayoutResourceKey<Resources>,
-> = Array<Exclude<Resources[number], Keys | { value: Keys }>>;
+> = Array<OmitResourceDefinition<Resources[number], Keys>>;
+
+/**
+ * The result of `resources.pick(...)` / `resources.omit(...)`.
+ *
+ * - calling it returns the selected resource definitions.
+ * - `.isResource(value)` narrows an unknown value to one of the selected keys.
+ */
+export type ResourceSelection<
+  Definitions extends ReadonlyArray<ResourceDefinition>,
+> = {
+  /** Returns the selected resource definitions. */
+  (): Show<Definitions>;
+  /**
+   * Narrows an unknown value to one of the selected resource keys.
+   *
+   * @param value - The value to test.
+   */
+  isResource(value: unknown): value is LayoutResourceKey<Definitions>;
+};
 
 /**
  * Accessor for the resources bound to a `defineResourceLayout` definition.
  *
  * - `resources()` returns the raw resources.
- * - `resources.omit(...keys)` returns the resources except for the omitted ones.
- * - `resources.pick(...keys)` returns only the picked resources.
+ * - `resources.omit(key, ...rest)` selects every resource except the named ones.
+ * - `resources.pick(key, ...rest)` selects only the named resources.
  * - `resources.isResource(value)` narrows an unknown value to a resource key.
+ *
+ * `pick` / `omit` return a {@link ResourceSelection} thunk: call it for the
+ * definitions, or use its `isResource` guard.
  */
 export type LayoutResourcesAccessor<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -142,23 +197,26 @@ export type LayoutResourcesAccessor<
    */
   isResource(value: unknown): value is LayoutResourceKey<Resources>;
   /**
-   * Returns the declared resources with the named ones removed, preserving the
-   * order and shape of the remaining definitions.
+   * Selects every declared resource except the named ones. Requires at least
+   * one key.
    *
-   * @param keys - Top-level resource names to exclude.
+   * @param firstKey - A top-level resource name to exclude.
+   * @param restKeys - Further resource names to exclude.
    */
   omit<Keys extends LayoutResourceKey<Resources>>(
-    ...keys: Keys[]
-  ): Show<OmitResourceDefinitions<Resources, Keys>>;
+    firstKey: Keys,
+    ...restKeys: Keys[]
+  ): ResourceSelection<OmitResourceDefinitions<Resources, Keys>>;
   /**
-   * Returns only the declared resources matching the named ones, preserving the
-   * order and shape of the selected definitions.
+   * Selects only the named resources. Requires at least one key.
    *
-   * @param keys - Top-level resource names to keep.
+   * @param firstKey - A top-level resource name to keep.
+   * @param restKeys - Further resource names to keep.
    */
   pick<Keys extends LayoutResourceKey<Resources>>(
-    ...keys: Keys[]
-  ): Show<PickResourceDefinitions<Resources, Keys>>;
+    firstKey: Keys,
+    ...restKeys: Keys[]
+  ): ResourceSelection<PickResourceDefinitions<Resources, Keys>>;
 };
 
 /**
@@ -172,20 +230,42 @@ export type LayoutRenderResourcesAccessor<
   readonly current: LayoutResourceKey<Resources>;
 };
 
+function createResourceSelection(
+  definitions: ReadonlyArray<ResourceDefinition>,
+): ResourceSelection<ReadonlyArray<ResourceDefinition>> {
+  const selection = (() => definitions) as ResourceSelection<
+    ReadonlyArray<ResourceDefinition>
+  >;
+
+  selection.isResource = createIsValidResourceFn(definitions);
+
+  return selection;
+}
+
 function createLayoutResourcesAccessor<
   Resources extends ReadonlyArray<ResourceDefinition>,
 >(resources: Resources): LayoutResourcesAccessor<Resources> {
   const accessor = (() => resources) as LayoutResourcesAccessor<Resources>;
 
   accessor.isResource = createIsValidResourceFn(resources);
-  accessor.omit = ((...keys: string[]) =>
-    resources.filter(
-      (resource) => !keys.includes(readResourceSlug(resource)),
-    )) as LayoutResourcesAccessor<Resources>['omit'];
-  accessor.pick = ((...keys: string[]) =>
-    resources.filter((resource) =>
-      keys.includes(readResourceSlug(resource)),
-    )) as LayoutResourcesAccessor<Resources>['pick'];
+  accessor.omit = ((firstKey: string, ...restKeys: string[]) => {
+    const keys = [firstKey, ...restKeys];
+
+    return createResourceSelection(
+      resources.filter(
+        (resource) => !keys.includes(readResourceSlug(resource)),
+      ),
+    );
+  }) as LayoutResourcesAccessor<Resources>['omit'];
+  accessor.pick = ((firstKey: string, ...restKeys: string[]) => {
+    const keys = [firstKey, ...restKeys];
+
+    return createResourceSelection(
+      resources.filter((resource) =>
+        keys.includes(readResourceSlug(resource)),
+      ),
+    );
+  }) as LayoutResourcesAccessor<Resources>['pick'];
 
   return accessor;
 }
