@@ -7,6 +7,7 @@ export type {
   DefineResourceLayoutForResources,
   DefineResourceLayoutForResourcesFactory,
   DefineResourcesFn,
+  LayoutRenderResourcesAccessor,
   LayoutResourcesAccessor,
 } from './define-layout';
 export type {

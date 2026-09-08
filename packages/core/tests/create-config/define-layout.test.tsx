@@ -991,11 +991,11 @@ describe('defineResourceLayout', () => {
       ]);
     });
 
-    it('exposes currentResource, isResource, and resources on the render context', () => {
+    it('exposes resource, isResource, and the resources accessor on the render context', () => {
       let captured:
         | {
             resource: string;
-            currentResource: string;
+            current: string;
             isUsers: boolean;
             isNope: boolean;
             rawResources: unknown;
@@ -1009,7 +1009,7 @@ describe('defineResourceLayout', () => {
           render: (_props, context) => {
             captured = {
               resource: context.resource,
-              currentResource: context.currentResource,
+              current: context.resources.current,
               isUsers: context.isResource('users'),
               isNope: context.isResource('nope'),
               rawResources: context.resources(),
@@ -1030,7 +1030,7 @@ describe('defineResourceLayout', () => {
 
       expect(captured).toEqual({
         resource: 'users',
-        currentResource: 'users',
+        current: 'users',
         isUsers: true,
         isNope: false,
         rawResources: resourceDefs,

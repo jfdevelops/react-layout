@@ -94,19 +94,18 @@ type LayoutRenderContext<
   composables: LayoutRenderComposables<Composables>;
   inProps: Record<string, unknown>;
   /**
-   * @deprecated Use `currentResource` instead. `resource` will be removed in the
-   * next major version.
+   * @deprecated Use `resources.current` instead. `resource` will be removed in
+   * the next major version.
    */
   resource: LayoutResourceKey<Resources>;
-  /** The resource this layout instance is rendering for. */
-  currentResource: LayoutResourceKey<Resources>;
   /** Narrows an unknown value to a resource key of this layout. */
   isResource: (value: unknown) => value is LayoutResourceKey<Resources>;
   /**
-   * Accessor for the resources bound to this definition. Call `resources()` for
-   * the raw value, or `resources.pick(...)` / `resources.omit(...)` to filter.
+   * Accessor for the resources bound to this definition. Read `resources.current`
+   * for the resource this instance renders, call `resources()` for the raw
+   * value, or use `resources.pick(...)` / `resources.omit(...)` to filter.
    */
-  resources: LayoutResourcesAccessor<Resources>;
+  resources: LayoutRenderResourcesAccessor<Resources>;
   name: string;
 };
 
@@ -155,6 +154,17 @@ export type LayoutResourcesAccessor<
   ): Show<PickResourceDefinitions<Resources, Keys>>;
 };
 
+/**
+ * Render-scoped {@link LayoutResourcesAccessor}, extended with `current` — the
+ * resource key the layout instance is rendering for.
+ */
+export type LayoutRenderResourcesAccessor<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> = LayoutResourcesAccessor<Resources> & {
+  /** The resource this layout instance is rendering for. */
+  readonly current: LayoutResourceKey<Resources>;
+};
+
 function createLayoutResourcesAccessor<
   Resources extends ReadonlyArray<ResourceDefinition>,
 >(resources: Resources): LayoutResourcesAccessor<Resources> {
@@ -170,6 +180,15 @@ function createLayoutResourcesAccessor<
     )) as LayoutResourcesAccessor<Resources>['pick'];
 
   return accessor;
+}
+
+function createLayoutRenderResourcesAccessor<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+>(
+  resources: Resources,
+  current: LayoutResourceKey<Resources>,
+): LayoutRenderResourcesAccessor<Resources> {
+  return Object.assign(createLayoutResourcesAccessor(resources), { current });
 }
 type LayoutRenderComposables<Composables extends ComposableComponents> = [
   keyof Composables,
@@ -746,9 +765,11 @@ function defineResourceLayoutImpl<
     const mergedRenderContext = {
       composables: resolvedComposables as LayoutRenderComposables<Composables>,
       resource: layoutContext.resource,
-      currentResource: layoutContext.resource,
       isResource: createIsValidResourceFn(resources),
-      resources: resourcesAccessor,
+      resources: createLayoutRenderResourcesAccessor(
+        resources as Resources,
+        layoutContext.resource,
+      ),
       name: layoutContext.name,
       inProps: splitInProps,
     } as LayoutRenderContext<Resources, Composables>;
