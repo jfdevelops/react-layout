@@ -264,15 +264,16 @@ function createResourceLinksFromConfig<
   });
 }
 
-function createResourceLinkGroupId() {
-  if (
-    typeof crypto !== 'undefined' &&
-    typeof crypto.randomUUID === 'function'
-  ) {
-    return crypto.randomUUID();
-  }
-
-  return `group-${Math.random().toString(36).slice(2, 11)}`;
+/**
+ * Deterministic, not random: this only needs to be unique within a single
+ * `withGroups()` call (it's used as a list key/lookup), and the index already
+ * guarantees that. A random id would make `withGroups()` unsafe to call from
+ * module scope — some runtimes (e.g. Cloudflare Workers) disallow generating
+ * random values outside a request handler, and config arrays like this are
+ * routinely defined as top-level constants.
+ */
+function createResourceLinkGroupId(index: number) {
+  return `group-${index}`;
 }
 
 function createResourceLinksWithGroups<
@@ -327,7 +328,7 @@ function createResourceLinksWithGroups<
     }
 
     return {
-      id: createResourceLinkGroupId(),
+      id: createResourceLinkGroupId(index),
       label: 'label' in group ? (group.label ?? null) : null,
       icon: 'icon' in group ? group.icon : null,
       links: createResourceLinksFromConfig(group.links),
