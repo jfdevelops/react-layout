@@ -120,6 +120,15 @@ export interface CreateResourceLinkGroupOptions<
     CreateResourceLinkConfig<Resources>,
 > {
   /**
+   * An optional, caller-provided identity for the group. Provide this when you
+   * combine groups from more than one `withGroups()` call into one list (e.g.
+   * a module-owned nav section alongside a feature-owned one) — without it,
+   * the id is derived from the group's `label` and its link resources, which
+   * is enough to keep groups from a single call apart but can't distinguish
+   * two independently-defined groups that happen to look identical.
+   */
+  id?: string;
+  /**
    * The label of the group. This is the text that will be displayed for the group.
    */
   label?: string;
@@ -265,15 +274,31 @@ function createResourceLinksFromConfig<
 }
 
 /**
- * Deterministic, not random: this only needs to be unique within a single
- * `withGroups()` call (it's used as a list key/lookup), and the index already
- * guarantees that. A random id would make `withGroups()` unsafe to call from
- * module scope — some runtimes (e.g. Cloudflare Workers) disallow generating
- * random values outside a request handler, and config arrays like this are
- * routinely defined as top-level constants.
+ * Deterministic, not random: a random id (the previous implementation used
+ * `crypto.randomUUID()` / `Math.random()`) would make `withGroups()` unsafe to
+ * call from module scope — some runtimes (e.g. Cloudflare Workers) disallow
+ * generating random values outside a request handler, and config arrays like
+ * this are routinely defined as top-level constants.
+ *
+ * Falls back to the group's own shape — its `label` and its link resource
+ * keys — rather than just the array index, so groups from *separate*
+ * `withGroups()` calls that get concatenated into one list (a module-owned nav
+ * section next to a feature-owned one, say) don't collide just because they're
+ * both first in their own call. Two groups that are genuinely identical in
+ * shape will still collide; pass an explicit `id` on the group to rule that
+ * out entirely.
  */
-function createResourceLinkGroupId(index: number) {
-  return `group-${index}`;
+function createResourceLinkGroupId(
+  group: { id?: unknown; label?: unknown; links: object },
+  index: number,
+) {
+  if (typeof group.id === 'string' && group.id.length > 0) {
+    return group.id;
+  }
+
+  const label = typeof group.label === 'string' ? group.label : '';
+  const linkKeys = Object.keys(group.links).join(',');
+  return `group-${index}-${label}-${linkKeys}`;
 }
 
 function createResourceLinksWithGroups<
@@ -311,6 +336,12 @@ function createResourceLinksWithGroups<
       );
     }
 
+    if ('id' in group && group.id !== undefined && typeof group.id !== 'string') {
+      throw new Error(
+        `[createResourceLinks.withGroups]: "id" must be a string for group at index ${index}. Received ${typeof group.id}`,
+      );
+    }
+
     if (!('links' in group)) {
       throw new Error(
         `[createResourceLinks.withGroups]: "links" is required for group at index ${index}.`,
@@ -328,7 +359,7 @@ function createResourceLinksWithGroups<
     }
 
     return {
-      id: createResourceLinkGroupId(index),
+      id: createResourceLinkGroupId(group, index),
       label: 'label' in group ? (group.label ?? null) : null,
       icon: 'icon' in group ? group.icon : null,
       links: createResourceLinksFromConfig(group.links),

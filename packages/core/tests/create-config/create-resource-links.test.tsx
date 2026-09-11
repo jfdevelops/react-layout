@@ -360,6 +360,39 @@ describe('createResourceLinks', () => {
       expect(again[1]?.id).toBe(groups[1]?.id);
     });
 
+    it('keeps ids distinct when groups from separate calls are concatenated', () => {
+      // Two independent config modules, each defining their own first group —
+      // both would be index 0 within their own `withGroups()` call.
+      const moduleOwned = createResourceLinks.withGroups([
+        { label: 'Directory', links: { users: { label: 'Users' } } },
+      ]);
+      const featureOwned = createResourceLinks.withGroups([
+        { label: 'Billing', links: { invoices: { label: 'Invoices' } } },
+      ]);
+
+      const combined = [...moduleOwned, ...featureOwned];
+      const ids = new Set(combined.map((group) => group.id));
+      expect(ids.size).toBe(combined.length);
+    });
+
+    it('uses a caller-provided id when given, overriding the derived one', () => {
+      const [group] = createResourceLinks.withGroups([
+        { id: 'directory', label: 'Directory', links: { users: { label: 'Users' } } },
+      ]);
+
+      expect(group?.id).toBe('directory');
+    });
+
+    it('throws when id is not a string', () => {
+      expect(() =>
+        createResourceLinks.withGroups([
+          { id: 123, links: { users: { label: 'Users' } } } as never,
+        ]),
+      ).toThrowError(
+        '[createResourceLinks.withGroups]: "id" must be a string for group at index 0. Received number',
+      );
+    });
+
     it('maps each group to id, label, icon, and links', () => {
       const icon = <span data-testid='directory-icon'>D</span>;
 
