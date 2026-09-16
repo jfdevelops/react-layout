@@ -78,6 +78,24 @@ describe('defineResourceLayout', () => {
     );
   });
 
+  it('rejects nested sub-resource slugs that collide with the wrapper config key', () => {
+    expect(() =>
+      defineResourceLayout({
+        resources: [
+          {
+            value: 'users',
+            subResources: ['admins', 'wrapper'],
+          },
+        ] as never,
+        layout: {
+          render: () => <section />,
+        },
+      }),
+    ).toThrowError(
+      'Sub-resource "wrapper" under "users" collides with a reserved config key',
+    );
+  });
+
   it('binds resources via forResources and merges optional extras', () => {
     const { createResourceLayout } = testResourceLayout({
       resources: ['admins'],

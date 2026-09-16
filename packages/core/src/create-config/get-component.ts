@@ -1,4 +1,4 @@
-import type { JSX } from 'react';
+import { cloneElement, isValidElement, type JSX, type ReactNode } from 'react';
 import {
   InvalidComponentError,
   InvalidConfigError,
@@ -24,6 +24,7 @@ import {
   type IsSubResourceKey,
 } from './is-sub-resource-key';
 import {
+  isComponentSlotKey,
   readComponentKeys,
   readSubResourceKeys,
 } from './component-keys';
@@ -42,6 +43,8 @@ import type {
   ResourceConfigEntry,
   ResourceConfigMap,
   ResourceConfigInput,
+  ResourceConfigWrapper,
+  ResourceConfigWrapperTarget,
   SharedResourceConfigOptions,
 } from './types';
 
@@ -382,6 +385,54 @@ function resolveResourceConfigEntry(
   return resolveResourceConfigEntry(next, subResource.subResource);
 }
 
+/** Whether a {@link ResourceConfigWrapper} is the `{ applyTo, component }` form. */
+function isScopedResourceConfigWrapper(
+  wrapper: ResourceConfigWrapper,
+): wrapper is {
+  applyTo: ReadonlyArray<ResourceConfigWrapperTarget>;
+  component: ReactNode;
+} {
+  return (
+    typeof wrapper === 'object' &&
+    wrapper !== null &&
+    !isValidElement(wrapper) &&
+    'applyTo' in wrapper
+  );
+}
+
+function wrapResourceConfigComponent(
+  wrapper: ReactNode,
+  element: JSX.Element,
+): JSX.Element {
+  if (!isValidElement(wrapper)) {
+    throw new InvalidConfigError({
+      reason: 'A resource config "wrapper" must be a single React element',
+      config: wrapper,
+    });
+  }
+
+  return cloneElement(wrapper, undefined, element);
+}
+
+/** Applies an entry's `wrapper` (if any) to one of its resolved component slots. */
+function applyResourceConfigWrapper(
+  wrapper: ResourceConfigWrapper | undefined,
+  slot: ResourceConfigWrapperTarget,
+  element: JSX.Element,
+): JSX.Element {
+  if (wrapper === undefined) {
+    return element;
+  }
+
+  if (isScopedResourceConfigWrapper(wrapper)) {
+    return wrapper.applyTo.includes(slot)
+      ? wrapResourceConfigComponent(wrapper.component, element)
+      : element;
+  }
+
+  return wrapResourceConfigComponent(wrapper, element);
+}
+
 function readResourceConfigComponent(
   entry: ResourceConfigComponents,
   componentKey: ResourceConfigComponentKey,
@@ -396,7 +447,11 @@ function readResourceConfigComponent(
       });
     }
 
-    return branch.component;
+    return applyResourceConfigWrapper(
+      branch.wrapper,
+      'component',
+      branch.component,
+    );
   }
 
   const value = entry[componentKey];
@@ -408,7 +463,7 @@ function readResourceConfigComponent(
     });
   }
 
-  return value;
+  return applyResourceConfigWrapper(entry.wrapper, componentKey, value);
 }
 
 function getComponentFromOptions<
@@ -440,6 +495,8 @@ function getComponentFromPath<
   Resources extends ReadonlyArray<ResourceDefinition>,
 >(config: ResourceConfigMap<Resources>, path: string): JSX.Element {
   let cursor: unknown = config;
+  let parent: ResourceConfigEntry | undefined;
+  let lastSegment = '';
 
   for (const segment of path.split('.')) {
     if (!isResourceConfigEntry(cursor)) {
@@ -458,11 +515,21 @@ function getComponentFromPath<
       });
     }
 
+    parent = cursor;
+    lastSegment = segment;
     cursor = next;
   }
 
   if (isResourceConfigEntry(cursor) && 'component' in cursor) {
     return readResourceConfigComponent(cursor, 'component');
+  }
+
+  if (
+    parent !== undefined &&
+    isValidElement(cursor) &&
+    isComponentSlotKey(lastSegment)
+  ) {
+    return applyResourceConfigWrapper(parent.wrapper, lastSegment, cursor);
   }
 
   return cursor as JSX.Element;

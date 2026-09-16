@@ -24,6 +24,18 @@ export const RESOURCE_CONFIG_COMPONENT_KEYS = [
   ...SHARED_BRANCH_KEYS,
 ] as const satisfies readonly ResourceConfigComponentKey[];
 
+/** The config key that holds a node's {@link ResourceConfigWrapper}. */
+export const WRAPPER_CONFIG_KEY = 'wrapper' as const;
+
+/**
+ * Every config key that cannot double as a sub-resource slug: component slots,
+ * shared branches, and `wrapper`.
+ */
+export const RESERVED_RESOURCE_CONFIG_KEYS = [
+  ...RESOURCE_CONFIG_COMPONENT_KEYS,
+  WRAPPER_CONFIG_KEY,
+] as const;
+
 export type ComponentSlotKey = (typeof COMPONENT_SLOT_KEYS)[number];
 export type SharedBranchKey = (typeof SHARED_BRANCH_KEYS)[number];
 
@@ -39,6 +51,13 @@ export function isResourceConfigComponentKey(
   key: string,
 ): key is ResourceConfigComponentKey {
   return (RESOURCE_CONFIG_COMPONENT_KEYS as readonly string[]).includes(key);
+}
+
+/** Whether a config key is reserved, i.e. cannot also be used as a sub-resource slug. */
+export function isReservedResourceConfigKey(
+  key: string,
+): key is (typeof RESERVED_RESOURCE_CONFIG_KEYS)[number] {
+  return (RESERVED_RESOURCE_CONFIG_KEYS as readonly string[]).includes(key);
 }
 
 /**
@@ -70,6 +89,6 @@ export function readComponentKeys(
  */
 export function readSubResourceKeys(node: Record<string, unknown>): string[] {
   return Object.keys(node).filter(
-    (key) => !isResourceConfigComponentKey(key) && isConfigNode(node[key]),
+    (key) => !isReservedResourceConfigKey(key) && isConfigNode(node[key]),
   );
 }

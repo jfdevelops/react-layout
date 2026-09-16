@@ -1,7 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { cleanup, render } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
   defineResourceLayout,
   InvalidComponentError,
+  InvalidConfigError,
   InvalidResourceError,
   InvalidSubResourceError,
 } from '../../src';
@@ -357,5 +360,111 @@ describe('getComponent with a sub-resource on a specific resource', () => {
     expect(
       config.getComponent('templates.deleted.expired.errorComponent'),
     ).toBe(expiredError);
+  });
+});
+
+describe('resource config wrapper', () => {
+  afterEach(cleanup);
+
+  const { createResourceConfig } = defineResourceLayout({
+    resources: ['general'],
+    layout: {
+      render: () => <></>,
+    },
+  });
+
+  function Page({ children }: { children?: ReactNode }) {
+    return <div data-testid='page'>{children}</div>;
+  }
+
+  it('wraps every configured slot when wrapper is a plain node', () => {
+    const config = createResourceConfig({
+      general: {
+        wrapper: <Page />,
+        component: <div data-testid='form'>form</div>,
+        errorComponent: <div data-testid='error'>error</div>,
+      },
+    });
+
+    const main = render(config.getComponent({ resource: 'general' }));
+    expect(main.getByTestId('page')).toContainElement(
+      main.getByTestId('form'),
+    );
+    main.unmount();
+
+    const error = render(
+      config.getComponent({ resource: 'general', component: 'errorComponent' }),
+    );
+    expect(error.getByTestId('page')).toContainElement(
+      error.getByTestId('error'),
+    );
+  });
+
+  it('wraps only the slots listed in applyTo', () => {
+    const config = createResourceConfig({
+      general: {
+        wrapper: { applyTo: ['component'], component: <Page /> },
+        component: <div data-testid='form'>form</div>,
+        errorComponent: <div data-testid='error'>error</div>,
+      },
+    });
+
+    const main = render(config.getComponent({ resource: 'general' }));
+    expect(main.getByTestId('page')).toContainElement(
+      main.getByTestId('form'),
+    );
+
+    const error = config.getComponent({
+      resource: 'general',
+      component: 'errorComponent',
+    });
+    expect(error).toBe(config.config.general?.errorComponent);
+  });
+
+  it('wraps a new/detail branch with the branch’s own wrapper', () => {
+    const created = <div data-testid='new'>new</div>;
+    const config = createResourceConfig({
+      general: {
+        component: <div>list</div>,
+        new: {
+          wrapper: <Page />,
+          component: created,
+        },
+      },
+    });
+
+    const result = render(
+      config.getComponent({ resource: 'general', component: 'new' }),
+    );
+    expect(result.getByTestId('page')).toContainElement(
+      result.getByTestId('new'),
+    );
+  });
+
+  it('applies the wrapper when reading through a deep config path', () => {
+    const config = createResourceConfig({
+      general: {
+        wrapper: <Page />,
+        component: <div data-testid='form'>form</div>,
+      },
+    });
+
+    const result = render(config.getComponent('general.component'));
+    expect(result.getByTestId('page')).toContainElement(
+      result.getByTestId('form'),
+    );
+  });
+
+  it('throws a descriptive error when wrapper is not a valid element', () => {
+    const config = createResourceConfig({
+      general: {
+        wrapper: 'not-an-element',
+        component: <div>form</div>,
+      },
+    });
+
+    expect(() => config.getComponent({ resource: 'general' })).toThrowError(
+      InvalidConfigError,
+    );
   });
 });

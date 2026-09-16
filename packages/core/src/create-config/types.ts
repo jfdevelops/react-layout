@@ -1,4 +1,4 @@
-import type { JSX } from 'react';
+import type { JSX, ReactNode } from 'react';
 import type {
   LayoutResourceKey,
   ResourceDefinition,
@@ -19,28 +19,57 @@ export type ResourceComponentPathKey = Exclude<
   'component'
 >;
 
+/** Component slots a {@link ResourceConfigWrapper} can be scoped to with `applyTo`. */
+export type ResourceConfigWrapperTarget = keyof BaseResourceConfigComponents;
+
+/**
+ * Wraps a config entry's component slots so the same JSX doesn't have to be repeated
+ * around `component`, `errorComponent`, `pendingComponent`, and `notFoundComponent`
+ * individually. A plain node wraps every configured slot on the entry; the
+ * `{ applyTo, component }` form wraps only the listed slots.
+ */
+export type ResourceConfigWrapper =
+  | ReactNode
+  | {
+      /** Which of this entry's component slots the wrapper applies to. */
+      applyTo: ReadonlyArray<ResourceConfigWrapperTarget>;
+      /** The wrapping element; the resolved component is rendered as its child. */
+      component: ReactNode;
+    };
+
+/** Adds an optional {@link ResourceConfigWrapper} to a resource config entry. */
+export type WithResourceConfigWrapper<Entry> = Entry & {
+  wrapper?: ResourceConfigWrapper;
+};
+
 export type SharedResourceConfigOptions = {
   /**
    * Configuration for the new resource.
    */
-  new?: BaseResourceConfigComponents;
+  new?: WithResourceConfigWrapper<BaseResourceConfigComponents>;
   /**
    * Configuration for the detail resource.
    */
-  detail?: BaseResourceConfigComponents;
+  detail?: WithResourceConfigWrapper<BaseResourceConfigComponents>;
 };
 
-export type ResourceConfigComponents = BaseResourceConfigComponents &
-  SharedResourceConfigOptions;
+export type ResourceConfigComponents =
+  WithResourceConfigWrapper<BaseResourceConfigComponents> &
+    SharedResourceConfigOptions;
 
-export type ResourceConfigComponentKey = keyof ResourceConfigComponents;
+/** Config keys that select a component or branch, i.e. everything but `wrapper`. */
+export type ResourceConfigComponentKey = Exclude<
+  keyof ResourceConfigComponents,
+  'wrapper'
+>;
 
 /**
  * Config keys that cannot be used as nested sub-resource slugs. They already
- * name component slots (`component`, `errorComponent`, …) or shared branches
- * (`detail`, `new`). Top-level resource names may still use these strings.
+ * name component slots (`component`, `errorComponent`, …), shared branches
+ * (`detail`, `new`), or the `wrapper` slot. Top-level resource names may still
+ * use these strings.
  */
-type ReservedResourceSlug = ResourceConfigComponentKey;
+type ReservedResourceSlug = ResourceConfigComponentKey | 'wrapper';
 
 type ReservedResourceSlugMessage<Slug extends string> =
   `The resource slug "${Slug}" is reserved for config keys`;

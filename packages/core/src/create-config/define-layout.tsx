@@ -52,7 +52,7 @@ import {
 import { BaseComponent, functionalUpdate, pick, Show, Updater } from '../utils';
 import { capitalize } from '../utils/capitalize';
 import { InvalidConfigError } from '../errors';
-import { isResourceConfigComponentKey } from './component-keys';
+import { isReservedResourceConfigKey } from './component-keys';
 import {
   type CreateResourceConfigFn,
   createResourceConfig,
@@ -724,7 +724,7 @@ function assertUnreservedResourceSlugs(
   for (const resource of resources) {
     const slug = readResourceSlug(resource);
 
-    if (owner !== undefined && isResourceConfigComponentKey(slug)) {
+    if (owner !== undefined && isReservedResourceConfigKey(slug)) {
       throw new InvalidConfigError({
         reason: `Sub-resource "${slug}" under "${owner}" collides with a reserved config key`,
       });

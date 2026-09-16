@@ -121,7 +121,10 @@ export type {
   ResourceConfigEntry,
   ResourceConfigInput,
   ResourceConfigMap,
+  ResourceConfigWrapper,
+  ResourceConfigWrapperTarget,
   SharedResourceConfigOptions,
   SubResourceConfig,
   SubResourceConfigComponentsFor,
+  WithResourceConfigWrapper,
 } from './types';
