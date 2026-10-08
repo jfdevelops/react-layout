@@ -1,5 +1,11 @@
 # @jfdevelops/react-layout-validator
 
+## 0.2.7
+
+### Patch Changes
+
+- 715f3f8: Use `@jfdevelops/create-error` with ArkType-backed Standard Schemas to provide named, typed errors throughout the React Layout packages.
+
 ## 0.2.6
 
 ### Patch Changes
