@@ -172,7 +172,7 @@ export type CreateResourceLinksWithGroups<
 export type CreateResourceMap<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Value,
-> = Partial<Record<ResourceLinkConfigResource<Resources>, Value>>;
+> = Partial<Record<LayoutResourceKey<Resources>, Value>>;
 
 export interface CreateResourceMapFn<
   Resources extends ReadonlyArray<ResourceDefinition>,

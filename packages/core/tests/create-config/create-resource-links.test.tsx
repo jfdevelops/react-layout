@@ -283,8 +283,9 @@ describe('createResourceLinks', () => {
     it('throws when a resource map contains an unknown resource', () => {
       expect(() =>
         createResourceLinks.createResourceMap({
+          // @ts-expect-error Unknown resource keys must be rejected by the public type.
           unknown: { to: '/unknown' },
-        } as never),
+        }),
       ).toThrowError(
         '[createResourceLinks.createResourceMap]: unknown resource "unknown".',
       );
