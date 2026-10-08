@@ -5,11 +5,23 @@ import {
   InvalidPathError,
   InvalidResourceError,
   InvalidSubResourceError,
+  LayoutConfigurationError,
   MissingPathVariableError,
   ReactLayoutError,
 } from '../../src/errors';
 
 describe('React Layout errors', () => {
+  it('creates a named layout configuration error', () => {
+    const error = new LayoutConfigurationError('Invalid layout configuration');
+
+    expect(error).toBeInstanceOf(ReactLayoutError);
+    expect(error).toMatchObject({
+      name: 'LayoutConfigurationError',
+      code: 'layoutConfiguration',
+      message: 'Invalid layout configuration',
+    });
+  });
+
   it('creates an invalid configuration error', () => {
     const error = new InvalidConfigError({
       reason: 'A paths definition is required',
@@ -126,12 +138,14 @@ describe('React Layout errors', () => {
       reason: 'Missing resources',
       config: { resources: [] },
     });
-    const renderer = vi.fn(
-      (scope: 'config', context: typeof error.context) =>
-        `${scope}: ${context.reason}`,
-    );
+    const renderer = vi.fn();
 
-    expect(error.renderMessage(renderer)).toBe('config: Missing resources');
+    expect(
+      error.renderMessage((scope, context) => {
+        renderer(scope, context);
+        return `${scope}: ${context.reason}`;
+      }),
+    ).toBe('config: Missing resources');
     expect(renderer).toHaveBeenCalledWith('config', {
       reason: 'Missing resources',
       config: { resources: [] },

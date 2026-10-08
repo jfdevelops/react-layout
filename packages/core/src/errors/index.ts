@@ -1,13 +1,5 @@
 export {
-  createReactLayoutError,
   ReactLayoutError,
-} from './react-layout-error';
-export type {
-  CreatedReactLayoutError,
-  CreateReactLayoutErrorOptions,
-  ErrorMessageRenderer,
-  ReactLayoutErrorContext,
-  ReactLayoutErrorRendererFactory,
 } from './react-layout-error';
 
 export { InvalidConfigError } from './invalid-config';
@@ -27,3 +19,6 @@ export type { InvalidComponentContext } from './invalid-component';
 
 export { MissingPathVariableError } from './missing-path-variable';
 export type { MissingPathVariableContext } from './missing-path-variable';
+
+export { LayoutConfigurationError } from './layout-configuration-error';
+export type { LayoutConfigurationErrorContext } from './layout-configuration-error';

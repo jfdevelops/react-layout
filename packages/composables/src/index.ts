@@ -33,3 +33,4 @@ export type {
 } from './composable';
 export type { InPropsObject } from './types';
 export type { BaseComponent, Show, UnionToIntersection } from './utils';
+export { EmptyComponentsError, InvalidComponentsError } from './errors';

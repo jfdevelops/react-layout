@@ -3,6 +3,7 @@ import {
   type LayoutResourceKey,
   type ResourceDefinition,
 } from '../resource';
+import { LayoutConfigurationError } from '../errors';
 
 export type ResourceAnchorLinkFn<Resource extends string> = (
   resource: Resource,
@@ -214,25 +215,25 @@ function createResourceLinksFromConfig<
 >(config: CreateResourceLinkConfig<Resources, Resource>) {
   return Object.entries(config).map(([resource, config]) => {
     if (!config) {
-      throw new Error(
+      throw new LayoutConfigurationError(
         `[createResourceLinks]: "config" is required for the ${resource} resource.`,
       );
     }
 
     if (typeof config !== 'object') {
-      throw new Error(
+      throw new LayoutConfigurationError(
         `[createResourceLinks]: "config" must be an object for the ${resource} resource. Received ${typeof config}`,
       );
     }
 
     if (!('label' in config)) {
-      throw new Error(
+      throw new LayoutConfigurationError(
         `[createResourceLinks]: "label" is required for the ${resource} resource.`,
       );
     }
 
     if (typeof config.label !== 'string') {
-      throw new Error(
+      throw new LayoutConfigurationError(
         `[createResourceLinks]: "label" must be a string for the ${resource} resource. Received ${typeof config.label}`,
       );
     }
@@ -248,7 +249,7 @@ function createResourceLinksFromConfig<
       typeof linkConfig.href !== 'string' &&
       typeof linkConfig.href !== 'function'
     ) {
-      throw new Error(
+      throw new LayoutConfigurationError(
         `[createResourceLinks]: "href" must be a string or function for the ${resource} resource. Received ${typeof linkConfig.href}`,
       );
     }
@@ -259,7 +260,7 @@ function createResourceLinksFromConfig<
       typeof linkConfig.hash !== 'string' &&
       typeof linkConfig.hash !== 'function'
     ) {
-      throw new Error(
+      throw new LayoutConfigurationError(
         `[createResourceLinks]: "hash" must be a string or function for the ${resource} resource. Received ${typeof linkConfig.hash}`,
       );
     }
@@ -329,7 +330,7 @@ function createResourceMapFn<
   >(map: Map) {
     for (const resource of Object.keys(map)) {
       if (!resourceKeys.has(resource)) {
-        throw new Error(
+        throw new LayoutConfigurationError(
           `[createResourceLinks.createResourceMap]: unknown resource "${resource}".`,
         );
       }
@@ -347,20 +348,20 @@ function createResourceLinksWithGroups<
   groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources, Resource>>,
 ): Array<CreateResourceLinksWithGroups<Resources>> {
   if (!Array.isArray(groups)) {
-    throw new Error(
+    throw new LayoutConfigurationError(
       '[createResourceLinks.withGroups]: "groups" must be an array.',
     );
   }
 
   const createdGroups = groups.map((group, index) => {
     if (!group) {
-      throw new Error(
+      throw new LayoutConfigurationError(
         `[createResourceLinks.withGroups]: group at index ${index} is required.`,
       );
     }
 
     if (typeof group !== 'object') {
-      throw new Error(
+      throw new LayoutConfigurationError(
         `[createResourceLinks.withGroups]: group at index ${index} must be an object. Received ${typeof group}`,
       );
     }
@@ -370,19 +371,19 @@ function createResourceLinksWithGroups<
       group.label !== undefined &&
       typeof group.label !== 'string'
     ) {
-      throw new Error(
+      throw new LayoutConfigurationError(
         `[createResourceLinks.withGroups]: "label" must be a string for group at index ${index}. Received ${typeof group.label}`,
       );
     }
 
     if ('id' in group && group.id !== undefined && typeof group.id !== 'string') {
-      throw new Error(
+      throw new LayoutConfigurationError(
         `[createResourceLinks.withGroups]: "id" must be a string for group at index ${index}. Received ${typeof group.id}`,
       );
     }
 
     if (!('links' in group)) {
-      throw new Error(
+      throw new LayoutConfigurationError(
         `[createResourceLinks.withGroups]: "links" is required for group at index ${index}.`,
       );
     }
@@ -392,7 +393,7 @@ function createResourceLinksWithGroups<
       group.links === null ||
       Array.isArray(group.links)
     ) {
-      throw new Error(
+      throw new LayoutConfigurationError(
         `[createResourceLinks.withGroups]: "links" must be an object for group at index ${index}. Received ${Array.isArray(group.links) ? 'array' : typeof group.links}`,
       );
     }

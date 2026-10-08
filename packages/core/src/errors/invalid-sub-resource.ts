@@ -1,44 +1,37 @@
-import {
-  createReactLayoutError,
-  type ReactLayoutErrorContext,
-} from './react-layout-error';
+import { type } from 'arktype';
+import { createReactLayoutError } from './react-layout-error';
 
-const scope = 'subResource' as const;
+const context = type({
+  'reason?': 'string',
+  'resource?': 'string',
+  scope: "'subResource'",
+  subResource: 'unknown',
+  'validSubResources?': 'string[]',
+});
 
-/** Context describing an unavailable sub-resource and its owning resource. */
-export interface InvalidSubResourceContext
-  extends ReactLayoutErrorContext<typeof scope> {
-  subResource: unknown;
-  resource?: string;
-  validSubResources?: readonly string[];
-  reason?: string;
-}
+export type InvalidSubResourceContext = typeof context.infer;
 
 /** Thrown when a requested sub-resource is invalid or unavailable. */
-export class InvalidSubResourceError extends createReactLayoutError(
-  { code: 'invalidSubResource', scope },
-)(
-  (
-    scope,
-    {
-      subResource,
-      resource,
-      validSubResources,
-      reason,
-    }: InvalidSubResourceContext,
-  ) => {
+export class InvalidSubResourceError extends createReactLayoutError({
+  code: 'invalidSubResource',
+  scope: 'subResource',
+})
+  .defineContext(context)
+  .implement(({ context, scope }) => {
     const quotedSubResource =
-      JSON.stringify(subResource) ?? `"${String(subResource)}"`;
-    const resourceMessage = resource ? ` for resource "${resource}"` : '';
-    const reasonMessage = reason ? ` ${reason}` : '';
+      JSON.stringify(context.subResource) ??
+      `"${String(context.subResource)}"`;
+    const resourceMessage = context.resource
+      ? ` for resource "${context.resource}"`
+      : '';
+    const reasonMessage = context.reason ? ` ${context.reason}` : '';
     const validSubResourcesMessage =
-      validSubResources && validSubResources.length > 0
+      context.validSubResources && context.validSubResources.length > 0
         ? ` Available sub-resources are ${new Intl.ListFormat('en', {
             style: 'long',
             type: 'disjunction',
-          }).format(validSubResources)}.`
+          }).format(context.validSubResources)}.`
         : '';
 
     return `[${scope}]: Sub-resource ${quotedSubResource}${resourceMessage} is not available.${reasonMessage}${validSubResourcesMessage}`;
-  },
-) {}
+  }) {}

@@ -13,6 +13,7 @@ import {
 import type { InPropsDefinition, InPropsObject } from '../../props';
 import type { LayoutResourceKey, ResourceDefinition } from '../../resource';
 import { capitalize } from '../../utils/capitalize';
+import { LayoutConfigurationError } from '../../errors';
 import type { LayoutIncludeProps } from '../define-layout';
 import type {
   CapitalizedResource,
@@ -209,7 +210,7 @@ export function createForResources<
         const resource = key as LayoutResourceKey<Resources>;
 
         if (!selectedResources.has(resource)) {
-          throw new Error(
+          throw new LayoutConfigurationError(
             `Resource "${key}" is not available in this scoped component`,
           );
         }
@@ -229,7 +230,7 @@ export function createForResources<
             const contextKey = capitalize(resource);
 
             if (contextKey === 'Root') {
-              throw new Error(
+              throw new LayoutConfigurationError(
                 `Resource "${resource}" maps to the reserved render context key "Root"`,
               );
             }
@@ -237,7 +238,7 @@ export function createForResources<
             const existingResource = contextResources.get(contextKey);
 
             if (existingResource !== undefined) {
-              throw new Error(
+              throw new LayoutConfigurationError(
                 `Resources "${existingResource}" and "${resource}" both map to render context key "${contextKey}"`,
               );
             }
@@ -258,7 +259,7 @@ export function createForResources<
               entry.components ?? {},
             )) {
               if (reservedScopedComponentNames.has(name)) {
-                throw new Error(
+                throw new LayoutConfigurationError(
                   `Scoped component "${name}" for resource "${resource}" uses a reserved name`,
                 );
               }
@@ -276,7 +277,7 @@ export function createForResources<
                 const componentProps = useContext(componentPropsContext);
 
                 if (componentProps === undefined) {
-                  throw new Error(
+                  throw new LayoutConfigurationError(
                     `Scoped component "${name}" must be rendered inside its scoped component`,
                   );
                 }
@@ -317,7 +318,7 @@ export function createForResources<
                     const componentProps = useContext(componentPropsContext);
 
                     if (componentProps === undefined) {
-                      throw new Error(
+                      throw new LayoutConfigurationError(
                         `Scoped component "${name}.${staticName}" must be rendered inside its scoped component`,
                       );
                     }
@@ -339,7 +340,7 @@ export function createForResources<
                     }
 
                     if (!isRenderableComponentType(result)) {
-                      throw new Error(
+                      throw new LayoutConfigurationError(
                         `Scoped component "${name}" must return a component type to use static "${staticName}"`,
                       );
                     }
@@ -350,7 +351,7 @@ export function createForResources<
                     )[staticName];
 
                     if (!isRenderableComponentType(staticComponent)) {
-                      throw new Error(
+                      throw new LayoutConfigurationError(
                         `Scoped component "${name}" has no component static "${staticName}"`,
                       );
                     }
@@ -371,7 +372,7 @@ export function createForResources<
               const componentProps = useContext(componentPropsContext);
 
               if (componentProps === undefined) {
-                throw new Error(
+                throw new LayoutConfigurationError(
                   `Render context component "${contextKey}" must be rendered inside its scoped component`,
                 );
               }
@@ -406,7 +407,7 @@ export function createForResources<
         const componentProps = useContext(componentPropsContext);
 
         if (componentProps === undefined) {
-          throw new Error(
+          throw new LayoutConfigurationError(
             'Render context component "Root" must be rendered inside its scoped component',
           );
         }
@@ -419,7 +420,7 @@ export function createForResources<
           const entry = definedEntries.get(resource);
 
           if (entry === undefined) {
-            throw new Error(
+            throw new LayoutConfigurationError(
               `Render context component "Root" requires a "resources.${resource}" entry to build the layout for resource "${resource}"`,
             );
           }
@@ -482,7 +483,7 @@ export function createForResources<
           componentProps.resource as LayoutResourceKey<Resources>;
 
         if (!selectedResources.has(componentResource)) {
-          throw new Error(
+          throw new LayoutConfigurationError(
             `Resource "${componentResource}" is not available in this scoped component`,
           );
         }
@@ -548,7 +549,7 @@ export function createForResources<
 
       function bindResource(resource: LayoutResourceKey<Resources>) {
         if (!selectedResources.has(resource)) {
-          throw new Error(
+          throw new LayoutConfigurationError(
             `Resource "${resource}" is not available in this scoped component`,
           );
         }
@@ -617,7 +618,7 @@ export function createForResources<
           (resourceOption) => resourceOption.resource === resource,
         )
       ) {
-        throw new Error(
+        throw new LayoutConfigurationError(
           `Resource "${resource}" is not available in this scoped component`,
         );
       }

@@ -1,11 +1,17 @@
-export type PropErrorOptions = {
-  layoutName?: string;
-  path: string;
-  resource?: string;
-  received: unknown;
-  expected: unknown;
-  message: string;
-};
+import { type } from 'arktype';
+
+import { validatorErrorFactory } from './errors';
+
+const propErrorContext = type({
+  'layoutName?': 'string | undefined',
+  path: 'string',
+  'resource?': 'string | undefined',
+  received: 'unknown',
+  expected: 'unknown',
+  message: 'string',
+});
+
+export type PropErrorOptions = typeof propErrorContext.infer;
 
 type PropMessageOptions = {
   path: string;
@@ -34,29 +40,28 @@ export function createMismatchedPropMessage(
   return `Invalid prop "${options.path}"${createPropLocation(options)}: expected "${options.expected}", received "${options.received}".`;
 }
 
-export class PropError extends Error {
-  constructor({
-    layoutName,
-    path,
-    resource,
-    received,
-    expected,
-    message,
-  }: PropErrorOptions) {
-    super(message);
-    this.name = 'PropError';
-    this.layoutName = layoutName;
-    this.path = path;
-    this.resource = resource;
-    this.received = received;
-    this.expected = expected;
+export class PropError extends validatorErrorFactory({ code: 'invalidProp' })
+  .defineContext(propErrorContext)
+  .implement(({ message }) => message) {
+  get layoutName() {
+    return this.context.layoutName;
   }
 
-  readonly layoutName: string | undefined;
-  readonly path: string;
-  readonly resource: string | undefined;
-  readonly received: unknown;
-  readonly expected: unknown;
+  get path() {
+    return this.context.path;
+  }
+
+  get resource() {
+    return this.context.resource;
+  }
+
+  get received() {
+    return this.context.received;
+  }
+
+  get expected() {
+    return this.context.expected;
+  }
 }
 
 export function getPropValueType(value: unknown) {

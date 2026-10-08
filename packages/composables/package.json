@@ -33,7 +33,9 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@jfdevelops/react-layout-validator": "workspace:*"
+    "@jfdevelops/create-error": "0.2.0",
+    "@jfdevelops/react-layout-validator": "workspace:*",
+    "arktype": "2.2.8"
   },
   "peerDependencies": {
     "react": ">=18",

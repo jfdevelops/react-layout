@@ -48,5 +48,9 @@
     "unrun": "0.3.0",
     "vite": "8.0.10",
     "vitest": "4.1.5"
+  },
+  "dependencies": {
+    "@jfdevelops/create-error": "0.2.0",
+    "arktype": "2.2.8"
   }
 }
