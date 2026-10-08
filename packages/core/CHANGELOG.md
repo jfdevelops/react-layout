@@ -1,5 +1,11 @@
 # @jfdevelops/react-layout
 
+## 0.22.1
+
+### Patch Changes
+
+- 63e1614: Add typed resource map helpers to `createResourceLinks` and `withGroups`, including runtime validation against declared resources.
+
 ## 0.22.0
 
 ### Minor Changes
