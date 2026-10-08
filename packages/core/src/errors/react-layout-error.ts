@@ -37,8 +37,13 @@ export const createReactLayoutError = createError({
   properties: ({ definition, data, implementation }) => ({
     code: definition.code,
     scope: definition.scope,
-    renderMessage(renderer = implementation) {
-      return renderer({ context: data, scope: definition.scope });
+    renderMessage(
+      renderer: (
+        scope: typeof definition.scope,
+        context: typeof data,
+      ) => string = (scope, context) => implementation({ context, scope }),
+    ) {
+      return renderer(definition.scope, data);
     },
   }),
   toJSON: (error) => ({

@@ -12,4 +12,10 @@ describe('validator errors', () => {
     expect(error.name).toBe(ErrorClass.name);
     expect(error.message).toBe(message);
   });
+
+  it('keeps invalid record keys identifiable as type errors', () => {
+    expect(new InvalidRecordKeyError('Invalid record key')).toBeInstanceOf(
+      TypeError,
+    );
+  });
 });

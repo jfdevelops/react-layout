@@ -141,17 +141,14 @@ describe('React Layout errors', () => {
     const renderer = vi.fn();
 
     expect(
-      error.renderMessage(({ scope, context }) => {
-        renderer({ scope, context });
+      error.renderMessage((scope, context) => {
+        renderer(scope, context);
         return `${scope}: ${context.reason}`;
       }),
     ).toBe('config: Missing resources');
-    expect(renderer).toHaveBeenCalledWith({
-      context: {
-        reason: 'Missing resources',
-        config: { resources: [] },
-        scope: 'config',
-      },
+    expect(renderer).toHaveBeenCalledWith('config', {
+      reason: 'Missing resources',
+      config: { resources: [] },
       scope: 'config',
     });
   });

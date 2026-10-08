@@ -22,3 +22,5 @@ export class InvalidRecordKeyError extends validatorErrorFactory({
 })
   .defineContext(type('string'))
   .implement((message) => message) {}
+
+Object.setPrototypeOf(InvalidRecordKeyError.prototype, TypeError.prototype);
