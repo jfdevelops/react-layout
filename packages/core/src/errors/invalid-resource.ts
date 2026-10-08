@@ -1,31 +1,32 @@
-import {
-  createReactLayoutError,
-  type ReactLayoutErrorContext,
-} from './react-layout-error';
+import { type } from 'arktype';
+import { createReactLayoutError } from './react-layout-error';
 
-const scope = 'resource' as const;
+const context = type({
+  'reason?': 'string',
+  resource: 'unknown',
+  scope: "'resource'",
+  'validResources?': 'string[]',
+});
 
-/** Context describing a resource that is unavailable to React Layout. */
-export interface InvalidResourceContext
-  extends ReactLayoutErrorContext<typeof scope> {
-  resource: unknown;
-  validResources?: readonly string[];
-  reason?: string;
-}
+export type InvalidResourceContext = typeof context.infer;
 
 /** Thrown when a requested layout resource is invalid or unavailable. */
-export class InvalidResourceError extends createReactLayoutError(
-  { code: 'invalidResource', scope },
-)((scope, { resource, validResources, reason }: InvalidResourceContext) => {
-  const quotedResource = JSON.stringify(resource) ?? `"${String(resource)}"`;
-  const reasonMessage = reason ? ` ${reason}` : '';
-  const validResourcesMessage =
-    validResources && validResources.length > 0
-      ? ` Available resources are ${new Intl.ListFormat('en', {
-          style: 'long',
-          type: 'disjunction',
-        }).format(validResources)}.`
-      : '';
+export class InvalidResourceError extends createReactLayoutError({
+  code: 'invalidResource',
+  scope: 'resource',
+})
+  .defineContext(context)
+  .implement(({ context, scope }) => {
+    const quotedResource =
+      JSON.stringify(context.resource) ?? `"${String(context.resource)}"`;
+    const reasonMessage = context.reason ? ` ${context.reason}` : '';
+    const validResourcesMessage =
+      context.validResources && context.validResources.length > 0
+        ? ` Available resources are ${new Intl.ListFormat('en', {
+            style: 'long',
+            type: 'disjunction',
+          }).format(context.validResources)}.`
+        : '';
 
-  return `[${scope}]: Resource ${quotedResource} is not available.${reasonMessage}${validResourcesMessage}`;
-}) {}
+    return `[${scope}]: Resource ${quotedResource} is not available.${reasonMessage}${validResourcesMessage}`;
+  }) {}

@@ -1,34 +1,29 @@
-import {
-  createReactLayoutError,
-  type ReactLayoutErrorContext,
-} from './react-layout-error';
+import { type } from 'arktype';
+import { createReactLayoutError } from './react-layout-error';
 
-const scope = 'pathVariable' as const;
+const context = type({
+  path: 'string',
+  'providedVariables?': 'string[]',
+  scope: "'pathVariable'",
+  variable: 'string',
+});
 
-/** Context describing a variable required to resolve a layout path. */
-export interface MissingPathVariableContext
-  extends ReactLayoutErrorContext<typeof scope> {
-  variable: string;
-  path: string;
-  providedVariables?: readonly string[];
-}
+export type MissingPathVariableContext = typeof context.infer;
 
 /** Thrown when a required layout path variable was not provided. */
-export class MissingPathVariableError extends createReactLayoutError(
-  { code: 'missingPathVariable', scope },
-)(
-  (
-    scope,
-    { variable, path, providedVariables }: MissingPathVariableContext,
-  ) => {
+export class MissingPathVariableError extends createReactLayoutError({
+  code: 'missingPathVariable',
+  scope: 'pathVariable',
+})
+  .defineContext(context)
+  .implement(({ context, scope }) => {
     const providedMessage =
-      providedVariables && providedVariables.length > 0
+      context.providedVariables && context.providedVariables.length > 0
         ? ` Provided variables were ${new Intl.ListFormat('en', {
             style: 'long',
             type: 'disjunction',
-          }).format(providedVariables.map((provided) => `$${provided}`))}.`
+          }).format(context.providedVariables.map((provided) => `$${provided}`))}.`
         : ' No path variables were provided.';
 
-    return `[${scope}]: Path "${path}" requires $${variable}.${providedMessage}`;
-  },
-) {}
+    return `[${scope}]: Path "${context.path}" requires $${context.variable}.${providedMessage}`;
+  }) {}

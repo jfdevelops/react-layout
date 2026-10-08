@@ -61,27 +61,23 @@ export type {
   TargetPathBuilder,
 } from './create-config';
 export {
-  createReactLayoutError,
   InvalidComponentError,
   InvalidConfigError,
   InvalidPathError,
   InvalidResourceError,
   InvalidSubResourceError,
+  LayoutConfigurationError,
   MissingPathVariableError,
   ReactLayoutError,
 } from './errors';
 export type {
-  CreatedReactLayoutError,
-  CreateReactLayoutErrorOptions,
-  ErrorMessageRenderer,
   InvalidComponentContext,
   InvalidConfigContext,
   InvalidPathContext,
   InvalidResourceContext,
   InvalidSubResourceContext,
+  LayoutConfigurationErrorContext,
   MissingPathVariableContext,
-  ReactLayoutErrorContext,
-  ReactLayoutErrorRendererFactory,
 } from './errors';
 export {
   createProp,

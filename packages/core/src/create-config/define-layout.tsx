@@ -20,6 +20,7 @@ import {
   RequiredPresetLayoutProps,
   resolveLayoutComposables,
 } from '@jfdevelops/react-layout-composables';
+import { LayoutConfigurationError } from '../errors';
 import {
   type AnyBuiltPropDefinition,
   createPrimitivePropBuilder,
@@ -1049,7 +1050,7 @@ function defineResourceLayoutImpl<
         !('makeComposable' in layout) ||
         typeof layout.makeComposable !== 'function'
       ) {
-        throw new Error(
+        throw new LayoutConfigurationError(
           'makeComposable requires composables to be defined in the layout',
         );
       }

@@ -4,6 +4,7 @@ import type {
   PropVisibility,
 } from './types';
 import { BaseProp } from './base';
+import { InvalidRecordKeyError } from './errors';
 
 function assertAllowedRecordKey(
   key: string,
@@ -16,7 +17,7 @@ function assertAllowedRecordKey(
   try {
     keyProp(key);
   } catch {
-    throw new TypeError(`"${key}" is not an allowed record key.`);
+    throw new InvalidRecordKeyError(`"${key}" is not an allowed record key.`);
   }
 }
 

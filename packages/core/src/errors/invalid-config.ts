@@ -1,21 +1,21 @@
-import {
-  createReactLayoutError,
-  type ReactLayoutErrorContext,
-} from './react-layout-error';
+import { type } from 'arktype';
+import { createReactLayoutError } from './react-layout-error';
 
-const scope = 'config' as const;
+const context = type({
+  'config?': 'unknown',
+  reason: 'string',
+  scope: "'config'",
+});
 
-/** Context describing a configuration that React Layout cannot use. */
-export interface InvalidConfigContext
-  extends ReactLayoutErrorContext<typeof scope> {
-  reason: string;
-  config?: unknown;
-}
+export type InvalidConfigContext = typeof context.infer;
 
 /** Thrown when a React Layout configuration is invalid. */
-export class InvalidConfigError extends createReactLayoutError(
-  { code: 'invalidConfig', scope },
-)(
-  (scope, { reason }: InvalidConfigContext) =>
-    `[${scope}]: The layout configuration is invalid: ${reason}`,
-) {}
+export class InvalidConfigError extends createReactLayoutError({
+  code: 'invalidConfig',
+  scope: 'config',
+})
+  .defineContext(context)
+  .implement(
+    ({ context, scope }) =>
+      `[${scope}]: The layout configuration is invalid: ${context.reason}`,
+  ) {}

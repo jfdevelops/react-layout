@@ -2,6 +2,7 @@ import { JSX } from 'react';
 import { BaseProp } from './base';
 import { ComponentProp, ComponentPropWithPropertiesProp, RenderChildrenProp } from './component';
 import { EnumProp } from './enum';
+import { InvalidWrapperError } from './errors';
 import { LiteralProp } from './literal';
 import { ObjectProp } from './object';
 import { RecordProp } from './record';
@@ -527,7 +528,7 @@ function createWrappedProp<
         ) as unknown as WrappedPropFor<Type, Visibility, For, Value>;
       }
 
-      throw new Error(`Invalid wrapper for: ${wrapperFor}`);
+      throw new InvalidWrapperError(`Invalid wrapper for: ${wrapperFor}`);
     };
 }
 

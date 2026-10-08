@@ -289,7 +289,7 @@ function validateParams(
     if (typeof resource !== 'string' || !sets.resources.includes(resource)) {
       throw new InvalidResourceError({
         resource,
-        validResources: sets.resources,
+        validResources: [...sets.resources],
       });
     }
   }
@@ -305,7 +305,7 @@ function validateParams(
         throw new InvalidSubResourceError({
           subResource: slug,
           resource: typeof resource === 'string' ? resource : undefined,
-          validSubResources: sets.subResources,
+          validSubResources: [...sets.subResources],
         });
       }
     }
@@ -318,7 +318,7 @@ function validateParams(
     if (typeof component !== 'string' || !sets.components.includes(component)) {
       throw new InvalidComponentError({
         component,
-        validComponents: sets.components,
+        validComponents: [...sets.components],
       });
     }
   }
@@ -331,7 +331,7 @@ function validateParams(
     if (!state.componentKeyOptional) {
       throw new InvalidComponentError({
         component: componentKey,
-        validComponents: sets.components,
+        validComponents: [...sets.components],
         reason: 'A "componentKey" prop is required for this component',
       });
     }
@@ -345,7 +345,7 @@ function validateParams(
   ) {
     throw new InvalidComponentError({
       component: componentKey,
-      validComponents: sets.components,
+      validComponents: [...sets.components],
     });
   }
 }
@@ -492,7 +492,7 @@ export function createTargetPathBuilder<
             if (!state.paths.includes(path)) {
               throw new InvalidPathError({
                 path,
-                validPaths: state.paths,
+                validPaths: [...state.paths],
                 reason: 'This component was not built for that path',
               });
             }

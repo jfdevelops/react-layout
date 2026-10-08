@@ -1,6 +1,11 @@
 import { defineConfig } from 'tsdown';
 
 export default defineConfig({
+  deps: {
+    dts: {
+      alwaysBundle: ['@jfdevelops/create-error'],
+    },
+  },
   entry: {
     index: 'src/index.ts',
   },

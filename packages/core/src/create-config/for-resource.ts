@@ -10,6 +10,7 @@ import type {
   ResourceDefinition,
 } from '../resource';
 import type { UnionToIntersection, Updater } from '../utils';
+import { LayoutConfigurationError } from '../errors';
 import { capitalize } from '../utils/capitalize';
 import type {
   LayoutIncludeProps,
@@ -642,7 +643,7 @@ export function createForResource<
     }
 
     if (!resource) {
-      throw new Error('"resource" is required when calling "forResource"');
+      throw new LayoutConfigurationError('"resource" is required when calling "forResource"');
     }
 
     const selectedName =

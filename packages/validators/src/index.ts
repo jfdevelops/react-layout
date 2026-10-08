@@ -1,5 +1,6 @@
 export { BaseProp, primitiveTypes } from './base';
 export { PropError, type PropErrorOptions } from './prop-error';
+export { InvalidRecordKeyError, InvalidWrapperError } from './errors';
 export {
   createPrimitivePropBuilder,
   createProp,

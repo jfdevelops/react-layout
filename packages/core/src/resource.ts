@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { NonEmptyReadonlyArray } from '@jfdevelops/react-layout-validator';
 import { MergeIntersection, UnionToIntersection } from './utils';
+import { LayoutConfigurationError } from './errors';
 
 export type ResourceDefinition =
   | string
@@ -204,7 +205,7 @@ export function toResourceEnum<
   const keys = Object.keys(resources);
 
   if (keys.length === 0) {
-    throw new Error('No resources provided');
+    throw new LayoutConfigurationError('No resources provided');
   }
 
   return keys as unknown as ResourceEnum<Resources>;

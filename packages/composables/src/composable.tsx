@@ -4,6 +4,7 @@ import {
   ReactNode,
   useContext,
 } from 'react';
+import { EmptyComponentsError, InvalidComponentsError } from './errors';
 import {
   AnyBuiltPropDefinition,
   type PropValidationContext,
@@ -579,18 +580,14 @@ export function makeComposable<Props>() {
     const { components, name: layoutName } = options;
 
     if (!components || typeof components !== 'object') {
-      throw new Error('components must be an object');
+      throw new InvalidComponentsError('components must be an object');
     }
 
     const componentNames = Object.keys(components);
 
     if (componentNames.length === 0) {
-      throw new Error('components must have at least one component');
+      throw new EmptyComponentsError('components must have at least one component');
     }
-
-    // if (!('Layout' in components)) {
-    //   throw new Error('The Layout composable is required');
-    // }
 
     const create: MakeComposable<Composables, Name> = (overrideOptions) => {
       const resolvedName = overrideOptions?.name ?? layoutName;
