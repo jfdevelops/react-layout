@@ -111,6 +111,7 @@ export interface CreateResourceLinksFn<
       CreateResourceLinkConfig<Resources, Resource>
     >
   >;
+  createResourceMap: CreateResourceMapFn<Resources>;
   withGroups: CreateResourceLinksWithGroupsFn<Resources>;
 }
 
@@ -168,11 +169,24 @@ export type CreateResourceLinksWithGroups<
   links: Array<AnyCreatedResourceLink<Resources>>;
 };
 
+export type CreateResourceMap<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Value,
+> = Partial<Record<LayoutResourceKey<Resources>, Value>>;
+
+export interface CreateResourceMapFn<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> {
+  <const Map extends CreateResourceMap<Resources, unknown>>(map: Map): Map;
+}
+
 export type CreateResourceLinksWithGroupsFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
 > = <const Resource extends ResourceLinkConfigResource<Resources>>(
   groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources, Resource>>,
-) => Array<CreateResourceLinksWithGroups<Resources>>;
+) => Array<CreateResourceLinksWithGroups<Resources>> & {
+  createResourceMap: CreateResourceMapFn<Resources>;
+};
 
 function resolveResourceLinkHref<Resource extends string>(
   value: ResourceLinkHref<Resource> | undefined,
@@ -301,10 +315,35 @@ function createResourceLinkGroupId(
   return `group-${index}-${label}-${linkKeys}`;
 }
 
+function createResourceMapFn<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+>(resources: Resources): CreateResourceMapFn<Resources> {
+  const resourceKeys = new Set(
+    resources.map((resource) =>
+      typeof resource === 'string' ? resource : resource.value,
+    ),
+  );
+
+  return function createResourceMap<
+    const Map extends CreateResourceMap<Resources, unknown>,
+  >(map: Map) {
+    for (const resource of Object.keys(map)) {
+      if (!resourceKeys.has(resource)) {
+        throw new Error(
+          `[createResourceLinks.createResourceMap]: unknown resource "${resource}".`,
+        );
+      }
+    }
+
+    return map;
+  };
+}
+
 function createResourceLinksWithGroups<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Resource extends ResourceLinkConfigResource<Resources>,
 >(
+  createResourceMap: CreateResourceMapFn<Resources>,
   groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources, Resource>>,
 ): Array<CreateResourceLinksWithGroups<Resources>> {
   if (!Array.isArray(groups)) {
@@ -313,7 +352,7 @@ function createResourceLinksWithGroups<
     );
   }
 
-  return groups.map((group, index) => {
+  const createdGroups = groups.map((group, index) => {
     if (!group) {
       throw new Error(
         `[createResourceLinks.withGroups]: group at index ${index} is required.`,
@@ -365,11 +404,21 @@ function createResourceLinksWithGroups<
       links: createResourceLinksFromConfig(group.links),
     };
   }) as Array<CreateResourceLinksWithGroups<Resources>>;
+
+  Object.defineProperty(createdGroups, 'createResourceMap', {
+    value: createResourceMap,
+  });
+
+  return createdGroups as Array<CreateResourceLinksWithGroups<Resources>> & {
+    createResourceMap: CreateResourceMapFn<Resources>;
+  };
 }
 
 export function createResourceLinksFn<
   const Resources extends ReadonlyArray<ResourceDefinition>,
 >(_resources: Resources): CreateResourceLinksFn<Resources> {
+  const createResourceMap = createResourceMapFn(_resources);
+
   function createResourceLinks<
     const Resource extends ResourceLinkConfigResource<Resources>,
   >(config: CreateResourceLinkConfig<Resources, Resource>) {
@@ -381,10 +430,11 @@ export function createResourceLinksFn<
   >(
     groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources, Resource>>,
   ) {
-    return createResourceLinksWithGroups(groups);
+    return createResourceLinksWithGroups(createResourceMap, groups);
   }
 
   return Object.assign(createResourceLinks, {
+    createResourceMap,
     withGroups,
   }) as CreateResourceLinksFn<Resources>;
 }

@@ -25,6 +25,8 @@ export type {
   CreatedResourceHref,
   CreatedResourceLink,
   CreatedResourceLinkBase,
+  CreateResourceMap,
+  CreateResourceMapFn,
   CreateResourceLinkConfig,
   CreateResourceLinkGroupInput,
   CreateResourceLinkGroupOptions,

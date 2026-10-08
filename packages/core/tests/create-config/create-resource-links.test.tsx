@@ -268,6 +268,39 @@ describe('createResourceLinks', () => {
   });
 
   describe('withGroups', () => {
+    it('creates a resource map directly', () => {
+      const map = createResourceLinks.createResourceMap({
+        users: { to: '/users' },
+        posts: { to: '/posts', search: { view: 'articles' } },
+      });
+
+      expect(map).toEqual({
+        users: { to: '/users' },
+        posts: { to: '/posts', search: { view: 'articles' } },
+      });
+    });
+
+    it('throws when a resource map contains an unknown resource', () => {
+      expect(() =>
+        createResourceLinks.createResourceMap({
+          // @ts-expect-error Unknown resource keys must be rejected by the public type.
+          unknown: { to: '/unknown' },
+        }),
+      ).toThrowError(
+        '[createResourceLinks.createResourceMap]: unknown resource "unknown".',
+      );
+    });
+
+    it('creates a resource map from the withGroups result', () => {
+      const map = createResourceLinks
+        .withGroups([])
+        .createResourceMap({
+          users: { to: '/users' },
+        });
+
+      expect(map).toEqual({ users: { to: '/users' } });
+    });
+
     it('defaults group label to null when not provided', () => {
 
       const [group] = createResourceLinks.withGroups([

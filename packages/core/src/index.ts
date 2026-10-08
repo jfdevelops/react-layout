@@ -33,6 +33,8 @@ export type {
 export { defineResourceLayout } from './create-config';
 export type {
   ComponentTypes,
+  CreateResourceMap,
+  CreateResourceMapFn,
   CreateGetComponentForPath,
   CreatedResourceConfig,
   CreateResourceLayoutWithLayoutOptions,
