@@ -11,3 +11,5 @@ Add `findResource(resource)` to grouped resource links for finding the group
 that contains a resource. Its argument rejects unknown resources, and its
 return type reflects whether that resource is present in the grouped-links
 result.
+
+Allow resource links and link groups to define an optional `activeIcon`.

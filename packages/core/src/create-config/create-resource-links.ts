@@ -25,6 +25,10 @@ export interface CreateResourceLinkOptions<
    */
   label: string;
   /**
+   * An optional icon to render when the link is active.
+   */
+  activeIcon?: ReactNode;
+  /**
    * An optional icon to register with the link. This is a headless approach, meaning you have full control
    * over the icon's rendering.
    */
@@ -74,6 +78,7 @@ export type CreatedResourceHref = {
 };
 
 export type CreatedResourceLinkBase<Resource extends string> = {
+  activeIcon?: ReactNode;
   href: CreatedResourceHref;
   label: string;
   resource: Resource;
@@ -135,6 +140,10 @@ export interface CreateResourceLinkGroupOptions<
    */
   label?: string;
   /**
+   * An optional icon to render when the group is active.
+   */
+  activeIcon?: ReactNode;
+  /**
    * An optional icon to register with the group. This is a headless approach, meaning you have full control
    * over the icon's rendering.
    */
@@ -164,6 +173,7 @@ export type AnyCreatedResourceLink<
 export type CreateResourceLinksWithGroups<
   Resources extends ReadonlyArray<ResourceDefinition>,
 > = {
+  activeIcon?: ReactNode;
   id: string;
   label: string | null;
   icon: ReactNode;
@@ -303,6 +313,9 @@ function createResourceLinksFromConfig<
     };
 
     return {
+      ...(linkConfig.activeIcon !== undefined
+        ? { activeIcon: linkConfig.activeIcon }
+        : {}),
       href,
       label: config.label,
       resource,
@@ -422,6 +435,9 @@ function createResourceLinksWithGroups<
     }
 
     return {
+      ...(group.activeIcon !== undefined
+        ? { activeIcon: group.activeIcon }
+        : {}),
       id: createResourceLinkGroupId(group, index),
       label: 'label' in group ? (group.label ?? null) : null,
       icon: 'icon' in group ? group.icon : null,

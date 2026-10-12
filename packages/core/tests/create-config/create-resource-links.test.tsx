@@ -267,6 +267,17 @@ describe('createResourceLinks', () => {
     expect(link.icon).toBe(icon);
   });
 
+  it('includes activeIcon when provided', () => {
+    const activeIcon = <span data-testid='active-users-icon'>AU</span>;
+    const [usersLink, postsLink] = createResourceLinks({
+      users: { label: 'Users', activeIcon },
+      posts: { label: 'Posts' },
+    });
+
+    expect(usersLink.activeIcon).toBe(activeIcon);
+    expect(postsLink.activeIcon).toBeUndefined();
+  });
+
   describe('withGroups', () => {
     it('creates a resource map directly', () => {
       const map = createResourceLinks.createResourceMap({
@@ -535,6 +546,25 @@ describe('createResourceLinks', () => {
       ]);
 
       expect(group.icon).toBeNull();
+    });
+
+    it('includes group activeIcon when provided', () => {
+      const activeIcon = <span data-testid='active-directory-icon'>AD</span>;
+      const [directoryGroup, settingsGroup] =
+        createResourceLinks.withGroups([
+          {
+            label: 'Directory',
+            activeIcon,
+            links: { users: { label: 'Users' } },
+          },
+          {
+            label: 'Settings',
+            links: { posts: { label: 'Posts' } },
+          },
+        ]);
+
+      expect(directoryGroup.activeIcon).toBe(activeIcon);
+      expect(settingsGroup.activeIcon).toBeUndefined();
     });
   });
 });
