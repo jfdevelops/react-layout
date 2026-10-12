@@ -24,6 +24,20 @@ const createDirectoryLayout = createResourceLayout.forResources(
 );
 
 describe('defineResourceLayout types', () => {
+  it('types the current resource provider and hook from declared resources', () => {
+    const { ResourceProvider, useResource } = defineResourceLayout({
+      resources: ['users', 'posts'],
+      layout: { render: () => null as never },
+    });
+
+    expectTypeOf(useResource).returns.toEqualTypeOf<
+      'users' | 'posts'
+    >();
+    expectTypeOf(ResourceProvider).parameter(0).toMatchTypeOf<{
+      resource: 'users' | 'posts';
+    }>();
+  });
+
   it('requires at least one resource for forResources', () => {
     // @ts-expect-error forResources requires at least one resource
     defineResourceLayout.forResources();

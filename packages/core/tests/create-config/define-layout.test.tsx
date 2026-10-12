@@ -5,8 +5,13 @@ import {
   createComposableComponent,
   defineComposableComponent,
   defineResourceLayout,
+  MissingResourceProviderError,
 } from '../../src';
-import { testResourceLayout, testResourceLayoutWithRender } from './helpers';
+import {
+  renderCapturingError,
+  testResourceLayout,
+  testResourceLayoutWithRender,
+} from './helpers';
 
 function createContactsComposableLayout() {
   const createBreadcrumbComposable = defineComposableComponent({
@@ -58,6 +63,65 @@ function createContactsComposableLayout() {
 describe('defineResourceLayout', () => {
   afterEach(() => {
     cleanup();
+  });
+
+  it('provides the current resource to descendant React components', () => {
+    const { createResourceLayout, useResource } = defineResourceLayout({
+      resources: ['users', 'posts'],
+      layout: {
+        render: () => <CurrentResource />,
+      },
+    });
+
+    function CurrentResource() {
+      return <span>{useResource()}</span>;
+    }
+
+    const UsersPage = createResourceLayout({
+      resource: 'users',
+      name: 'UsersPage',
+    });
+
+    render(<UsersPage />);
+
+    expect(screen.getByText('users')).toBeInTheDocument();
+  });
+
+  it('returns a provider for components outside a created layout', () => {
+    const { ResourceProvider, useResource } = defineResourceLayout({
+      resources: ['users', 'posts'],
+      layout: { render: () => <section /> },
+    });
+
+    function CurrentResource() {
+      return <span>{useResource()}</span>;
+    }
+
+    render(
+      <ResourceProvider resource='posts'>
+        <CurrentResource />
+      </ResourceProvider>,
+    );
+
+    expect(screen.getByText('posts')).toBeInTheDocument();
+  });
+
+  it('throws a custom error when useResource is called outside its provider', () => {
+    const { useResource } = defineResourceLayout({
+      resources: ['users'],
+      layout: { render: () => <section /> },
+    });
+
+    function CurrentResource() {
+      return <span>{useResource()}</span>;
+    }
+
+    const error = renderCapturingError(<CurrentResource />);
+
+    expect(error).toBeInstanceOf(MissingResourceProviderError);
+    expect(error?.message).toBe(
+      '[resourceContext]: useResource must be called within its ResourceProvider.',
+    );
   });
 
   it('rejects nested sub-resource slugs that collide with reserved config keys', () => {

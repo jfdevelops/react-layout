@@ -7,6 +7,7 @@ import {
   InvalidSubResourceError,
   LayoutConfigurationError,
   MissingPathVariableError,
+  MissingResourceProviderError,
   ReactLayoutError,
 } from '../../src/errors';
 
@@ -131,6 +132,18 @@ describe('React Layout errors', () => {
     expect(error.message).toContain('$userId');
     expect(error.message).toContain('/users/$userId');
     expect(error.message).toContain('$teamId');
+  });
+
+  it('creates a missing resource provider error', () => {
+    const error = new MissingResourceProviderError({});
+
+    expect(error).toBeInstanceOf(Error);
+    expect(error).toBeInstanceOf(ReactLayoutError);
+    expect(error.name).toBe('MissingResourceProviderError');
+    expect(error.code).toBe('missingResourceProvider');
+    expect(error.scope).toBe('resourceContext');
+    expect(error.message).toContain('useResource');
+    expect(error.message).toContain('ResourceProvider');
   });
 
   it('uses a custom renderer with the error scope and context', () => {

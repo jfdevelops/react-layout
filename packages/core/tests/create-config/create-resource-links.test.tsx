@@ -279,6 +279,17 @@ describe('createResourceLinks', () => {
     expect(link.icon).toBe(icon);
   });
 
+  it('includes activeIcon when provided', () => {
+    const activeIcon = <span data-testid='active-users-icon'>AU</span>;
+    const [usersLink, postsLink] = createResourceLinks({
+      users: { label: 'Users', activeIcon },
+      posts: { label: 'Posts' },
+    });
+
+    expect(usersLink.activeIcon).toBe(activeIcon);
+    expect(postsLink.activeIcon).toBeUndefined();
+  });
+
   describe('withGroups', () => {
     it('creates a resource map directly', () => {
       const map = createResourceLinks.createResourceMap({
@@ -357,13 +368,45 @@ describe('createResourceLinks', () => {
     });
 
     it('creates a resource map from the withGroups result', () => {
-      const map = createResourceLinks
-        .withGroups([])
-        .createResourceMap({
-          users: { to: '/users' },
-        });
+      const groups = createResourceLinks.withGroups([]);
+      const map = groups.createResourceMap({
+        users: { to: '/users' },
+      });
 
       expect(map).toEqual({ users: { to: '/users' } });
+      expectTypeOf(groups.findResource('users')).toEqualTypeOf<undefined>();
+    });
+
+    it('finds the group containing a resource', () => {
+      const groups = createResourceLinks.withGroups([
+        {
+          label: 'Directory',
+          links: { users: { label: 'Users' }, posts: { label: 'Posts' } },
+        },
+        {
+          label: 'Settings',
+          links: { roles: { label: 'Roles' } },
+        },
+      ]);
+
+      expect(groups.findResource('posts')).toBe(groups[0]);
+      expect(groups.findResource('roles')).toBe(groups[1]);
+
+      expectTypeOf(groups.findResource('posts')).toEqualTypeOf<
+        (typeof groups)[number]
+      >();
+
+      const groupsWithoutPosts = createResourceLinks.withGroups([
+        { links: { users: { label: 'Users' } } },
+      ]);
+
+      expect(groupsWithoutPosts.findResource('posts')).toBeUndefined();
+      expectTypeOf(
+        groupsWithoutPosts.findResource('posts'),
+      ).toEqualTypeOf<undefined>();
+
+      // @ts-expect-error Unknown resources are rejected.
+      groups.findResource('missing');
     });
 
     it('defaults group label to null when not provided', () => {
@@ -693,6 +736,25 @@ describe('createResourceLinks', () => {
         'data-fill',
         'currentColor',
       );
+    });
+
+    it('includes group activeIcon when provided', () => {
+      const activeIcon = <span data-testid='active-directory-icon'>AD</span>;
+      const [directoryGroup, settingsGroup] =
+        createResourceLinks.withGroups([
+          {
+            label: 'Directory',
+            activeIcon,
+            links: { users: { label: 'Users' } },
+          },
+          {
+            label: 'Settings',
+            links: { posts: { label: 'Posts' } },
+          },
+        ]);
+
+      expect(directoryGroup.activeIcon).toBe(activeIcon);
+      expect(settingsGroup.activeIcon).toBeUndefined();
     });
   });
 });

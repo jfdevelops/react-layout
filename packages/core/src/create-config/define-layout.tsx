@@ -1,6 +1,8 @@
 import {
+  createContext,
   type JSX,
   type ReactNode,
+  useContext,
   useCallback,
   useLayoutEffect,
   useMemo,
@@ -20,7 +22,10 @@ import {
   RequiredPresetLayoutProps,
   resolveLayoutComposables,
 } from '@jfdevelops/react-layout-composables';
-import { LayoutConfigurationError } from '../errors';
+import {
+  LayoutConfigurationError,
+  MissingResourceProviderError,
+} from '../errors';
 import {
   type AnyBuiltPropDefinition,
   createPrimitivePropBuilder,
@@ -712,7 +717,26 @@ type DefinedResourceLayout<
    * the raw value, or `resources.pick(...)` / `resources.omit(...)` to filter.
    */
   resources: LayoutResourcesAccessor<Resources>;
+  /**
+   * Provides the current resource to descendants that call `useResource`.
+   * Components created by `createResourceLayout` install this provider
+   * automatically.
+   */
+  ResourceProvider: ResourceLayoutProvider<Resources>;
+  /** Returns the nearest current resource. */
+  useResource: () => LayoutResourceKey<Resources>;
 };
+
+export type ResourceLayoutProviderProps<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> = {
+  children: ReactNode;
+  resource: LayoutResourceKey<Resources>;
+};
+
+export type ResourceLayoutProvider<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> = (props: ResourceLayoutProviderProps<Resources>) => JSX.Element;
 
 function readResourceSlug(resource: ResourceDefinition) {
   return typeof resource === 'string' ? resource : resource.value;
@@ -771,6 +795,31 @@ function defineResourceLayoutImpl<
   assertUnreservedResourceSlugs(resources);
 
   const resourcesAccessor = createLayoutResourcesAccessor(resources);
+  const ResourceContext = createContext<
+    LayoutResourceKey<Resources> | undefined
+  >(undefined);
+
+  function ResourceProvider({
+    children,
+    resource,
+  }: ResourceLayoutProviderProps<Resources>) {
+    return (
+      <ResourceContext.Provider value={resource}>
+        {children}
+      </ResourceContext.Provider>
+    );
+  }
+
+  function useResource() {
+    const resource = useContext(ResourceContext);
+
+    if (resource === undefined) {
+      throw new MissingResourceProviderError({});
+    }
+
+    return resource;
+  }
+
   const normalizedResources = normalizeResources(resources);
   const resourcesEnum = createPrimitivePropBuilder('string').enum(
     toResourceEnum(normalizedResources),
@@ -999,9 +1048,11 @@ function defineResourceLayoutImpl<
       >;
 
       return (
-        <LayoutComposablePresetProvider value={composablePresetProps}>
-          {render(layoutRenderProps, mergedRenderContext)}
-        </LayoutComposablePresetProvider>
+        <ResourceProvider resource={layoutContext.resource}>
+          <LayoutComposablePresetProvider value={composablePresetProps}>
+            {render(layoutRenderProps, mergedRenderContext)}
+          </LayoutComposablePresetProvider>
+        </ResourceProvider>
       );
     }
 
@@ -1159,6 +1210,8 @@ function defineResourceLayoutImpl<
     createResourceLayout,
     createResourceLinks,
     resources: resourcesAccessor,
+    ResourceProvider,
+    useResource,
   } as DefinedResourceLayout<
     Resources,
     InProps,

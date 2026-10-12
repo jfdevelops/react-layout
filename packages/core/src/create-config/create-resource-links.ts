@@ -41,6 +41,10 @@ export interface CreateResourceLinkOptions<
    */
   label: string;
   /**
+   * An optional icon to render when the link is active.
+   */
+  activeIcon?: ReactNode;
+  /**
    * An optional icon to register with the link. This is a headless approach, meaning you have full control
    * over the icon's rendering.
    */
@@ -90,6 +94,7 @@ export type CreatedResourceHref = {
 };
 
 export type CreatedResourceLinkBase<Resource extends string> = {
+  activeIcon?: ReactNode;
   href: CreatedResourceHref;
   label: string;
   resource: Resource;
@@ -152,6 +157,10 @@ export interface CreateResourceLinkGroupOptions<
    */
   label?: string;
   /**
+   * An optional icon to render when the group is active.
+   */
+  activeIcon?: ReactNode;
+  /**
    * An optional icon to register with the group. This is a headless approach, meaning you have full control
    * over the icon's rendering.
    */
@@ -181,6 +190,7 @@ export type AnyCreatedResourceLink<
 export type CreateResourceLinksWithGroups<
   Resources extends ReadonlyArray<ResourceDefinition>,
 > = {
+  activeIcon?: ReactNode;
   id: string;
   label: string | null;
   icon: ResourceIcon<LayoutRenderResourcesAccessor<Resources>>;
@@ -224,19 +234,36 @@ export interface CreateResourceMapFn<
 export interface CreateResourceLinksWithGroupsFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
 > {
+  (groups: readonly []): CreateResourceLinksWithGroupsResult<Resources, never>;
   <const Resource extends ResourceLinkConfigResource<Resources>>(
     groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources, Resource>>,
-  ): CreateResourceLinksWithGroupsResult<Resources>;
+  ): CreateResourceLinksWithGroupsResult<Resources, Resource>;
 }
 
 export type CreateResourceLinksWithGroupsResult<
   Resources extends ReadonlyArray<ResourceDefinition>,
+  Resource extends ResourceLinkConfigResource<Resources> = ResourceLinkConfigResource<Resources>,
 > = Array<CreateResourceLinksWithGroups<Resources>> & {
   (
     resource?: LayoutRenderResourcesAccessor<Resources>,
   ): Array<ResolvedResourceLinksWithGroups<Resources>>;
   createResourceMap: CreateResourceMapFn<Resources>;
+  findResource<
+    const RequestedResource extends LayoutResourceKey<Resources> | Resource,
+  >(
+    resource: RequestedResource,
+  ): FindResourceGroupResult<Resources, Resource, RequestedResource>;
 };
+
+export type FindResourceGroupResult<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  IncludedResource extends string,
+  RequestedResource extends string,
+> = RequestedResource extends unknown
+  ? RequestedResource extends IncludedResource
+    ? CreateResourceLinksWithGroups<Resources>
+    : undefined
+  : never;
 
 function resolveResourceLinkHref<Resource extends string>(
   value: ResourceLinkHref<Resource> | undefined,
@@ -329,6 +356,9 @@ function createResourceLinksFromConfig<
     };
 
     return {
+      ...(linkConfig.activeIcon !== undefined
+        ? { activeIcon: linkConfig.activeIcon }
+        : {}),
       href,
       label: config.label,
       resource,
@@ -427,7 +457,7 @@ function createResourceLinksWithGroups<
 >(
   createResourceMap: CreateResourceMapFn<Resources>,
   groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources, Resource>>,
-): CreateResourceLinksWithGroupsResult<Resources> {
+): CreateResourceLinksWithGroupsResult<Resources, Resource> {
   if (!Array.isArray(groups)) {
     throw new LayoutConfigurationError(
       '[createResourceLinks.withGroups]: "groups" must be an array.',
@@ -480,6 +510,9 @@ function createResourceLinksWithGroups<
     }
 
     return {
+      ...(group.activeIcon !== undefined
+        ? { activeIcon: group.activeIcon }
+        : {}),
       id: createResourceLinkGroupId(group, index),
       label: 'label' in group ? (group.label ?? null) : null,
       icon: 'icon' in group ? group.icon : null,
@@ -566,8 +599,18 @@ function createResourceLinksWithGroups<
       return Reflect.set(target, property, value, receiver);
     },
   });
+  Object.defineProperty(createdGroups, 'findResource', {
+    value(resource: ResourceLinkConfigResource<Resources>) {
+      return createdGroups.find((group) =>
+        group.links.some((link) => link.resource === resource),
+      );
+    },
+  });
 
-  return callableGroups as CreateResourceLinksWithGroupsResult<Resources>;
+  return callableGroups as CreateResourceLinksWithGroupsResult<
+    Resources,
+    Resource
+  >;
 }
 
 function defineIcon<Icon extends ElementType = ElementType, Resource = any>(
