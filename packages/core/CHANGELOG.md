@@ -1,5 +1,11 @@
 # @jfdevelops/react-layout
 
+## 0.24.0
+
+### Minor Changes
+
+- d110a86: Make grouped resource links callable so functional icons can be resolved from a current resource, while preserving array methods on the group collection. Add `createResourceLinks.defineIcon` for reusable, typed icon renderers. Resource maps now expose typed `isValidResource` and `get` helpers.
+
 ## 0.23.0
 
 ### Minor Changes
