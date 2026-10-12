@@ -1,9 +1,21 @@
 import { render, screen } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { describe, expect, expectTypeOf, it } from 'vitest';
+import { defineResourceLayout } from '../../src';
 import { testResourceLayoutWithRender } from './helpers';
 
 describe('createResourceLinks', () => {
-  const { createResourceLinks } = testResourceLayoutWithRender;
+  const { createResourceLinks, resources: layoutResources } =
+    testResourceLayoutWithRender;
+
+  function createRenderResources() {
+    return Object.assign(() => layoutResources(), {
+      current: 'users' as const,
+      isResource: layoutResources.isResource,
+      omit: layoutResources.omit,
+      pick: layoutResources.pick,
+    });
+  }
 
   it('allows an arbitrary property name', () => {
     expect(
@@ -291,6 +303,59 @@ describe('createResourceLinks', () => {
       });
     });
 
+    it('narrows inferred resource keys and gets their values', () => {
+      const map = createResourceLinks.createResourceMap({
+        users: { to: '/users' },
+        posts: { to: '/posts', search: { view: 'articles' } },
+      });
+      const candidate: unknown = 'users';
+
+      expect(map.isValidResource(candidate)).toBe(true);
+      expectTypeOf(map.get('users')).toEqualTypeOf<{
+        readonly to: '/users';
+      }>();
+      expectTypeOf(map.get('posts')).toEqualTypeOf<{
+        readonly to: '/posts';
+        readonly search: { readonly view: 'articles' };
+      }>();
+      if (map.isValidResource(candidate)) {
+        const resource: 'users' | 'posts' = candidate;
+
+        expectTypeOf(map.get(resource)).toEqualTypeOf<
+          | { readonly to: '/users' }
+          | {
+              readonly to: '/posts';
+              readonly search: { readonly view: 'articles' };
+            }
+        >();
+        expect(map.get(resource)).toEqual({ to: '/users' });
+      }
+      expect(map.isValidResource('comments')).toBe(false);
+      expect(map.isValidResource('get')).toBe(false);
+      expect(map.get('posts')).toEqual({
+        to: '/posts',
+        search: { view: 'articles' },
+      });
+      // @ts-expect-error Invalid inferred resources are rejected at the argument.
+      const invalidResource = map.get('comments');
+      expectTypeOf(invalidResource).toEqualTypeOf<never>();
+    });
+
+    it('rejects resource keys that conflict with map helpers', () => {
+      const { createResourceLinks: createConflictingResourceLinks } =
+        defineResourceLayout.forResources('get')({
+          layout: { render: () => <></> },
+        });
+
+      expect(() =>
+        createConflictingResourceLinks.createResourceMap({
+          get: { to: '/get' },
+        }),
+      ).toThrowError(
+        '[createResourceLinks.createResourceMap]: resource "get" conflicts with a map helper.',
+      );
+    });
+
     it('throws when a resource map contains an unknown resource', () => {
       expect(() =>
         createResourceLinks.createResourceMap({
@@ -489,7 +554,7 @@ describe('createResourceLinks', () => {
         },
       ]);
 
-      expect(groups).toEqual([
+      expect([...groups]).toEqual([
         {
           id: expect.any(String),
           label: 'Directory',
@@ -546,6 +611,131 @@ describe('createResourceLinks', () => {
       ]);
 
       expect(group.icon).toBeNull();
+    });
+
+    it('is callable to resolve functional icons with a resource', () => {
+      let receivedResource: unknown;
+      const groups = createResourceLinks.withGroups([
+        {
+          label: 'Directory',
+          icon: (resource) => {
+            receivedResource = resource;
+            resource();
+            resource.pick('users');
+            resource.omit('posts');
+
+            return (
+              <span
+                data-testid='directory-icon'
+                data-active={resource.current}
+              />
+            );
+          },
+          links: {
+            users: {
+              label: 'Users',
+              icon: (resource) => (
+                <span data-testid='users-icon' data-active={resource.current} />
+              ),
+            },
+          },
+        },
+      ]);
+
+      const resources = createRenderResources();
+      const [group] = groups(resources);
+      const resolvedLabels = groups(resources)
+        .filter(Boolean)
+        .map((resolvedGroup) => resolvedGroup.label);
+
+      expect(receivedResource).toBe(resources);
+      expect(resolvedLabels).toEqual(['Directory']);
+      render(
+        <>
+          {group.icon}
+          {group.links[0]?.icon}
+        </>,
+      );
+      expect(screen.getByTestId('directory-icon')).toHaveAttribute(
+        'data-active',
+        'users',
+      );
+      expect(screen.getByTestId('users-icon')).toHaveAttribute(
+        'data-active',
+        'users',
+      );
+    });
+
+    it('keeps array methods available before resolving icons', () => {
+      const groups = createResourceLinks.withGroups([
+        {
+          label: 'Directory',
+          icon: (resource) => <span>{resource.current}</span>,
+          links: { users: { label: 'Users' } },
+        },
+      ]);
+
+      expect(groups.filter(Boolean).map((group) => group.label)).toEqual([
+        'Directory',
+      ]);
+      expect(groups).toBeInstanceOf(Array);
+      expect(JSON.stringify(groups)).toBe(JSON.stringify([...groups]));
+
+      const replacement = { ...groups[0], label: 'Replacement' };
+      groups[0] = replacement;
+
+      expect(groups[0]).toBe(replacement);
+    });
+
+    it('throws when functional icons are resolved without a resource', () => {
+      const groups = createResourceLinks.withGroups([
+        {
+          icon: (resource) => <span>{resource.current}</span>,
+          links: { users: { label: 'Users' } },
+        },
+      ]);
+
+      expect(() => groups()).toThrowError(
+        '[createResourceLinks.withGroups]: "resource" is required when resolving functional icons.',
+      );
+    });
+
+    it('allows resolving static icons without a resource', () => {
+      const groups = createResourceLinks.withGroups([
+        {
+          icon: <span>Directory</span>,
+          links: { users: { label: 'Users' } },
+        },
+      ]);
+
+      expect(groups()).toHaveLength(1);
+    });
+
+    it('defines reusable icon renderers with an overridable icon type', () => {
+      type IconProps = { fill?: string };
+      type Icon = (props: IconProps) => ReactNode;
+      const defineActiveIcon = createResourceLinks.defineIcon<Icon>(
+        ({ resource, Icon }) => (
+          <Icon fill={resource.current === 'users' ? 'currentColor' : 'none'} />
+        ),
+      );
+      function TestIcon({ fill }: IconProps) {
+        return <span data-testid='defined-icon' data-fill={fill} />;
+      }
+      const groups = createResourceLinks.withGroups([
+        {
+          icon: defineActiveIcon(TestIcon),
+          links: { users: { label: 'Users' } },
+        },
+      ]);
+
+      const [group] = groups(createRenderResources());
+      render(group.icon);
+
+      expect(screen.getByTestId('defined-icon')).toHaveAttribute(
+        'data-fill',
+        'currentColor',
+      );
     });
 
     it('includes group activeIcon when provided', () => {

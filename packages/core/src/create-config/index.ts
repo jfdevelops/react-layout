@@ -27,6 +27,7 @@ export type {
   CreatedResourceHref,
   CreatedResourceLink,
   CreatedResourceLinkBase,
+  CreatedResourceMap,
   CreateResourceMap,
   CreateResourceMapFn,
   CreateResourceLinkConfig,
@@ -37,10 +38,15 @@ export type {
   CreateResourceLinksWithGroupsFn,
   CreateResourceLinksWithGroups,
   CreateResourceLinksWithGroupsResult,
+  DefineResourceIconFn,
   FindResourceGroupResult,
   InferHashFromResourceLinkHref,
   ResourceAnchorLinkFn,
+  ResourceIcon,
+  ResourceIconFn,
   ResourceLinkHref,
+  ResolvedResourceLinksWithGroups,
+  ValidateResource,
 } from './create-resource-links';
 export {
   createGetComponent,
