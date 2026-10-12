@@ -292,13 +292,13 @@ describe('createResourceLinks', () => {
     });
 
     it('creates a resource map from the withGroups result', () => {
-      const map = createResourceLinks
-        .withGroups([])
-        .createResourceMap({
-          users: { to: '/users' },
-        });
+      const groups = createResourceLinks.withGroups([]);
+      const map = groups.createResourceMap({
+        users: { to: '/users' },
+      });
 
       expect(map).toEqual({ users: { to: '/users' } });
+      expectTypeOf(groups.findResource('users')).toEqualTypeOf<undefined>();
     });
 
     it('finds the group containing a resource', () => {

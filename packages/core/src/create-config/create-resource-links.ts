@@ -181,11 +181,14 @@ export interface CreateResourceMapFn<
   <const Map extends CreateResourceMap<Resources, unknown>>(map: Map): Map;
 }
 
-export type CreateResourceLinksWithGroupsFn<
+export interface CreateResourceLinksWithGroupsFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
-> = <const Resource extends ResourceLinkConfigResource<Resources>>(
-  groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources, Resource>>,
-) => CreateResourceLinksWithGroupsResult<Resources, Resource>;
+> {
+  (groups: readonly []): CreateResourceLinksWithGroupsResult<Resources, never>;
+  <const Resource extends ResourceLinkConfigResource<Resources>>(
+    groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources, Resource>>,
+  ): CreateResourceLinksWithGroupsResult<Resources, Resource>;
+}
 
 export type CreateResourceLinksWithGroupsResult<
   Resources extends ReadonlyArray<ResourceDefinition>,
