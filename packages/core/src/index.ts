@@ -55,6 +55,8 @@ export type {
   ResourceLayoutShellComponent,
   ResourceLayoutShellProps,
   ResourceLayoutShellPublisher,
+  ResourceLayoutProvider,
+  ResourceLayoutProviderProps,
   ResourceSelection,
   ShellLayoutDefinition,
   ShellRenderContext,
@@ -68,6 +70,7 @@ export {
   InvalidSubResourceError,
   LayoutConfigurationError,
   MissingPathVariableError,
+  MissingResourceProviderError,
   ReactLayoutError,
 } from './errors';
 export type {

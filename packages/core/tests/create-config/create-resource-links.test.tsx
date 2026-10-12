@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import { testResourceLayoutWithRender } from './helpers';
 
 describe('createResourceLinks', () => {
@@ -299,6 +299,38 @@ describe('createResourceLinks', () => {
         });
 
       expect(map).toEqual({ users: { to: '/users' } });
+    });
+
+    it('finds the group containing a resource', () => {
+      const groups = createResourceLinks.withGroups([
+        {
+          label: 'Directory',
+          links: { users: { label: 'Users' }, posts: { label: 'Posts' } },
+        },
+        {
+          label: 'Settings',
+          links: { roles: { label: 'Roles' } },
+        },
+      ]);
+
+      expect(groups.findResource('posts')).toBe(groups[0]);
+      expect(groups.findResource('roles')).toBe(groups[1]);
+
+      expectTypeOf(groups.findResource('posts')).toEqualTypeOf<
+        (typeof groups)[number]
+      >();
+
+      const groupsWithoutPosts = createResourceLinks.withGroups([
+        { links: { users: { label: 'Users' } } },
+      ]);
+
+      expect(groupsWithoutPosts.findResource('posts')).toBeUndefined();
+      expectTypeOf(
+        groupsWithoutPosts.findResource('posts'),
+      ).toEqualTypeOf<undefined>();
+
+      // @ts-expect-error Unknown resources are rejected.
+      groups.findResource('missing');
     });
 
     it('defaults group label to null when not provided', () => {

@@ -185,9 +185,29 @@ export type CreateResourceLinksWithGroupsFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
 > = <const Resource extends ResourceLinkConfigResource<Resources>>(
   groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources, Resource>>,
-) => Array<CreateResourceLinksWithGroups<Resources>> & {
+) => CreateResourceLinksWithGroupsResult<Resources, Resource>;
+
+export type CreateResourceLinksWithGroupsResult<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Resource extends ResourceLinkConfigResource<Resources> = ResourceLinkConfigResource<Resources>,
+> = Array<CreateResourceLinksWithGroups<Resources>> & {
   createResourceMap: CreateResourceMapFn<Resources>;
+  findResource<
+    const RequestedResource extends LayoutResourceKey<Resources> | Resource,
+  >(
+    resource: RequestedResource,
+  ): FindResourceGroupResult<Resources, Resource, RequestedResource>;
 };
+
+export type FindResourceGroupResult<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  IncludedResource extends string,
+  RequestedResource extends string,
+> = RequestedResource extends unknown
+  ? RequestedResource extends IncludedResource
+    ? CreateResourceLinksWithGroups<Resources>
+    : undefined
+  : never;
 
 function resolveResourceLinkHref<Resource extends string>(
   value: ResourceLinkHref<Resource> | undefined,
@@ -409,10 +429,18 @@ function createResourceLinksWithGroups<
   Object.defineProperty(createdGroups, 'createResourceMap', {
     value: createResourceMap,
   });
+  Object.defineProperty(createdGroups, 'findResource', {
+    value(resource: ResourceLinkConfigResource<Resources>) {
+      return createdGroups.find((group) =>
+        group.links.some((link) => link.resource === resource),
+      );
+    },
+  });
 
-  return createdGroups as Array<CreateResourceLinksWithGroups<Resources>> & {
-    createResourceMap: CreateResourceMapFn<Resources>;
-  };
+  return createdGroups as CreateResourceLinksWithGroupsResult<
+    Resources,
+    Resource
+  >;
 }
 
 export function createResourceLinksFn<
