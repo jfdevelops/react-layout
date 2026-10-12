@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, expectTypeOf, it } from 'vitest';
+import { defineResourceLayout } from '../../src';
 import { testResourceLayoutWithRender } from './helpers';
 
 describe('createResourceLinks', () => {
@@ -319,6 +320,7 @@ describe('createResourceLinks', () => {
         expect(map.get(resource)).toEqual({ to: '/users' });
       }
       expect(map.isValidResource('comments')).toBe(false);
+      expect(map.isValidResource('get')).toBe(false);
       expect(map.get('posts')).toEqual({
         to: '/posts',
         search: { view: 'articles' },
@@ -326,6 +328,21 @@ describe('createResourceLinks', () => {
       // @ts-expect-error Invalid inferred resources are rejected at the argument.
       const invalidResource = map.get('comments');
       expectTypeOf(invalidResource).toEqualTypeOf<never>();
+    });
+
+    it('rejects resource keys that conflict with map helpers', () => {
+      const { createResourceLinks: createConflictingResourceLinks } =
+        defineResourceLayout.forResources('get')({
+          layout: { render: () => <></> },
+        });
+
+      expect(() =>
+        createConflictingResourceLinks.createResourceMap({
+          get: { to: '/get' },
+        }),
+      ).toThrowError(
+        '[createResourceLinks.createResourceMap]: resource "get" conflicts with a map helper.',
+      );
     });
 
     it('throws when a resource map contains an unknown resource', () => {
@@ -618,6 +635,13 @@ describe('createResourceLinks', () => {
       expect(groups.filter(Boolean).map((group) => group.label)).toEqual([
         'Directory',
       ]);
+      expect(groups).toBeInstanceOf(Array);
+      expect(JSON.stringify(groups)).toBe(JSON.stringify([...groups]));
+
+      const replacement = { ...groups[0], label: 'Replacement' };
+      groups[0] = replacement;
+
+      expect(groups[0]).toBe(replacement);
     });
 
     it('throws when functional icons are resolved without a resource', () => {

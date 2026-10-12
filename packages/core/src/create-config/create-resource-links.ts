@@ -368,6 +368,7 @@ function createResourceLinkGroupId(
 function createResourceMapFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
 >(resources: Resources): CreateResourceMapFn<Resources> {
+  const helperNames = new Set(['get', 'isValidResource']);
   const resourceKeys = new Set(
     resources.map((resource) =>
       typeof resource === 'string' ? resource : resource.value,
@@ -377,23 +378,41 @@ function createResourceMapFn<
   return function createResourceMap<
     const Map extends CreateResourceMap<Resources, unknown>,
   >(map: Map) {
-    for (const resource of Object.keys(map)) {
+    const configuredResources = Object.keys(map);
+
+    for (const resource of configuredResources) {
       if (!resourceKeys.has(resource)) {
         throw new LayoutConfigurationError(
           `[createResourceLinks.createResourceMap]: unknown resource "${resource}".`,
         );
       }
+
+      if (helperNames.has(resource)) {
+        throw new LayoutConfigurationError(
+          `[createResourceLinks.createResourceMap]: resource "${resource}" conflicts with a map helper.`,
+        );
+      }
     }
+
+    const configuredResourceKeys = new Set(configuredResources);
+    const resourceValues = new Map(
+      configuredResources.map((resource) => [
+        resource,
+        (map as Record<string, unknown>)[resource],
+      ]),
+    );
 
     Object.defineProperties(map, {
       get: {
         value(resource: string) {
-          return map[resource as keyof Map];
+          return resourceValues.get(resource);
         },
       },
       isValidResource: {
         value(value: unknown): value is Extract<keyof Map, string> {
-          return typeof value === 'string' && Object.hasOwn(map, value);
+          return (
+            typeof value === 'string' && configuredResourceKeys.has(value)
+          );
         },
       },
     });
@@ -511,12 +530,40 @@ function createResourceLinksWithGroups<
         return createdGroups[Symbol.iterator].bind(createdGroups);
       }
 
+      if (property === 'toJSON') {
+        return () => createdGroups;
+      }
+
       if (property in createdGroups) {
         const value = Reflect.get(createdGroups, property);
         return typeof value === 'function' ? value.bind(createdGroups) : value;
       }
 
       return Reflect.get(target, property, receiver);
+    },
+    getOwnPropertyDescriptor(target, property) {
+      return (
+        Reflect.getOwnPropertyDescriptor(createdGroups, property) ??
+        Reflect.getOwnPropertyDescriptor(target, property)
+      );
+    },
+    getPrototypeOf() {
+      return Array.prototype;
+    },
+    ownKeys(target) {
+      return [
+        ...new Set([
+          ...Reflect.ownKeys(target),
+          ...Reflect.ownKeys(createdGroups),
+        ]),
+      ];
+    },
+    set(target, property, value, receiver) {
+      if (property in createdGroups || /^\d+$/.test(String(property))) {
+        return Reflect.set(createdGroups, property, value);
+      }
+
+      return Reflect.set(target, property, value, receiver);
     },
   });
 
