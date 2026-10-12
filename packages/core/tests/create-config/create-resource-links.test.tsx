@@ -8,15 +8,6 @@ describe('createResourceLinks', () => {
   const { createResourceLinks, resources: layoutResources } =
     testResourceLayoutWithRender;
 
-  function createRenderResources() {
-    return Object.assign(() => layoutResources(), {
-      current: 'users' as const,
-      isResource: layoutResources.isResource,
-      omit: layoutResources.omit,
-      pick: layoutResources.pick,
-    });
-  }
-
   it('allows an arbitrary property name', () => {
     expect(
       createResourceLinks({
@@ -642,13 +633,14 @@ describe('createResourceLinks', () => {
         },
       ]);
 
-      const resources = createRenderResources();
-      const [group] = groups(resources);
-      const resolvedLabels = groups(resources)
+      const [group] = groups('users');
+      const resolvedLabels = groups('users')
         .filter(Boolean)
         .map((resolvedGroup) => resolvedGroup.label);
 
-      expect(receivedResource).toBe(resources);
+      expect(
+        (receivedResource as { current: string }).current,
+      ).toBe('users');
       expect(resolvedLabels).toEqual(['Directory']);
       render(
         <>
@@ -695,7 +687,7 @@ describe('createResourceLinks', () => {
         },
       ]);
 
-      expect(() => groups()).toThrowError(
+      expect(() => (groups as unknown as () => unknown)()).toThrowError(
         '[createResourceLinks.withGroups]: "resource" is required when resolving functional icons.',
       );
     });
@@ -708,7 +700,7 @@ describe('createResourceLinks', () => {
         },
       ]);
 
-      expect(groups()).toHaveLength(1);
+      expect(groups('users')).toHaveLength(1);
     });
 
     it('defines reusable icon renderers with an overridable icon type', () => {
@@ -729,7 +721,7 @@ describe('createResourceLinks', () => {
         },
       ]);
 
-      const [group] = groups(createRenderResources());
+      const [group] = groups('users');
       render(group.icon);
 
       expect(screen.getByTestId('defined-icon')).toHaveAttribute(

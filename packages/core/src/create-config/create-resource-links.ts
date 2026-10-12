@@ -1,10 +1,14 @@
 import type { ElementType, ReactNode } from 'react';
 import {
+  createIsValidResourceFn,
   type LayoutResourceKey,
   type ResourceDefinition,
 } from '../resource';
 import { LayoutConfigurationError } from '../errors';
-import type { LayoutRenderResourcesAccessor } from './define-layout';
+import type {
+  LayoutRenderResourcesAccessor,
+  ResourceSelection,
+} from './define-layout';
 
 export type ResourceAnchorLinkFn<Resource extends string> = (
   resource: Resource,
@@ -245,7 +249,7 @@ export type CreateResourceLinksWithGroupsResult<
   Resource extends ResourceLinkConfigResource<Resources> = ResourceLinkConfigResource<Resources>,
 > = Array<CreateResourceLinksWithGroups<Resources>> & {
   (
-    resource?: LayoutRenderResourcesAccessor<Resources>,
+    resource: LayoutResourceKey<Resources>,
   ): Array<ResolvedResourceLinksWithGroups<Resources>>;
   createResourceMap: CreateResourceMapFn<Resources>;
   findResource<
@@ -395,6 +399,42 @@ function createResourceLinkGroupId(
   return `group-${index}-${label}-${linkKeys}`;
 }
 
+function readResourceValue(resource: ResourceDefinition) {
+  return typeof resource === 'string' ? resource : resource.value;
+}
+
+function createResourceSelection(
+  definitions: ReadonlyArray<ResourceDefinition>,
+): ResourceSelection<ReadonlyArray<ResourceDefinition>> {
+  const selection = (() => definitions) as ResourceSelection<
+    ReadonlyArray<ResourceDefinition>
+  >;
+
+  selection.isResource = createIsValidResourceFn(definitions);
+
+  return selection;
+}
+
+function createRenderResourcesAccessor<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+>(resources: Resources, current: LayoutResourceKey<Resources>) {
+  const accessor = Object.assign(() => resources, {
+    current,
+  }) as LayoutRenderResourcesAccessor<Resources>;
+
+  accessor.isResource = createIsValidResourceFn(resources);
+  accessor.omit = ((...keys: string[]) =>
+    createResourceSelection(
+      resources.filter((resource) => !keys.includes(readResourceValue(resource))),
+    )) as LayoutRenderResourcesAccessor<Resources>['omit'];
+  accessor.pick = ((...keys: string[]) =>
+    createResourceSelection(
+      resources.filter((resource) => keys.includes(readResourceValue(resource))),
+    )) as LayoutRenderResourcesAccessor<Resources>['pick'];
+
+  return accessor;
+}
+
 function createResourceMapFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
 >(resources: Resources): CreateResourceMapFn<Resources> {
@@ -455,6 +495,7 @@ function createResourceLinksWithGroups<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Resource extends ResourceLinkConfigResource<Resources>,
 >(
+  resources: Resources,
   createResourceMap: CreateResourceMapFn<Resources>,
   groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources, Resource>>,
 ): CreateResourceLinksWithGroupsResult<Resources, Resource> {
@@ -521,7 +562,7 @@ function createResourceLinksWithGroups<
   }) as Array<CreateResourceLinksWithGroups<Resources>>;
 
   function resolveGroups(
-    resource?: LayoutRenderResourcesAccessor<Resources>,
+    resource?: LayoutResourceKey<Resources>,
   ) {
     const hasFunctionalIcon = createdGroups.some(
       (group) =>
@@ -535,7 +576,10 @@ function createResourceLinksWithGroups<
       );
     }
 
-    const currentResources = resource as LayoutRenderResourcesAccessor<Resources>;
+    const currentResources = createRenderResourcesAccessor(
+      resources,
+      resource as LayoutResourceKey<Resources>,
+    );
 
     return createdGroups.map((group) => ({
       ...group,
@@ -639,7 +683,7 @@ export function createResourceLinksFn<
   >(
     groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources, Resource>>,
   ) {
-    return createResourceLinksWithGroups(createResourceMap, groups);
+    return createResourceLinksWithGroups(_resources, createResourceMap, groups);
   }
 
   return Object.assign(createResourceLinks, {
