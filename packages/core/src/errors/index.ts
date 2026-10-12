@@ -20,5 +20,7 @@ export type { InvalidComponentContext } from './invalid-component';
 export { MissingPathVariableError } from './missing-path-variable';
 export type { MissingPathVariableContext } from './missing-path-variable';
 
+export { MissingResourceProviderError } from './missing-resource-provider';
+
 export { LayoutConfigurationError } from './layout-configuration-error';
 export type { LayoutConfigurationErrorContext } from './layout-configuration-error';

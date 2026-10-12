@@ -13,7 +13,7 @@ A React library for building resource-based page layouts. Define a shared layout
 ```tsx
 import { createProp, defineResourceLayout } from '@jfdevelops/react-layout';
 
-const { createResourceLayout } = defineResourceLayout({
+const { createResourceLayout, useResource } = defineResourceLayout({
   resources: ['users', 'settings'],
   options: {
     title: createProp.string(),
@@ -29,12 +29,19 @@ const { createResourceLayout } = defineResourceLayout({
     },
     render: (props, { composables }) => (
       <composables.Layout>
+        <ResourceBreadcrumb />
         <composables.Title>{props.title}</composables.Title>
         <p>{props.description}</p>
       </composables.Layout>
     ),
   },
 });
+
+function ResourceBreadcrumb() {
+  const resource = useResource();
+
+  return <span>{resource}</span>;
+}
 
 const UsersPage = createResourceLayout({
   resource: 'users',
@@ -43,6 +50,10 @@ const UsersPage = createResourceLayout({
   description: 'Manage users.',
 });
 ```
+
+Created resource layouts automatically provide their current resource.
+Descendant components can read it with the definition's typed `useResource`
+hook. The returned `ResourceProvider` is also available for manual boundaries.
 
 See [`examples/basic-example`](./examples/basic-example) for a full working app.
 
