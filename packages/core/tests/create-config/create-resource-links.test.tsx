@@ -100,6 +100,19 @@ describe('createResourceLinks', () => {
     ]);
   });
 
+  it('preserves the inferred icon type when iterating links', () => {
+    const links = createResourceLinks({
+      users: { label: 'Users', icon: 'users-icon' as const },
+      posts: { label: 'Posts', icon: 42 as const },
+    });
+
+    links.forEach((link) => {
+      expectTypeOf(link.icon).toEqualTypeOf<
+        'users-icon' | 42 | null
+      >();
+    });
+  });
+
   it('uses a custom string href with the resource name as hash', () => {
 
     expect(
@@ -747,6 +760,29 @@ describe('createResourceLinks', () => {
       expect(group?.links[0]?.resource).toBe('users');
     });
 
+    it('preserves inferred icon types while iterating groups', () => {
+      const groups = createResourceLinks.withGroups([
+        {
+          icon: 'directory-icon' as const,
+          links: { users: { label: 'Users', icon: 42 as const } },
+        },
+      ]);
+
+      groups.forEach((group) => {
+        expectTypeOf(group.icon).toEqualTypeOf<'directory-icon' | null>();
+        group.links.forEach((link) => {
+          expectTypeOf(link.icon).toEqualTypeOf<42 | null>();
+        });
+      });
+
+      groups('users').forEach((group) => {
+        expectTypeOf(group.icon).toEqualTypeOf<'directory-icon' | null>();
+        group.links.forEach((link) => {
+          expectTypeOf(link.icon).toEqualTypeOf<42 | null>();
+        });
+      });
+    });
+
     it('defines reusable icon renderers with an overridable icon type', () => {
       type IconProps = { fill?: string };
       type Icon = (props: IconProps) => ReactNode;
@@ -758,12 +794,17 @@ describe('createResourceLinks', () => {
       function TestIcon({ fill }: IconProps) {
         return <span data-testid='defined-icon' data-fill={fill} />;
       }
+      const icon = defineActiveIcon(TestIcon);
       const groups = createResourceLinks.withGroups([
         {
-          icon: defineActiveIcon(TestIcon),
+          icon,
           links: { users: { label: 'Users' } },
         },
       ]);
+
+      groups.forEach((group) => {
+        expectTypeOf(group.icon).toEqualTypeOf<typeof icon | null>();
+      });
 
       const [group] = groups('users');
       render(group.icon);
