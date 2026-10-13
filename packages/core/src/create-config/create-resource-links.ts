@@ -266,12 +266,17 @@ type ResourceLinkGroupResource<Groups extends ReadonlyArray<unknown>> =
 
 type ResourceLinkGroupIcon<Groups extends ReadonlyArray<unknown>> =
   Groups[number] extends infer Group
+    ? 'icon' extends keyof Group
+      ? Group extends { icon?: infer Icon }
+        ? Icon
+        : never
+      : never
+    : never;
+
+type ResourceLinkGroupLinkIcon<Groups extends ReadonlyArray<unknown>> =
+  Groups[number] extends infer Group
     ? Group extends { links: infer Links }
-      ? ('icon' extends keyof Group
-          ? Group extends { icon?: infer Icon }
-            ? Icon
-            : never
-          : never) | ResourceLinkConfigIcon<Links>
+      ? ResourceLinkConfigIcon<Links>
       : never
     : never;
 
@@ -286,13 +291,14 @@ export type AnyCreatedResourceLink<
 
 export type CreateResourceLinksWithGroups<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  Icon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
+  GroupIcon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
+  LinkIcon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
 > = {
   activeIcon?: ReactNode;
   id: string;
   label: string | null;
-  icon: Icon | null;
-  links: Array<AnyCreatedResourceLink<Resources, Icon>>;
+  icon: GroupIcon | null;
+  links: Array<AnyCreatedResourceLink<Resources, LinkIcon>>;
 };
 
 type ResolveResourceIcon<Icon> = Icon extends (...args: any[]) => infer Result
@@ -301,12 +307,16 @@ type ResolveResourceIcon<Icon> = Icon extends (...args: any[]) => infer Result
 
 export type ResolvedResourceLinksWithGroups<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  Icon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
-> = Omit<CreateResourceLinksWithGroups<Resources, Icon>, 'icon' | 'links'> & {
-  icon: ResolveResourceIcon<Icon> | null;
+  GroupIcon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
+  LinkIcon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
+> = Omit<
+  CreateResourceLinksWithGroups<Resources, GroupIcon, LinkIcon>,
+  'icon' | 'links'
+> & {
+  icon: ResolveResourceIcon<GroupIcon> | null;
   links: Array<
-    Omit<AnyCreatedResourceLink<Resources, Icon>, 'icon'> & {
-      icon: ResolveResourceIcon<Icon> | null;
+    Omit<AnyCreatedResourceLink<Resources, LinkIcon>, 'icon'> & {
+      icon: ResolveResourceIcon<LinkIcon> | null;
     }
   >;
 };
@@ -362,15 +372,17 @@ export interface CreateResourceLinksWithGroupsFn<
   ): CreateResourceLinksWithGroupsResult<
     Resources,
     ResourceLinkGroupResource<Groups>,
-    ResourceLinkGroupIcon<Groups>
+    ResourceLinkGroupIcon<Groups>,
+    ResourceLinkGroupLinkIcon<Groups>
   >;
 }
 
 export type CreateResourceLinksWithGroupsResult<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Resource extends ResourceLinkConfigResource<Resources> = ResourceLinkConfigResource<Resources>,
-  Icon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
-> = Array<CreateResourceLinksWithGroups<Resources, Icon>> & {
+  GroupIcon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
+  LinkIcon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
+> = Array<CreateResourceLinksWithGroups<Resources, GroupIcon, LinkIcon>> & {
   /**
    * Resolves each group's icon and its link icons for the active resource.
    *
@@ -381,7 +393,12 @@ export type CreateResourceLinksWithGroupsResult<
    */
   (
     resource: LayoutResourceKey<Resources>,
-  ): ResolvedResourceLinksWithGroupsResult<Resources, Resource, Icon>;
+  ): ResolvedResourceLinksWithGroupsResult<
+    Resources,
+    Resource,
+    GroupIcon,
+    LinkIcon
+  >;
   /**
    * Creates a resource map for this layout. Same helper as
    * `createResourceLinks.createResourceMap`.
@@ -406,15 +423,19 @@ export type CreateResourceLinksWithGroupsResult<
     Resources,
     Resource,
     RequestedResource,
-    Icon
+    GroupIcon,
+    LinkIcon
   >;
 };
 
 export type ResolvedResourceLinksWithGroupsResult<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Resource extends ResourceLinkConfigResource<Resources> = ResourceLinkConfigResource<Resources>,
-  Icon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
-> = Array<ResolvedResourceLinksWithGroups<Resources, Icon>> & {
+  GroupIcon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
+  LinkIcon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
+> = Array<
+  ResolvedResourceLinksWithGroups<Resources, GroupIcon, LinkIcon>
+> & {
   /** Returns the resolved group whose links include `resource`. */
   findResource<
     const RequestedResource extends LayoutResourceKey<Resources> | Resource,
@@ -424,7 +445,8 @@ export type ResolvedResourceLinksWithGroupsResult<
     Resources,
     Resource,
     RequestedResource,
-    Icon
+    GroupIcon,
+    LinkIcon
   >;
 };
 
@@ -432,10 +454,11 @@ export type FindResourceGroupResult<
   Resources extends ReadonlyArray<ResourceDefinition>,
   IncludedResource extends string,
   RequestedResource extends string,
-  Icon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
+  GroupIcon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
+  LinkIcon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
 > = RequestedResource extends unknown
   ? RequestedResource extends IncludedResource
-    ? CreateResourceLinksWithGroups<Resources, Icon>
+    ? CreateResourceLinksWithGroups<Resources, GroupIcon, LinkIcon>
     : undefined
   : never;
 
@@ -443,10 +466,11 @@ export type FindResolvedResourceGroupResult<
   Resources extends ReadonlyArray<ResourceDefinition>,
   IncludedResource extends string,
   RequestedResource extends string,
-  Icon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
+  GroupIcon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
+  LinkIcon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
 > = RequestedResource extends unknown
   ? RequestedResource extends IncludedResource
-    ? ResolvedResourceLinksWithGroups<Resources, Icon>
+    ? ResolvedResourceLinksWithGroups<Resources, GroupIcon, LinkIcon>
     : undefined
   : never;
 
@@ -685,7 +709,8 @@ function createResourceLinksWithGroups<
 ): CreateResourceLinksWithGroupsResult<
   Resources,
   ResourceLinkGroupResource<Groups>,
-  ResourceLinkGroupIcon<Groups>
+  ResourceLinkGroupIcon<Groups>,
+  ResourceLinkGroupLinkIcon<Groups>
 > {
   if (!Array.isArray(groups)) {
     throw new LayoutConfigurationError(
@@ -790,7 +815,8 @@ function createResourceLinksWithGroups<
     return resolvedGroups as ResolvedResourceLinksWithGroupsResult<
       Resources,
       ResourceLinkGroupResource<Groups>,
-      ResourceLinkGroupIcon<Groups>
+      ResourceLinkGroupIcon<Groups>,
+      ResourceLinkGroupLinkIcon<Groups>
     >;
   }
 
@@ -851,7 +877,8 @@ function createResourceLinksWithGroups<
   return callableGroups as CreateResourceLinksWithGroupsResult<
     Resources,
     ResourceLinkGroupResource<Groups>,
-    ResourceLinkGroupIcon<Groups>
+    ResourceLinkGroupIcon<Groups>,
+    ResourceLinkGroupLinkIcon<Groups>
   >;
 }
 

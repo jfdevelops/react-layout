@@ -769,24 +769,16 @@ describe('createResourceLinks', () => {
       ]);
 
       groups.forEach((group) => {
-        expectTypeOf(group.icon).toEqualTypeOf<
-          'directory-icon' | 42 | null
-        >();
+        expectTypeOf(group.icon).toEqualTypeOf<'directory-icon' | null>();
         group.links.forEach((link) => {
-          expectTypeOf(link.icon).toEqualTypeOf<
-            'directory-icon' | 42 | null
-          >();
+          expectTypeOf(link.icon).toEqualTypeOf<42 | null>();
         });
       });
 
       groups('users').forEach((group) => {
-        expectTypeOf(group.icon).toEqualTypeOf<
-          'directory-icon' | 42 | null
-        >();
+        expectTypeOf(group.icon).toEqualTypeOf<'directory-icon' | null>();
         group.links.forEach((link) => {
-          expectTypeOf(link.icon).toEqualTypeOf<
-            'directory-icon' | 42 | null
-          >();
+          expectTypeOf(link.icon).toEqualTypeOf<42 | null>();
         });
       });
     });
