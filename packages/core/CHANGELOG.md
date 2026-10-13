@@ -1,5 +1,11 @@
 # @jfdevelops/react-layout
 
+## 0.24.2
+
+### Patch Changes
+
+- c2e712f: Preserve the typed `findResource` helper after resolving grouped resource-link icons with a current resource.
+
 ## 0.24.1
 
 ### Patch Changes
