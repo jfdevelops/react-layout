@@ -750,6 +750,44 @@ describe('createResourceLinks', () => {
       );
     });
 
+    it('defines typed inputs for reusable icon renderers', () => {
+      type IconProps = { fill?: string };
+      type Icon = (props: IconProps) => ReactNode;
+      const defineActiveIcon = createResourceLinks.defineIcon
+        .input(({ resource, Icon }) => ({ resource: resource(), Icon }))
+        .render<Icon>(({ resource, input }) => {
+          expectTypeOf(input.resource).toEqualTypeOf<'users' | 'posts'>();
+          expectTypeOf(input.Icon).toEqualTypeOf<Icon>();
+          expectTypeOf(resource.pick).toBeFunction();
+          const Icon = input.Icon;
+
+          return (
+            <Icon
+              fill={
+                resource.current === input.resource ? 'currentColor' : 'none'
+              }
+            />
+          );
+        });
+      function TestIcon({ fill }: IconProps) {
+        return <span data-testid='defined-input-icon' data-fill={fill} />;
+      }
+      const groups = createResourceLinks.withGroups([
+        {
+          icon: defineActiveIcon({ resource: 'users', Icon: TestIcon }),
+          links: { users: { label: 'Users' } },
+        },
+      ]);
+
+      const [group] = groups('users');
+      render(group.icon);
+
+      expect(screen.getByTestId('defined-input-icon')).toHaveAttribute(
+        'data-fill',
+        'currentColor',
+      );
+    });
+
     it('includes group activeIcon when provided', () => {
       const activeIcon = <span data-testid='active-directory-icon'>AD</span>;
       const [directoryGroup, settingsGroup] =

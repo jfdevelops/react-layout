@@ -27,6 +27,46 @@ export type ResourceIconFn<Resource = any> = (resource: Resource) => ReactNode;
 
 export type ResourceIcon<Resource = any> = ReactNode | ResourceIconFn<Resource>;
 
+declare const resourceIconInputMarker: unique symbol;
+
+type ResourceIconInputMarker<Value> = {
+  readonly [resourceIconInputMarker]: Value;
+};
+
+type ResourceIconComponentInputMarker = ResourceIconInputMarker<'Icon'>;
+
+export type ResolveResourceIconInput<Definition, Icon> =
+  Definition extends ResourceIconComponentInputMarker
+    ? Icon
+    : Definition extends ResourceIconInputMarker<infer Value>
+      ? Value
+      : Definition extends ReadonlyArray<unknown>
+        ? { [Index in keyof Definition]: ResolveResourceIconInput<Definition[Index], Icon> }
+        : Definition extends object
+          ? { [Key in keyof Definition]: ResolveResourceIconInput<Definition[Key], Icon> }
+          : Definition;
+
+export interface DefineResourceIconInputHelpers<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> {
+  resource(): ResourceIconInputMarker<LayoutResourceKey<Resources>>;
+  Icon: ResourceIconComponentInputMarker;
+}
+
+export interface DefineResourceIconInputResult<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Definition,
+> {
+  render<Icon extends ElementType = ElementType>(
+    render: (options: {
+      resource: LayoutRenderResourcesAccessor<Resources>;
+      input: ResolveResourceIconInput<Definition, Icon>;
+    }) => ReactNode,
+  ): (
+    input: ResolveResourceIconInput<Definition, Icon>,
+  ) => ResourceIconFn<LayoutRenderResourcesAccessor<Resources>>;
+}
+
 export interface DefineResourceIconFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
 > {
@@ -36,6 +76,11 @@ export interface DefineResourceIconFn<
       Icon: Icon;
     }) => ReactNode,
   ): (Icon: Icon) => ResourceIconFn<LayoutRenderResourcesAccessor<Resources>>;
+  input<Definition>(
+    defineInput: (
+      helpers: DefineResourceIconInputHelpers<Resources>,
+    ) => Definition,
+  ): DefineResourceIconInputResult<Resources, Definition>;
 }
 export interface CreateResourceLinkOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -689,20 +734,66 @@ function createResourceLinksWithGroups<
   >;
 }
 
-function defineIcon<Icon extends ElementType = ElementType, Resource = any>(
-  render: (options: { resource: Resource; Icon: Icon }) => ReactNode,
-) {
-  return function createIcon(Icon: Icon): ResourceIconFn<Resource> {
-    return function renderIcon(resource) {
-      return render({ resource, Icon });
+function createDefineIcon<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+>(): DefineResourceIconFn<Resources> {
+  function defineIcon<Icon extends ElementType = ElementType>(
+    render: (options: {
+      resource: LayoutRenderResourcesAccessor<Resources>;
+      Icon: Icon;
+    }) => ReactNode,
+  ) {
+    return function createIcon(Icon: Icon) {
+      return function renderIcon(
+        resource: LayoutRenderResourcesAccessor<Resources>,
+      ) {
+        return render({ resource, Icon });
+      };
+    };
+  }
+
+  defineIcon.input = function defineIconInput<Definition>(
+    defineInput: (
+      helpers: DefineResourceIconInputHelpers<Resources>,
+    ) => Definition,
+  ): DefineResourceIconInputResult<Resources, Definition> {
+    const marker = {} as ResourceIconInputMarker<never>;
+
+    defineInput({
+      resource() {
+        return marker;
+      },
+      Icon: marker as ResourceIconComponentInputMarker,
+    });
+
+    return {
+      render<Icon extends ElementType = ElementType>(
+        render: (options: {
+          resource: LayoutRenderResourcesAccessor<Resources>;
+          input: ResolveResourceIconInput<Definition, Icon>;
+        }) => ReactNode,
+      ) {
+        return function createIcon(
+          input: ResolveResourceIconInput<Definition, Icon>,
+        ) {
+          return function renderIcon(
+            resource: LayoutRenderResourcesAccessor<Resources>,
+          ) {
+            return render({ resource, input });
+          };
+        };
+      },
     };
   };
+
+  return defineIcon;
 }
 
 export function createResourceLinksFn<
   const Resources extends ReadonlyArray<ResourceDefinition>,
 >(_resources: Resources): CreateResourceLinksFn<Resources> {
   const createResourceMap = createResourceMapFn(_resources);
+  const defineIcon = createDefineIcon<Resources>();
 
   function createResourceLinks<
     const Resource extends ResourceLinkConfigResource<Resources>,
