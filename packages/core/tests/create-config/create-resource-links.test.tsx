@@ -359,13 +359,25 @@ describe('createResourceLinks', () => {
     });
 
     it('creates a resource map from the withGroups result', () => {
-      const groups = createResourceLinks.withGroups([]);
+      const groups = createResourceLinks.withGroups([
+        { links: { users: { label: 'Users' } } },
+      ]);
       const map = groups.createResourceMap({
         users: { to: '/users' },
       });
 
       expect(map).toEqual({ users: { to: '/users' } });
-      expectTypeOf(groups.findResource('users')).toEqualTypeOf<undefined>();
+    });
+
+    it('rejects an empty group list', () => {
+      expect(() =>
+        createResourceLinks.withGroups(
+          // @ts-expect-error Groups must include at least one entry.
+          [],
+        ),
+      ).toThrowError(
+        '[createResourceLinks.withGroups]: "groups" must include at least one group.',
+      );
     });
 
     it('finds the group containing a resource', () => {
@@ -679,7 +691,7 @@ describe('createResourceLinks', () => {
       expect(groups[0]).toBe(replacement);
     });
 
-    it('throws when functional icons are resolved without a resource', () => {
+    it('throws when called without a resource', () => {
       const groups = createResourceLinks.withGroups([
         {
           icon: (resource) => <span>{resource.current}</span>,
@@ -688,19 +700,27 @@ describe('createResourceLinks', () => {
       ]);
 
       expect(() => (groups as unknown as () => unknown)()).toThrowError(
-        '[createResourceLinks.withGroups]: "resource" is required when resolving functional icons.',
+        '[createResourceLinks.withGroups]: "resource" is required.',
       );
+      expectTypeOf(groups).parameter(0).toEqualTypeOf<'users' | 'posts'>();
+      expectTypeOf(groups).toBeCallableWith('users');
     });
 
-    it('allows resolving static icons without a resource', () => {
+    it('reads static icons from the groups value', () => {
+      const icon = <span>Directory</span>;
+      const linkIcon = <span>Users</span>;
       const groups = createResourceLinks.withGroups([
         {
-          icon: <span>Directory</span>,
-          links: { users: { label: 'Users' } },
+          icon,
+          links: { users: { label: 'Users', icon: linkIcon } },
         },
       ]);
 
-      expect(groups('users')).toHaveLength(1);
+      const [group] = groups;
+
+      expect(group?.icon).toBe(icon);
+      expect(group?.links[0]?.icon).toBe(linkIcon);
+      expect(group?.links[0]?.resource).toBe('users');
     });
 
     it('defines reusable icon renderers with an overridable icon type', () => {

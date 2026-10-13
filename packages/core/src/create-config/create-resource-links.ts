@@ -1,4 +1,5 @@
 import type { ElementType, ReactNode } from 'react';
+import type { NonEmptyReadonlyArray } from '@jfdevelops/react-layout-validator';
 import {
   createIsValidResourceFn,
   type LayoutResourceKey,
@@ -230,6 +231,12 @@ export type CreatedResourceMap<Map extends object> = Map & {
 export interface CreateResourceMapFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
 > {
+  /**
+   * Creates a resource map for this layout.
+   *
+   * @param map Values keyed by this layout's resources. An unknown resource,
+   * or a key that collides with a map helper, is rejected.
+   */
   <const Map extends CreateResourceMap<Resources, unknown>>(
     map: Map,
   ): CreatedResourceMap<Map>;
@@ -238,9 +245,16 @@ export interface CreateResourceMapFn<
 export interface CreateResourceLinksWithGroupsFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
 > {
-  (groups: readonly []): CreateResourceLinksWithGroupsResult<Resources, never>;
+  /**
+   * Groups resource links into sections.
+   *
+   * @param groups The sections to create. At least one is required. The link
+   * keys in those sections are the resources `findResource` can resolve.
+   */
   <const Resource extends ResourceLinkConfigResource<Resources>>(
-    groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources, Resource>>,
+    groups: NonEmptyReadonlyArray<
+      CreateResourceLinkGroupInput<Resources, Resource>
+    >,
   ): CreateResourceLinksWithGroupsResult<Resources, Resource>;
 }
 
@@ -248,10 +262,33 @@ export type CreateResourceLinksWithGroupsResult<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Resource extends ResourceLinkConfigResource<Resources> = ResourceLinkConfigResource<Resources>,
 > = Array<CreateResourceLinksWithGroups<Resources>> & {
+  /**
+   * Resolves each group's icon and its link icons for the active resource.
+   *
+   * Functional icons receive the resources accessor for `resource`. Read the
+   * groups value directly when you do not need to resolve icons.
+   *
+   * @param resource The active resource key.
+   */
   (
     resource: LayoutResourceKey<Resources>,
   ): Array<ResolvedResourceLinksWithGroups<Resources>>;
+  /**
+   * Creates a resource map for this layout. Same helper as
+   * `createResourceLinks.createResourceMap`.
+   *
+   * @param map Values keyed by this layout's resources. An unknown resource,
+   * or a key that collides with a map helper, is rejected.
+   */
   createResourceMap: CreateResourceMapFn<Resources>;
+  /**
+   * Returns the group whose links include `resource`.
+   *
+   * The result is `undefined` when that resource was not configured in any
+   * group. A resource outside this layout is rejected by the type.
+   *
+   * @param resource The resource whose group should be returned.
+   */
   findResource<
     const RequestedResource extends LayoutResourceKey<Resources> | Resource,
   >(
@@ -505,6 +542,12 @@ function createResourceLinksWithGroups<
     );
   }
 
+  if (groups.length === 0) {
+    throw new LayoutConfigurationError(
+      '[createResourceLinks.withGroups]: "groups" must include at least one group.',
+    );
+  }
+
   const createdGroups = groups.map((group, index) => {
     if (!group) {
       throw new LayoutConfigurationError(
@@ -561,25 +604,14 @@ function createResourceLinksWithGroups<
     };
   }) as Array<CreateResourceLinksWithGroups<Resources>>;
 
-  function resolveGroups(
-    resource?: LayoutResourceKey<Resources>,
-  ) {
-    const hasFunctionalIcon = createdGroups.some(
-      (group) =>
-        typeof group.icon === 'function' ||
-        group.links.some((link) => typeof link.icon === 'function'),
-    );
-
-    if (resource === undefined && hasFunctionalIcon) {
+  function resolveGroups(resource?: LayoutResourceKey<Resources>) {
+    if (resource === undefined) {
       throw new LayoutConfigurationError(
-        '[createResourceLinks.withGroups]: "resource" is required when resolving functional icons.',
+        '[createResourceLinks.withGroups]: "resource" is required.',
       );
     }
 
-    const currentResources = createRenderResourcesAccessor(
-      resources,
-      resource as LayoutResourceKey<Resources>,
-    );
+    const currentResources = createRenderResourcesAccessor(resources, resource);
 
     return createdGroups.map((group) => ({
       ...group,
@@ -681,7 +713,9 @@ export function createResourceLinksFn<
   function withGroups<
     const Resource extends ResourceLinkConfigResource<Resources>,
   >(
-    groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources, Resource>>,
+    groups: NonEmptyReadonlyArray<
+      CreateResourceLinkGroupInput<Resources, Resource>
+    >,
   ) {
     return createResourceLinksWithGroups(_resources, createResourceMap, groups);
   }
