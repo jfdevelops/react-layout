@@ -28,42 +28,45 @@ export type ResourceIconFn<Resource = any> = (resource: Resource) => ReactNode;
 export type ResourceIcon<Resource = any> = ReactNode | ResourceIconFn<Resource>;
 
 declare const resourceIconInputMarker: unique symbol;
+declare const resourceIconComponentInputMarker: unique symbol;
 
 type ResourceIconInputMarker<Value> = {
   readonly [resourceIconInputMarker]: Value;
 };
 
-type ResourceIconComponentInputMarker = ResourceIconInputMarker<'Icon'>;
+type ResourceIconComponentInputMarker<Icon extends ElementType> = {
+  readonly [resourceIconComponentInputMarker]: Icon;
+};
 
-export type ResolveResourceIconInput<Definition, Icon> =
-  Definition extends ResourceIconComponentInputMarker
+export type ResolveResourceIconInput<Definition> =
+  Definition extends ResourceIconComponentInputMarker<infer Icon>
     ? Icon
     : Definition extends ResourceIconInputMarker<infer Value>
       ? Value
       : Definition extends ReadonlyArray<unknown>
-        ? { [Index in keyof Definition]: ResolveResourceIconInput<Definition[Index], Icon> }
+        ? { [Index in keyof Definition]: ResolveResourceIconInput<Definition[Index]> }
         : Definition extends object
-          ? { [Key in keyof Definition]: ResolveResourceIconInput<Definition[Key], Icon> }
+          ? { [Key in keyof Definition]: ResolveResourceIconInput<Definition[Key]> }
           : Definition;
 
 export interface DefineResourceIconInputHelpers<
   Resources extends ReadonlyArray<ResourceDefinition>,
 > {
   resource(): ResourceIconInputMarker<LayoutResourceKey<Resources>>;
-  Icon: ResourceIconComponentInputMarker;
+  icon<Icon extends ElementType = ElementType>(): ResourceIconComponentInputMarker<Icon>;
 }
 
 export interface DefineResourceIconInputResult<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Definition,
 > {
-  render<Icon extends ElementType = ElementType>(
+  render(
     render: (options: {
       resource: LayoutRenderResourcesAccessor<Resources>;
-      input: ResolveResourceIconInput<Definition, Icon>;
+      input: ResolveResourceIconInput<Definition>;
     }) => ReactNode,
   ): (
-    input: ResolveResourceIconInput<Definition, Icon>,
+    input: ResolveResourceIconInput<Definition>,
   ) => ResourceIconFn<LayoutRenderResourcesAccessor<Resources>>;
 }
 
@@ -757,24 +760,27 @@ function createDefineIcon<
       helpers: DefineResourceIconInputHelpers<Resources>,
     ) => Definition,
   ): DefineResourceIconInputResult<Resources, Definition> {
-    const marker = {} as ResourceIconInputMarker<never>;
+    const resourceMarker = {} as ResourceIconInputMarker<never>;
+    const componentMarker = {} as ResourceIconComponentInputMarker<ElementType>;
 
     defineInput({
       resource() {
-        return marker;
+        return resourceMarker;
       },
-      Icon: marker as ResourceIconComponentInputMarker,
+      icon<Icon extends ElementType = ElementType>() {
+        return componentMarker as ResourceIconComponentInputMarker<Icon>;
+      },
     });
 
     return {
-      render<Icon extends ElementType = ElementType>(
+      render(
         render: (options: {
           resource: LayoutRenderResourcesAccessor<Resources>;
-          input: ResolveResourceIconInput<Definition, Icon>;
+          input: ResolveResourceIconInput<Definition>;
         }) => ReactNode,
       ) {
         return function createIcon(
-          input: ResolveResourceIconInput<Definition, Icon>,
+          input: ResolveResourceIconInput<Definition>,
         ) {
           return function renderIcon(
             resource: LayoutRenderResourcesAccessor<Resources>,

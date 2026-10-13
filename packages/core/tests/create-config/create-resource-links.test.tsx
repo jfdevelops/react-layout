@@ -754,8 +754,11 @@ describe('createResourceLinks', () => {
       type IconProps = { fill?: string };
       type Icon = (props: IconProps) => ReactNode;
       const defineActiveIcon = createResourceLinks.defineIcon
-        .input(({ resource, Icon }) => ({ resource: resource(), Icon }))
-        .render<Icon>(({ resource, input }) => {
+        .input(({ resource, icon }) => ({
+          resource: resource(),
+          Icon: icon<Icon>(),
+        }))
+        .render(({ resource, input }) => {
           expectTypeOf(input.resource).toEqualTypeOf<'users' | 'posts'>();
           expectTypeOf(input.Icon).toEqualTypeOf<Icon>();
           expectTypeOf(resource.pick).toBeFunction();

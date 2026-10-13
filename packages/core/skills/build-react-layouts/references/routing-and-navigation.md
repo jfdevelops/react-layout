@@ -95,20 +95,20 @@ const navigation = createResourceLinks.withGroups([
 
 Use `.input(...).render(...)` when the same renderer needs caller-provided
 values. The `.input` callback declares the input shape: `resource()` represents
-a valid resource key and `Icon` represents the component type supplied to
-`.render<IconType>()`. The render callback receives the full resources accessor
-and the inferred input object. The icon component is available as
+a valid resource key and `icon<IconType>()` represents an icon component. The
+render callback receives the full resources accessor and the inferred input
+object. The icon component is available as
 `input.Icon`; it is intentionally not duplicated as a top-level render value.
 
 ```tsx
 import type { LucideIcon } from 'lucide-react';
 
 const defineNavigationIcon = createResourceLinks.defineIcon
-  .input(({ resource, Icon }) => ({
+  .input(({ resource, icon }) => ({
     resource: resource(),
-    Icon,
+    Icon: icon<LucideIcon>(),
   }))
-  .render<LucideIcon>(({ resource, input }) => {
+  .render(({ resource, input }) => {
     const Icon = input.Icon;
 
     return (
