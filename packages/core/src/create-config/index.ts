@@ -39,6 +39,8 @@ export type {
   CreateResourceLinksWithGroups,
   CreateResourceLinksWithGroupsResult,
   DefineResourceIconFn,
+  DefineResourceIconInputHelpers,
+  DefineResourceIconInputResult,
   FindResourceGroupResult,
   InferHashFromResourceLinkHref,
   ResourceAnchorLinkFn,
@@ -46,6 +48,7 @@ export type {
   ResourceIconFn,
   ResourceLinkHref,
   ResolvedResourceLinksWithGroups,
+  ResolveResourceIconInput,
   ValidateResource,
 } from './create-resource-links';
 export {

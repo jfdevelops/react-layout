@@ -47,6 +47,110 @@ does not follow the general pattern.
 Render links using the generated `resource` value instead of reconstructing it
 from labels.
 
+### Define reusable resource icons
+
+The `icon` property accepts either a plain React node or a function. Use a
+plain node when the icon does not depend on the current resource:
+
+```tsx
+const navigation = createResourceLinks.withGroups([
+  {
+    links: {
+      dashboard: {
+        label: 'Dashboard',
+        icon: <DashboardIcon />,
+      },
+    },
+  },
+]);
+```
+
+Use `defineIcon` when multiple link definitions share the same render logic.
+Without custom input, the returned function accepts the icon component
+directly. Its render callback receives the full render-scoped resources
+accessor:
+
+```tsx
+import type { LucideIcon } from 'lucide-react';
+
+const defineDashboardIcon = createResourceLinks.defineIcon<LucideIcon>(
+  ({ resource, Icon }) => (
+    <Icon
+      fill={resource.current === 'dashboard' ? 'currentColor' : 'none'}
+    />
+  ),
+);
+
+const navigation = createResourceLinks.withGroups([
+  {
+    links: {
+      dashboard: {
+        label: 'Dashboard',
+        icon: defineDashboardIcon(DashboardIcon),
+      },
+    },
+  },
+]);
+```
+
+Use `.input(...).render(...)` when the same renderer needs caller-provided
+values. The `.input` callback declares the input shape: `resource()` represents
+a valid resource key and `icon<IconType>()` represents an icon component. The
+render callback receives the full resources accessor and the inferred input
+object. The icon component is available as
+`input.Icon`; it is intentionally not duplicated as a top-level render value.
+
+```tsx
+import type { LucideIcon } from 'lucide-react';
+
+const defineNavigationIcon = createResourceLinks.defineIcon
+  .input(({ resource, icon }) => ({
+    resource: resource(),
+    Icon: icon<LucideIcon>(),
+  }))
+  .render(({ resource, input }) => {
+    const Icon = input.Icon;
+
+    return (
+      <Icon
+        fill={
+          resource.current === input.resource ? 'currentColor' : 'none'
+        }
+      />
+    );
+  });
+
+const navigation = createResourceLinks.withGroups([
+  {
+    links: {
+      dashboard: {
+        label: 'Dashboard',
+        icon: defineNavigationIcon({
+          resource: 'dashboard',
+          Icon: DashboardIcon,
+        }),
+      },
+      appointments: {
+        label: 'Appointments',
+        icon: defineNavigationIcon({
+          resource: 'appointments',
+          Icon: AppointmentsIcon,
+        }),
+      },
+    },
+  },
+]);
+```
+
+Resolve functional icons by calling the grouped collection with the current
+resource key. The collection remains array-like when unresolved, so array
+methods such as `filter` and `map` are still available directly.
+
+```tsx
+const resolvedNavigation = navigation(currentResource);
+const visibleGroups = navigation.filter(Boolean);
+```
+
 ## Create the resource configuration
 
 Create a typed configuration that maps each routeable resource to its normal

@@ -8,15 +8,6 @@ describe('createResourceLinks', () => {
   const { createResourceLinks, resources: layoutResources } =
     testResourceLayoutWithRender;
 
-  function createRenderResources() {
-    return Object.assign(() => layoutResources(), {
-      current: 'users' as const,
-      isResource: layoutResources.isResource,
-      omit: layoutResources.omit,
-      pick: layoutResources.pick,
-    });
-  }
-
   it('allows an arbitrary property name', () => {
     expect(
       createResourceLinks({
@@ -368,13 +359,25 @@ describe('createResourceLinks', () => {
     });
 
     it('creates a resource map from the withGroups result', () => {
-      const groups = createResourceLinks.withGroups([]);
+      const groups = createResourceLinks.withGroups([
+        { links: { users: { label: 'Users' } } },
+      ]);
       const map = groups.createResourceMap({
         users: { to: '/users' },
       });
 
       expect(map).toEqual({ users: { to: '/users' } });
-      expectTypeOf(groups.findResource('users')).toEqualTypeOf<undefined>();
+    });
+
+    it('rejects an empty group list', () => {
+      expect(() =>
+        createResourceLinks.withGroups(
+          // @ts-expect-error Groups must include at least one entry.
+          [],
+        ),
+      ).toThrowError(
+        '[createResourceLinks.withGroups]: "groups" must include at least one group.',
+      );
     });
 
     it('finds the group containing a resource', () => {
@@ -642,13 +645,14 @@ describe('createResourceLinks', () => {
         },
       ]);
 
-      const resources = createRenderResources();
-      const [group] = groups(resources);
-      const resolvedLabels = groups(resources)
+      const [group] = groups('users');
+      const resolvedLabels = groups('users')
         .filter(Boolean)
         .map((resolvedGroup) => resolvedGroup.label);
 
-      expect(receivedResource).toBe(resources);
+      expect(
+        (receivedResource as { current: string }).current,
+      ).toBe('users');
       expect(resolvedLabels).toEqual(['Directory']);
       render(
         <>
@@ -687,7 +691,7 @@ describe('createResourceLinks', () => {
       expect(groups[0]).toBe(replacement);
     });
 
-    it('throws when functional icons are resolved without a resource', () => {
+    it('throws when called without a resource', () => {
       const groups = createResourceLinks.withGroups([
         {
           icon: (resource) => <span>{resource.current}</span>,
@@ -695,20 +699,28 @@ describe('createResourceLinks', () => {
         },
       ]);
 
-      expect(() => groups()).toThrowError(
-        '[createResourceLinks.withGroups]: "resource" is required when resolving functional icons.',
+      expect(() => (groups as unknown as () => unknown)()).toThrowError(
+        '[createResourceLinks.withGroups]: "resource" is required.',
       );
+      expectTypeOf(groups).parameter(0).toEqualTypeOf<'users' | 'posts'>();
+      expectTypeOf(groups).toBeCallableWith('users');
     });
 
-    it('allows resolving static icons without a resource', () => {
+    it('reads static icons from the groups value', () => {
+      const icon = <span>Directory</span>;
+      const linkIcon = <span>Users</span>;
       const groups = createResourceLinks.withGroups([
         {
-          icon: <span>Directory</span>,
-          links: { users: { label: 'Users' } },
+          icon,
+          links: { users: { label: 'Users', icon: linkIcon } },
         },
       ]);
 
-      expect(groups()).toHaveLength(1);
+      const [group] = groups;
+
+      expect(group?.icon).toBe(icon);
+      expect(group?.links[0]?.icon).toBe(linkIcon);
+      expect(group?.links[0]?.resource).toBe('users');
     });
 
     it('defines reusable icon renderers with an overridable icon type', () => {
@@ -729,10 +741,51 @@ describe('createResourceLinks', () => {
         },
       ]);
 
-      const [group] = groups(createRenderResources());
+      const [group] = groups('users');
       render(group.icon);
 
       expect(screen.getByTestId('defined-icon')).toHaveAttribute(
+        'data-fill',
+        'currentColor',
+      );
+    });
+
+    it('defines typed inputs for reusable icon renderers', () => {
+      type IconProps = { fill?: string };
+      type Icon = (props: IconProps) => ReactNode;
+      const defineActiveIcon = createResourceLinks.defineIcon
+        .input(({ resource, icon }) => ({
+          resource: resource(),
+          Icon: icon<Icon>(),
+        }))
+        .render(({ resource, input }) => {
+          expectTypeOf(input.resource).toEqualTypeOf<'users' | 'posts'>();
+          expectTypeOf(input.Icon).toEqualTypeOf<Icon>();
+          expectTypeOf(resource.pick).toBeFunction();
+          const Icon = input.Icon;
+
+          return (
+            <Icon
+              fill={
+                resource.current === input.resource ? 'currentColor' : 'none'
+              }
+            />
+          );
+        });
+      function TestIcon({ fill }: IconProps) {
+        return <span data-testid='defined-input-icon' data-fill={fill} />;
+      }
+      const groups = createResourceLinks.withGroups([
+        {
+          icon: defineActiveIcon({ resource: 'users', Icon: TestIcon }),
+          links: { users: { label: 'Users' } },
+        },
+      ]);
+
+      const [group] = groups('users');
+      render(group.icon);
+
+      expect(screen.getByTestId('defined-input-icon')).toHaveAttribute(
         'data-fill',
         'currentColor',
       );
