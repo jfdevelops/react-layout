@@ -320,7 +320,7 @@ export type CreateResourceLinksWithGroupsResult<
    */
   (
     resource: LayoutResourceKey<Resources>,
-  ): Array<ResolvedResourceLinksWithGroups<Resources>>;
+  ): ResolvedResourceLinksWithGroupsResult<Resources, Resource>;
   /**
    * Creates a resource map for this layout. Same helper as
    * `createResourceLinks.createResourceMap`.
@@ -344,6 +344,18 @@ export type CreateResourceLinksWithGroupsResult<
   ): FindResourceGroupResult<Resources, Resource, RequestedResource>;
 };
 
+export type ResolvedResourceLinksWithGroupsResult<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Resource extends ResourceLinkConfigResource<Resources> = ResourceLinkConfigResource<Resources>,
+> = Array<ResolvedResourceLinksWithGroups<Resources>> & {
+  /** Returns the resolved group whose links include `resource`. */
+  findResource<
+    const RequestedResource extends LayoutResourceKey<Resources> | Resource,
+  >(
+    resource: RequestedResource,
+  ): FindResolvedResourceGroupResult<Resources, Resource, RequestedResource>;
+};
+
 export type FindResourceGroupResult<
   Resources extends ReadonlyArray<ResourceDefinition>,
   IncludedResource extends string,
@@ -351,6 +363,16 @@ export type FindResourceGroupResult<
 > = RequestedResource extends unknown
   ? RequestedResource extends IncludedResource
     ? CreateResourceLinksWithGroups<Resources>
+    : undefined
+  : never;
+
+export type FindResolvedResourceGroupResult<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  IncludedResource extends string,
+  RequestedResource extends string,
+> = RequestedResource extends unknown
+  ? RequestedResource extends IncludedResource
+    ? ResolvedResourceLinksWithGroups<Resources>
     : undefined
   : never;
 
@@ -661,7 +683,7 @@ function createResourceLinksWithGroups<
 
     const currentResources = createRenderResourcesAccessor(resources, resource);
 
-    return createdGroups.map((group) => ({
+    const resolvedGroups = createdGroups.map((group) => ({
       ...group,
       icon:
         typeof group.icon === 'function'
@@ -675,6 +697,19 @@ function createResourceLinksWithGroups<
             : link.icon,
       })),
     }));
+
+    Object.defineProperty(resolvedGroups, 'findResource', {
+      value(requestedResource: ResourceLinkConfigResource<Resources>) {
+        return resolvedGroups.find((group) =>
+          group.links.some((link) => link.resource === requestedResource),
+        );
+      },
+    });
+
+    return resolvedGroups as ResolvedResourceLinksWithGroupsResult<
+      Resources,
+      Resource
+    >;
   }
 
   const callableGroups = new Proxy(resolveGroups, {

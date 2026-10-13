@@ -412,6 +412,30 @@ describe('createResourceLinks', () => {
       groups.findResource('missing');
     });
 
+    it('finds a resource after resolving functional icons', () => {
+      const groups = createResourceLinks.withGroups([
+        {
+          label: 'Directory',
+          icon: (resource) => <span>{resource.current}</span>,
+          links: { users: { label: 'Users' } },
+        },
+      ]);
+
+      const resolvedGroups = groups('users');
+
+      expect(resolvedGroups.findResource('users')).toBe(resolvedGroups[0]);
+      expectTypeOf(resolvedGroups.findResource('users')).toEqualTypeOf<
+        (typeof resolvedGroups)[number]
+      >();
+      expect(resolvedGroups.findResource('posts')).toBeUndefined();
+      expectTypeOf(
+        resolvedGroups.findResource('posts'),
+      ).toEqualTypeOf<undefined>();
+
+      // @ts-expect-error Unknown resources are rejected.
+      resolvedGroups.findResource('missing');
+    });
+
     it('defaults group label to null when not provided', () => {
 
       const [group] = createResourceLinks.withGroups([
