@@ -148,6 +148,7 @@ methods such as `filter` and `map` are still available directly.
 
 ```tsx
 const resolvedNavigation = navigation(currentResource);
+const currentGroup = resolvedNavigation.findResource(currentResource);
 const visibleGroups = navigation.filter(Boolean);
 ```
 
