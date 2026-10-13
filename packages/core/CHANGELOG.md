@@ -1,5 +1,11 @@
 # @jfdevelops/react-layout
 
+## 0.24.3
+
+### Patch Changes
+
+- ae636fa: Preserve inferred resource-link icon types when iterating direct links, grouped links, and resolved grouped links.
+
 ## 0.24.2
 
 ### Patch Changes
