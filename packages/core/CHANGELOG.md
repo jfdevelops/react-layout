@@ -1,5 +1,11 @@
 # @jfdevelops/react-layout
 
+## 1.0.0
+
+### Major Changes
+
+- e0b418b: Replace the chained `createDefinedResourceLayout` builder with a single configuration object, flatten its bound layout definitions, normalize the public resources accessor, and add spreadable `createResourceConfig.forResource` fragments.
+
 ## 0.25.0
 
 ### Minor Changes
