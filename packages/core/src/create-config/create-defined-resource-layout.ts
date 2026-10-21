@@ -1,6 +1,10 @@
 import type { ComposableComponents } from '@jfdevelops/react-layout-composables';
 import { LayoutConfigurationError } from '../errors';
 import type { InPropsDefinition, InPropsObject } from '../props';
+import type {
+  IncludedComponentPropDefinitions,
+  MergedLayoutInProps,
+} from '../props';
 import type { ResourceDefinition } from '../resource';
 import {
   type CreateViewMapOptions,
@@ -159,9 +163,24 @@ export type BoundDefineResourceLayout<
   ): DefinedResourceLayout<
     Resources,
     Options,
-    Composables,
-    IncludeProps,
-    CustomProps,
+    Composables &
+      DefaultComposables &
+      LoadingComposables &
+      ErrorComposables &
+      NotFoundComposables,
+    DefaultIncludeProps &
+      LoadingIncludeProps &
+      ErrorIncludeProps &
+      NotFoundIncludeProps,
+    DefaultCustomProps &
+      IncludedComponentPropDefinitions<
+        MergedLayoutInProps<
+          Resources,
+          Options,
+          Composables & DefaultComposables
+        >,
+        DefaultIncludeProps
+      >,
     RenderStates
   >;
   lazy<Module extends Record<string, unknown>>(

@@ -1,5 +1,6 @@
 import {
   Component,
+  type ComponentProps,
   type ComponentType,
   type JSX,
   lazy,
@@ -11,6 +12,7 @@ import {
   LayoutConfigurationError,
   ResourceModuleLoadError,
 } from '../errors';
+import { componentPropDefinitionsSymbol } from '@jfdevelops/react-layout-validator';
 import type { ResourcePath, ResourceDefinition } from '../resource';
 import { definedResourceLayoutComponentSymbol } from './render-state';
 
@@ -23,8 +25,25 @@ type DefinedLayoutFromModule<Module> = Extract<
   DefinedLayoutComponent
 >;
 
-/** The created component selected from a lazy module's named exports. */
-export type LazyResourceLayoutComponent<Module> = DefinedLayoutFromModule<Module>;
+type LazyUnsupportedStatic =
+  | 'makeComposable'
+  | 'props'
+  | 'resource'
+  | typeof componentPropDefinitionsSymbol
+  | typeof definedResourceLayoutComponentSymbol;
+
+/**
+ * Public surface available before a lazy module resolves. Component metadata
+ * and composition factories are intentionally omitted because they cannot be
+ * read synchronously without loading the module.
+ */
+export type LazyResourceLayoutComponent<Module> = ComponentType<
+  ComponentProps<DefinedLayoutFromModule<Module>>
+> &
+  Pick<
+    DefinedLayoutFromModule<Module>,
+    Exclude<keyof DefinedLayoutFromModule<Module>, LazyUnsupportedStatic>
+  >;
 
 /** Component rendered while a resource module or one of its states is loading. */
 export type LazyResourceLoadingComponent = ComponentType;
@@ -205,11 +224,22 @@ export function createLazyResourceLayout<
   }
 
   const Component = createMemberComponent();
+  const unsupportedStatics = new Set<PropertyKey>([
+    'makeComposable',
+    'props',
+    'resource',
+    componentPropDefinitionsSymbol,
+    definedResourceLayoutComponentSymbol,
+  ]);
 
   return new Proxy(Component, {
     get(target, property, receiver) {
       if (Reflect.has(target, property)) {
         return Reflect.get(target, property, receiver);
+      }
+
+      if (typeof property !== 'string' || unsupportedStatics.has(property)) {
+        return undefined;
       }
 
       const existing = stateComponents.get(property);
@@ -223,5 +253,5 @@ export function createLazyResourceLayout<
 
       return stateComponent;
     },
-  }) as LazyResourceLayoutComponent<Module>;
+  }) as unknown as LazyResourceLayoutComponent<Module>;
 }

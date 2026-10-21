@@ -89,6 +89,67 @@ it('infers included option props independently for built-in inline states', () =
   Users.Error;
 });
 
+it('uses default-state props for the root component contract', () => {
+  const definition = defineResourceLayout({
+    resources: ['users'],
+    options: {
+      title: createProp.string(),
+    },
+    layout: {
+      render: {
+        default: {
+          props: {
+            include: {
+              title: {
+                visibility: 'required',
+                passthrough: 'component',
+              },
+            },
+            custom: {
+              label: createProp.string(),
+            },
+          },
+          render: ({ label, title }) => <h1>{`${title}: ${label}`}</h1>,
+        },
+      },
+    },
+  });
+  const Users = definition.createResourceLayout({
+    resource: 'users',
+    name: 'Users',
+  });
+
+  expectTypeOf(Users).toBeCallableWith({ label: 'List', title: 'Users' });
+
+  () => {
+    // @ts-expect-error default-state custom props remain required on the root.
+    <Users title='Users' />;
+    // @ts-expect-error included component props remain required on the root.
+    <Users label='List' />;
+  };
+});
+
+it('preserves render-state members through withLayout', () => {
+  const definition = defineResourceLayout.withLayout({
+    resources: ['users'],
+    shell: {
+      render: (_props, { children }) => <main>{children}</main>,
+    },
+    layout: {
+      render: {
+        default: () => <p>Users</p>,
+        Loading: () => <p>Loading users</p>,
+      },
+    },
+  });
+  const Users = definition.createResourceLayout({
+    resource: 'users',
+    name: 'Users',
+  });
+
+  expectTypeOf(Users.Loading).toBeFunction();
+});
+
 it('infers included option props through a bound layout builder', () => {
   const { defineResourceLayout: defineBoundLayout } =
     createDefinedResourceLayout('users').defineOptions({
@@ -238,6 +299,30 @@ it('types dot-delimited nested lazy resource paths', () => {
       resource: 'admin.posts',
       load: async () => ({ Example: (() => null) as never }),
     });
+  };
+});
+
+it('does not expose synchronous metadata on lazy resource proxies', () => {
+  const loadedDefinition = defineResourceLayout({
+    resources: ['users'],
+    layout: { render: () => <p>Users</p> },
+  });
+  const LoadedUsers = loadedDefinition.createResourceLayout({
+    resource: 'users',
+    name: 'LoadedUsers',
+  });
+  const { defineResourceLayout: defineBoundLayout } =
+    createDefinedResourceLayout('users');
+  const Users = defineBoundLayout.lazy({
+    resource: 'users',
+    load: async () => ({ LoadedUsers }),
+  });
+
+  () => {
+    // @ts-expect-error lazy proxies cannot synchronously expose resource metadata.
+    Users.resource;
+    // @ts-expect-error lazy proxies cannot lift validators before loading.
+    createProp.fromComponent(Users);
   };
 });
 

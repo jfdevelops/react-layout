@@ -80,6 +80,32 @@ describe('resource layout render states', () => {
     expect(screen.getByText('Missing')).toBeInTheDocument();
   });
 
+  it('validates custom props declared by the object-form default state', () => {
+    const definition = defineResourceLayout({
+      resources: ['users'],
+      layout: {
+        render: {
+          default: {
+            props: {
+              custom: {
+                label: createProp.string(),
+              },
+            },
+            render: ({ label }) => <p>{label}</p>,
+          },
+        },
+      },
+    });
+    const Users = definition.createResourceLayout({
+      resource: 'users',
+      name: 'Users',
+    });
+
+    render(<Users label='Default state label' />);
+
+    expect(screen.getByText('Default state label')).toBeInTheDocument();
+  });
+
   it('creates reusable and deferred state fragments', async () => {
     const { createRenderState, defineResourceLayout: defineBoundLayout } =
       createDefinedResourceLayout('users');
@@ -100,6 +126,45 @@ describe('resource layout render states', () => {
     render(<Users.Loading />);
 
     expect(await screen.findByText('Deferred loading')).toBeInTheDocument();
+  });
+
+  it('renders deferred and lazy created states as the default component', async () => {
+    const { createRenderState, defineResourceLayout: defineBoundLayout } =
+      createDefinedResourceLayout('users');
+    const deferredDefinition = defineBoundLayout({
+      layout: {
+        render: {
+          ...createRenderState.defer(() => <p>Deferred default</p>),
+        },
+      },
+    });
+    const DeferredUsers = deferredDefinition.createResourceLayout({
+      resource: 'users',
+      name: 'DeferredUsers',
+    });
+    const lazyDefault = createRenderState(() => <p>Lazy default</p>);
+    const lazyDefinition = defineBoundLayout({
+      layout: {
+        render: {
+          default: createRenderState.lazy(async () => ({ lazyDefault })),
+          Loading: () => <p>Loading default</p>,
+        },
+      },
+    });
+    const LazyUsers = lazyDefinition.createResourceLayout({
+      resource: 'users',
+      name: 'LazyUsers',
+    });
+
+    render(
+      <>
+        <DeferredUsers />
+        <LazyUsers />
+      </>,
+    );
+
+    expect(await screen.findByText('Deferred default')).toBeInTheDocument();
+    expect(await screen.findByText('Lazy default')).toBeInTheDocument();
   });
 
   it('lifts runtime prop definitions from created components', () => {
@@ -372,6 +437,10 @@ describe('resource layout render states', () => {
         return { LoadedUsers };
       },
     });
+
+    const lazyStatics = Users as unknown as Record<PropertyKey, unknown>;
+    expect(lazyStatics.resource).toBeUndefined();
+    expect(lazyStatics.props).toBeUndefined();
 
     render(
       <>
