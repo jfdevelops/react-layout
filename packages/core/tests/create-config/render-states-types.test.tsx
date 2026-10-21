@@ -3,6 +3,7 @@ import {
   createDefinedResourceLayout,
   createComposableComponent,
   createProp,
+  defineComposableComponent,
   defineResourceLayout,
 } from '../../src';
 
@@ -179,6 +180,11 @@ it('infers included option props through a bound layout factory', () => {
 });
 
 it('carries defined options and typed composables through the factory', () => {
+  const createSharedMessage = defineComposableComponent({
+    name: 'SharedMessage',
+    props: { message: createProp.string() },
+  });
+  const SharedMessage = createSharedMessage(() => <></>);
   const {
     createRenderState,
     defineResourceLayout: defineBoundLayout,
@@ -186,6 +192,7 @@ it('carries defined options and typed composables through the factory', () => {
     resources: ['users'],
     options: { title: createProp.string() },
     composables: (create) => ({
+      ...SharedMessage,
       Layout: create({
         name: ({ resource }) => {
           expectTypeOf(resource).toEqualTypeOf<'users'>();
@@ -201,12 +208,19 @@ it('carries defined options and typed composables through the factory', () => {
       LoadingMessage: createComposableComponent({ name: 'LoadingMessage' }),
     }),
     props: {
-      include: { title: true },
+      include: { message: true, title: true },
     },
-    render: ({ title }, { composables: stateComposables }) => {
+    render: ({ message, title }, { composables: stateComposables }) => {
+      expectTypeOf(message).toEqualTypeOf<string>();
       expectTypeOf(title).toEqualTypeOf<string>();
+      expectTypeOf(stateComposables.Layout).toBeFunction();
+      expectTypeOf(stateComposables.SharedMessage).toBeFunction();
       expectTypeOf(stateComposables.LoadingFrame).toBeFunction();
-      return <stateComposables.LoadingMessage>{title}</stateComposables.LoadingMessage>;
+      return (
+        <stateComposables.LoadingMessage>
+          {message}: {title}
+        </stateComposables.LoadingMessage>
+      );
     },
   });
   const { createResourceLayout } = defineBoundLayout({
@@ -218,6 +232,7 @@ it('carries defined options and typed composables through the factory', () => {
   const Users = createResourceLayout({
     resource: 'users',
     name: 'Users',
+    message: 'Still working',
     title: 'Loading users',
   });
 

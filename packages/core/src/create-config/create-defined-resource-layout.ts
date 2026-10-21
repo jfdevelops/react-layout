@@ -220,7 +220,7 @@ export type CreateDefinedResourceLayoutResult<
   Composables extends ComposableComponents,
 > = {
   /** Creates eager, deferred, or separately imported render-state fragments. */
-  createRenderState: CreateRenderState<Resources, Options>;
+  createRenderState: CreateRenderState<Resources, Options, Composables>;
   /** Sets the shared loading and module-error UI used by lazy layouts. */
   defineLazyDefaults: DefineLazyDefaults;
   /** Defines a layout using the resources, options, and composables already bound. */
@@ -313,7 +313,11 @@ export function createDefinedResourceLayout<
   };
 
   return {
-    createRenderState: createRenderStateBuilder({ options, resources }),
+    createRenderState: createRenderStateBuilder({
+      composables,
+      options,
+      resources,
+    }),
     defineLazyDefaults,
     defineResourceLayout: boundDefineResourceLayout,
     resources: createLayoutResourcesAccessor(resources),
