@@ -385,7 +385,11 @@ describe('defineResourceLayout.withLayout', () => {
     expect(typeof defined.createResourceConfig).toBe('function');
     expect(typeof defined.createResourceLinks).toBe('function');
     expect(typeof defined.createResourceLayout).toBe('function');
-    expect(defined.resources()).toEqual(['users', 'posts']);
+    expect(defined.resources()).toEqual([
+      { value: 'users' },
+      { value: 'posts' },
+    ]);
+    expect(defined.resources.raw()).toEqual(['users', 'posts']);
   });
 });
 

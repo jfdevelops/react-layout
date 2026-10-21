@@ -10,10 +10,35 @@ import {
 describe('resource layout render states', () => {
   afterEach(cleanup);
 
-  it('reuses options defined by the chained builder in render states', () => {
+  it('uses the same normalized resources accessor as global definitions', () => {
+    const { resources } = createDefinedResourceLayout({
+      resources: [
+        'users',
+        { value: 'posts', subResources: ['comments'] },
+      ],
+    });
+
+    expect(resources()).toEqual([
+      { value: 'users' },
+      {
+        value: 'posts',
+        subResources: [{ value: 'comments' }],
+      },
+    ]);
+    expect(resources.raw()).toEqual([
+      'users',
+      { value: 'posts', subResources: ['comments'] },
+    ]);
+    expect(resources.pick('posts')()).toEqual([
+      { value: 'posts', subResources: ['comments'] },
+    ]);
+  });
+
+  it('reuses factory options in render states', () => {
     const { createRenderState, defineResourceLayout: defineBoundLayout } =
-      createDefinedResourceLayout('users').defineOptions({
-        message: createProp.string(),
+      createDefinedResourceLayout({
+        resources: ['users'],
+        options: { message: createProp.string() },
       });
     const Loading = createRenderState({
       state: 'Loading',
@@ -21,11 +46,9 @@ describe('resource layout render states', () => {
       render: ({ message }) => <p>{message}</p>,
     });
     const { createResourceLayout } = defineBoundLayout({
-      layout: {
-        render: {
-          default: () => <></>,
-          ...Loading,
-        },
+      render: {
+        default: () => <></>,
+        ...Loading,
       },
     });
     const Users = createResourceLayout({
@@ -108,17 +131,15 @@ describe('resource layout render states', () => {
 
   it('creates reusable and deferred state fragments', async () => {
     const { createRenderState, defineResourceLayout: defineBoundLayout } =
-      createDefinedResourceLayout('users');
+      createDefinedResourceLayout({ resources: ['users'] });
     const Loading = createRenderState.defer({
       state: 'Loading',
       render: () => <p>Deferred loading</p>,
     });
     const { createResourceLayout } = defineBoundLayout({
-      layout: {
-        render: {
-          default: () => <h1>Users</h1>,
-          ...Loading,
-        },
+      render: {
+        default: () => <h1>Users</h1>,
+        ...Loading,
       },
     });
     const Users = createResourceLayout({ resource: 'users', name: 'Users' });
@@ -130,12 +151,10 @@ describe('resource layout render states', () => {
 
   it('renders deferred and lazy created states as the default component', async () => {
     const { createRenderState, defineResourceLayout: defineBoundLayout } =
-      createDefinedResourceLayout('users');
+      createDefinedResourceLayout({ resources: ['users'] });
     const deferredDefinition = defineBoundLayout({
-      layout: {
-        render: {
-          ...createRenderState.defer(() => <p>Deferred default</p>),
-        },
+      render: {
+        ...createRenderState.defer(() => <p>Deferred default</p>),
       },
     });
     const DeferredUsers = deferredDefinition.createResourceLayout({
@@ -144,11 +163,9 @@ describe('resource layout render states', () => {
     });
     const lazyDefault = createRenderState(() => <p>Lazy default</p>);
     const lazyDefinition = defineBoundLayout({
-      layout: {
-        render: {
-          default: createRenderState.lazy(async () => ({ lazyDefault })),
-          Loading: () => <p>Loading default</p>,
-        },
+      render: {
+        default: createRenderState.lazy(async () => ({ lazyDefault })),
+        Loading: () => <p>Loading default</p>,
       },
     });
     const LazyUsers = lazyDefinition.createResourceLayout({
@@ -217,7 +234,7 @@ describe('resource layout render states', () => {
       name: 'Source',
     });
     const { createRenderState, defineResourceLayout: defineTargetLayout } =
-      createDefinedResourceLayout('users');
+      createDefinedResourceLayout({ resources: ['users'] });
     const Preview = createRenderState({
       state: 'Preview',
       composables: () => ({
@@ -231,11 +248,9 @@ describe('resource layout render states', () => {
       ),
     });
     const targetDefinition = defineTargetLayout({
-      layout: {
-        render: {
-          default: () => <p>Target</p>,
-          ...Preview,
-        },
+      render: {
+        default: () => <p>Target</p>,
+        ...Preview,
       },
     });
     const Target = targetDefinition.createResourceLayout({
@@ -269,7 +284,7 @@ describe('resource layout render states', () => {
 
   it('loads a separately chunked render state from its named module export', async () => {
     const { createRenderState, defineResourceLayout: defineBoundLayout } =
-      createDefinedResourceLayout('users');
+      createDefinedResourceLayout({ resources: ['users'] });
     const auditState = createRenderState({
       state: 'Audit',
       props: {
@@ -280,13 +295,11 @@ describe('resource layout render states', () => {
       render: ({ label }) => <p>{label}</p>,
     });
     const { createResourceLayout } = defineBoundLayout({
-      layout: {
-        render: {
-          default: () => <h1>Users</h1>,
-          Audit: createRenderState.lazy(async () => ({
-            auditState,
-          })),
-        },
+      render: {
+        default: () => <h1>Users</h1>,
+        Audit: createRenderState.lazy(async () => ({
+          auditState,
+        })),
       },
     });
     const Users = createResourceLayout({ resource: 'users', name: 'Users' });
@@ -298,7 +311,7 @@ describe('resource layout render states', () => {
 
   it('uses configured Loading while an imported state is suspended', async () => {
     const { createRenderState, defineResourceLayout: defineBoundLayout } =
-      createDefinedResourceLayout('users');
+      createDefinedResourceLayout({ resources: ['users'] });
     const auditState = createRenderState({
       state: 'Audit',
       render: () => <p>Audit loaded</p>,
@@ -310,12 +323,10 @@ describe('resource layout render states', () => {
       },
     );
     const { createResourceLayout } = defineBoundLayout({
-      layout: {
-        render: {
-          default: () => <h1>Users</h1>,
-          Loading: () => <p>Loading audit</p>,
-          Audit: createRenderState.lazy(() => stateModule),
-        },
+      render: {
+        default: () => <h1>Users</h1>,
+        Loading: () => <p>Loading audit</p>,
+        Audit: createRenderState.lazy(() => stateModule),
       },
     });
     const Users = createResourceLayout({ resource: 'users', name: 'Users' });
@@ -329,7 +340,7 @@ describe('resource layout render states', () => {
 
   it('exposes retry in an automatic Error state context', async () => {
     const { createRenderState, defineResourceLayout: defineBoundLayout } =
-      createDefinedResourceLayout('users');
+      createDefinedResourceLayout({ resources: ['users'] });
     const ErrorState = createRenderState({
       state: 'Error',
       props: {
@@ -349,20 +360,18 @@ describe('resource layout render states', () => {
     });
     let loadCount = 0;
     const { createResourceLayout } = defineBoundLayout({
-      layout: {
-        render: {
-          default: () => <h1>Users</h1>,
-          ...ErrorState,
-          Audit: createRenderState.lazy(async () => {
-            loadCount += 1;
+      render: {
+        default: () => <h1>Users</h1>,
+        ...ErrorState,
+        Audit: createRenderState.lazy(async () => {
+          loadCount += 1;
 
-            if (loadCount === 1) {
-              throw new Error('audit download failed');
-            }
+          if (loadCount === 1) {
+            throw new Error('audit download failed');
+          }
 
-            return { auditState };
-          }),
-        },
+          return { auditState };
+        }),
       },
     });
     const Users = createResourceLayout({ resource: 'users', name: 'Users' });
@@ -425,7 +434,7 @@ describe('resource layout render states', () => {
       resource: 'users',
       name: 'LoadedUsers',
     });
-    const suite = createDefinedResourceLayout('users');
+    const suite = createDefinedResourceLayout({ resources: ['users'] });
     suite.defineLazyDefaults({
       Loading: () => <p>Loading resource code</p>,
     });
@@ -463,7 +472,7 @@ describe('resource layout render states', () => {
       resource: 'users',
       name: 'LoadedUsers',
     });
-    const suite = createDefinedResourceLayout('users');
+    const suite = createDefinedResourceLayout({ resources: ['users'] });
     suite.defineLazyDefaults({
       Error: ({ retry }) => (
         <button type='button' onClick={retry}>

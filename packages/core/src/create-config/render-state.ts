@@ -109,12 +109,17 @@ type TypedRenderStateDefinition<
   Options extends InPropsDefinition<Resources>,
   State extends string,
   CustomProps extends InPropsObject,
-  Composables extends ComposableComponents,
+  SharedComposables extends ComposableComponents,
+  StateComposables extends ComposableComponents,
   IncludeProps extends IncludedProps<
-    MergedLayoutInProps<Resources, Options, Composables>
+    MergedLayoutInProps<
+      Resources,
+      Options,
+      SharedComposables & StateComposables
+    >
   >,
 > = {
-  composables?: RenderStateComposablesDefinition<Resources, Composables>;
+  composables?: RenderStateComposablesDefinition<Resources, StateComposables>;
   props?: {
     include?: IncludeProps;
     custom?: CustomProps;
@@ -123,11 +128,11 @@ type TypedRenderStateDefinition<
     props: RenderStateProps<
       Resources,
       Options,
-      Composables,
+      SharedComposables & StateComposables,
       IncludeProps,
       CustomProps
     >,
-    context: RenderStateContext<Composables>,
+    context: RenderStateContext<SharedComposables & StateComposables>,
   ) => JSX.Element;
   state: State;
 };
@@ -176,13 +181,18 @@ type DefinedRenderStateFromModule<Module> = Extract<
 export type CreateRenderState<
   Resources extends ReadonlyArray<ResourceDefinition> = ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources> = {},
+  SharedComposables extends ComposableComponents = {},
 > = {
   <
     const State extends string = 'default',
     const CustomProps extends InPropsObject = {},
-    const Composables extends ComposableComponents = {},
+    const StateComposables extends ComposableComponents = {},
     const IncludeProps extends IncludedProps<
-      MergedLayoutInProps<Resources, Options, Composables>
+      MergedLayoutInProps<
+        Resources,
+        Options,
+        SharedComposables & StateComposables
+      >
     > = {},
   >(
     definition: TypedRenderStateDefinition<
@@ -190,7 +200,8 @@ export type CreateRenderState<
       Options,
       State,
       CustomProps,
-      Composables,
+      SharedComposables,
+      StateComposables,
       IncludeProps
     >,
   ): RenderStateFragment<
@@ -199,15 +210,20 @@ export type CreateRenderState<
       Options,
       State,
       CustomProps,
-      Composables,
+      SharedComposables,
+      StateComposables,
       IncludeProps
     >
   >;
   <
     const CustomProps extends InPropsObject = {},
-    const Composables extends ComposableComponents = {},
+    const StateComposables extends ComposableComponents = {},
     const IncludeProps extends IncludedProps<
-      MergedLayoutInProps<Resources, Options, Composables>
+      MergedLayoutInProps<
+        Resources,
+        Options,
+        SharedComposables & StateComposables
+      >
     > = {},
   >(
     definition: Omit<
@@ -216,7 +232,8 @@ export type CreateRenderState<
         Options,
         'default',
         CustomProps,
-        Composables,
+        SharedComposables,
+        StateComposables,
         IncludeProps
       >,
       'state'
@@ -227,7 +244,8 @@ export type CreateRenderState<
       Options,
       'default',
       CustomProps,
-      Composables,
+      SharedComposables,
+      StateComposables,
       IncludeProps
     >
   >;
@@ -237,9 +255,13 @@ export type CreateRenderState<
   defer<
     const State extends string = 'default',
     const CustomProps extends InPropsObject = {},
-    const Composables extends ComposableComponents = {},
+    const StateComposables extends ComposableComponents = {},
     const IncludeProps extends IncludedProps<
-      MergedLayoutInProps<Resources, Options, Composables>
+      MergedLayoutInProps<
+        Resources,
+        Options,
+        SharedComposables & StateComposables
+      >
     > = {},
   >(
     definition: TypedRenderStateDefinition<
@@ -247,7 +269,8 @@ export type CreateRenderState<
       Options,
       State,
       CustomProps,
-      Composables,
+      SharedComposables,
+      StateComposables,
       IncludeProps
     >,
   ): RenderStateFragment<
@@ -257,16 +280,21 @@ export type CreateRenderState<
         Options,
         State,
         CustomProps,
-        Composables,
+        SharedComposables,
+        StateComposables,
         IncludeProps
       >
     >
   >;
   defer<
     const CustomProps extends InPropsObject = {},
-    const Composables extends ComposableComponents = {},
+    const StateComposables extends ComposableComponents = {},
     const IncludeProps extends IncludedProps<
-      MergedLayoutInProps<Resources, Options, Composables>
+      MergedLayoutInProps<
+        Resources,
+        Options,
+        SharedComposables & StateComposables
+      >
     > = {},
   >(
     definition: Omit<
@@ -275,7 +303,8 @@ export type CreateRenderState<
         Options,
         'default',
         CustomProps,
-        Composables,
+        SharedComposables,
+        StateComposables,
         IncludeProps
       >,
       'state'
@@ -287,7 +316,8 @@ export type CreateRenderState<
         Options,
         'default',
         CustomProps,
-        Composables,
+        SharedComposables,
+        StateComposables,
         IncludeProps
       >
     >
@@ -327,8 +357,13 @@ function toFragment<Definition extends AnyRenderStateDefinition>(
 export type CreateRenderStateBuilderArguments<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
+  SharedComposables extends ComposableComponents = {},
 > = {
+  /** Shared composables whose components and preset props every state can use. */
+  composables?: LayoutComposablesDefinition<Resources, SharedComposables>;
+  /** Option props that individual states can expose through `props.include`. */
   options: Options;
+  /** Resources used to constrain composable names and resource-specific props. */
   resources: Resources;
 };
 
@@ -336,7 +371,8 @@ export type CreateRenderStateBuilderArguments<
 export type CreateRenderStateBuilderResult<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
-> = CreateRenderState<Resources, Options>;
+  SharedComposables extends ComposableComponents = {},
+> = CreateRenderState<Resources, Options, SharedComposables>;
 
 /**
  * Creates a state factory whose `props.include` keys are constrained by the
@@ -345,9 +381,14 @@ export type CreateRenderStateBuilderResult<
 export function createRenderStateBuilder<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
+  SharedComposables extends ComposableComponents = {},
 >(
-  _arguments: CreateRenderStateBuilderArguments<Resources, Options>,
-): CreateRenderStateBuilderResult<Resources, Options> {
+  _arguments: CreateRenderStateBuilderArguments<
+    Resources,
+    Options,
+    SharedComposables
+  >,
+): CreateRenderStateBuilderResult<Resources, Options, SharedComposables> {
   function createRenderState(
     input: AnyRenderStateDefinition | RenderStateCallback,
   ) {
@@ -371,7 +412,11 @@ export function createRenderStateBuilder<
     [lazyRenderStateSymbol]: load,
   });
 
-  return createRenderState as CreateRenderStateBuilderResult<Resources, Options>;
+  return createRenderState as CreateRenderStateBuilderResult<
+    Resources,
+    Options,
+    SharedComposables
+  >;
 }
 
 /** Type guard for states created with `createRenderState.defer(...)`. */

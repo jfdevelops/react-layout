@@ -27,11 +27,10 @@ export type {
 } from './render-state';
 export type {
   BoundDefineResourceLayout,
+  CreateDefinedResourceLayoutOptions,
   CreateDefinedResourceLayoutResult,
-  DefinedResourceLayoutBuilder,
   DefinedResourceLayoutInput,
   DefineLazyDefaults,
-  DefineOptions,
   NonEmptyResources,
 } from './create-defined-resource-layout';
 export type {
@@ -106,6 +105,7 @@ export {
 } from './get-component';
 export type {
   ComponentTypes,
+  CreateResourceConfigForResource,
   CreateResourceConfigFn,
   CreatedResourceConfig,
   GetComponent,
@@ -116,6 +116,7 @@ export type {
   GetComponentOptions,
   ResourceConfigPath,
   ResourceFromGetComponentBound,
+  ResourceConfigFragment,
   GetComponentOptionsForResource,
   SubResourceFromGetComponentBound,
   ValidateForResourceBound,

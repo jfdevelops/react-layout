@@ -19,6 +19,36 @@ export type ResourceDefinition =
       >;
     };
 
+/**
+ * A resource definition normalized to an object with a stable `value` key.
+ * `subResources` is present only when it existed on the declared resource.
+ */
+export type NormalizedResourceDefinition<
+  Resource extends ResourceDefinition = ResourceDefinition,
+> = Resource extends string
+  ? { value: Resource }
+  : Resource extends {
+        value: infer Value extends string;
+        subResources: infer SubResources extends ReadonlyArray<ResourceDefinition>;
+      }
+    ? {
+        value: Value;
+        subResources: NormalizedResourceDefinitions<SubResources>;
+      }
+    : never;
+
+/**
+ * A tuple of resource definitions with strings converted to `{ value }`
+ * objects and nested sub-resources normalized recursively.
+ */
+export type NormalizedResourceDefinitions<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> = {
+  readonly [Index in keyof Resources]: Resources[Index] extends ResourceDefinition
+    ? NormalizedResourceDefinition<Resources[Index]>
+    : never;
+};
+
 export type ResourceTree = Record<
   string,
   {
@@ -92,6 +122,28 @@ export function normalizeResources<
   Resources extends ReadonlyArray<ResourceDefinition>,
 >(resources: Resources): NormalizeResources<Resources> {
   return normalizeResourcesTree(resources) as NormalizeResources<Resources>;
+}
+
+/**
+ * Normalizes public resource declarations to a consistent object shape while
+ * preserving tuple positions and string literals in the returned type.
+ *
+ * @param resources - Resource definitions in their original declared form.
+ * @returns A recursively normalized tuple whose entries always have `value`.
+ */
+export function normalizeResourceDefinitions<
+  const Resources extends ReadonlyArray<ResourceDefinition>,
+>(resources: Resources): NormalizedResourceDefinitions<Resources> {
+  return resources.map((resource) => {
+    if (typeof resource === 'string') {
+      return { value: resource };
+    }
+
+    return {
+      value: resource.value,
+      subResources: normalizeResourceDefinitions(resource.subResources),
+    };
+  }) as NormalizedResourceDefinitions<Resources>;
 }
 
 export function createIsValidResourceFn<

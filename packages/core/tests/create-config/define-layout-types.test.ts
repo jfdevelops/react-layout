@@ -793,6 +793,24 @@ describe('createComponent types', () => {
     };
   });
 
+  describe('resources accessor', () => {
+    it('types normalized, raw, and selected resource results', () => {
+      const { resources } = defineResourceLayout({
+        resources: [
+          'users',
+          { value: 'posts', subResources: ['comments'] },
+        ],
+        layout: { render: () => null as never },
+      });
+
+      expectTypeOf(resources()[0].value).toEqualTypeOf<'users'>();
+      expectTypeOf(resources()[1].subResources[0].value).toEqualTypeOf<'comments'>();
+      expectTypeOf(resources.raw()[0]).toEqualTypeOf<'users'>();
+      expectTypeOf(resources((values) => values[1].value)).toEqualTypeOf<'posts'>();
+      expectTypeOf(resources.raw((values) => values[1].value)).toEqualTypeOf<'posts'>();
+    });
+  });
+
   describe('withLayout', () => {
     it('returns a Shell alongside the base helpers and makes layout.render optional', () => {
       const defined = defineResourceLayout.withLayout({

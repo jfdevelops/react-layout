@@ -1042,13 +1042,22 @@ describe('defineResourceLayout', () => {
       ).toEqual(['users', 'posts']);
     });
 
-    it('exposes the raw resources and pick/omit helpers on the definition', () => {
+    it('exposes normalized and raw resources with selectors', () => {
       const { resources } = defineResourceLayout({
         resources: resourceDefs,
         layout: { render: () => <section /> },
       });
 
-      expect(resources()).toEqual(resourceDefs);
+      expect(resources()).toEqual([
+        { value: 'users' },
+        {
+          value: 'posts',
+          subResources: [{ value: 'comments' }],
+        },
+      ]);
+      expect(resources.raw()).toEqual(resourceDefs);
+      expect(resources((normalized) => normalized[0].value)).toBe('users');
+      expect(resources.raw((raw) => raw[0])).toBe('users');
       expect(resources.isResource('posts')).toBe(true);
       expect(resources.isResource('nope')).toBe(false);
     });
@@ -1094,7 +1103,7 @@ describe('defineResourceLayout', () => {
               current: context.resources.current,
               isUsers: context.resources.isResource('users'),
               isNope: context.resources.isResource('nope'),
-              rawResources: context.resources(),
+              rawResources: context.resources.raw(),
               picked: context.resources.pick('posts')(),
             };
 
