@@ -52,6 +52,12 @@ export {
 } from './types';
 export { UnionProp } from './union';
 export {
+  attachComponentPropDefinitions,
+  componentPropDefinitionsSymbol,
+  createPropsFromComponent,
+  type ComponentWithPropDefinitions,
+} from './component-props';
+export {
   type PropValidationContext,
   validateProps,
 } from './validate-props';

@@ -30,7 +30,7 @@ export type {
   RequiredPresetRenderProps,
   ResolveLayoutComposables,
 } from '@jfdevelops/react-layout-composables';
-export { defineResourceLayout } from './create-config';
+export { createDefinedResourceLayout, defineResourceLayout } from './create-config';
 export type {
   ComponentTypes,
   CreateResourceMap,
@@ -61,6 +61,42 @@ export type {
   ShellLayoutDefinition,
   ShellRenderContext,
   TargetPathBuilder,
+  LazyResourceErrorComponent,
+  LazyResourceLayoutOptions,
+  LazyResourceLayoutComponent,
+  LazyResourceLoadingComponent,
+  LazyResourceStates,
+  AnyRenderStateDefinition,
+  BoundDefineResourceLayout,
+  CreateDefinedResourceLayoutResult,
+  CreateViewMapBuiltInRenderStatesOptions,
+  CreateViewMapFunctionRenderOptions,
+  CreateViewMapInlineRenderStatesOptions,
+  CreateViewMapRenderStatesOptions,
+  ContextualInlineRenderState,
+  ContextualInlineRenderStates,
+  CreateLayoutBuildingBlocks,
+  CreateLayoutBuildingBlocksArguments,
+  CreateLayoutBuildingBlocksResult,
+  CreateRenderState,
+  CreateRenderStateBuilderArguments,
+  CreateRenderStateBuilderResult,
+  DefinedResourceLayoutBuilder,
+  DefinedResourceLayoutInput,
+  DefineLayoutComposables,
+  DefineLazyDefaults,
+  DefineOptions,
+  DeferredRenderState,
+  LayoutComposablesDefinition,
+  LazyRenderState,
+  NonEmptyResources,
+  RenderStateCallback,
+  RenderStateComposablesDefinition,
+  RenderStateContext,
+  RenderStateFragment,
+  RenderStateProps,
+  TypedBuiltInRenderStates,
+  TypedInlineRenderState,
 } from './create-config';
 export {
   InvalidComponentError,
@@ -72,6 +108,8 @@ export {
   MissingPathVariableError,
   MissingResourceProviderError,
   ReactLayoutError,
+  ResourceModuleLoadError,
+  ResourceRenderError,
 } from './errors';
 export type {
   InvalidComponentContext,
@@ -81,6 +119,7 @@ export type {
   InvalidSubResourceContext,
   LayoutConfigurationErrorContext,
   MissingPathVariableContext,
+  ResourceStateError,
 } from './errors';
 export {
   createProp,
@@ -101,6 +140,7 @@ export type {
 } from '@jfdevelops/react-layout-validator';
 export type {
   IncludedProps,
+  IncludedComponentPropDefinitions,
   IncludedPropBehavior,
   InferredInProps,
   InPropsDefinition,
@@ -125,6 +165,7 @@ export type {
   ResourceDefinitionValue,
   ResourceEnum,
   ResourceLayoutComponentProps,
+  ResourcePath,
   ResourceTree,
 } from './resource';
 export { pick } from './utils';

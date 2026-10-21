@@ -24,3 +24,9 @@ export { MissingResourceProviderError } from './missing-resource-provider';
 
 export { LayoutConfigurationError } from './layout-configuration-error';
 export type { LayoutConfigurationErrorContext } from './layout-configuration-error';
+
+export {
+  ResourceModuleLoadError,
+  ResourceRenderError,
+  type ResourceStateError,
+} from './resource-state-error';

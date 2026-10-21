@@ -391,11 +391,11 @@ export type CreateResourceLinksWithGroupsResult<
    *
    * @param resource The active resource key.
    */
-  (
-    resource: LayoutResourceKey<Resources>,
+  <TargetResource extends LayoutResourceKey<Resources>>(
+    resource: TargetResource,
   ): ResolvedResourceLinksWithGroupsResult<
     Resources,
-    Resource,
+    TargetResource,
     GroupIcon,
     LinkIcon
   >;

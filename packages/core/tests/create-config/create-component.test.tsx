@@ -1,5 +1,11 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { useState, type JSX, type ReactNode } from 'react';
+import {
+  createElement,
+  useState,
+  type ComponentType,
+  type JSX,
+  type ReactNode,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createProp, defineResourceLayout } from '../../src';
@@ -95,6 +101,48 @@ describe('createComponent', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('User content')).toBeInTheDocument();
     expect(screen.getByText('custom:users')).toBeInTheDocument();
+  });
+
+  it('forwards props declared by an object-form default state to Root', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users'],
+      layout: {
+        render: {
+          default: {
+            props: {
+              custom: {
+                label: createProp.string(),
+              },
+            },
+            render: ({ label }) => <p>{label}</p>,
+          },
+        },
+      },
+    });
+    const createDirectoryLayout =
+      createResourceLayout.forResources('users');
+    const Directory = createDirectoryLayout.createComponent({
+      props: {
+        include: { label: true },
+      },
+      resources: {
+        users: {
+          render: () => null,
+        },
+      },
+      render: (_props, context) =>
+        createElement(
+          context.Root as ComponentType<Record<string, unknown>>,
+          {},
+          createElement(
+            context.Users as ComponentType<Record<string, unknown>>,
+          ),
+        ),
+    });
+
+    render(<Directory resource='users' label='Scoped users' />);
+
+    expect(screen.getByText('Scoped users')).toBeInTheDocument();
   });
 
   it('preserves resource render state when the scoped component rerenders', () => {

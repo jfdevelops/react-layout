@@ -1,0 +1,471 @@
+import type { JSX } from 'react';
+import type {
+  ComposableComponents,
+  CreateLayoutComposable,
+} from '@jfdevelops/react-layout-composables';
+import type { InPropsObject } from '../props';
+import type {
+  IncludedProps,
+  InPropsDefinition,
+  LayoutRenderProps,
+  MergedLayoutInProps,
+} from '../props';
+import type { LayoutResourceKey, ResourceDefinition } from '../resource';
+
+export const deferredRenderStateSymbol: unique symbol = Symbol(
+  'deferredRenderState',
+) as never;
+export const lazyRenderStateSymbol: unique symbol = Symbol(
+  'lazyRenderState',
+) as never;
+export const definedRenderStateSymbol: unique symbol = Symbol.for(
+  '@jfdevelops/react-layout/render-state',
+) as never;
+export const definedResourceLayoutComponentSymbol: unique symbol = Symbol.for(
+  '@jfdevelops/react-layout/resource-layout-component',
+) as never;
+
+/** Runtime-compatible render-state shape used when inspecting lazy modules. */
+export type AnyRenderStateDefinition = {
+  composables?: (create: CreateLayoutComposable<any>) => ComposableComponents;
+  props?: {
+    include?: Record<string, unknown>;
+    custom?: InPropsObject;
+  };
+  render: (props: any, context: any) => JSX.Element;
+  state?: string;
+};
+
+/** An inline state whose first render is scheduled through `React.lazy`. */
+export type DeferredRenderState<Definition extends AnyRenderStateDefinition> = {
+  readonly [deferredRenderStateSymbol]: Definition;
+};
+
+/** A state definition supplied by a separately imported module. */
+export type LazyRenderState<Definition extends AnyRenderStateDefinition> = {
+  readonly [lazyRenderStateSymbol]: () => Promise<Record<string, unknown>>;
+  readonly definition?: Definition;
+};
+
+/** Callback shorthand for a render state with no local configuration. */
+export type RenderStateCallback = (props: any, context: any) => JSX.Element;
+
+/**
+ * Defines state-local composable components with a `create` helper narrowed to
+ * the resources bound to the surrounding builder.
+ */
+export type RenderStateComposablesDefinition<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Composables extends ComposableComponents,
+> = (
+  create: CreateLayoutComposable<LayoutResourceKey<Resources>>,
+) => Composables;
+
+/**
+ * Defines reusable layout-level composables while preserving their inferred
+ * names, props, and bound resource union.
+ */
+export type LayoutComposablesDefinition<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Composables extends ComposableComponents,
+> = RenderStateComposablesDefinition<Resources, Composables>;
+
+type BuilderRenderComposables<Composables extends ComposableComponents> = [
+  keyof Composables,
+] extends [never]
+  ? undefined
+  : Composables;
+
+/** Values available as the second argument of a created state's `render`. */
+export type RenderStateContext<
+  Composables extends ComposableComponents,
+> = {
+  composables: BuilderRenderComposables<Composables>;
+  retry?: () => void;
+};
+
+/**
+ * Resolves one state's custom props and explicitly included option/composable
+ * props to the values received by its render callback.
+ */
+export type RenderStateProps<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  IncludeProps extends IncludedProps<
+    MergedLayoutInProps<Resources, Options, Composables>
+  >,
+  CustomProps extends InPropsObject,
+> = LayoutRenderProps<
+  Resources,
+  Options,
+  Composables,
+  IncludeProps,
+  CustomProps
+>;
+
+type TypedRenderStateDefinition<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  State extends string,
+  CustomProps extends InPropsObject,
+  Composables extends ComposableComponents,
+  IncludeProps extends IncludedProps<
+    MergedLayoutInProps<Resources, Options, Composables>
+  >,
+> = {
+  composables?: RenderStateComposablesDefinition<Resources, Composables>;
+  props?: {
+    include?: IncludeProps;
+    custom?: CustomProps;
+  };
+  render: (
+    props: RenderStateProps<
+      Resources,
+      Options,
+      Composables,
+      IncludeProps,
+      CustomProps
+    >,
+    context: RenderStateContext<Composables>,
+  ) => JSX.Element;
+  state: State;
+};
+
+type NormalizeRenderStateDefinition<Input> =
+  Input extends DeferredRenderState<infer Definition>
+    ? Definition
+    : Input extends RenderStateCallback
+      ? { render: Input; state: 'default' }
+      : Input extends AnyRenderStateDefinition
+        ? Input
+        : never;
+
+type StateName<Definition> = Definition extends DeferredRenderState<
+  infer DeferredDefinition
+>
+  ? StateName<DeferredDefinition>
+  : Definition extends { state?: infer State extends string }
+    ? State
+    : 'default';
+
+/**
+ * A spreadable state entry keyed by its literal state name. Spreading this into
+ * `layout.render` is what creates compound members such as `Users.Loading`.
+ */
+export type RenderStateFragment<Definition> = {
+  [State in StateName<NormalizeRenderStateDefinition<Definition>>]: Definition;
+} & {
+  readonly [definedRenderStateSymbol]: NormalizeRenderStateDefinition<Definition>;
+};
+
+type DefinedRenderStateFromModule<Module> = Extract<
+  Module[keyof Module],
+  { readonly [definedRenderStateSymbol]: AnyRenderStateDefinition }
+>[typeof definedRenderStateSymbol];
+
+/**
+ * Creates independently typed render-state fragments.
+ *
+ * - Calling it directly creates an eager state.
+ * - `.defer(...)` schedules an inline definition through `React.lazy`, but
+ *   does not create a separate JavaScript chunk.
+ * - `.lazy(() => import(...))` imports a complete named state definition as a
+ *   separate chunk.
+ */
+export type CreateRenderState<
+  Resources extends ReadonlyArray<ResourceDefinition> = ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources> = {},
+> = {
+  <
+    const State extends string = 'default',
+    const CustomProps extends InPropsObject = {},
+    const Composables extends ComposableComponents = {},
+    const IncludeProps extends IncludedProps<
+      MergedLayoutInProps<Resources, Options, Composables>
+    > = {},
+  >(
+    definition: TypedRenderStateDefinition<
+      Resources,
+      Options,
+      State,
+      CustomProps,
+      Composables,
+      IncludeProps
+    >,
+  ): RenderStateFragment<
+    TypedRenderStateDefinition<
+      Resources,
+      Options,
+      State,
+      CustomProps,
+      Composables,
+      IncludeProps
+    >
+  >;
+  <
+    const CustomProps extends InPropsObject = {},
+    const Composables extends ComposableComponents = {},
+    const IncludeProps extends IncludedProps<
+      MergedLayoutInProps<Resources, Options, Composables>
+    > = {},
+  >(
+    definition: Omit<
+      TypedRenderStateDefinition<
+        Resources,
+        Options,
+        'default',
+        CustomProps,
+        Composables,
+        IncludeProps
+      >,
+      'state'
+    >,
+  ): RenderStateFragment<
+    TypedRenderStateDefinition<
+      Resources,
+      Options,
+      'default',
+      CustomProps,
+      Composables,
+      IncludeProps
+    >
+  >;
+  <const Render extends RenderStateCallback>(
+    render: Render,
+  ): RenderStateFragment<Render>;
+  defer<
+    const State extends string = 'default',
+    const CustomProps extends InPropsObject = {},
+    const Composables extends ComposableComponents = {},
+    const IncludeProps extends IncludedProps<
+      MergedLayoutInProps<Resources, Options, Composables>
+    > = {},
+  >(
+    definition: TypedRenderStateDefinition<
+      Resources,
+      Options,
+      State,
+      CustomProps,
+      Composables,
+      IncludeProps
+    >,
+  ): RenderStateFragment<
+    DeferredRenderState<
+      TypedRenderStateDefinition<
+        Resources,
+        Options,
+        State,
+        CustomProps,
+        Composables,
+        IncludeProps
+      >
+    >
+  >;
+  defer<
+    const CustomProps extends InPropsObject = {},
+    const Composables extends ComposableComponents = {},
+    const IncludeProps extends IncludedProps<
+      MergedLayoutInProps<Resources, Options, Composables>
+    > = {},
+  >(
+    definition: Omit<
+      TypedRenderStateDefinition<
+        Resources,
+        Options,
+        'default',
+        CustomProps,
+        Composables,
+        IncludeProps
+      >,
+      'state'
+    >,
+  ): RenderStateFragment<
+    DeferredRenderState<
+      TypedRenderStateDefinition<
+        Resources,
+        Options,
+        'default',
+        CustomProps,
+        Composables,
+        IncludeProps
+      >
+    >
+  >;
+  defer<const Render extends RenderStateCallback>(
+    render: Render,
+  ): RenderStateFragment<DeferredRenderState<{ render: Render; state: 'default' }>>;
+  lazy<Module extends Record<string, unknown>>(
+    load: () => Promise<Module>,
+  ): LazyRenderState<DefinedRenderStateFromModule<Module>>;
+};
+
+function normalizeDefinition(
+  input: AnyRenderStateDefinition | RenderStateCallback,
+): AnyRenderStateDefinition {
+  return typeof input === 'function'
+    ? { render: input, state: 'default' }
+    : input;
+}
+
+function toFragment<Definition extends AnyRenderStateDefinition>(
+  definition: Definition,
+) {
+  const fragment = {
+    [definition.state ?? 'default']: definition,
+  } as RenderStateFragment<Definition>;
+
+  Object.defineProperty(fragment, definedRenderStateSymbol, {
+    enumerable: false,
+    value: definition,
+  });
+
+  return fragment;
+}
+
+/** Inputs used internally to bind resource and option types to a state builder. */
+export type CreateRenderStateBuilderArguments<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+> = {
+  options: Options;
+  resources: Resources;
+};
+
+/** The state factory produced for a particular resource and option definition. */
+export type CreateRenderStateBuilderResult<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+> = CreateRenderState<Resources, Options>;
+
+/**
+ * Creates a state factory whose `props.include` keys are constrained by the
+ * supplied resources and options.
+ */
+export function createRenderStateBuilder<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+>(
+  _arguments: CreateRenderStateBuilderArguments<Resources, Options>,
+): CreateRenderStateBuilderResult<Resources, Options> {
+  function createRenderState(
+    input: AnyRenderStateDefinition | RenderStateCallback,
+  ) {
+    return toFragment(normalizeDefinition(input));
+  }
+
+  createRenderState.defer = (
+    input: AnyRenderStateDefinition | RenderStateCallback,
+  ) => {
+    const definition = normalizeDefinition(input);
+
+    return {
+      [definition.state ?? 'default']: {
+        [deferredRenderStateSymbol]: definition,
+      },
+    };
+  };
+  createRenderState.lazy = (
+    load: () => Promise<Record<string, unknown>>,
+  ) => ({
+    [lazyRenderStateSymbol]: load,
+  });
+
+  return createRenderState as CreateRenderStateBuilderResult<Resources, Options>;
+}
+
+/** Type guard for states created with `createRenderState.defer(...)`. */
+export function isDeferredRenderState(
+  value: unknown,
+): value is DeferredRenderState<AnyRenderStateDefinition> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    deferredRenderStateSymbol in value
+  );
+}
+
+/** Type guard for states created with `createRenderState.lazy(...)`. */
+export function isLazyRenderState(
+  value: unknown,
+): value is LazyRenderState<AnyRenderStateDefinition> {
+  return (
+    typeof value === 'object' && value !== null && lazyRenderStateSymbol in value
+  );
+}
+
+/**
+ * Selects the single state definition exported by a lazy module. Throws when
+ * the module exports none or more than one, avoiding ambiguous selection.
+ */
+export function findDefinedRenderState(
+  module: Record<string, unknown>,
+): AnyRenderStateDefinition {
+  const definitions = Object.values(module).filter(
+    (value) =>
+      typeof value === 'object' && value !== null && definedRenderStateSymbol in value,
+  ) as Array<Record<typeof definedRenderStateSymbol, AnyRenderStateDefinition>>;
+
+  if (definitions.length !== 1) {
+    throw new Error(
+      `A lazy render-state module must export exactly one defined render state; received ${definitions.length}.`,
+    );
+  }
+
+  return definitions[0][definedRenderStateSymbol];
+}
+
+/** Identity helper that contextually types a reusable composables callback. */
+export type DefineLayoutComposables<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> = <const Composables extends ComposableComponents>(
+  definition: LayoutComposablesDefinition<Resources, Composables>,
+) => LayoutComposablesDefinition<Resources, Composables>;
+
+/** Public cross-file building blocks returned by a defined layout builder. */
+export type CreateLayoutBuildingBlocks<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+> = {
+  composables: DefineLayoutComposables<Resources>;
+  createRenderState: CreateRenderState<Resources, Options>;
+};
+
+/** Resource and option bindings used to create layout building blocks. */
+export type CreateLayoutBuildingBlocksArguments<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+> = CreateRenderStateBuilderArguments<Resources, Options>;
+
+/** Layout helpers produced for the supplied resource and option bindings. */
+export type CreateLayoutBuildingBlocksResult<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+> = CreateLayoutBuildingBlocks<Resources, Options>;
+
+/**
+ * Creates the reusable `composables` and `createRenderState` helpers without
+ * introducing an identity wrapper around the layout object itself.
+ */
+export function createLayoutBuildingBlocks<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+>(
+  arguments_: CreateLayoutBuildingBlocksArguments<Resources, Options>,
+): CreateLayoutBuildingBlocksResult<Resources, Options> {
+  function composables<const Composables extends ComposableComponents>(
+    definition: LayoutComposablesDefinition<Resources, Composables>,
+  ): LayoutComposablesDefinition<Resources, Composables> {
+    return definition;
+  }
+
+  return {
+    composables,
+    createRenderState: createRenderStateBuilder(arguments_),
+  };
+}
+
+/** Preserves a bound resource tuple for consumers that need to re-export it. */
+export type BoundResources<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> = Resources;

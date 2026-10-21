@@ -464,6 +464,18 @@ export function createForResources<
 
         const entry = definedEntries.get(resource);
         const definedCustom: Record<string, unknown> = {};
+        const forwardedRootProps: Record<string, unknown> = {};
+
+        for (const key of Object.keys(getComponentPropDefinitions(resource))) {
+          if (key in componentProps) {
+            forwardedRootProps[key] = componentProps[key];
+          }
+
+          const capitalized = capitalize(key);
+          if (capitalized in componentProps) {
+            forwardedRootProps[capitalized] = componentProps[capitalized];
+          }
+        }
 
         for (const [key, value] of Object.entries(
           entry?.props?.defined ?? {},
@@ -473,7 +485,11 @@ export function createForResources<
           }
         }
 
-        return createElement(root, { ...definedCustom, ...rootProps });
+        return createElement(root, {
+          ...forwardedRootProps,
+          ...definedCustom,
+          ...rootProps,
+        });
       }
 
       renderContext.Root = Root;

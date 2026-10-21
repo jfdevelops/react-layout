@@ -57,6 +57,101 @@ hook. The returned `ResourceProvider` is also available for manual boundaries.
 
 See [`examples/basic-example`](./examples/basic-example) for a full working app.
 
+## Render states and split definitions
+
+`render` also accepts an object. `default` is required and becomes the plain
+component; every other key becomes a typed compound component with independent
+props and composables.
+
+```tsx
+const { createResourceLayout } = defineResourceLayout({
+  resources: ['users'],
+  options: {
+    title: createProp.string(),
+  },
+  layout: {
+    render: {
+      default: {
+        props: { include: { title: true } },
+        render: ({ title }) => <h1>{title}</h1>,
+      },
+      Loading: () => <p>Loading users…</p>,
+      Error: {
+        props: {
+          custom: { error: createProp.object({ message: createProp.string() }) },
+        },
+        render: ({ error }) => <p>{error.message}</p>,
+      },
+      NotFound: () => <p>Users not found.</p>,
+    },
+  },
+});
+
+const Users = createResourceLayout({
+  resource: 'users',
+  name: 'Users',
+  title: 'Users',
+});
+
+<Users />;
+<Users.Loading />;
+<Users.NotFound />;
+```
+
+Use `createDefinedResourceLayout` to bind resources and options once, then split
+the returned building blocks across files. `composables` receives the same
+resource-aware `create` callback as `layout.composables`.
+
+```tsx
+const {
+  composables,
+  createRenderState,
+  defineResourceLayout,
+} = createDefinedResourceLayout('users').defineOptions({
+  title: createProp.string(),
+});
+
+export const pageComposables = composables((create) => ({
+  Layout: create({ name: 'PageLayout' }),
+}));
+
+export const Loading = createRenderState({
+  state: 'Loading',
+  props: { include: { title: true } },
+  render: ({ title }) => <p>Loading {title}…</p>,
+});
+```
+
+`createRenderState.defer(...)` creates a Suspense-deferred inline state, while
+`createRenderState.lazy(() => import('./audit.state'))` creates a real
+code-split state. A lazy state module must have exactly one named export created
+by `createRenderState`.
+
+Entire created resource components can also be loaded lazily:
+
+```tsx
+const {
+  defineLazyDefaults,
+  defineResourceLayout,
+  resources,
+} = createDefinedResourceLayout('users');
+
+defineLazyDefaults({
+  Loading: GenericResourceLoading,
+  Error: GenericResourceCodeError,
+});
+
+export const Users = defineResourceLayout.lazy({
+  resource: 'users',
+  load: () => import('./users.layout'),
+});
+```
+
+Lazy modules use named exports and must export exactly one component created by
+the library. Nested resources use typed dot paths such as
+`admin.users.detail`. Lazy components preserve compound state access such as
+`<Users.NotFound />` and share one cached module load.
+
 ## Workspace
 
 | Path | Description |
