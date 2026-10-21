@@ -138,6 +138,32 @@ type SelectedIncludedProps<
   PropsKeys<Props, GetPropsKey<IncludeProps, Visibility, Passthrough>>
 >;
 
+type OptionalPropDefinition<Definition> = Definition extends {
+  optional(): infer OptionalDefinition;
+}
+  ? OptionalDefinition
+  : Definition;
+
+/** Raw validator definitions accepted by a generated component call. */
+export type IncludedComponentPropDefinitions<
+  Props extends InPropsObject,
+  IncludeProps extends IncludedProps<Props>,
+> = SelectedIncludedProps<Props, IncludeProps, 'required', 'component'> & {
+  [Key in keyof SelectedIncludedProps<
+    Props,
+    IncludeProps,
+    'optional',
+    'component'
+  >]: OptionalPropDefinition<
+    SelectedIncludedProps<
+      Props,
+      IncludeProps,
+      'optional',
+      'component'
+    >[Key]
+  >;
+};
+
 export type ResolvedIncludedProps<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,

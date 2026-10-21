@@ -1,4 +1,39 @@
 export { defineResourceLayout } from './define-layout';
+export { createDefinedResourceLayout } from './create-defined-resource-layout';
+export type {
+  LazyResourceErrorComponent,
+  LazyResourceLayoutOptions,
+  LazyResourceLayoutComponent,
+  LazyResourceLoadingComponent,
+  LazyResourceStates,
+} from './lazy-resource-layout';
+export type {
+  AnyRenderStateDefinition,
+  CreateLayoutBuildingBlocks,
+  CreateLayoutBuildingBlocksArguments,
+  CreateLayoutBuildingBlocksResult,
+  CreateRenderState,
+  CreateRenderStateBuilderArguments,
+  CreateRenderStateBuilderResult,
+  DefineLayoutComposables,
+  DeferredRenderState,
+  LayoutComposablesDefinition,
+  LazyRenderState,
+  RenderStateCallback,
+  RenderStateComposablesDefinition,
+  RenderStateContext,
+  RenderStateFragment,
+  RenderStateProps,
+} from './render-state';
+export type {
+  BoundDefineResourceLayout,
+  CreateDefinedResourceLayoutResult,
+  DefinedResourceLayoutBuilder,
+  DefinedResourceLayoutInput,
+  DefineLazyDefaults,
+  DefineOptions,
+  NonEmptyResources,
+} from './create-defined-resource-layout';
 export type {
   CreateResourceLayoutFn,
   CreateResourceLayoutMakeComposableOptions,
@@ -8,8 +43,17 @@ export type {
   DefineResourceLayoutForResources,
   DefineResourceLayoutForResourcesFactory,
   DefineResourceLayoutWithLayoutFn,
+  DefinedResourceLayout,
   DefinedResourceLayoutWithShell,
   DefineResourcesFn,
+  CreateViewMapBuiltInRenderStatesOptions,
+  CreateViewMapOptions,
+  CreateViewMapInlineRenderStatesOptions,
+  CreateViewMapRenderStatesOptions,
+  ContextualInlineRenderState,
+  ContextualInlineRenderStates,
+  LayoutDefinition,
+  LayoutIncludeProps,
   LayoutRenderResourcesAccessor,
   LayoutResourcesAccessor,
   ResourceLayoutProvider,
@@ -19,6 +63,8 @@ export type {
   ResourceSelection,
   ShellLayoutDefinition,
   ShellRenderContext,
+  TypedBuiltInRenderStates,
+  TypedInlineRenderState,
 } from './define-layout';
 export type {
   ResourceLayoutShellPublisher,

@@ -1,11 +1,15 @@
 import {
+  Component as ReactComponent,
+  lazy,
   createContext,
   type JSX,
   type ReactNode,
+  Suspense,
   useContext,
   useCallback,
   useLayoutEffect,
   useMemo,
+  useReducer,
   useRef,
   useState,
 } from 'react';
@@ -25,9 +29,13 @@ import {
 import {
   LayoutConfigurationError,
   MissingResourceProviderError,
+  ResourceModuleLoadError,
+  ResourceRenderError,
 } from '../errors';
 import {
   type AnyBuiltPropDefinition,
+  attachComponentPropDefinitions,
+  componentPropDefinitionsSymbol,
   createPrimitivePropBuilder,
   createProp,
   type ResolveLayoutProps,
@@ -37,6 +45,7 @@ import {
 } from '@jfdevelops/react-layout-validator';
 import {
   IncludedProps,
+  IncludedComponentPropDefinitions,
   type IncludedPropBehavior,
   InferredInProps,
   InPropsDefinition,
@@ -83,6 +92,15 @@ import {
   ResourceLayoutShellPublisherContext,
   useResourceLayoutShellPublisher,
 } from './shell-context';
+import {
+  type AnyRenderStateDefinition,
+  deferredRenderStateSymbol,
+  definedResourceLayoutComponentSymbol,
+  findDefinedRenderState,
+  isDeferredRenderState,
+  isLazyRenderState,
+  lazyRenderStateSymbol,
+} from './render-state';
 
 export type LayoutIncludeProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -126,7 +144,54 @@ type LayoutRenderContext<
    */
   resources: LayoutRenderResourcesAccessor<Resources>;
   name: string;
+  /** Retries the active lazy state when the current Error state was automatic. */
+  retry?: () => void;
 };
+
+type RenderStateBoundaryProps = {
+  children: ReactNode;
+  fallback: (error: unknown, retry: () => void) => ReactNode;
+  onRetry?: () => void;
+};
+
+const RenderStateRetryContext = createContext<(() => void) | undefined>(
+  undefined,
+);
+
+class RenderStateBoundary extends ReactComponent<
+  RenderStateBoundaryProps,
+  { error?: unknown }
+> {
+  state: { error?: unknown } = {};
+
+  static getDerivedStateFromError(error: unknown) {
+    return { error };
+  }
+
+  retry = () => {
+    this.props.onRetry?.();
+    this.setState({ error: undefined });
+  };
+
+  render() {
+    if (this.state.error !== undefined) {
+      return this.props.fallback(this.state.error, this.retry);
+    }
+
+    return this.props.children;
+  }
+}
+
+function toResourceStateError(
+  resource: string,
+  state: string,
+  error: unknown,
+) {
+  return error instanceof ResourceModuleLoadError ||
+    error instanceof ResourceRenderError
+    ? error
+    : new ResourceRenderError(resource, state, error);
+}
 
 /**
  * A single {@link ResourceDefinition} kept by a `pick`, or `never` when it does
@@ -460,7 +525,288 @@ function resolveLayoutOptionDefaults(
  * Extracted so {@link defineResourceLayout.withLayout} can reuse the exact same
  * shape while making `render` optional (see {@link ShellLayoutDefinition}).
  */
-type LayoutDefinition<
+type LayoutRenderFunction<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
+  CustomProps extends InPropsObject,
+> = (
+  props: LayoutRenderProps<
+    Resources,
+    Options,
+    Composables,
+    IncludeProps,
+    CustomProps
+  >,
+  context: LayoutRenderContext<Resources, Composables>,
+) => JSX.Element;
+
+type RenderStateComposables<Input> = Input extends {
+  composables?: (...arguments_: any[]) => infer Composables extends ComposableComponents;
+}
+  ? Composables
+  : {};
+
+type ContextualRenderStateIncludeProps<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  Input,
+> = RenderStateIncludeProps<Input> extends LayoutIncludeProps<
+  Resources,
+  Options,
+  Composables
+>
+  ? RenderStateIncludeProps<Input>
+  : LayoutIncludeProps<Resources, Options, Composables>;
+
+type ContextualLayoutRenderState<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  Input,
+> = Input extends import('./render-state').DeferredRenderState<AnyRenderStateDefinition>
+    ? Input
+    : Input extends import('./render-state').LazyRenderState<AnyRenderStateDefinition>
+      ? Input
+      : Input extends { readonly state: string }
+        ? Input
+        :
+            | LayoutRenderFunction<Resources, Options, Composables, {}, {}>
+            | {
+      props?: LayoutProps<
+        Resources,
+        Options,
+        Composables & RenderStateComposables<Input>,
+        ContextualRenderStateIncludeProps<
+          Resources,
+          Options,
+          Composables & RenderStateComposables<Input>,
+          Input
+        >,
+        RenderStateCustomProps<Input>
+      >;
+      composables?: (
+        create: CreateLayoutComposable<LayoutResourceKey<Resources>>,
+      ) => RenderStateComposables<Input>;
+      render: LayoutRenderFunction<
+        Resources,
+        Options,
+        Composables & RenderStateComposables<Input>,
+        ContextualRenderStateIncludeProps<
+          Resources,
+          Options,
+          Composables & RenderStateComposables<Input>,
+          Input
+        >,
+        RenderStateCustomProps<Input>
+      >;
+      state?: string;
+    };
+
+type ContextualLayoutRenderStates<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  States,
+> = States extends Record<string, unknown>
+  ? {
+      [State in keyof States]: ContextualLayoutRenderState<
+        Resources,
+        Options,
+        Composables,
+        States[State]
+      >;
+    } & { default: unknown }
+  : never;
+
+/**
+ * Contextual shape applied to each inline `layout.render` entry. It prevents
+ * callback parameters from falling back to implicit `any` and exposes both
+ * layout-level and state-local composables through the render context.
+ */
+export type ContextualInlineRenderState<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  LayoutComposables extends ComposableComponents,
+> =
+  | LayoutRenderFunction<Resources, Options, LayoutComposables, {}, {}>
+  | {
+      props?: {
+        include?: LayoutIncludeProps<
+          Resources,
+          Options,
+          LayoutComposables & ComposableComponents
+        >;
+        custom?: InPropsObject;
+      };
+      composables?: (
+        create: CreateLayoutComposable<LayoutResourceKey<Resources>>,
+      ) => ComposableComponents;
+      render: LayoutRenderFunction<
+        Resources,
+        Options,
+        LayoutComposables & ComposableComponents,
+        LayoutIncludeProps<
+          Resources,
+          Options,
+          LayoutComposables & ComposableComponents
+        >,
+        Record<string, any>
+      >;
+      state?: string;
+    };
+
+/**
+ * Requires a `default` inline state while allowing named built-in or custom
+ * states to share the same contextual callback typing.
+ */
+export type ContextualInlineRenderStates<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  LayoutComposables extends ComposableComponents,
+> = {
+  default: ContextualInlineRenderState<Resources, Options, LayoutComposables>;
+} & Record<
+  string,
+  ContextualInlineRenderState<Resources, Options, LayoutComposables>
+>;
+
+/** An inline state with independently inferred props and composables. */
+export type TypedInlineRenderState<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  LayoutComposables extends ComposableComponents,
+  StateComposables extends ComposableComponents,
+  IncludeProps extends LayoutIncludeProps<
+    Resources,
+    Options,
+    LayoutComposables & StateComposables
+  >,
+  CustomProps extends InPropsObject,
+> = {
+  props?: {
+    include?: IncludeProps;
+    custom?: CustomProps;
+  };
+  composables?: (
+    create: CreateLayoutComposable<LayoutResourceKey<Resources>>,
+  ) => StateComposables;
+  render: LayoutRenderFunction<
+    Resources,
+    Options,
+    LayoutComposables & StateComposables,
+    IncludeProps,
+    CustomProps
+  >;
+  state?: string;
+};
+
+type CreatedRenderState =
+  | import('./render-state').DeferredRenderState<AnyRenderStateDefinition>
+  | import('./render-state').LazyRenderState<AnyRenderStateDefinition>;
+
+/**
+ * Built-in state map whose states infer their props and composables
+ * independently instead of sharing a widened string index signature.
+ */
+export type TypedBuiltInRenderStates<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  LayoutComposables extends ComposableComponents,
+  DefaultComposables extends ComposableComponents,
+  DefaultIncludeProps extends LayoutIncludeProps<
+    Resources,
+    Options,
+    LayoutComposables & DefaultComposables
+  >,
+  DefaultCustomProps extends InPropsObject,
+  LoadingComposables extends ComposableComponents,
+  LoadingIncludeProps extends LayoutIncludeProps<
+    Resources,
+    Options,
+    LayoutComposables & LoadingComposables
+  >,
+  LoadingCustomProps extends InPropsObject,
+  ErrorComposables extends ComposableComponents,
+  ErrorIncludeProps extends LayoutIncludeProps<
+    Resources,
+    Options,
+    LayoutComposables & ErrorComposables
+  >,
+  ErrorCustomProps extends InPropsObject,
+  NotFoundComposables extends ComposableComponents,
+  NotFoundIncludeProps extends LayoutIncludeProps<
+    Resources,
+    Options,
+    LayoutComposables & NotFoundComposables
+  >,
+  NotFoundCustomProps extends InPropsObject,
+> = {
+  default:
+    | LayoutRenderFunction<Resources, Options, LayoutComposables, {}, {}>
+    | CreatedRenderState
+    | TypedInlineRenderState<
+        Resources,
+        Options,
+        LayoutComposables,
+        DefaultComposables,
+        DefaultIncludeProps,
+        DefaultCustomProps
+      >;
+  Loading?:
+    | LayoutRenderFunction<Resources, Options, LayoutComposables, {}, {}>
+    | CreatedRenderState
+    | TypedInlineRenderState<
+        Resources,
+        Options,
+        LayoutComposables,
+        LoadingComposables,
+        LoadingIncludeProps,
+        LoadingCustomProps
+      >;
+  Error?:
+    | LayoutRenderFunction<Resources, Options, LayoutComposables, {}, {}>
+    | CreatedRenderState
+    | TypedInlineRenderState<
+        Resources,
+        Options,
+        LayoutComposables,
+        ErrorComposables,
+        ErrorIncludeProps,
+        ErrorCustomProps
+      >;
+  NotFound?:
+    | LayoutRenderFunction<Resources, Options, LayoutComposables, {}, {}>
+    | CreatedRenderState
+    | TypedInlineRenderState<
+        Resources,
+        Options,
+        LayoutComposables,
+        NotFoundComposables,
+        NotFoundIncludeProps,
+        NotFoundCustomProps
+      >;
+};
+
+type LayoutRenderInput<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
+  CustomProps extends InPropsObject,
+> =
+  | LayoutRenderFunction<
+      Resources,
+      Options,
+      Composables,
+      IncludeProps,
+      CustomProps
+    >
+  | ({ default: unknown } & Record<string, unknown>);
+
+export type LayoutDefinition<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
@@ -482,24 +828,29 @@ type LayoutDefinition<
   /**
    * The render function for the layout.
    */
-  render: (
-    props: LayoutRenderProps<
-      Resources,
-      Options,
-      Composables,
-      IncludeProps,
-      CustomProps
-    >,
-    context: LayoutRenderContext<Resources, Composables>,
-  ) => JSX.Element;
+  render: LayoutRenderInput<
+    Resources,
+    Options,
+    Composables,
+    IncludeProps,
+    CustomProps
+  >;
 };
 
-type CreateViewMapOptions<
+/** Complete input accepted by the unbound `defineResourceLayout` API. */
+export type CreateViewMapOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources> = {},
   Composables extends ComposableComponents = {},
   IncludeProps extends LayoutIncludeProps<Resources, Options, Composables> = {},
   CustomProps extends InPropsObject = {},
+  Render = LayoutDefinition<
+    Resources,
+    Options,
+    Composables,
+    IncludeProps,
+    CustomProps
+  >['render'],
 > = {
   /**
    * An array of valid resource names to support. Nested sub-resource slugs that
@@ -510,14 +861,197 @@ type CreateViewMapOptions<
    * The options that are passed into the created resource layout.
    */
   options?: Options;
-  layout: LayoutDefinition<
+  layout: Omit<
+    LayoutDefinition<
+      Resources,
+      Options,
+      Composables,
+      IncludeProps,
+      CustomProps
+    >,
+    'render'
+  > & {
+    render: Render extends (...args: any[]) => any
+      ? LayoutRenderFunction<
+          Resources,
+          Options,
+          Composables,
+          IncludeProps,
+          CustomProps
+        >
+      : Render & ({ default: unknown } & Record<string, unknown>);
+  };
+};
+
+/**
+ * Resource-layout input that preserves the exact keys and definitions of an
+ * object-form render-state map.
+ */
+export type CreateViewMapRenderStatesOptions<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
+  CustomProps extends InPropsObject,
+  RenderStates extends { default: unknown } & Record<string, unknown>,
+> = Omit<
+  CreateViewMapOptions<
+    Resources,
+    Options,
+    Composables,
+    IncludeProps,
+    CustomProps,
+    RenderStates
+  >,
+  'layout'
+> & {
+  layout: Omit<
+    LayoutDefinition<
+      Resources,
+      Options,
+      Composables,
+      IncludeProps,
+      CustomProps
+    >,
+    'render'
+  > & {
+    render: ContextualLayoutRenderStates<
+      Resources,
+      Options,
+      Composables,
+      RenderStates
+    >;
+  };
+};
+
+/**
+ * Object-form layout input that contextually types inline state callbacks.
+ * Use {@link CreateViewMapRenderStatesOptions} when working with already
+ * created state fragments instead.
+ */
+export type CreateViewMapInlineRenderStatesOptions<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
+  CustomProps extends InPropsObject,
+> = Omit<
+  CreateViewMapOptions<
     Resources,
     Options,
     Composables,
     IncludeProps,
     CustomProps
-  >;
+  >,
+  'layout'
+> & {
+  layout: Omit<
+    LayoutDefinition<
+      Resources,
+      Options,
+      Composables,
+      IncludeProps,
+      CustomProps
+    >,
+    'render'
+  > & {
+    render: ContextualInlineRenderStates<
+      Resources,
+      Options,
+      Composables
+    >;
+  };
 };
+
+/** Input for independently inferred built-in render states. */
+export type CreateViewMapBuiltInRenderStatesOptions<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
+  CustomProps extends InPropsObject,
+  RenderStates,
+> = Omit<
+  CreateViewMapOptions<
+    Resources,
+    Options,
+    Composables,
+    IncludeProps,
+    CustomProps
+  >,
+  'layout'
+> & {
+  layout: Omit<
+    LayoutDefinition<
+      Resources,
+      Options,
+      Composables,
+      IncludeProps,
+      CustomProps
+    >,
+    'render'
+  > & {
+    render: RenderStates;
+  };
+};
+
+type UnwrapRenderState<Input> =
+  Input extends import('./render-state').DeferredRenderState<
+    infer Definition extends AnyRenderStateDefinition
+  >
+    ? Definition
+    : Input extends import('./render-state').LazyRenderState<
+          infer Definition extends AnyRenderStateDefinition
+        >
+      ? Definition
+      : Input extends (...args: any[]) => any
+        ? { render: Input }
+        : Input;
+
+type RenderStateCustomProps<Input> = UnwrapRenderState<Input> extends {
+  props?: { custom?: infer CustomProps extends InPropsObject };
+}
+  ? CustomProps
+  : {};
+
+type RenderStateIncludeProps<Input> = UnwrapRenderState<Input> extends {
+  props?: { include?: infer IncludeProps };
+}
+  ? IncludeProps
+  : {};
+
+type ResourceLayoutStateComponents<
+  Name extends string,
+  Resource extends string,
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  States,
+> = States extends Record<string, unknown>
+  ? {
+      [State in Exclude<keyof States & string, 'default'>]: BaseComponent<
+        `${Name}.${State}`,
+        Show<
+          ResolveProps<RenderStateCustomProps<States[State]>> &
+            ResolvedIncludedComponentProps<
+              MergedLayoutInProps<Resources, Options, Composables>,
+              RenderStateIncludeProps<States[State]> &
+                LayoutIncludeProps<Resources, Options, Composables>
+            >
+        >
+      > &
+        ((props: Show<
+          ResolveProps<RenderStateCustomProps<States[State]>> &
+            ResolvedIncludedComponentProps<
+              MergedLayoutInProps<Resources, Options, Composables>,
+              RenderStateIncludeProps<States[State]> &
+                LayoutIncludeProps<Resources, Options, Composables>
+            >
+        >) => JSX.Element) & {
+          readonly resource: Resource;
+        };
+    }
+  : {};
 
 type ResourceLayoutComposition<
   Name extends string,
@@ -533,6 +1067,10 @@ export type ResourceLayoutComponent<
   Composables extends ComposableComponents = {},
   Resource extends string = string,
   IncludedCallProps extends object = {},
+  States = {},
+  Resources extends ReadonlyArray<ResourceDefinition> = ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources> = {},
+  PropDefinitions extends InPropsObject = Props,
 > = ResourceLayoutComposition<Name, Composables> &
   BaseComponent<Name, Show<ResolveProps<Props> & IncludedCallProps>> & {
     (props: Show<ResolveProps<Props> & IncludedCallProps>): JSX.Element;
@@ -541,7 +1079,17 @@ export type ResourceLayoutComponent<
      * component. This property is `undefined` at runtime.
      */
     readonly resource: Resource;
-  };
+    readonly [definedResourceLayoutComponentSymbol]: true;
+    readonly [componentPropDefinitionsSymbol]: PropDefinitions;
+  } &
+  ResourceLayoutStateComponents<
+    Name,
+    Resource,
+    Resources,
+    Options,
+    Composables,
+    States
+  >;
 
 export type LayoutPropsForResource<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -562,6 +1110,7 @@ type CreateResourceLayoutFnImpl<
   Composables extends ComposableComponents,
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
   CustomProps extends InPropsObject = {},
+  States = {},
 > = <
   Name extends string,
   Resource extends LayoutResourceKey<Resources>,
@@ -584,7 +1133,15 @@ type CreateResourceLayoutFnImpl<
   ResolvedIncludedComponentProps<
     MergedLayoutInProps<Resources, InProps, Composables>,
     IncludeProps
-  >
+  >,
+  States,
+  Resources,
+  InProps,
+  CustomProps &
+    IncludedComponentPropDefinitions<
+      MergedLayoutInProps<Resources, InProps, Composables>,
+      IncludeProps
+    >
 >;
 
 export type CreateResourceLayoutMakeComposableOptions<
@@ -628,12 +1185,14 @@ type CreateResourceLayoutFnBase<
   Composables extends ComposableComponents = {},
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
   CustomProps extends InPropsObject = {},
+  States = {},
 > = CreateResourceLayoutFnImpl<
   Resources,
   InProps,
   Composables,
   IncludeProps,
-  CustomProps
+  CustomProps,
+  States
 > & {
   /**
    * A function to create a resource layout for a specific resource.
@@ -681,12 +1240,14 @@ export type CreateResourceLayoutFn<
   Composables extends ComposableComponents = {},
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
   CustomProps extends InPropsObject = {},
+  States = {},
 > = CreateResourceLayoutFnBase<
   Resources,
   InProps,
   Composables,
   IncludeProps,
-  CustomProps
+  CustomProps,
+  States
 > &
   CreateResourceLayoutMakeComposableMember<
     Resources,
@@ -696,12 +1257,13 @@ export type CreateResourceLayoutFn<
     CustomProps
   >;
 
-type DefinedResourceLayout<
+export type DefinedResourceLayout<
   Resources extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents = {},
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
   CustomProps extends InPropsObject = {},
+  States = {},
 > = {
   createResourceConfig: CreateResourceConfigFn<Resources>;
   createResourceLayout: CreateResourceLayoutFn<
@@ -709,7 +1271,8 @@ type DefinedResourceLayout<
     InProps,
     Composables,
     IncludeProps,
-    CustomProps
+    CustomProps,
+    States
   >;
   createResourceLinks: CreateResourceLinksFn<Resources>;
   /**
@@ -771,20 +1334,29 @@ function defineResourceLayoutImpl<
     Composables
   > = {},
   CustomProps extends InPropsObject = {},
+  const Render = LayoutDefinition<
+    Resources,
+    InProps,
+    Composables,
+    IncludeProps,
+    CustomProps
+  >['render'],
 >(
   options: CreateViewMapOptions<
     Resources,
     InProps,
     Composables,
     IncludeProps,
-    CustomProps
+    CustomProps,
+    Render
   >,
 ): DefinedResourceLayout<
   Resources,
   InProps,
   Composables,
   IncludeProps,
-  CustomProps
+  CustomProps,
+  Render extends Record<string, unknown> ? Render : {}
 > {
   const { options: inProps = {} as InProps, resources, layout } = options;
   // Internal, set only by `defineResourceLayout.withLayout`: the identity of the
@@ -867,7 +1439,35 @@ function defineResourceLayoutImpl<
       ...(instancePropDefinitions as Record<string, unknown> | undefined),
       ...layoutOptionProps,
     });
-    const { composables, render, props: layoutProps } = layout;
+    const { composables, props: legacyLayoutProps } = layout;
+    const renderStates = (
+      typeof layout.render === 'function'
+        ? { default: layout.render }
+        : layout.render
+    ) as Record<string, unknown>;
+    const defaultRenderInput = renderStates.default;
+    const deferredDefault = isDeferredRenderState(defaultRenderInput)
+      ? defaultRenderInput[deferredRenderStateSymbol]
+      : undefined;
+    const defaultRenderDefinition =
+      typeof defaultRenderInput === 'function'
+        ? { props: legacyLayoutProps, render: defaultRenderInput }
+        : deferredDefault ?? defaultRenderInput;
+
+    if (
+      typeof defaultRenderDefinition !== 'object' ||
+      defaultRenderDefinition === null ||
+      !('render' in defaultRenderDefinition) ||
+      typeof defaultRenderDefinition.render !== 'function'
+    ) {
+      throw new LayoutConfigurationError(
+        'The "default" render state must define a render function',
+      );
+    }
+
+    const defaultState = defaultRenderDefinition as AnyRenderStateDefinition;
+    const render = defaultState.render;
+    const layoutProps = defaultState.props ?? legacyLayoutProps;
     const customLayoutProps = layoutProps?.custom;
     const includeLayoutProps = layoutProps?.include;
     const layoutOptionValues = layoutOptionProps as Record<string, unknown>;
@@ -886,8 +1486,14 @@ function defineResourceLayoutImpl<
       layoutName: name,
       resource: layoutContext.resource,
     };
-    const resolvedComposables = composables
-      ? resolveLayoutComposables(composables, layoutContext)
+    const defaultComposables = defaultState.composables
+      ? (create: CreateLayoutComposable<LayoutResourceKey<Resources>>) => ({
+          ...(composables?.(create) ?? {}),
+          ...defaultState.composables?.(create as never),
+        })
+      : composables;
+    const resolvedComposables = defaultComposables
+      ? resolveLayoutComposables(defaultComposables as never, layoutContext)
       : undefined;
     const mergedResolvedInProps = { ...resolvedInProps };
 
@@ -942,6 +1548,24 @@ function defineResourceLayoutImpl<
       name: layoutContext.name,
       inProps: splitInProps,
     } as LayoutRenderContext<Resources, Composables>;
+    const stateComponents: Record<
+      string,
+      (props: Record<string, unknown>) => JSX.Element
+    > = {};
+
+    function RenderDefaultState({
+      renderProps,
+    }: {
+      renderProps: LayoutRenderProps<
+        Resources,
+        InProps,
+        Composables,
+        IncludeProps,
+        CustomProps
+      >;
+    }) {
+      return render(renderProps, mergedRenderContext);
+    }
 
     function Component(
       props: Show<
@@ -1047,12 +1671,35 @@ function defineResourceLayoutImpl<
         CustomProps
       >;
 
-      return (
+      const rendered = (
         <ResourceProvider resource={layoutContext.resource}>
           <LayoutComposablePresetProvider value={composablePresetProps}>
-            {render(layoutRenderProps, mergedRenderContext)}
+            <RenderDefaultState renderProps={layoutRenderProps} />
           </LayoutComposablePresetProvider>
         </ResourceProvider>
+      );
+
+      const ErrorComponent = stateComponents.Error;
+
+      return ErrorComponent ? (
+        <RenderStateBoundary
+          fallback={(error, retry) => (
+            <RenderStateRetryContext.Provider value={retry}>
+              <ErrorComponent
+                error={toResourceStateError(
+                  String(layoutContext.resource),
+                  'default',
+                  error,
+                )}
+                retry={retry}
+              />
+            </RenderStateRetryContext.Provider>
+          )}
+        >
+          {rendered}
+        </RenderStateBoundary>
+      ) : (
+        rendered
       );
     }
 
@@ -1071,7 +1718,247 @@ function defineResourceLayoutImpl<
       };
     }
 
-    return Object.assign(Component, {
+    function createStateComponent(
+      stateName: string,
+      input: unknown,
+    ): (props: Record<string, unknown>) => JSX.Element {
+      if (isLazyRenderState(input)) {
+        const loadState = input[lazyRenderStateSymbol];
+
+        function createLazyState() {
+          return lazy(async () => {
+            const stateDefinition = findDefinedRenderState(
+              await loadState().catch((error: unknown) => {
+                throw new ResourceModuleLoadError(
+                  String(layoutContext.resource),
+                  error,
+                );
+              }),
+            );
+
+            if (
+              stateDefinition.state !== undefined &&
+              stateDefinition.state !== stateName
+            ) {
+              throw new LayoutConfigurationError(
+                `Lazy render state "${stateDefinition.state}" cannot be used as "${stateName}"`,
+              );
+            }
+
+            return {
+              default: createLoadedStateComponent(stateName, stateDefinition),
+            };
+          });
+        }
+
+        function LazyStateComponent(props: Record<string, unknown>) {
+          const [, rerender] = useReducer((version) => version + 1, 0);
+          const LazyState = useRef(createLazyState());
+          const CurrentLazyState = LazyState.current;
+          const LoadingComponent =
+            stateName === 'Loading' ? undefined : stateComponents.Loading;
+          const ErrorComponent =
+            stateName === 'Error' ? undefined : stateComponents.Error;
+
+          function retry() {
+            LazyState.current = createLazyState();
+            rerender();
+          }
+
+          const rendered = (
+            <Suspense
+              fallback={LoadingComponent ? <LoadingComponent /> : null}
+            >
+              <CurrentLazyState {...props} />
+            </Suspense>
+          );
+
+          return ErrorComponent ? (
+            <RenderStateBoundary
+              fallback={(error, reset) => (
+                <RenderStateRetryContext.Provider value={reset}>
+                  <ErrorComponent
+                    error={toResourceStateError(
+                      String(layoutContext.resource),
+                      stateName,
+                      error,
+                    )}
+                    retry={reset}
+                  />
+                </RenderStateRetryContext.Provider>
+              )}
+              onRetry={retry}
+            >
+              {rendered}
+            </RenderStateBoundary>
+          ) : (
+            rendered
+          );
+        }
+
+        return LazyStateComponent;
+      }
+
+      const definition = isDeferredRenderState(input)
+        ? input[deferredRenderStateSymbol]
+        : typeof input === 'function'
+          ? { render: input }
+          : input;
+
+      if (
+        typeof definition !== 'object' ||
+        definition === null ||
+        !('render' in definition) ||
+        typeof definition.render !== 'function'
+      ) {
+        throw new LayoutConfigurationError(
+          `Render state "${stateName}" must define a render function`,
+        );
+      }
+
+      const StateComponent = createLoadedStateComponent(
+        stateName,
+        definition as AnyRenderStateDefinition,
+      );
+
+      if (!isDeferredRenderState(input)) {
+        return StateComponent;
+      }
+
+      const DeferredState = lazy(() =>
+        Promise.resolve({ default: StateComponent }),
+      );
+
+      function DeferredStateComponent(props: Record<string, unknown>) {
+        const LoadingComponent =
+          stateName === 'Loading' ? undefined : stateComponents.Loading;
+        const ErrorComponent =
+          stateName === 'Error' ? undefined : stateComponents.Error;
+        const rendered = (
+          <Suspense fallback={LoadingComponent ? <LoadingComponent /> : null}>
+            <DeferredState {...props} />
+          </Suspense>
+        );
+
+        return ErrorComponent ? (
+          <RenderStateBoundary
+            fallback={(error, retry) => (
+              <RenderStateRetryContext.Provider value={retry}>
+                <ErrorComponent
+                  error={toResourceStateError(
+                    String(layoutContext.resource),
+                    stateName,
+                    error,
+                  )}
+                  retry={retry}
+                />
+              </RenderStateRetryContext.Provider>
+            )}
+          >
+            {rendered}
+          </RenderStateBoundary>
+        ) : (
+          rendered
+        );
+      }
+
+      return DeferredStateComponent;
+    }
+
+    function createLoadedStateComponent(
+      stateName: string,
+      definition: AnyRenderStateDefinition,
+    ) {
+      const stateComposables = definition.composables
+        ? (create: CreateLayoutComposable<LayoutResourceKey<Resources>>) => ({
+            ...(composables?.(create) ?? {}),
+            ...definition.composables?.(create as never),
+          })
+        : composables;
+      const stateRender =
+        stateName === 'Error'
+          ? (props: Record<string, unknown>, context: Record<string, unknown>) => (
+              <RenderStateRetryContext.Consumer>
+                {(retry) =>
+                  definition.render(props, {
+                    ...context,
+                    retry,
+                  })
+                }
+              </RenderStateRetryContext.Consumer>
+            )
+          : definition.render;
+      const stateLayout = defineResourceLayoutImpl({
+        resources,
+        options: inProps,
+        layout: {
+          composables: stateComposables,
+          props: definition.props,
+          render: stateRender,
+        },
+      } as never);
+      const StateComponent = stateLayout.createResourceLayout(
+        layoutOptions as never,
+      ) as ((props: Record<string, unknown>) => JSX.Element) & {
+        displayName?: string;
+      };
+
+      StateComponent.displayName = `${name}.${stateName}`;
+
+      return StateComponent;
+    }
+
+    for (const [stateName, input] of Object.entries(renderStates)) {
+        if (stateName === 'default') {
+          continue;
+        }
+
+        if (
+          [
+            '__proto__',
+            'apply',
+            'arguments',
+            'bind',
+            'call',
+            'caller',
+            'displayName',
+            'length',
+            'makeComposable',
+            'name',
+            'props',
+            'prototype',
+            'resource',
+          ].includes(stateName)
+        ) {
+          throw new LayoutConfigurationError(
+            `Render state name "${stateName}" is reserved`,
+          );
+        }
+
+        stateComponents[stateName] = createStateComponent(stateName, input);
+    }
+    const includedComponentDefinitions = Object.fromEntries(
+      Object.keys(includeLayoutProps ?? {}).flatMap((key) => {
+        if (
+          !allowsComponentPassthrough(includeLayoutProps?.[key]) ||
+          !(key in mergedResolvedInProps)
+        ) {
+          return [];
+        }
+
+        const definition = mergedResolvedInProps[key] as AnyBuiltPropDefinition & {
+          optional?: () => AnyBuiltPropDefinition;
+        };
+        const componentDefinition = isIncludedPropRequired(
+          includeLayoutProps?.[key],
+        )
+          ? definition
+          : definition.optional?.() ?? definition;
+
+        return [[key, componentDefinition]];
+      }),
+    );
+    const createdComponent = Object.assign(Component, {
       displayName: name,
       props: undefined as unknown as Show<
         ResolveProps<CustomProps> &
@@ -1085,13 +1972,21 @@ function defineResourceLayoutImpl<
         components: resolvedComposables as Composables | undefined,
         name,
       }),
+      ...stateComponents,
+      [definedResourceLayoutComponentSymbol]: true as const,
     });
-  }) as CreateResourceLayoutFnImpl<
+
+    return attachComponentPropDefinitions(createdComponent, {
+      ...customLayoutProps,
+      ...includedComponentDefinitions,
+    } as InPropsObject);
+  }) as unknown as CreateResourceLayoutFnImpl<
     Resources,
     InProps,
     Composables,
     IncludeProps,
-    CustomProps
+    CustomProps,
+    Render extends Record<string, unknown> ? Render : {}
   >;
   const createTopLevelMakeComposable = () => {
     return (options: Record<string, unknown>) => {
@@ -1106,7 +2001,7 @@ function defineResourceLayoutImpl<
         );
       }
 
-      return layout.makeComposable();
+      return (layout.makeComposable as () => unknown)();
     };
   };
 
@@ -1200,7 +2095,8 @@ function defineResourceLayoutImpl<
     InProps,
     Composables,
     IncludeProps,
-    CustomProps
+    CustomProps,
+    Render extends Record<string, unknown> ? Render : {}
   >;
 
   const createResourceLinks = createResourceLinksFn(resources);
@@ -1217,7 +2113,8 @@ function defineResourceLayoutImpl<
     InProps,
     Composables,
     IncludeProps,
-    CustomProps
+    CustomProps,
+    Render extends Record<string, unknown> ? Render : {}
   >;
 }
 
@@ -1228,13 +2125,21 @@ type DefineResourceLayoutForResourcesOptions<
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
   CustomProps extends InPropsObject = {},
   ExtraResources extends ReadonlyArray<ResourceDefinition> = [],
+  Render = LayoutDefinition<
+    Resources,
+    InProps,
+    Composables,
+    IncludeProps,
+    CustomProps
+  >['render'],
 > = Omit<
   CreateViewMapOptions<
     Resources,
     InProps,
     Composables,
     IncludeProps,
-    CustomProps
+    CustomProps,
+    Render
   >,
   'resources'
 > & {
@@ -1265,6 +2170,13 @@ export type DefineResourceLayoutForResourcesFactory<
     Composables
   > = {},
   CustomProps extends InPropsObject = {},
+  const Render = LayoutDefinition<
+    [...BaseResources, ...ExtraResources],
+    InProps,
+    Composables,
+    IncludeProps,
+    CustomProps
+  >['render'],
 >(
   options: DefineResourceLayoutForResourcesOptions<
     [...BaseResources, ...ExtraResources],
@@ -1272,14 +2184,16 @@ export type DefineResourceLayoutForResourcesFactory<
     Composables,
     IncludeProps,
     CustomProps,
-    ExtraResources
+    ExtraResources,
+    Render
   >,
 ) => DefinedResourceLayout<
   [...BaseResources, ...ExtraResources],
   InProps,
   Composables,
   IncludeProps,
-  CustomProps
+    CustomProps,
+    Render extends Record<string, unknown> ? Render : {}
 >;
 
 /**
@@ -1306,20 +2220,105 @@ export type DefineResourceLayoutFn = {
       Composables
     > = {},
     CustomProps extends InPropsObject = {},
-  >(
-    options: CreateViewMapOptions<
+    const Render extends (...arguments_: any[]) => JSX.Element = LayoutRenderFunction<
       Resources,
       InProps,
       Composables,
       IncludeProps,
       CustomProps
     >,
+  >(
+    options: CreateViewMapOptions<
+      Resources,
+      InProps,
+      Composables,
+      IncludeProps,
+      CustomProps,
+      Render
+    >,
   ): DefinedResourceLayout<
     Resources,
     InProps,
     Composables,
     IncludeProps,
-    CustomProps
+    CustomProps,
+    {}
+  >;
+  <
+    const Resources extends ReadonlyArray<ResourceDefinition>,
+    InProps extends InPropsDefinition<Resources> = {},
+    Composables extends ComposableComponents = {},
+    const IncludeProps extends LayoutIncludeProps<
+      Resources,
+      InProps,
+      Composables
+    > = {},
+    CustomProps extends InPropsObject = {},
+    DefaultComposables extends ComposableComponents = {},
+    const DefaultIncludeProps extends LayoutIncludeProps<
+      Resources,
+      InProps,
+      Composables & DefaultComposables
+    > = {},
+    DefaultCustomProps extends InPropsObject = {},
+    LoadingComposables extends ComposableComponents = {},
+    const LoadingIncludeProps extends LayoutIncludeProps<
+      Resources,
+      InProps,
+      Composables & LoadingComposables
+    > = {},
+    LoadingCustomProps extends InPropsObject = {},
+    ErrorComposables extends ComposableComponents = {},
+    const ErrorIncludeProps extends LayoutIncludeProps<
+      Resources,
+      InProps,
+      Composables & ErrorComposables
+    > = {},
+    ErrorCustomProps extends InPropsObject = {},
+    NotFoundComposables extends ComposableComponents = {},
+    const NotFoundIncludeProps extends LayoutIncludeProps<
+      Resources,
+      InProps,
+      Composables & NotFoundComposables
+    > = {},
+    NotFoundCustomProps extends InPropsObject = {},
+    const RenderStates extends { default: unknown } & Record<
+      string,
+      unknown
+    > = { default: unknown },
+  >(
+    options: CreateViewMapBuiltInRenderStatesOptions<
+      Resources,
+      InProps,
+      Composables,
+      IncludeProps,
+      CustomProps,
+      TypedBuiltInRenderStates<
+        Resources,
+        InProps,
+        Composables,
+        DefaultComposables,
+        DefaultIncludeProps,
+        DefaultCustomProps,
+        LoadingComposables,
+        LoadingIncludeProps,
+        LoadingCustomProps,
+        ErrorComposables,
+        ErrorIncludeProps,
+        ErrorCustomProps,
+        NotFoundComposables,
+        NotFoundIncludeProps,
+        NotFoundCustomProps
+      > &
+        RenderStates
+    >,
+  ): DefinedResourceLayout<
+    Resources,
+    InProps,
+    Composables,
+    IncludeProps,
+    CustomProps,
+    RenderStates
   >;
 };
 

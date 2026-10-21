@@ -112,6 +112,29 @@ export type ResourceDefinitionValue<Resource extends ResourceDefinition> =
       ? Value
       : never;
 
+type NestedResourcePath<
+  Definition extends ResourceDefinition,
+  Prefix extends string = '',
+> = Definition extends string
+  ? Prefix extends ''
+    ? Definition
+    : `${Prefix}.${Definition}`
+  : Definition extends {
+        value: infer Value extends string;
+        subResources: infer SubResources extends ReadonlyArray<ResourceDefinition>;
+      }
+    ? | (Prefix extends '' ? Value : `${Prefix}.${Value}`)
+      | NestedResourcePath<
+          SubResources[number],
+          Prefix extends '' ? Value : `${Prefix}.${Value}`
+        >
+    : never;
+
+/** Dot-delimited paths for every resource and nested sub-resource. */
+export type ResourcePath<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> = NestedResourcePath<Resources[number]>;
+
 /**
  * Top-level resource names declared in a `resources` array. Preserves string
  * literal unions for const resource definitions (unlike `keyof` on the

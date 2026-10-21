@@ -21,6 +21,7 @@ import type {
   ResolveLayoutProps,
 } from './types';
 import { UnionProp } from './union';
+import { createPropsFromComponent } from './component-props';
 
 type ExtractVisibility<Prop extends AnyBaseProp> =
   Prop extends BaseProp<any, infer V extends PropVisibility, any>
@@ -859,4 +860,10 @@ export const createProp = {
   record: createRecordProp,
   component: <Type extends ComponentPropType>(options: { type: Type }) =>
     createComponentPropBuilder(options.type),
+  /**
+   * Reuses retained prop definitions from a component created by this library.
+   * Use `.pick(...)` or `.omit(...)` to select the definitions a new component
+   * or render state should expose.
+   */
+  fromComponent: createPropsFromComponent,
 };
