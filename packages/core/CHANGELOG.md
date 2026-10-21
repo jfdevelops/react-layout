@@ -1,5 +1,19 @@
 # @jfdevelops/react-layout
 
+## 0.25.0
+
+### Minor Changes
+
+- b67e590: Add typed resource layout render states, resource/option-bound building blocks,
+  deferred and lazy state loading, lazy resource component proxies with retryable
+  loading and error defaults, and `createProp.fromComponent(...).pick/omit`.
+
+### Patch Changes
+
+- Updated dependencies [b67e590]
+  - @jfdevelops/react-layout-validator@0.3.0
+  - @jfdevelops/react-layout-composables@0.2.8
+
 ## 0.24.3
 
 ### Patch Changes

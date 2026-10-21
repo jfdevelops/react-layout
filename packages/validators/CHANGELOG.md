@@ -1,5 +1,13 @@
 # @jfdevelops/react-layout-validator
 
+## 0.3.0
+
+### Minor Changes
+
+- b67e590: Add typed resource layout render states, resource/option-bound building blocks,
+  deferred and lazy state loading, lazy resource component proxies with retryable
+  loading and error defaults, and `createProp.fromComponent(...).pick/omit`.
+
 ## 0.2.7
 
 ### Patch Changes
