@@ -7,14 +7,14 @@ import type {
 } from '../props';
 import type { ResourceDefinition } from '../resource';
 import {
-  type CreateViewMapOptions,
   type CreateViewMapBuiltInRenderStatesOptions,
   type CreateViewMapFunctionRenderOptions,
   type DefinedResourceLayout,
   defineResourceLayout,
-  type LayoutDefinition,
   type LayoutIncludeProps,
+  type LayoutResourcesAccessor,
   type TypedBuiltInRenderStates,
+  createLayoutResourcesAccessor,
 } from './define-layout';
 import {
   createLazyResourceLayout,
@@ -22,8 +22,9 @@ import {
   type LazyResourceStates,
 } from './lazy-resource-layout';
 import {
-  createLayoutBuildingBlocks,
-  type CreateLayoutBuildingBlocks,
+  createRenderStateBuilder,
+  type CreateRenderState,
+  type LayoutComposablesDefinition,
 } from './render-state';
 
 /** A resource tuple with at least one entry, preserving literal and nested paths. */
@@ -32,10 +33,21 @@ export type NonEmptyResources = readonly [
   ...ResourceDefinition[],
 ];
 
-/**
- * The portion of a resource-layout definition accepted after resources and
- * options have been bound by {@link createDefinedResourceLayout}.
- */
+/** Configuration shared by every layout created from one defined-layout factory. */
+export type CreateDefinedResourceLayoutOptions<
+  Resources extends NonEmptyResources,
+  Options extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+> = {
+  /** Resources supported by every layout created from this factory. */
+  resources: Resources;
+  /** Props that render states can opt into through `props.include`. */
+  options?: Options;
+  /** Layout-wide composables available to every render state. */
+  composables?: LayoutComposablesDefinition<Resources, Composables>;
+};
+
+/** The flat layout definition accepted after shared configuration is bound. */
 export type DefinedResourceLayoutInput<
   Resources extends NonEmptyResources,
   Options extends InPropsDefinition<Resources>,
@@ -44,28 +56,24 @@ export type DefinedResourceLayoutInput<
   CustomProps extends InPropsObject,
   Render,
 > = Omit<
-  CreateViewMapOptions<
+  CreateViewMapFunctionRenderOptions<
     Resources,
     Options,
     Composables,
     IncludeProps,
-    CustomProps,
-    Render
-  >,
-  'options' | 'resources'
->;
+    CustomProps
+  >['layout'],
+  'composables' | 'render'
+> & { render: Render };
 
-/**
- * A `defineResourceLayout` function bound to one resource tuple and option
- * definition. Callers only provide the layout; `.lazy` instead creates a
- * type-preserving proxy around a named module export.
- */
+/** A `defineResourceLayout` function with its shared configuration pre-bound. */
 export type BoundDefineResourceLayout<
   Resources extends NonEmptyResources,
   Options extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
 > = {
+  /** Defines a layout whose `render` value is a single default-state callback. */
   <
-    Composables extends ComposableComponents = {},
     const IncludeProps extends LayoutIncludeProps<
       Resources,
       Options,
@@ -73,15 +81,15 @@ export type BoundDefineResourceLayout<
     > = {},
     CustomProps extends InPropsObject = {},
   >(
-    definition: Omit<
+    layout: Omit<
       CreateViewMapFunctionRenderOptions<
         Resources,
         Options,
         Composables,
         IncludeProps,
         CustomProps
-      >,
-      'options' | 'resources'
+      >['layout'],
+      'composables'
     >,
   ): DefinedResourceLayout<
     Resources,
@@ -91,8 +99,11 @@ export type BoundDefineResourceLayout<
     CustomProps,
     {}
   >;
+  /**
+   * Defines a layout whose `render` map contains the required `default` state
+   * and any built-in or custom compound component states.
+   */
   <
-    Composables extends ComposableComponents = {},
     const IncludeProps extends LayoutIncludeProps<
       Resources,
       Options,
@@ -127,12 +138,11 @@ export type BoundDefineResourceLayout<
       Composables & NotFoundComposables
     > = {},
     NotFoundCustomProps extends InPropsObject = {},
-    const RenderStates extends { default: unknown } & Record<
-      string,
-      unknown
-    > = { default: unknown },
+    const RenderStates extends { default: unknown } & Record<string, unknown> = {
+      default: unknown;
+    },
   >(
-    definition: Omit<
+    layout: Omit<
       CreateViewMapBuiltInRenderStatesOptions<
         Resources,
         Options,
@@ -155,10 +165,9 @@ export type BoundDefineResourceLayout<
           NotFoundComposables,
           NotFoundIncludeProps,
           NotFoundCustomProps
-        > &
-          RenderStates
-      >,
-      'options' | 'resources'
+        > & RenderStates
+      >['layout'],
+      'composables'
     >,
   ): DefinedResourceLayout<
     Resources,
@@ -183,62 +192,87 @@ export type BoundDefineResourceLayout<
       >,
     RenderStates
   >;
+  /**
+   * Creates a lazy proxy for the single library-defined component exported by
+   * a resource module.
+   *
+   * @param options - Resource path and named-module import callback.
+   */
   lazy<Module extends Record<string, unknown>>(
     options: LazyResourceLayoutOptions<Resources, Module>,
   ): ReturnType<typeof createLazyResourceLayout<Resources, Module>>;
 };
 
-/**
- * Registers shared loading and module-error components for lazy resource
- * layouts. Defaults must be registered before the first `.lazy` call.
- */
-export type DefineLazyDefaults = (defaults: LazyResourceStates) => void;
-
-/**
- * Binds option definitions to the complete builder. Those option keys then
- * become available to every render state's `props.include` declaration.
- */
-export type DefineOptions<Resources extends NonEmptyResources> = <
-  const Options extends InPropsDefinition<Resources>,
->(
-  options: Options,
-) => DefinedResourceLayoutBuilder<Resources, Options>;
-
-/**
- * Self-contained helpers for defining one family of resource layouts across
- * multiple files while retaining its resource and option types.
- */
-export type DefinedResourceLayoutBuilder<
-  Resources extends NonEmptyResources,
-  Options extends InPropsDefinition<Resources>,
-> = CreateLayoutBuildingBlocks<Resources, Options> & {
-  defineLazyDefaults: DefineLazyDefaults;
-  defineOptions: DefineOptions<Resources>;
-  defineResourceLayout: BoundDefineResourceLayout<Resources, Options>;
-  resources: Resources;
+/** Registers loading and module-error components used by lazy layouts. */
+export type DefineLazyDefaults = {
+  /**
+   * Sets defaults once, before the factory creates its first lazy layout.
+   *
+   * @param defaults - Shared components for pending module loads and failures.
+   */
+  (defaults: LazyResourceStates): void;
 };
 
-/** The initial builder returned before option definitions are bound. */
+/** Reusable helpers produced by {@link createDefinedResourceLayout}. */
 export type CreateDefinedResourceLayoutResult<
   Resources extends NonEmptyResources,
-> = DefinedResourceLayoutBuilder<Resources, {}>;
-
-type CreateBuilderArguments<
-  Resources extends NonEmptyResources,
   Options extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
 > = {
-  options: Options;
-  resources: Resources;
+  /** Creates eager, deferred, or separately imported render-state fragments. */
+  createRenderState: CreateRenderState<Resources, Options>;
+  /** Sets the shared loading and module-error UI used by lazy layouts. */
+  defineLazyDefaults: DefineLazyDefaults;
+  /** Defines a layout using the resources, options, and composables already bound. */
+  defineResourceLayout: BoundDefineResourceLayout<
+    Resources,
+    Options,
+    Composables
+  >;
+  /** Reads, selects, or validates the resources bound to this factory. */
+  resources: LayoutResourcesAccessor<Resources>;
 };
 
-function createBuilder<
-  Resources extends NonEmptyResources,
-  Options extends InPropsDefinition<Resources>,
+/**
+ * Creates type-linked layout helpers from one shared configuration. The returned
+ * `defineResourceLayout` accepts the layout directly, while `createRenderState`
+ * carries the same resource and option types across file boundaries.
+ *
+ * @param configuration - Resources and optional shared props/composables to
+ * bind to every returned helper.
+ * @returns Helpers that share the configuration's inferred literal types.
+ *
+ * @example
+ * ```tsx
+ * const { createRenderState, defineResourceLayout } =
+ *   createDefinedResourceLayout({
+ *     resources: ['users'],
+ *     options: { title: createProp.string() },
+ *   });
+ *
+ * const Loading = createRenderState({
+ *   state: 'Loading',
+ *   props: { include: { title: true } },
+ *   render: ({ title }) => <p>Loading {title}</p>,
+ * });
+ *
+ * export const usersLayout = defineResourceLayout({
+ *   render: { default: () => <Users />, ...Loading },
+ * });
+ * ```
+ */
+export function createDefinedResourceLayout<
+  const Resources extends NonEmptyResources,
+  const Options extends InPropsDefinition<Resources> = {},
+  Composables extends ComposableComponents = {},
 >(
-  arguments_: CreateBuilderArguments<Resources, Options>,
-): DefinedResourceLayoutBuilder<Resources, Options> {
-  const { options, resources } = arguments_;
-  const buildingBlocks = createLayoutBuildingBlocks({ options, resources });
+  configuration: CreateDefinedResourceLayoutOptions<
+    Resources,
+    Options,
+    Composables
+  >,
+): CreateDefinedResourceLayoutResult<Resources, Options, Composables> {
+  const { resources, options = {} as Options, composables } = configuration;
   const defineBoundLayout = defineResourceLayout.forResources(...resources);
   let lazyDefaults: LazyResourceStates = {};
   let lazyDefaultsDefined = false;
@@ -261,52 +295,27 @@ function createBuilder<
     lazyDefaultsDefined = true;
   }
 
-  const boundDefineResourceLayout = ((definition: Record<string, unknown>) =>
+  const boundDefineResourceLayout = ((layout: Record<string, unknown>) =>
     defineBoundLayout({
-      ...definition,
       options,
-    } as never)) as unknown as BoundDefineResourceLayout<Resources, Options>;
+      layout: { ...layout, composables },
+    } as never)) as unknown as BoundDefineResourceLayout<
+    Resources,
+    Options,
+    Composables
+  >;
 
   boundDefineResourceLayout.lazy = <Module extends Record<string, unknown>>(
     lazyOptions: LazyResourceLayoutOptions<Resources, Module>,
   ): ReturnType<typeof createLazyResourceLayout<Resources, Module>> => {
     lazyLayoutCreated = true;
-
     return createLazyResourceLayout(lazyOptions, lazyDefaults);
   };
 
-  function defineOptions<
-    const DefinedOptions extends InPropsDefinition<Resources>,
-  >(
-    definedOptions: DefinedOptions,
-  ): DefinedResourceLayoutBuilder<Resources, DefinedOptions> {
-    return createBuilder({ options: definedOptions, resources });
-  }
-
   return {
-    ...buildingBlocks,
+    createRenderState: createRenderStateBuilder({ options, resources }),
     defineLazyDefaults,
-    defineOptions,
     defineResourceLayout: boundDefineResourceLayout,
-    resources,
+    resources: createLayoutResourcesAccessor(resources),
   };
-}
-
-/**
- * Binds a literal resource tuple once and returns reusable, type-linked layout
- * helpers. Chain `.defineOptions(options)` when states need to include shared
- * option props.
- *
- * @example
- * ```tsx
- * const { createRenderState, defineResourceLayout } =
- *   createDefinedResourceLayout('users').defineOptions({
- *     title: createProp.string(),
- *   });
- * ```
- */
-export function createDefinedResourceLayout<
-  const Resources extends NonEmptyResources,
->(...resources: Resources): CreateDefinedResourceLayoutResult<Resources> {
-  return createBuilder({ options: {}, resources });
 }

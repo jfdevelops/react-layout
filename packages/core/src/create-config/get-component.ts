@@ -37,6 +37,7 @@ import type {
 } from './paths';
 import type {
   BaseResourceConfigComponents,
+  ResourceConfig,
   ResourceConfigComponentKey,
   ResourceConfigComponents,
   ResourceConfigEntry,
@@ -344,11 +345,47 @@ export type ComponentTypes<Created> = Created extends {
     }[keyof Config]
   : never;
 
+/**
+ * One resource entry keyed for direct spreading into a resource config.
+ * Preserves the precise component slots and sub-resource branches in `Config`.
+ */
+export type ResourceConfigFragment<
+  Resource extends string,
+  Config,
+> = { [Key in Resource]: Config };
+
+/**
+ * Creates one keyed config fragment for spreading into a resource config.
+ *
+ * @param resource - A top-level resource supported by the layout definition.
+ * @param config - Components and declared sub-resource branches for that resource.
+ */
+export type CreateResourceConfigForResource<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> = <
+  const Resource extends LayoutResourceKey<Resources>,
+  const Config extends ResourceConfig<Resources>[Resource],
+>(
+  resource: Resource,
+  config: Config,
+) => ResourceConfigFragment<Resource, Config>;
+
+/** Creates a validated resource config and exposes helpers for config fragments. */
 export type CreateResourceConfigFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
-> = <const Config extends ResourceConfigMap<Resources>>(
-  config: ResourceConfigInput<Resources, Config>,
-) => CreatedResourceConfig<Resources, Config>;
+> = {
+  /**
+   * Validates and indexes a complete configuration assembled from one or more
+   * resource entries.
+   *
+   * @param config - At least one resource entry supported by the layout.
+   */
+  <const Config extends ResourceConfigMap<Resources>>(
+    config: ResourceConfigInput<Resources, Config>,
+  ): CreatedResourceConfig<Resources, Config>;
+  /** Creates a typed fragment that can be spread into the complete config. */
+  forResource: CreateResourceConfigForResource<Resources>;
+};
 
 type SubResourceParam =
   | string
@@ -494,7 +531,7 @@ export function createGetComponent<
   return Object.assign(getComponent, { forResource });
 }
 
-export function createResourceConfig<
+function createResourceConfigImpl<
   Resources extends ReadonlyArray<ResourceDefinition>,
   const Config extends ResourceConfigMap<Resources>,
 >(
@@ -528,3 +565,35 @@ export function createResourceConfig<
     ) as unknown as Created['subResources'],
   };
 }
+
+function createResourceConfigForResource<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  const Resource extends LayoutResourceKey<Resources>,
+  const Config extends ResourceConfig<Resources>[Resource],
+>(
+  resource: Resource,
+  config: Config,
+): ResourceConfigFragment<Resource, Config> {
+  return { [resource]: config } as ResourceConfigFragment<Resource, Config>;
+}
+
+/**
+ * Creates a validated resource configuration. Use `.forResource()` to build
+ * independently declared, type-safe fragments that can be spread into the
+ * complete configuration object.
+ *
+ * @param config - Resource entries to validate and expose through lookup helpers.
+ * @returns The original config plus typed component and path lookup helpers.
+ *
+ * @example
+ * ```tsx
+ * const users = createResourceConfig.forResource('users', {
+ *   component: <Users />,
+ * });
+ *
+ * const config = createResourceConfig({ ...users });
+ * ```
+ */
+export const createResourceConfig = Object.assign(createResourceConfigImpl, {
+  forResource: createResourceConfigForResource,
+});

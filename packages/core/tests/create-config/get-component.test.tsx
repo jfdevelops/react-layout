@@ -275,6 +275,24 @@ describe('getComponent with a sub-resource on a specific resource', () => {
     },
   });
 
+  it('combines independently defined resource config fragments', () => {
+    const templates = createResourceConfig.forResource('templates', {
+      component: <div>templates</div>,
+      deleted: { component: <div>deleted</div> },
+    });
+    const appointments = createResourceConfig.forResource('appointments', {
+      component: <div>appointments</div>,
+    });
+    const config = createResourceConfig({ ...templates, ...appointments });
+
+    expect(config.getComponent({ resource: 'templates' })).toBe(
+      templates.templates.component,
+    );
+    expect(config.getComponent({ resource: 'appointments' })).toBe(
+      appointments.appointments.component,
+    );
+  });
+
   it('returns the default component for the selected sub-resource', () => {
     const deleted = <div data-testid='deleted-templates'>deleted</div>;
     const config = createResourceConfig({

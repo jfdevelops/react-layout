@@ -58,9 +58,11 @@ import {
 } from '../props';
 import {
   createIsValidResourceFn,
+  normalizeResourceDefinitions,
   normalizeResources,
   toResourceEnum,
   type LayoutResourceKey,
+  type NormalizedResourceDefinitions,
   type ResourceDefinition,
   type ResourceDefinitionValue,
 } from '../resource';
@@ -138,8 +140,9 @@ type LayoutRenderContext<
   resource: LayoutResourceKey<Resources>;
   /**
    * Accessor for the resources bound to this definition. Read `resources.current`
-   * for the resource this instance renders, call `resources()` for the raw
-   * value, use `resources.pick(...)` / `resources.omit(...)` to filter, or
+   * for the resource this instance renders, call `resources()` for normalized
+   * definitions, `resources.raw()` for the original value, use
+   * `resources.pick(...)` / `resources.omit(...)` to filter, or
    * `resources.isResource(...)` to narrow an unknown value.
    */
   resources: LayoutRenderResourcesAccessor<Resources>;
@@ -257,7 +260,8 @@ export type ResourceSelection<
 /**
  * Accessor for the resources bound to a `defineResourceLayout` definition.
  *
- * - `resources()` returns the raw resources.
+ * - `resources()` returns normalized `{ value, subResources? }` definitions.
+ * - `resources.raw()` returns the definitions exactly as declared.
  * - `resources.omit(key, ...rest)` selects every resource except the named ones.
  * - `resources.pick(key, ...rest)` selects only the named resources.
  * - `resources.isResource(value)` narrows an unknown value to a resource key.
@@ -269,10 +273,23 @@ export type LayoutResourcesAccessor<
   Resources extends ReadonlyArray<ResourceDefinition>,
 > = {
   /**
-   * Returns the raw `resources` value passed to `defineResourceLayout`,
-   * exactly as declared.
+   * Returns normalized resources, or the result of an optional selector.
+   *
+   * @param select - Transforms the normalized tuple without losing its literal
+   * resource and sub-resource types.
    */
-  (): Resources;
+  <Selected = NormalizedResourceDefinitions<Resources>>(
+    select?: (resources: NormalizedResourceDefinitions<Resources>) => Selected,
+  ): Selected;
+  /**
+   * Returns the original resource declarations, or an optionally selected
+   * value derived from them.
+   *
+   * @param select - Transforms the original tuple exactly as it was declared.
+   */
+  raw<Selected = Resources>(
+    select?: (resources: Resources) => Selected,
+  ): Selected;
   /**
    * Narrows an unknown value to one of this definition's top-level resource
    * keys.
@@ -332,11 +349,29 @@ function createResourceSelection(
   return selection;
 }
 
-function createLayoutResourcesAccessor<
+/**
+ * Creates the callable resource accessor shared by global and bound layout
+ * definitions.
+ *
+ * @param resources - Resource definitions to expose and normalize.
+ * @returns A callable normalized accessor with raw, selection, and guard APIs.
+ * @internal
+ */
+export function createLayoutResourcesAccessor<
   Resources extends ReadonlyArray<ResourceDefinition>,
 >(resources: Resources): LayoutResourcesAccessor<Resources> {
-  const accessor = (() => resources) as LayoutResourcesAccessor<Resources>;
+  const normalizedResources = normalizeResourceDefinitions(resources);
+  const accessor = ((
+    select?: (value: typeof normalizedResources) => unknown,
+  ) =>
+    select
+      ? select(normalizedResources)
+      : normalizedResources) as LayoutResourcesAccessor<Resources>;
 
+  accessor.raw = ((select?: (value: Resources) => unknown) =>
+    select
+      ? select(resources)
+      : resources) as LayoutResourcesAccessor<Resources>['raw'];
   accessor.isResource = createIsValidResourceFn(resources);
   accessor.omit = ((...keys: string[]) =>
     createResourceSelection(
@@ -1327,7 +1362,8 @@ export type DefinedResourceLayout<
   createResourceLinks: CreateResourceLinksFn<Resources>;
   /**
    * Accessor for the resources bound to this definition. Call `resources()` for
-   * the raw value, or `resources.pick(...)` / `resources.omit(...)` to filter.
+   * normalized definitions, `resources.raw()` for their declared form, or use
+   * `resources.pick(...)` / `resources.omit(...)` to filter.
    */
   resources: LayoutResourcesAccessor<Resources>;
   /**

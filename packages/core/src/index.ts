@@ -33,6 +33,8 @@ export type {
 export { createDefinedResourceLayout, defineResourceLayout } from './create-config';
 export type {
   ComponentTypes,
+  CreateResourceConfigForResource,
+  CreateResourceConfigFn,
   CreateResourceMap,
   CreateResourceMapFn,
   CreateGetComponentForPath,
@@ -57,6 +59,7 @@ export type {
   ResourceLayoutShellPublisher,
   ResourceLayoutProvider,
   ResourceLayoutProviderProps,
+  ResourceConfigFragment,
   ResourceSelection,
   ShellLayoutDefinition,
   ShellRenderContext,
@@ -68,6 +71,7 @@ export type {
   LazyResourceStates,
   AnyRenderStateDefinition,
   BoundDefineResourceLayout,
+  CreateDefinedResourceLayoutOptions,
   CreateDefinedResourceLayoutResult,
   CreateViewMapBuiltInRenderStatesOptions,
   CreateViewMapFunctionRenderOptions,
@@ -81,11 +85,9 @@ export type {
   CreateRenderState,
   CreateRenderStateBuilderArguments,
   CreateRenderStateBuilderResult,
-  DefinedResourceLayoutBuilder,
   DefinedResourceLayoutInput,
   DefineLayoutComposables,
   DefineLazyDefaults,
-  DefineOptions,
   DeferredRenderState,
   LayoutComposablesDefinition,
   LazyRenderState,
@@ -156,10 +158,17 @@ export type {
   ResolvedIncludedConfigProps,
   ResolvedIncludedPropsAsDefined,
 } from './props';
-export { normalizeResource, normalizeResources, toResourceEnum } from './resource';
+export {
+  normalizeResource,
+  normalizeResourceDefinitions,
+  normalizeResources,
+  toResourceEnum,
+} from './resource';
 export type {
   LayoutResourceKey,
   NormalizeResource,
+  NormalizedResourceDefinition,
+  NormalizedResourceDefinitions,
   NormalizeResources,
   ResourceDefinition,
   ResourceDefinitionValue,

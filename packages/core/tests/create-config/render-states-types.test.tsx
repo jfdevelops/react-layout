@@ -22,7 +22,7 @@ it('contextually types inline state render arguments', () => {
   });
 
   const { createRenderState, defineResourceLayout: defineTargetLayout } =
-    createDefinedResourceLayout('users');
+    createDefinedResourceLayout({ resources: ['users'] });
   const Preview = createRenderState({
     state: 'Preview',
     composables: () => ({
@@ -40,11 +40,9 @@ it('contextually types inline state render arguments', () => {
   });
 
   defineTargetLayout({
-    layout: {
-      render: {
-        default: () => <></>,
-        ...Preview,
-      },
+    render: {
+      default: () => <></>,
+      ...Preview,
     },
   });
 });
@@ -150,51 +148,52 @@ it('preserves render-state members through withLayout', () => {
   expectTypeOf(Users.Loading).toBeFunction();
 });
 
-it('infers included option props through a bound layout builder', () => {
+it('infers included option props through a bound layout factory', () => {
   const { defineResourceLayout: defineBoundLayout } =
-    createDefinedResourceLayout('users').defineOptions({
-      title: createProp.string(),
-      message: createProp.string(),
+    createDefinedResourceLayout({
+      resources: ['users'],
+      options: {
+        title: createProp.string(),
+        message: createProp.string(),
+      },
     });
 
   defineBoundLayout({
-    layout: {
-      render: {
-        default: {
+    render: {
+      default: {
           props: { include: { title: true } },
           render: ({ title }) => {
             expectTypeOf(title).toEqualTypeOf<string>();
             return <h1>{title}</h1>;
           },
         },
-        Loading: {
+      Loading: {
           props: { include: { message: true } },
           render: ({ message }) => {
             expectTypeOf(message).toEqualTypeOf<string>();
             return <p>{message}</p>;
           },
-        },
       },
     },
   });
 });
 
-it('carries defined options and typed composable factories through the builders', () => {
+it('carries defined options and typed composables through the factory', () => {
   const {
-    composables,
     createRenderState,
     defineResourceLayout: defineBoundLayout,
-  } = createDefinedResourceLayout('users').defineOptions({
-    title: createProp.string(),
-  });
-  const layoutComposables = composables((create) => ({
-    Layout: create({
-      name: ({ resource }) => {
-        expectTypeOf(resource).toEqualTypeOf<'users'>();
-        return 'Layout';
-      },
+  } = createDefinedResourceLayout({
+    resources: ['users'],
+    options: { title: createProp.string() },
+    composables: (create) => ({
+      Layout: create({
+        name: ({ resource }) => {
+          expectTypeOf(resource).toEqualTypeOf<'users'>();
+          return 'Layout';
+        },
+      }),
     }),
-  }));
+  });
   const Loading = createRenderState({
     state: 'Loading',
     composables: (create) => ({
@@ -211,12 +210,9 @@ it('carries defined options and typed composable factories through the builders'
     },
   });
   const { createResourceLayout } = defineBoundLayout({
-    layout: {
-      composables: layoutComposables,
-      render: {
-        default: () => <></>,
-        ...Loading,
-      },
+    render: {
+      default: () => <></>,
+      ...Loading,
     },
   });
   const Users = createResourceLayout({
@@ -241,7 +237,7 @@ it('carries defined options and typed composable factories through the builders'
 
 it('types compound render states independently', () => {
   const { createRenderState, defineResourceLayout: defineBoundLayout } =
-    createDefinedResourceLayout('users');
+    createDefinedResourceLayout({ resources: ['users'] });
   const ErrorState = createRenderState({
     state: 'Error',
     props: {
@@ -256,12 +252,10 @@ it('types compound render states independently', () => {
     },
   });
   const { createResourceLayout } = defineBoundLayout({
-    layout: {
-      render: {
-        default: () => <></>,
-        ...ErrorState,
-        Loading: () => <></>,
-      },
+    render: {
+      default: () => <></>,
+      ...ErrorState,
+      Loading: () => <></>,
     },
   });
   const Users = createResourceLayout({ resource: 'users', name: 'Users' });
@@ -279,11 +273,15 @@ it('types compound render states independently', () => {
 it('types dot-delimited nested lazy resource paths', () => {
   const { defineResourceLayout: defineBoundLayout } =
     createDefinedResourceLayout({
-      value: 'admin',
-      subResources: [
+      resources: [
         {
-          value: 'users',
-          subResources: ['detail'],
+          value: 'admin',
+          subResources: [
+            {
+              value: 'users',
+              subResources: ['detail'],
+            },
+          ],
         },
       ],
     });
@@ -312,7 +310,7 @@ it('does not expose synchronous metadata on lazy resource proxies', () => {
     name: 'LoadedUsers',
   });
   const { defineResourceLayout: defineBoundLayout } =
-    createDefinedResourceLayout('users');
+    createDefinedResourceLayout({ resources: ['users'] });
   const Users = defineBoundLayout.lazy({
     resource: 'users',
     load: async () => ({ LoadedUsers }),

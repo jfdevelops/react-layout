@@ -293,6 +293,30 @@ describe('getComponent types for resource-specific sub-resources', () => {
     },
   });
 
+  it('types independently spread resource config fragments', () => {
+    const templates = createResourceConfig.forResource('templates', {
+      component: null as never,
+      deleted: { component: null as never },
+    });
+    const appointments = createResourceConfig.forResource('appointments', {
+      component: null as never,
+    });
+    const splitConfig = createResourceConfig({
+      ...templates,
+      ...appointments,
+    });
+
+    expectTypeOf(splitConfig.config).toHaveProperty('templates');
+    expectTypeOf(splitConfig.config).toHaveProperty('appointments');
+
+    () => {
+      // @ts-expect-error comments is not a configured resource.
+      createResourceConfig.forResource('comments', {
+        component: null as never,
+      });
+    };
+  });
+
   it('infers component types actually defined across the config', () => {
     expectTypeOf<ComponentTypes<typeof config>>().toEqualTypeOf<
       'component' | 'detail' | 'errorComponent' | 'pendingComponent'

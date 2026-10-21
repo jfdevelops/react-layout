@@ -98,27 +98,46 @@ const Users = createResourceLayout({
 <Users.NotFound />;
 ```
 
-Use `createDefinedResourceLayout` to bind resources and options once, then split
-the returned building blocks across files. `composables` receives the same
-resource-aware `create` callback as `layout.composables`.
+Use `createDefinedResourceLayout` to bind resources, options, and composables
+once, then split the returned building blocks across files. Its `composables`
+callback receives the same resource-aware `create` function as the global API.
 
 ```tsx
 const {
-  composables,
   createRenderState,
   defineResourceLayout,
-} = createDefinedResourceLayout('users').defineOptions({
-  title: createProp.string(),
+} = createDefinedResourceLayout({
+  resources: ['users'],
+  options: {
+    title: createProp.string(),
+  },
+  composables: (create) => ({
+    Layout: create({ name: 'PageLayout' }),
+  }),
 });
-
-export const pageComposables = composables((create) => ({
-  Layout: create({ name: 'PageLayout' }),
-}));
 
 export const Loading = createRenderState({
   state: 'Loading',
   props: { include: { title: true } },
   render: ({ title }) => <p>Loading {title}…</p>,
+});
+```
+
+The returned `resources` accessor exposes normalized definitions by default and
+the original declarations through `resources.raw()`. Both calls accept an
+optional selector, while `pick`, `omit`, and `isResource` retain their existing
+behavior.
+
+Resource configs can also be assembled independently without losing their
+resource-specific types:
+
+```tsx
+const users = createResourceConfig.forResource('users', {
+  component: <Users />,
+});
+
+const config = createResourceConfig({
+  ...users,
 });
 ```
 
@@ -134,7 +153,7 @@ const {
   defineLazyDefaults,
   defineResourceLayout,
   resources,
-} = createDefinedResourceLayout('users');
+} = createDefinedResourceLayout({ resources: ['users'] });
 
 defineLazyDefaults({
   Loading: GenericResourceLoading,
