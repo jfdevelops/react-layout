@@ -5,6 +5,7 @@ import type { ResourceDefinition } from '../resource';
 import {
   type CreateViewMapOptions,
   type CreateViewMapBuiltInRenderStatesOptions,
+  type CreateViewMapFunctionRenderOptions,
   type DefinedResourceLayout,
   defineResourceLayout,
   type LayoutDefinition,
@@ -67,24 +68,16 @@ export type BoundDefineResourceLayout<
       Composables
     > = {},
     CustomProps extends InPropsObject = {},
-    const Render extends (...arguments_: any[]) => JSX.Element = Extract<
-      LayoutDefinition<
-      Resources,
-      Options,
-      Composables,
-      IncludeProps,
-      CustomProps
-      >['render'],
-      (...arguments_: any[]) => JSX.Element
-    >,
   >(
-    definition: DefinedResourceLayoutInput<
-      Resources,
-      Options,
-      Composables,
-      IncludeProps,
-      CustomProps,
-      Render
+    definition: Omit<
+      CreateViewMapFunctionRenderOptions<
+        Resources,
+        Options,
+        Composables,
+        IncludeProps,
+        CustomProps
+      >,
+      'options' | 'resources'
     >,
   ): DefinedResourceLayout<
     Resources,

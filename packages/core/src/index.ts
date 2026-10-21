@@ -70,6 +70,7 @@ export type {
   BoundDefineResourceLayout,
   CreateDefinedResourceLayoutResult,
   CreateViewMapBuiltInRenderStatesOptions,
+  CreateViewMapFunctionRenderOptions,
   CreateViewMapInlineRenderStatesOptions,
   CreateViewMapRenderStatesOptions,
   ContextualInlineRenderState,

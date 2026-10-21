@@ -884,6 +884,32 @@ export type CreateViewMapOptions<
 };
 
 /**
+ * Input for the callback shorthand of `layout.render`. Keeping the callback
+ * concrete allows TypeScript to infer layout composables and included props
+ * from their sibling definitions before contextually typing `render`.
+ */
+export type CreateViewMapFunctionRenderOptions<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
+  CustomProps extends InPropsObject,
+> = CreateViewMapOptions<
+  Resources,
+  Options,
+  Composables,
+  IncludeProps,
+  CustomProps,
+  LayoutRenderFunction<
+    Resources,
+    Options,
+    Composables,
+    IncludeProps,
+    CustomProps
+  >
+>;
+
+/**
  * Resource-layout input that preserves the exact keys and definitions of an
  * object-form render-state map.
  */
@@ -2220,21 +2246,13 @@ export type DefineResourceLayoutFn = {
       Composables
     > = {},
     CustomProps extends InPropsObject = {},
-    const Render extends (...arguments_: any[]) => JSX.Element = LayoutRenderFunction<
+  >(
+    options: CreateViewMapFunctionRenderOptions<
       Resources,
       InProps,
       Composables,
       IncludeProps,
       CustomProps
-    >,
-  >(
-    options: CreateViewMapOptions<
-      Resources,
-      InProps,
-      Composables,
-      IncludeProps,
-      CustomProps,
-      Render
     >,
   ): DefinedResourceLayout<
     Resources,

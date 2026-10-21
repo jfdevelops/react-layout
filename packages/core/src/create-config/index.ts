@@ -47,6 +47,7 @@ export type {
   DefinedResourceLayoutWithShell,
   DefineResourcesFn,
   CreateViewMapBuiltInRenderStatesOptions,
+  CreateViewMapFunctionRenderOptions,
   CreateViewMapOptions,
   CreateViewMapInlineRenderStatesOptions,
   CreateViewMapRenderStatesOptions,
