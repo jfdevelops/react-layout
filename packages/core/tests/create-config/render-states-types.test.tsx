@@ -377,3 +377,172 @@ it('lifts included component props with their call-site optionality', () => {
   expectTypeOf(Target).toBeCallableWith({});
   expectTypeOf(Target).toBeCallableWith({ title: 'Optional title' });
 });
+
+it('rejects invalid render-state values across layout entry points', () => {
+  const invalidStates = { default: () => <></>, Preview: 123 };
+  const { defineResourceLayout: defineBoundLayout } =
+    createDefinedResourceLayout({ resources: ['users'] });
+
+  () => {
+    // @ts-expect-error custom states must be render callbacks or definitions
+    defineResourceLayout({ resources: ['users'], layout: { render: invalidStates } });
+    // @ts-expect-error bound layouts validate custom state entries too
+    defineBoundLayout({ render: invalidStates });
+    // @ts-expect-error multi-resource layouts validate custom state entries
+    defineResourceLayout.forResources('users')({ layout: { render: invalidStates } });
+    defineResourceLayout.withLayout({
+      resources: ['users'],
+      shell: { render: (_props, { children }) => <>{children}</> },
+      // @ts-expect-error shell layouts validate custom state entries
+      layout: { render: invalidStates },
+    });
+  };
+});
+
+it('validates definitions with explicit state names', () => {
+  const { defineResourceLayout: defineBoundLayout } =
+    createDefinedResourceLayout({ resources: ['users'] });
+  () => {
+    // @ts-expect-error a state name cannot bypass validation of its render callback
+    defineBoundLayout({ render: { default: () => <></>, Preview: { state: 'Preview', render: 123 } } });
+    // @ts-expect-error an empty map suggests states but still requires a default render
+    defineBoundLayout({ render:  {} });
+  };
+});
+
+it('infers custom inline states from the complete render map', () => {
+  const { defineResourceLayout: defineBoundLayout } = createDefinedResourceLayout({
+    resources: ['users'],
+    options: { title: createProp.string() },
+  });
+  const definition = defineBoundLayout({
+    render: {
+      default: () => <></>,
+      Preview: {
+        props: {
+          include: { title: { visibility: 'required', passthrough: 'component' } },
+          custom: { count: createProp.number() },
+        },
+        composables: () => ({ Frame: createComposableComponent({ name: 'PreviewFrame' }) }),
+        render: ({ title, count }, { composables }) => {
+          expectTypeOf(title).toEqualTypeOf<string>();
+          expectTypeOf(count).toEqualTypeOf<number>();
+          expectTypeOf(composables.Frame).not.toBeAny();
+          // @ts-expect-error only this state's composables are available
+          composables.Unknown;
+          return <composables.Frame>{title}: {count}</composables.Frame>;
+        },
+      },
+      Empty: {
+        props: { custom: { message: createProp.string() } },
+        render: ({ message }) => {
+          expectTypeOf(message).toEqualTypeOf<string>();
+          return <p>{message}</p>;
+        },
+      },
+    },
+  });
+  const Users = definition.createResourceLayout({ resource: 'users', name: 'Users' });
+  expectTypeOf(Users).toBeCallableWith({});
+  expectTypeOf(Users.Preview).toBeCallableWith({ title: 'Preview', count: 1 });
+  expectTypeOf(Users.Empty).toBeCallableWith({ message: 'Empty' });
+  () => {
+    // @ts-expect-error required props belong to the custom state
+    Users.Preview({});
+    // @ts-expect-error another state's props cannot be passed here
+    Users.Empty({ count: 1 });
+    // @ts-expect-error undeclared states are not exposed
+    Users.Loading;
+  };
+});
+
+it('preserves the function overload and its props and context', () => {
+  const { defineResourceLayout: defineBoundLayout } = createDefinedResourceLayout({
+    resources: ['users'], options: { title: createProp.string() },
+  });
+  const definition = defineBoundLayout({
+    props: { include: { title: true }, custom: { count: createProp.number() } },
+    render: ({ title, count }, { resources }) => {
+      expectTypeOf(title).toEqualTypeOf<string>();
+      expectTypeOf(count).toEqualTypeOf<number>();
+      expectTypeOf(resources.current).toEqualTypeOf<'users'>();
+      return <p>{title}: {count}</p>;
+    },
+  });
+  const Users = definition.createResourceLayout({ resource: 'users', name: 'Users', title: 'Users' });
+  expectTypeOf(Users).toBeCallableWith({ count: 1 });
+});
+
+it('validates option names in custom inline states', () => {
+  const { defineResourceLayout: defineBoundLayout } = createDefinedResourceLayout({
+    resources: ['users'], options: { title: createProp.string() },
+  });
+  () => {
+    // @ts-expect-error unknown options cannot be included in a custom state
+    defineBoundLayout({ render: { default: () => <></>, Preview: { props: { include: { missing: true } }, render: () => <></> } } });
+  };
+});
+
+it('tracks custom inline states through resource-bound and shell overloads', () => {
+  const resourceDefinition = defineResourceLayout.forResources('users')({
+    resources: ['posts'],
+    options: { title: createProp.string() },
+    layout: {
+      render: {
+        default: () => <></>,
+        Preview: {
+          props: { include: { title: true }, custom: { count: createProp.number() } },
+          render: ({ title, count }, { resources }) => {
+            expectTypeOf(title).toEqualTypeOf<string>();
+            expectTypeOf(count).toEqualTypeOf<number>();
+            expectTypeOf(resources.current).toEqualTypeOf<'users' | 'posts'>();
+            return <p>{title}: {count}</p>;
+          },
+        },
+      },
+    },
+  });
+  const ResourceUsers = resourceDefinition.createResourceLayout({ resource: 'users', name: 'Users', title: 'Users' });
+  expectTypeOf(ResourceUsers.Preview).toBeCallableWith({ count: 1 });
+
+  const shellDefinition = defineResourceLayout.withLayout({
+    resources: ['users'],
+    options: { title: createProp.string() },
+    shell: { render: (_props, { children }) => <main>{children}</main> },
+    layout: {
+      render: {
+        default: () => <></>,
+        Preview: {
+          props: { include: { title: true }, custom: { count: createProp.number() } },
+          render: ({ title, count }) => {
+            expectTypeOf(title).toEqualTypeOf<string>();
+            expectTypeOf(count).toEqualTypeOf<number>();
+            return <p>{title}: {count}</p>;
+          },
+        },
+      },
+    },
+  });
+  const ShellUsers = shellDefinition.createResourceLayout({ resource: 'users', name: 'Users', title: 'Users' });
+  expectTypeOf(ShellUsers.Preview).toBeCallableWith({ count: 1 });
+});
+
+it('infers inline custom states on the unbound object overload', () => {
+  const definition = defineResourceLayout({
+    resources: ['users'],
+    layout: {
+      render: {
+        default: () => <></>,
+        Preview: {
+          props: { custom: { count: createProp.number() } },
+          render: ({ count }) => {
+            expectTypeOf(count).toEqualTypeOf<number>();
+            return <p>{count}</p>;
+          },
+        },
+      },
+    },
+  });
+  const Users = definition.createResourceLayout({ resource: 'users', name: 'Users' });
+  expectTypeOf(Users.Preview).toBeCallableWith({ count: 1 });
+});
