@@ -496,6 +496,40 @@ describe('resource layout render states', () => {
     expect(loadCount).toBe(1);
   });
 
+  it.each(['default', 'named'] as const)('lazy loads a namespace from a %s module export', async (exportName) => {
+    const suite = createDefinedResourceLayout({ resources: ['users'], namespace: true });
+    const definition = suite.defineResourceLayout({
+      render: {
+        default: {
+          props: { custom: { title: createProp.string() } },
+          render: ({ title }) => <h1>{title}</h1>,
+        },
+        Detail: {
+          props: { custom: { count: createProp.number() } },
+          render: ({ count }) => <p>Detail {count}</p>,
+        },
+      },
+    });
+    const LoadedUsers = definition.createResourceLayout({ resource: 'users', name: 'LoadedUsers' });
+    const load = vi.fn(async () => ({ [exportName]: LoadedUsers, unrelated: { Root: () => null } }));
+    const Users = suite.defineResourceLayout.lazy({ resource: 'users', load });
+
+    expectTypeOf(Users).toBeCallableWith({ title: 'Namespace users' });
+    expectTypeOf(Users.Detail).toBeCallableWith({ count: 2 });
+    () => {
+      // @ts-expect-error lazy namespace roots retain required props
+      <Users />;
+      // @ts-expect-error lazy namespace states retain required props
+      <Users.Detail />;
+      // @ts-expect-error only declared states are exposed
+      Users.Unknown;
+    };
+    render(<><Users title='Namespace users' /><Users.Detail count={2} /></>);
+    expect(await screen.findByText('Namespace users')).toBeInTheDocument();
+    expect(await screen.findByText('Detail 2')).toBeInTheDocument();
+    expect(load).toHaveBeenCalledTimes(1);
+  });
+
   it('retries a failed lazy resource import with the configured error state', async () => {
     const created = defineResourceLayout({
       resources: ['users'],

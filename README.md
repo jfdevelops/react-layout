@@ -231,6 +231,13 @@ the library. Nested resources use typed dot paths such as
 `admin.users.detail`. Lazy components preserve compound state access such as
 `<Users.NotFound />` and share one cached module load.
 
+When a layout's `composables` callback references a state that includes props from
+that same callback's preset components, those included keys keep their declared
+requiredness and optionality. Their value types are `unknown` until the preset
+schema is available; TypeScript cannot infer a callback's return value into its
+own arguments. Shared preset and option props retain their known value types.
+
+
 ### Component namespaces
 
 By default, `createResourceLayout` returns a callable component with named state components attached. Set `namespace: true` to return a plain object instead, so autocomplete on `Users.` suggests only `Root` and the named states:

@@ -209,16 +209,37 @@ type StateLocalComposables<Input> = NormalizeStateInput<Input> extends {
   composables?: (...args: any[]) => infer Components extends ComposableComponents;
 } ? Components : {};
 
+/**
+ * A composables callback cannot infer its own return value into its arguments.
+ * Preserve the declared call-site contract for props supplied by local presets,
+ * even when their value types are not yet available in the callback context.
+ */
+type UnresolvedStateComponentProps<Props, Includes> = {
+  [Key in Exclude<keyof Includes, keyof Props> as Includes[Key] extends {
+    visibility: 'required'; passthrough: 'component';
+  } ? Key : never]: unknown;
+} & {
+  [Key in Exclude<keyof Includes, keyof Props> as Includes[Key] extends
+    | 'optional'
+    | { visibility: 'optional'; passthrough: 'component' }
+    ? Key : never]?: unknown;
+};
+
+type StateComponentProps<Props extends InPropsObject, Includes> =
+  ResolvedIncludedComponentProps<Props,
+    Pick<Includes, Extract<keyof Includes, keyof Props>> extends infer Known extends IncludedProps<Props>
+      ? Known : {}
+  > & UnresolvedStateComponentProps<Props, Includes>;
+
 /** Call-site props of a referenced state; creation-time options stay bound. */
 export type RenderStateCallProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
   Input,
-> = ResolveProps<StateCustomProps<Input>> & ResolvedIncludedComponentProps<
+> = ResolveProps<StateCustomProps<Input>> & StateComponentProps<
   MergedLayoutInProps<Resources, Options, Composables & StateLocalComposables<Input>>,
-  StateIncludes<Input> extends IncludedProps<MergedLayoutInProps<Resources, Options, Composables & StateLocalComposables<Input>>>
-    ? StateIncludes<Input> : {}
+  StateIncludes<Input>
 >;
 
 /** Typed references to all the states declared in an inline render map. */

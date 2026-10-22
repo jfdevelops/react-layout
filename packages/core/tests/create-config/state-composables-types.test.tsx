@@ -1,5 +1,5 @@
 import { expectTypeOf, it } from 'vitest';
-import { createDefinedResourceLayout, createProp, defineResourceLayout } from '../../src';
+import { createDefinedResourceLayout, createProp, defineComposableComponent, defineResourceLayout } from '../../src';
 
 it('preserves required props and narrows the carry-over configuration', () => {
   const { createRenderState, defineResourceLayout: defineLayout } = createDefinedResourceLayout({
@@ -119,6 +119,90 @@ it('tracks state names when the inline declarations contain only callbacks', () 
       render: {
         default: { render: (_props, { composables }) => <composables.Detail /> },
         Detail: { render: () => <p>Detail</p> },
+      },
+    },
+  });
+});
+
+
+it('preserves preset prop requirements while inferring layout composables', () => {
+  const Message = defineComposableComponent({
+    name: 'Message', props: { message: createProp.string(), suffix: createProp.string() },
+  })(() => <></>);
+  const options = { title: createProp.string() };
+  const states = {
+    default: () => <></>,
+    Target: {
+      props: { include: {
+        title: { visibility: 'required', passthrough: 'component' },
+        message: { visibility: 'required', passthrough: 'component' },
+        suffix: { visibility: 'optional', passthrough: 'component' },
+      } },
+      render: ({ message }: { message: string }) => <p>{message}</p>,
+    },
+  } as const;
+  const definition = defineResourceLayout<['users'], typeof states, typeof options, typeof Message>({
+    resources: ['users'], options,
+    layout: {
+      composables: (_create, refs) => {
+        expectTypeOf(refs.Target).toBeCallableWith({ message: 'Required', title: 'Title' });
+        expectTypeOf<typeof refs.Target.props.title>().toEqualTypeOf<string>();
+        expectTypeOf(refs.Target.asComposable({ props: { include: { message: true } } })).toBeCallableWith({ title: 'Title' });
+        () => {
+          // @ts-expect-error a preset's required component prop cannot be omitted
+          refs.Target({});
+          // @ts-expect-error optional props cannot replace a required prop
+          refs.Target({ suffix: 'Optional' });
+        };
+        return { ...Message, Direct: refs.Target };
+      },
+      render: states,
+    },
+  });
+  () => {
+    const Users = definition.createResourceLayout({ resource: 'users', name: 'Users' });
+    expectTypeOf<typeof Users.Target.props.message>().toEqualTypeOf<string>();
+  };
+  const factory = createDefinedResourceLayout({ resources: ['users'], options });
+  factory.defineResourceLayout<typeof states, typeof Message>({
+    composables: (_create, refs) => {
+      expectTypeOf(refs.Target).toBeCallableWith({ message: 'Required', title: 'Title' });
+      () => {
+        // @ts-expect-error bound local preset props are required on references
+        refs.Target({});
+      };
+      return { ...Message, Direct: refs.Target };
+    },
+    render: states,
+  });
+});
+
+it('uses inferred layout presets in state-local reference callbacks', () => {
+  const Message = defineComposableComponent({
+    name: 'Message', props: { message: createProp.string() },
+  })(() => <></>);
+  defineResourceLayout({
+    resources: ['users'],
+    layout: {
+      composables: () => Message,
+      render: {
+        default: {
+          composables: (_create, refs) => {
+            expectTypeOf<typeof refs.Target.props.message>().toEqualTypeOf<string>();
+            () => {
+              // @ts-expect-error inferred preset props keep their requiredness
+              refs.Target({});
+              // @ts-expect-error inferred preset props retain their value types
+              refs.Target({ message: 123 });
+            };
+            return {};
+          },
+          render: () => <></>,
+        },
+        Target: {
+          props: { include: { message: { visibility: 'required', passthrough: 'component' } } },
+          render: ({ message }) => <p>{message}</p>,
+        },
       },
     },
   });

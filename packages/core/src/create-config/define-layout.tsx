@@ -668,7 +668,7 @@ type ContextualLayoutRenderState<
       props?: ContextualStateLayoutProps<Resources, Options, Composables, Input>;
       composables?: (
         create: CreateLayoutComposable<LayoutResourceKey<Resources>>,
-        states: RenderStateReferences<Resources, Options, {}, States>,
+        states: RenderStateReferences<Resources, Options, Composables, States>,
       ) => ComposableComponents;
       render: ContextualStateRenderFunction<Resources, Options, Composables, Input>;
       state?: RenderStateName;
