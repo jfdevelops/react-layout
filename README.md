@@ -146,6 +146,66 @@ const config = createResourceConfig({
 code-split state. A lazy state module must have exactly one named export created
 by `createRenderState`.
 
+Created states can be used as composables. The helper stays out of object
+spreads, so it never becomes a compound state of its own:
+
+```tsx
+const Message = createRenderState({
+  state: 'Message',
+  props: { custom: { message: createProp.string() } },
+  render: ({ message }) => <p>{message}</p>,
+});
+
+const Page = createRenderState({
+  props: { custom: { message: createProp.string() } },
+  composables: () => ({
+    Message: Message.asComposable({ props: { include: { message: true } } }),
+  }),
+  render: (_props, { composables }) => <composables.Message />,
+});
+
+defineResourceLayout({ render: { ...Page, ...Message } });
+```
+
+For inline definitions, the layout-level `composables(create, states)` callback
+receives typed references to every declared state, including states declared
+later in the object. On a bound `defineResourceLayout`, this is the flat
+`composables` property; on the unbound API it is `layout.composables`:
+
+```tsx
+defineResourceLayout({
+  composables: (_create, states) => ({
+    Message: states.Message.asComposable({ props: { include: { message: true } } }),
+    ExplicitMessage: states.Message,
+  }),
+  render: {
+    default: {
+      props: { custom: { message: createProp.string() } },
+      render: (_props, { composables }) => <>
+        <composables.Message />
+        <composables.ExplicitMessage message="Explicit value" />
+      </>,
+    },
+    Message: {
+      props: { custom: { message: createProp.string() } },
+      render: ({ message }) => <p>{message}</p>,
+    },
+  },
+});
+```
+
+`states.Message` is already a composable. `asComposable({ props: { include: { ...: true } } })`
+selects which component props to inherit from the containing state's resolved
+render props. The default carries none; unselected required props must be
+passed in JSX, and explicit JSX values override inherited values. Creation-time
+options remain bound to the resource layout. References resolve when rendered,
+so they retain the current resource, hooks, deferred loading, and lazy loading.
+
+Define state-specific composables with `createRenderState` when their callback
+needs `create` or dependencies. Keeping inline references in the layout-level
+callback avoids TypeScript's [callback-return inference limitation inside reverse
+mapped state entries](https://github.com/microsoft/TypeScript/issues/53018), while keeping one generic for the complete render map.
+
 Entire created resource components can also be loaded lazily:
 
 ```tsx
@@ -170,6 +230,36 @@ Lazy modules use named exports and must export exactly one component created by
 the library. Nested resources use typed dot paths such as
 `admin.users.detail`. Lazy components preserve compound state access such as
 `<Users.NotFound />` and share one cached module load.
+
+### Component namespaces
+
+By default, `createResourceLayout` returns a callable component with named state components attached. Set `namespace: true` to return a plain object instead, so autocomplete on `Users.` suggests only `Root` and the named states:
+
+```tsx
+const definition = defineResourceLayout({
+  resources: ['users'],
+  namespace: true,
+  layout: {
+    render: {
+      default: () => <p>Users</p>,
+      Loading: () => <p>Loading users</p>,
+    },
+  },
+});
+
+const Users = definition.createResourceLayout({ resource: 'users', name: 'Users' });
+<Users.Root />;
+<Users.Loading />;
+
+const Callable = definition.createResourceLayout({
+  resource: 'users', name: 'Callable', namespace: false,
+});
+<Callable />;
+```
+
+`createDefinedResourceLayout({ resources: ['users'], namespace: true })` also sets the shared default. Its bound `defineResourceLayout({ namespace: false, render: ... })` can override it. The closest setting wins: shared factory → definition → component creation. Resource-specific factories inherit the definition's setting. Omitting `namespace` everywhere is equivalent to `false`.
+
+In namespace mode, component metadata and `makeComposable` remain available on `Root`. The state name `Root` is reserved only when namespace mode is enabled.
 
 ## Workspace
 
