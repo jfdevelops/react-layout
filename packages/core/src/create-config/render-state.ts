@@ -1,4 +1,6 @@
 import type { JSX } from 'react';
+import { withStateComposable, type StateComposable, type StateComposableHandle } from './state-composable';
+import type { ResolveProps } from '@jfdevelops/react-layout-validator';
 import type {
   ComposableComponents,
   CreateLayoutComposable,
@@ -9,6 +11,7 @@ import type {
   InPropsDefinition,
   LayoutRenderProps,
   MergedLayoutInProps,
+  ResolvedIncludedComponentProps,
 } from '../props';
 import type { LayoutResourceKey, ResourceDefinition } from '../resource';
 
@@ -27,7 +30,7 @@ export const definedResourceLayoutComponentSymbol: unique symbol = Symbol.for(
 
 /** Runtime-compatible render-state shape used when inspecting lazy modules. */
 export type AnyRenderStateDefinition = {
-  composables?: (create: CreateLayoutComposable<any>) => ComposableComponents;
+  composables?: (create: CreateLayoutComposable<any>, states: any) => ComposableComponents;
   props?: {
     include?: Record<string, unknown>;
     custom?: InPropsObject;
@@ -68,8 +71,10 @@ export type RenderStateCallback = (props: any, context: any) => JSX.Element;
 export type RenderStateComposablesDefinition<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Composables extends ComposableComponents,
+  States = {},
 > = (
   create: CreateLayoutComposable<LayoutResourceKey<Resources>>,
+  states: States,
 ) => Composables;
 
 /**
@@ -182,11 +187,60 @@ type StateName<Definition> = Definition extends DeferredRenderState<
  * A spreadable state entry keyed by its literal state name. Spreading this into
  * `layout.render` is what creates compound members such as `Users.Loading`.
  */
-export type RenderStateFragment<Definition> = {
+export type RenderStateFragment<Definition, CallProps extends object = ResolveProps<StateCustomProps<Definition>>> = {
   [State in StateName<NormalizeRenderStateDefinition<Definition>>]: Definition;
 } & {
   readonly [definedRenderStateSymbol]: NormalizeRenderStateDefinition<Definition>;
+} & StateComposableHandle<CallProps>;
+
+type StateCustomProps<Input> = NormalizeStateInput<Input> extends {
+  props?: { custom?: infer Props extends InPropsObject };
+} ? Props : {};
+
+type StateIncludes<Input> = NormalizeStateInput<Input> extends {
+  props?: { include?: infer Includes };
+} ? Includes : {};
+
+type NormalizeStateInput<Input> = Input extends DeferredRenderState<infer Definition>
+  ? Definition
+  : Input extends LazyRenderState<infer Definition> ? Definition : Input;
+
+type StateLocalComposables<Input> = NormalizeStateInput<Input> extends {
+  composables?: (...args: any[]) => infer Components extends ComposableComponents;
+} ? Components : {};
+
+/** Call-site props of a referenced state; creation-time options stay bound. */
+export type RenderStateCallProps<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  Input,
+> = ResolveProps<StateCustomProps<Input>> & ResolvedIncludedComponentProps<
+  MergedLayoutInProps<Resources, Options, Composables & StateLocalComposables<Input>>,
+  StateIncludes<Input> extends IncludedProps<MergedLayoutInProps<Resources, Options, Composables & StateLocalComposables<Input>>>
+    ? StateIncludes<Input> : {}
+>;
+
+/** Typed references to all the states declared in an inline render map. */
+export type RenderStateReferences<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  States,
+> = {
+  readonly [State in keyof States & string]: StateComposable<
+    RenderStateCallProps<Resources, Options, Composables, States[State]>
+  >;
 };
+
+type BoundRenderStateFragment<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+  Definition,
+> = RenderStateFragment<Definition, RenderStateCallProps<
+  Resources, Options, Composables, Definition
+>>;
 
 type DefinedRenderStateFromModule<Module> = Extract<
   Module[keyof Module],
@@ -230,7 +284,7 @@ export interface RenderStateOverloads<
       StateComposables,
       IncludeProps
     >,
-  ): RenderStateFragment<
+  ): BoundRenderStateFragment<Resources, Options, SharedComposables,
     RenderStateEntry<
       TypedRenderStateDefinition<
         Resources,
@@ -267,7 +321,7 @@ export interface RenderStateOverloads<
       >,
       'state'
     >,
-  ): RenderStateFragment<
+  ): BoundRenderStateFragment<Resources, Options, SharedComposables,
     RenderStateEntry<
       TypedRenderStateDefinition<
         Resources,
@@ -283,7 +337,7 @@ export interface RenderStateOverloads<
   >;
   (
     render: TypedRenderStateCallback<Resources, Options, SharedComposables>,
-  ): RenderStateFragment<
+  ): BoundRenderStateFragment<Resources, Options, SharedComposables,
     RenderStateEntry<
       TypedRenderStateCallback<Resources, Options, SharedComposables>,
       Deferred
@@ -308,7 +362,9 @@ export interface CreateRenderState<
   defer: RenderStateOverloads<Resources, Options, SharedComposables, true>;
   lazy<Module extends Record<string, unknown>>(
     load: () => Promise<Module>,
-  ): LazyRenderState<DefinedRenderStateFromModule<Module>>;
+  ): LazyRenderState<DefinedRenderStateFromModule<Module>> & StateComposableHandle<
+    RenderStateCallProps<Resources, Options, SharedComposables, DefinedRenderStateFromModule<Module>>
+  >;
 }
 
 function normalizeDefinition(
@@ -331,7 +387,7 @@ function toFragment<Definition extends AnyRenderStateDefinition>(
     value: definition,
   });
 
-  return fragment;
+  return withStateComposable(fragment, { input: definition, name: definition.state ?? 'default' });
 }
 
 /** Inputs used internally to bind resource and option types to a state builder. */
@@ -381,19 +437,19 @@ export function createRenderStateBuilder<
   ) => {
     const definition = normalizeDefinition(input);
 
-    return {
-      [definition.state ?? 'default']: {
-        [deferredRenderStateSymbol]: definition,
-      },
-    };
+    const deferred = { [deferredRenderStateSymbol]: definition };
+    return withStateComposable({ [definition.state ?? 'default']: deferred }, {
+      input: deferred, name: definition.state ?? 'default',
+    });
   };
   createRenderState.lazy = (
     load: () => Promise<Record<string, unknown>>,
-  ) => ({
-    [lazyRenderStateSymbol]: load,
-  });
+  ) => {
+    const lazyState = { [lazyRenderStateSymbol]: load };
+    return withStateComposable(lazyState, { input: lazyState, name: 'lazy' });
+  };
 
-  return createRenderState as CreateRenderStateBuilderResult<
+  return createRenderState as unknown as CreateRenderStateBuilderResult<
     Resources,
     Options,
     SharedComposables

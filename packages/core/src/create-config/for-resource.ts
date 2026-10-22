@@ -16,6 +16,7 @@ import type {
   LayoutIncludeProps,
   LayoutPropsForResource,
   ResourceLayoutComponent,
+  ResourceLayoutResult,
 } from './define-layout';
 
 type LayoutPropDefaults = Record<string, unknown>;
@@ -56,8 +57,12 @@ export type CreateResourceLayoutOptions<
   Name extends string,
   Resource extends LayoutResourceKey<Resources>,
   Props extends InPropsObject = {},
+  Namespace extends boolean = false,
 > = LayoutPropsForResource<Resources, InProps, Composables, IncludeProps> &
-  CreateResourceLayoutOptionsBase<Resources, Name, Resource, Props>;
+  CreateResourceLayoutOptionsBase<Resources, Name, Resource, Props> & {
+    /** Return a component namespace with `Root` instead of a callable component. Defaults to false. */
+    namespace?: Namespace;
+  };
 
 export type CreateLayoutForResourceOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -110,7 +115,9 @@ export type CreatedLayoutForResource<
   Resource extends LayoutResourceKey<Resources>,
   CustomProps extends InPropsObject = {},
   Defaults extends LayoutPropDefaults = {},
-> = <OverrideName extends string = Name, Props extends InPropsObject = {}>(
+  DefaultNamespace extends boolean = false,
+  States = {},
+> = <OverrideName extends string = Name, Props extends InPropsObject = {}, Namespace extends boolean = DefaultNamespace>(
   ...args: {} extends CreatedLayoutForResourceCallOptions<
     Resources,
     InProps,
@@ -119,7 +126,7 @@ export type CreatedLayoutForResource<
     OverrideName,
     Props,
     Defaults
-  >
+  > & { namespace?: Namespace }
     ? [options?: CreatedLayoutForResourceCallOptions<
         Resources,
         InProps,
@@ -128,7 +135,7 @@ export type CreatedLayoutForResource<
         OverrideName,
         Props,
         Defaults
-      >]
+      > & { namespace?: Namespace }]
     : [options: CreatedLayoutForResourceCallOptions<
         Resources,
         InProps,
@@ -137,8 +144,8 @@ export type CreatedLayoutForResource<
         OverrideName,
         Props,
         Defaults
-      >]
-) => ResourceLayoutComponent<
+      > & { namespace?: Namespace }]
+) => ResourceLayoutResult<ResourceLayoutComponent<
   OverrideName,
   CustomProps,
   Composables,
@@ -147,7 +154,11 @@ export type CreatedLayoutForResource<
     MergedLayoutInProps<Resources, InProps, Composables>,
     IncludeProps
   >
->;
+,
+  States,
+  Resources,
+  InProps
+>, Namespace>;
 
 type SetDefaultPropsForResource<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -192,6 +203,8 @@ export type SetDefaultPropForResourceFn<
   Name extends string,
   Resource extends LayoutResourceKey<Resources>,
   CustomProps extends InPropsObject = {},
+  DefaultNamespace extends boolean = false,
+  States = {},
 > = <
   const Defaults extends SetDefaultPropsForResource<
     Resources,
@@ -216,7 +229,9 @@ export type SetDefaultPropForResourceFn<
     Composables,
     IncludeProps,
     Defaults
-  >
+  >,
+  DefaultNamespace,
+  States
 >;
 
 type CapitalizedResource<Resource extends string> =
@@ -283,6 +298,8 @@ type ResourceLayoutBuilder<
   Name extends string,
   Resource extends LayoutResourceKey<Resources>,
   CustomProps extends InPropsObject,
+  DefaultNamespace extends boolean = false,
+  States = {},
 > = CreatedLayoutForResource<
   Resources,
   InProps,
@@ -290,7 +307,10 @@ type ResourceLayoutBuilder<
   IncludeProps,
   Name,
   Resource,
-  CustomProps
+  CustomProps,
+  {},
+  DefaultNamespace,
+  States
 > & {
   /** Set default values for layout props in a single call. */
   setDefaults: SetDefaultPropForResourceFn<
@@ -300,7 +320,9 @@ type ResourceLayoutBuilder<
     IncludeProps,
     Name,
     Resource,
-    CustomProps
+    CustomProps,
+    DefaultNamespace,
+    States
   >;
 };
 
@@ -364,6 +386,8 @@ type ResourceLayoutNameMapFn<
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   CustomProps extends InPropsObject,
   Resource extends LayoutResourceKey<Resources>,
+  DefaultNamespace extends boolean = false,
+  States = {},
 > = <const CallbackName extends string, const Names>(
   options: {
     resource: Resource;
@@ -392,7 +416,9 @@ type ResourceLayoutNameMapFn<
   IncludeProps,
   MappedResourceName<Names, CallbackName, Resource>,
   Resource,
-  CustomProps
+  CustomProps,
+  DefaultNamespace,
+  States
 >;
 
 type ResourceLayoutNameMapFns<
@@ -401,6 +427,8 @@ type ResourceLayoutNameMapFns<
   Composables extends ComposableComponents,
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   CustomProps extends InPropsObject,
+  DefaultNamespace extends boolean = false,
+  States = {},
 > = UnionToIntersection<
   {
     [Resource in LayoutResourceKey<Resources>]: ResourceLayoutNameMapFn<
@@ -409,7 +437,9 @@ type ResourceLayoutNameMapFns<
       Composables,
       IncludeProps,
       CustomProps,
-      Resource
+      Resource,
+      DefaultNamespace,
+      States
     >;
   }[LayoutResourceKey<Resources>]
 >;
@@ -420,6 +450,8 @@ export type CreateLayoutForResource<
   Composables extends ComposableComponents = {},
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
   CustomProps extends InPropsObject = {},
+  DefaultNamespace extends boolean = false,
+  States = {},
 > = {
   /**
    * Creates a layout builder for one resource without a default name.
@@ -439,7 +471,9 @@ export type CreateLayoutForResource<
     IncludeProps,
     string,
     Resource,
-    CustomProps
+    CustomProps,
+    DefaultNamespace,
+    States
   >;
 
   /**
@@ -469,7 +503,9 @@ export type CreateLayoutForResource<
     IncludeProps,
     NormalizeCapitalizedResourceName<Name, Resource>,
     Resource,
-    CustomProps
+    CustomProps,
+    DefaultNamespace,
+    States
   >;
 
   /**
@@ -496,7 +532,9 @@ export type CreateLayoutForResource<
     IncludeProps,
     Name,
     Resource,
-    CustomProps
+    CustomProps,
+    DefaultNamespace,
+    States
   >;
 
   /**
@@ -528,14 +566,18 @@ export type CreateLayoutForResource<
       keyof Selection & LayoutResourceKey<Resources>
     >,
     keyof Selection & LayoutResourceKey<Resources>,
-    CustomProps
+    CustomProps,
+    DefaultNamespace,
+    States
   >;
 } & ResourceLayoutNameMapFns<
   Resources,
   InProps,
   Composables,
   IncludeProps,
-  CustomProps
+  CustomProps,
+  DefaultNamespace,
+  States
 >;
 
 type CreateForResourceOptions = {

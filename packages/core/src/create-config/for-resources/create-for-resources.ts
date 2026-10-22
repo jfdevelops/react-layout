@@ -453,6 +453,7 @@ export function createForResources<
 
           root = scopedCreateResourceLayout({
             ...layoutOptions,
+            namespace: false,
             name:
               entry.name ??
               defaultNames.get(resource) ??

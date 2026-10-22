@@ -193,3 +193,6 @@ export type {
   SubResourceConfig,
   SubResourceConfigComponentsFor,
 } from './types';
+
+export type { AsStateComposable, StateComposable, StateComposableOptions } from './state-composable';
+export type { RenderStateCallProps, RenderStateReferences } from './render-state';
