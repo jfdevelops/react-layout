@@ -23,7 +23,10 @@ export type {
   RenderStateComposablesDefinition,
   RenderStateContext,
   RenderStateFragment,
+  RenderStateName,
+  RenderStateOverloads,
   RenderStateProps,
+  TypedRenderStateCallback,
 } from './render-state';
 export type {
   BoundDefineResourceLayout,

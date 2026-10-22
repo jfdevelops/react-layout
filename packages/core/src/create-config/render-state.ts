@@ -47,6 +47,17 @@ export type LazyRenderState<Definition extends AnyRenderStateDefinition> = {
   readonly definition?: Definition;
 };
 
+/**
+ * State names accepted by `createRenderState`. Built-in states are suggested by
+ * autocomplete while any other string still creates a custom compound state.
+ */
+export type RenderStateName =
+  | 'default'
+  | 'Loading'
+  | 'Error'
+  | 'NotFound'
+  | (string & {});
+
 /** Callback shorthand for a render state with no local configuration. */
 export type RenderStateCallback = (props: any, context: any) => JSX.Element;
 
@@ -137,6 +148,19 @@ type TypedRenderStateDefinition<
   state: State;
 };
 
+/**
+ * Callback shorthand for a created state, typed with the bound resources,
+ * options, and shared composables.
+ */
+export type TypedRenderStateCallback<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  SharedComposables extends ComposableComponents,
+> = (
+  props: RenderStateProps<Resources, Options, SharedComposables, {}, {}>,
+  context: RenderStateContext<SharedComposables>,
+) => JSX.Element;
+
 type NormalizeRenderStateDefinition<Input> =
   Input extends DeferredRenderState<infer Definition>
     ? Definition
@@ -169,6 +193,104 @@ type DefinedRenderStateFromModule<Module> = Extract<
   { readonly [definedRenderStateSymbol]: AnyRenderStateDefinition }
 >[typeof definedRenderStateSymbol];
 
+/** Wraps a state definition in the deferred marker when `Deferred` is `true`. */
+type RenderStateEntry<Definition, Deferred extends boolean> = Deferred extends true
+  ? DeferredRenderState<NormalizeRenderStateDefinition<Definition>>
+  : Definition;
+
+/**
+ * Overloads shared by `createRenderState` and `createRenderState.defer`. Each
+ * accepts a full definition, a definition without `state`, or a render
+ * callback; `Deferred` decides whether the returned entry is deferred.
+ */
+export interface RenderStateOverloads<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  SharedComposables extends ComposableComponents,
+  Deferred extends boolean,
+> {
+  <
+    const State extends RenderStateName,
+    const CustomProps extends InPropsObject = {},
+    const StateComposables extends ComposableComponents = {},
+    const IncludeProps extends IncludedProps<
+      MergedLayoutInProps<
+        Resources,
+        Options,
+        SharedComposables & StateComposables
+      >
+    > = {},
+  >(
+    definition: TypedRenderStateDefinition<
+      Resources,
+      Options,
+      State,
+      CustomProps,
+      SharedComposables,
+      StateComposables,
+      IncludeProps
+    >,
+  ): RenderStateFragment<
+    RenderStateEntry<
+      TypedRenderStateDefinition<
+        Resources,
+        Options,
+        State,
+        CustomProps,
+        SharedComposables,
+        StateComposables,
+        IncludeProps
+      >,
+      Deferred
+    >
+  >;
+  <
+    const CustomProps extends InPropsObject = {},
+    const StateComposables extends ComposableComponents = {},
+    const IncludeProps extends IncludedProps<
+      MergedLayoutInProps<
+        Resources,
+        Options,
+        SharedComposables & StateComposables
+      >
+    > = {},
+  >(
+    definition: Omit<
+      TypedRenderStateDefinition<
+        Resources,
+        Options,
+        'default',
+        CustomProps,
+        SharedComposables,
+        StateComposables,
+        IncludeProps
+      >,
+      'state'
+    >,
+  ): RenderStateFragment<
+    RenderStateEntry<
+      TypedRenderStateDefinition<
+        Resources,
+        Options,
+        'default',
+        CustomProps,
+        SharedComposables,
+        StateComposables,
+        IncludeProps
+      >,
+      Deferred
+    >
+  >;
+  (
+    render: TypedRenderStateCallback<Resources, Options, SharedComposables>,
+  ): RenderStateFragment<
+    RenderStateEntry<
+      TypedRenderStateCallback<Resources, Options, SharedComposables>,
+      Deferred
+    >
+  >;
+}
+
 /**
  * Creates independently typed render-state fragments.
  *
@@ -178,157 +300,16 @@ type DefinedRenderStateFromModule<Module> = Extract<
  * - `.lazy(() => import(...))` imports a complete named state definition as a
  *   separate chunk.
  */
-export type CreateRenderState<
+export interface CreateRenderState<
   Resources extends ReadonlyArray<ResourceDefinition> = ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources> = {},
   SharedComposables extends ComposableComponents = {},
-> = {
-  <
-    const State extends string = 'default',
-    const CustomProps extends InPropsObject = {},
-    const StateComposables extends ComposableComponents = {},
-    const IncludeProps extends IncludedProps<
-      MergedLayoutInProps<
-        Resources,
-        Options,
-        SharedComposables & StateComposables
-      >
-    > = {},
-  >(
-    definition: TypedRenderStateDefinition<
-      Resources,
-      Options,
-      State,
-      CustomProps,
-      SharedComposables,
-      StateComposables,
-      IncludeProps
-    >,
-  ): RenderStateFragment<
-    TypedRenderStateDefinition<
-      Resources,
-      Options,
-      State,
-      CustomProps,
-      SharedComposables,
-      StateComposables,
-      IncludeProps
-    >
-  >;
-  <
-    const CustomProps extends InPropsObject = {},
-    const StateComposables extends ComposableComponents = {},
-    const IncludeProps extends IncludedProps<
-      MergedLayoutInProps<
-        Resources,
-        Options,
-        SharedComposables & StateComposables
-      >
-    > = {},
-  >(
-    definition: Omit<
-      TypedRenderStateDefinition<
-        Resources,
-        Options,
-        'default',
-        CustomProps,
-        SharedComposables,
-        StateComposables,
-        IncludeProps
-      >,
-      'state'
-    >,
-  ): RenderStateFragment<
-    TypedRenderStateDefinition<
-      Resources,
-      Options,
-      'default',
-      CustomProps,
-      SharedComposables,
-      StateComposables,
-      IncludeProps
-    >
-  >;
-  <const Render extends RenderStateCallback>(
-    render: Render,
-  ): RenderStateFragment<Render>;
-  defer<
-    const State extends string = 'default',
-    const CustomProps extends InPropsObject = {},
-    const StateComposables extends ComposableComponents = {},
-    const IncludeProps extends IncludedProps<
-      MergedLayoutInProps<
-        Resources,
-        Options,
-        SharedComposables & StateComposables
-      >
-    > = {},
-  >(
-    definition: TypedRenderStateDefinition<
-      Resources,
-      Options,
-      State,
-      CustomProps,
-      SharedComposables,
-      StateComposables,
-      IncludeProps
-    >,
-  ): RenderStateFragment<
-    DeferredRenderState<
-      TypedRenderStateDefinition<
-        Resources,
-        Options,
-        State,
-        CustomProps,
-        SharedComposables,
-        StateComposables,
-        IncludeProps
-      >
-    >
-  >;
-  defer<
-    const CustomProps extends InPropsObject = {},
-    const StateComposables extends ComposableComponents = {},
-    const IncludeProps extends IncludedProps<
-      MergedLayoutInProps<
-        Resources,
-        Options,
-        SharedComposables & StateComposables
-      >
-    > = {},
-  >(
-    definition: Omit<
-      TypedRenderStateDefinition<
-        Resources,
-        Options,
-        'default',
-        CustomProps,
-        SharedComposables,
-        StateComposables,
-        IncludeProps
-      >,
-      'state'
-    >,
-  ): RenderStateFragment<
-    DeferredRenderState<
-      TypedRenderStateDefinition<
-        Resources,
-        Options,
-        'default',
-        CustomProps,
-        SharedComposables,
-        StateComposables,
-        IncludeProps
-      >
-    >
-  >;
-  defer<const Render extends RenderStateCallback>(
-    render: Render,
-  ): RenderStateFragment<DeferredRenderState<{ render: Render; state: 'default' }>>;
+> extends RenderStateOverloads<Resources, Options, SharedComposables, false> {
+  defer: RenderStateOverloads<Resources, Options, SharedComposables, true>;
   lazy<Module extends Record<string, unknown>>(
     load: () => Promise<Module>,
   ): LazyRenderState<DefinedRenderStateFromModule<Module>>;
-};
+}
 
 function normalizeDefinition(
   input: AnyRenderStateDefinition | RenderStateCallback,
