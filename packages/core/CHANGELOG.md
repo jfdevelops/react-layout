@@ -1,5 +1,11 @@
 # @jfdevelops/react-layout
 
+## 1.0.1
+
+### Patch Changes
+
+- c329583: Type the callback shorthand of `createRenderState` and `createRenderState.defer` with the bound props and shared `composables` context, and suggest built-in state names (`default`, `Loading`, `Error`, `NotFound`) when autocompleting `state`.
+
 ## 1.0.0
 
 ### Major Changes
