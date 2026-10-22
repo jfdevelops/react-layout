@@ -1,5 +1,17 @@
 # @jfdevelops/react-layout
 
+## 1.1.0
+
+### Minor Changes
+
+- 015dc6f: Add `asComposable({ props: { include } })` to eager, deferred, and lazy render-state builders. Layout-level composables callbacks receive typed state references as their second argument, including forward references. Selected props inherit the containing state's values, while explicit JSX props override them. Bound layouts can merge local state-reference composables with their shared factory composables.
+- 015dc6f: Add optional `namespace` defaults to resource-layout definitions and shared factories. `namespace: true` returns a plain object containing `Root` and the named states, avoiding native function members in namespace autocomplete. Defaults inherit through resource factories and can be overridden per definition or component creation; the default remains false.
+
+### Patch Changes
+
+- e014633: Load namespace resource exports through their marked Root component, preserving lazy root and state prop types. Preserve required and optional local preset prop keys on state references without introducing circular callback inference, and retain inferred layout preset types in state-local composables callbacks.
+- 015dc6f: Use separate function and object render overloads, infer built-in and custom states from one render-map generic, and suggest state keys in empty render objects. Keep each state's props separate from the default component's props and validate custom state entries.
+
 ## 1.0.1
 
 ### Patch Changes
