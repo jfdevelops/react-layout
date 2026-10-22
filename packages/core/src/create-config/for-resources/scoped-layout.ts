@@ -13,6 +13,7 @@ import type {
   LayoutIncludeProps,
   LayoutPropsForResource,
   ResourceLayoutComponent,
+  ResourceLayoutResult,
 } from '../define-layout';
 import type {
   CreatedLayoutForResource,
@@ -62,10 +63,13 @@ export type ScopedCreateResourceLayoutFnImpl<
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   Arguments extends ReadonlyArray<unknown>,
   CustomProps extends InPropsObject,
+  DefaultNamespace extends boolean = false,
+  States = {},
 > = <
   Resource extends SelectedLayoutResources<Resources, Arguments>,
   Name extends string = SelectedResourceLayoutName<Arguments, Resource>,
   Props extends InPropsObject = {},
+  Namespace extends boolean = DefaultNamespace,
 >(
   options: ScopedCreateResourceLayoutOptions<
     Resources,
@@ -76,8 +80,8 @@ export type ScopedCreateResourceLayoutFnImpl<
     Name,
     Resource,
     Props
-  >,
-) => ResourceLayoutComponent<
+  > & { namespace?: Namespace },
+) => ResourceLayoutResult<ResourceLayoutComponent<
   Name,
   CustomProps,
   Composables,
@@ -86,7 +90,11 @@ export type ScopedCreateResourceLayoutFnImpl<
     MergedLayoutInProps<Resources, InProps, Composables>,
     IncludeProps
   >
->;
+,
+  States,
+  Resources,
+  InProps
+>, Namespace>;
 
 export type ScopedCreateLayoutForResource<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -95,6 +103,8 @@ export type ScopedCreateLayoutForResource<
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   Arguments extends ReadonlyArray<unknown>,
   CustomProps extends InPropsObject,
+  DefaultNamespace extends boolean = false,
+  States = {},
 > = <
   Resource extends SelectedLayoutResources<Resources, Arguments>,
   Name extends string = SelectedResourceLayoutName<Arguments, Resource>,
@@ -107,8 +117,10 @@ export type ScopedCreateLayoutForResource<
   IncludeProps,
   Name,
   Resource,
-  CustomProps
-> & {
+  CustomProps,
+  {},
+  DefaultNamespace
+, States> & {
   setDefaults: SetDefaultPropForResourceFn<
     Resources,
     InProps,
@@ -116,8 +128,9 @@ export type ScopedCreateLayoutForResource<
     IncludeProps,
     Name,
     Resource,
-    CustomProps
-  >;
+    CustomProps,
+    DefaultNamespace
+  , States>;
 };
 
 export type ScopedCreateResourceLayoutMakeComposableFn<
@@ -151,13 +164,17 @@ export type ScopedCreateResourceLayoutFn<
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   Arguments extends ReadonlyArray<unknown>,
   CustomProps extends InPropsObject,
+  DefaultNamespace extends boolean = false,
+  States = {},
 > = ScopedCreateResourceLayoutFnImpl<
   Resources,
   InProps,
   Composables,
   IncludeProps,
   Arguments,
-  CustomProps
+  CustomProps,
+  DefaultNamespace,
+  States
 > & {
   /**
    * Creates a component shared by the target resources. Included layout props
@@ -235,7 +252,9 @@ export type ScopedCreateResourceLayoutFn<
     Composables,
     IncludeProps,
     Arguments,
-    CustomProps
+    CustomProps,
+    DefaultNamespace,
+    States
   >;
   /**
    * Type-only property containing the target resource union. This property is
@@ -263,6 +282,8 @@ export type CreateResourceLayoutForResourcesFn<
   Composables extends ComposableComponents = {},
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
   CustomProps extends InPropsObject = {},
+  DefaultNamespace extends boolean = false,
+  States = {},
 > = {
   /**
    * Creates a layout factory scoped to the listed resources.
@@ -288,7 +309,9 @@ export type CreateResourceLayoutForResourcesFn<
     Composables,
     IncludeProps,
     ResourceKeys,
-    CustomProps
+    CustomProps,
+    DefaultNamespace,
+    States
   >;
 
   /**
@@ -311,7 +334,9 @@ export type CreateResourceLayoutForResourcesFn<
     Composables,
     IncludeProps,
     readonly [{ resources: ResourceKeys }],
-    CustomProps
+    CustomProps,
+    DefaultNamespace,
+    States
   >;
 
   /**
@@ -363,7 +388,9 @@ export type CreateResourceLayoutForResourcesFn<
     Composables,
     IncludeProps,
     MappedResourceLayoutArguments<Resources, ResourceKeys, Names, CallbackName>,
-    CustomProps
+    CustomProps,
+    DefaultNamespace,
+    States
   >;
 
   /**
@@ -394,7 +421,9 @@ export type CreateResourceLayoutForResourcesFn<
     Composables,
     IncludeProps,
     SharedResourceLayoutArguments<Resources, ResourceKeys, Name>,
-    CustomProps
+    CustomProps,
+    DefaultNamespace,
+    States
   >;
 
   /**
@@ -426,6 +455,8 @@ export type CreateResourceLayoutForResourcesFn<
     Composables,
     IncludeProps,
     SelectedResourceLayoutArguments<Selection>,
-    CustomProps
+    CustomProps,
+    DefaultNamespace,
+    States
   >;
 };

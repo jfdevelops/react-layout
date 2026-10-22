@@ -20,10 +20,13 @@ type DefinedLayoutComponent = ComponentType<any> & {
   readonly [definedResourceLayoutComponentSymbol]: true;
 };
 
-type DefinedLayoutFromModule<Module> = Extract<
-  Module[keyof Module],
-  DefinedLayoutComponent
->;
+type UnwrapDefinedLayout<Export> = Export extends DefinedLayoutComponent
+  ? Export
+  : Export extends { Root: infer Root extends DefinedLayoutComponent }
+    ? Root
+    : never;
+
+type DefinedLayoutFromModule<Module> = UnwrapDefinedLayout<Module[keyof Module]>;
 
 type LazyUnsupportedStatic =
   | 'makeComposable'
@@ -117,11 +120,17 @@ class LazyResourceErrorBoundary extends Component<
 }
 
 function findDefinedLayoutComponent(module: Record<string, unknown>) {
-  const components = Object.values(module).filter(
-    (value): value is DefinedLayoutComponent =>
-      typeof value === 'function' &&
-      definedResourceLayoutComponentSymbol in value,
-  );
+  const components = Object.values(module)
+    .map((value) =>
+      typeof value === 'object' && value !== null && 'Root' in value
+        ? value.Root
+        : value,
+    )
+    .filter(
+      (value): value is DefinedLayoutComponent =>
+        typeof value === 'function' &&
+        definedResourceLayoutComponentSymbol in value,
+    );
 
   if (components.length !== 1) {
     throw new LayoutConfigurationError(

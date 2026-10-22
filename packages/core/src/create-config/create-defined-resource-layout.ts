@@ -1,19 +1,15 @@
-import type { ComposableComponents } from '@jfdevelops/react-layout-composables';
+import type { ComposableComponents, CreateLayoutComposable } from '@jfdevelops/react-layout-composables';
 import { LayoutConfigurationError } from '../errors';
 import type { InPropsDefinition, InPropsObject } from '../props';
-import type {
-  IncludedComponentPropDefinitions,
-  MergedLayoutInProps,
-} from '../props';
-import type { ResourceDefinition } from '../resource';
+import type { LayoutResourceKey, ResourceDefinition } from '../resource';
 import {
-  type CreateViewMapBuiltInRenderStatesOptions,
   type CreateViewMapFunctionRenderOptions,
   type DefinedResourceLayout,
   defineResourceLayout,
   type LayoutIncludeProps,
   type LayoutResourcesAccessor,
-  type TypedBuiltInRenderStates,
+  type CreateViewMapRenderStatesOptions,
+  type DefinedResourceLayoutFromStates,
   createLayoutResourcesAccessor,
 } from './define-layout';
 import {
@@ -24,6 +20,7 @@ import {
 import {
   createRenderStateBuilder,
   type CreateRenderState,
+  type RenderStateReferences,
   type LayoutComposablesDefinition,
 } from './render-state';
 
@@ -38,7 +35,9 @@ export type CreateDefinedResourceLayoutOptions<
   Resources extends NonEmptyResources,
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
+  DefaultNamespace extends boolean = false,
 > = {
+  namespace?: DefaultNamespace;
   /** Resources supported by every layout created from this factory. */
   resources: Resources;
   /** Props that render states can opt into through `props.include`. */
@@ -55,6 +54,7 @@ export type DefinedResourceLayoutInput<
   IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
   CustomProps extends InPropsObject,
   Render,
+  Namespace extends boolean = false,
 > = Omit<
   CreateViewMapFunctionRenderOptions<
     Resources,
@@ -64,133 +64,81 @@ export type DefinedResourceLayoutInput<
     CustomProps
   >['layout'],
   'composables' | 'render'
-> & { render: Render };
+> & { render: Render; namespace?: Namespace };
+
+type BoundLayoutComposables<
+  Shared extends ComposableComponents,
+  Local extends ComposableComponents,
+> = Omit<Shared, keyof Local> & Local;
+
+/** Flattens a definition's layout while preserving its namespace setting. */
+type BoundLayoutInput<Definition extends { layout: unknown; namespace?: boolean }> =
+  Definition['layout'] & Pick<Definition, 'namespace'>;
 
 /** A `defineResourceLayout` function with its shared configuration pre-bound. */
 export type BoundDefineResourceLayout<
   Resources extends NonEmptyResources,
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
+  DefaultNamespace extends boolean = false,
 > = {
+  /**
+   * Defines a layout whose `render` map contains the required `default` state
+   * and any built-in or custom compound component states.
+   * Keep this overload first so incomplete render objects suggest state keys.
+   * Use `createRenderState` for state-local `composables(create)` callbacks;
+   * the helper infers their render context independently of the enclosing map.
+   */
+  <
+    const Render extends { default: unknown } & Record<string, unknown>,
+    LocalComposables extends ComposableComponents = {},
+    Namespace extends boolean = DefaultNamespace,
+  >(
+    layout: Omit<
+      BoundLayoutInput<CreateViewMapRenderStatesOptions<Resources, Options, BoundLayoutComposables<Composables, LocalComposables>, {}, {}, Render, Namespace>>,
+      'composables'
+    > & {
+      composables?: (
+        create: CreateLayoutComposable<LayoutResourceKey<Resources>>,
+        states: RenderStateReferences<Resources, Options, Composables, Render>,
+      ) => LocalComposables;
+    },
+  ): DefinedResourceLayoutFromStates<Resources, Options, BoundLayoutComposables<Composables, LocalComposables>, Render, Namespace>;
   /** Defines a layout whose `render` value is a single default-state callback. */
   <
     const IncludeProps extends LayoutIncludeProps<
       Resources,
       Options,
-      Composables
+      BoundLayoutComposables<Composables, LocalComposables>
     > = {},
     CustomProps extends InPropsObject = {},
+    LocalComposables extends ComposableComponents = {},
+    Namespace extends boolean = DefaultNamespace,
   >(
     layout: Omit<
-      CreateViewMapFunctionRenderOptions<
+      BoundLayoutInput<CreateViewMapFunctionRenderOptions<
         Resources,
         Options,
-        Composables,
-        IncludeProps,
-        CustomProps
-      >['layout'],
-      'composables'
-    >,
-  ): DefinedResourceLayout<
-    Resources,
-    Options,
-    Composables,
-    IncludeProps,
-    CustomProps,
-    {}
-  >;
-  /**
-   * Defines a layout whose `render` map contains the required `default` state
-   * and any built-in or custom compound component states.
-   */
-  <
-    const IncludeProps extends LayoutIncludeProps<
-      Resources,
-      Options,
-      Composables
-    > = {},
-    CustomProps extends InPropsObject = {},
-    DefaultComposables extends ComposableComponents = {},
-    const DefaultIncludeProps extends LayoutIncludeProps<
-      Resources,
-      Options,
-      Composables & DefaultComposables
-    > = {},
-    DefaultCustomProps extends InPropsObject = {},
-    LoadingComposables extends ComposableComponents = {},
-    const LoadingIncludeProps extends LayoutIncludeProps<
-      Resources,
-      Options,
-      Composables & LoadingComposables
-    > = {},
-    LoadingCustomProps extends InPropsObject = {},
-    ErrorComposables extends ComposableComponents = {},
-    const ErrorIncludeProps extends LayoutIncludeProps<
-      Resources,
-      Options,
-      Composables & ErrorComposables
-    > = {},
-    ErrorCustomProps extends InPropsObject = {},
-    NotFoundComposables extends ComposableComponents = {},
-    const NotFoundIncludeProps extends LayoutIncludeProps<
-      Resources,
-      Options,
-      Composables & NotFoundComposables
-    > = {},
-    NotFoundCustomProps extends InPropsObject = {},
-    const RenderStates extends { default: unknown } & Record<string, unknown> = {
-      default: unknown;
-    },
-  >(
-    layout: Omit<
-      CreateViewMapBuiltInRenderStatesOptions<
-        Resources,
-        Options,
-        Composables,
+        BoundLayoutComposables<Composables, LocalComposables>,
         IncludeProps,
         CustomProps,
-        TypedBuiltInRenderStates<
-          Resources,
-          Options,
-          Composables,
-          DefaultComposables,
-          DefaultIncludeProps,
-          DefaultCustomProps,
-          LoadingComposables,
-          LoadingIncludeProps,
-          LoadingCustomProps,
-          ErrorComposables,
-          ErrorIncludeProps,
-          ErrorCustomProps,
-          NotFoundComposables,
-          NotFoundIncludeProps,
-          NotFoundCustomProps
-        > & RenderStates
-      >['layout'],
+        Namespace
+      >>,
       'composables'
-    >,
+    > & {
+      composables?: (
+        create: CreateLayoutComposable<LayoutResourceKey<Resources>>,
+        states: {},
+      ) => LocalComposables;
+    },
   ): DefinedResourceLayout<
     Resources,
     Options,
-    Composables &
-      DefaultComposables &
-      LoadingComposables &
-      ErrorComposables &
-      NotFoundComposables,
-    DefaultIncludeProps &
-      LoadingIncludeProps &
-      ErrorIncludeProps &
-      NotFoundIncludeProps,
-    DefaultCustomProps &
-      IncludedComponentPropDefinitions<
-        MergedLayoutInProps<
-          Resources,
-          Options,
-          Composables & DefaultComposables
-        >,
-        DefaultIncludeProps
-      >,
-    RenderStates
+    BoundLayoutComposables<Composables, LocalComposables>,
+    IncludeProps,
+    CustomProps,
+    {},
+    Namespace
   >;
   /**
    * Creates a lazy proxy for the single library-defined component exported by
@@ -218,6 +166,7 @@ export type CreateDefinedResourceLayoutResult<
   Resources extends NonEmptyResources,
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
+  DefaultNamespace extends boolean = false,
 > = {
   /** Creates eager, deferred, or separately imported render-state fragments. */
   createRenderState: CreateRenderState<Resources, Options, Composables>;
@@ -227,7 +176,8 @@ export type CreateDefinedResourceLayoutResult<
   defineResourceLayout: BoundDefineResourceLayout<
     Resources,
     Options,
-    Composables
+    Composables,
+    DefaultNamespace
   >;
   /** Reads, selects, or validates the resources bound to this factory. */
   resources: LayoutResourcesAccessor<Resources>;
@@ -265,13 +215,15 @@ export function createDefinedResourceLayout<
   const Resources extends NonEmptyResources,
   const Options extends InPropsDefinition<Resources> = {},
   Composables extends ComposableComponents = {},
+  DefaultNamespace extends boolean = false,
 >(
   configuration: CreateDefinedResourceLayoutOptions<
     Resources,
     Options,
-    Composables
+    Composables,
+    DefaultNamespace
   >,
-): CreateDefinedResourceLayoutResult<Resources, Options, Composables> {
+): CreateDefinedResourceLayoutResult<Resources, Options, Composables, DefaultNamespace> {
   const { resources, options = {} as Options, composables } = configuration;
   const defineBoundLayout = defineResourceLayout.forResources(...resources);
   let lazyDefaults: LazyResourceStates = {};
@@ -295,14 +247,26 @@ export function createDefinedResourceLayout<
     lazyDefaultsDefined = true;
   }
 
-  const boundDefineResourceLayout = ((layout: Record<string, unknown>) =>
-    defineBoundLayout({
+  const boundDefineResourceLayout = ((layout: Record<string, unknown>) => {
+    const localComposables = layout.composables as LayoutComposablesDefinition<Resources, ComposableComponents> | undefined;
+    return defineBoundLayout({
       options,
-      layout: { ...layout, composables },
-    } as never)) as unknown as BoundDefineResourceLayout<
+      namespace: layout.namespace ?? configuration.namespace,
+      layout: {
+        ...layout,
+        composables: composables || localComposables
+          ? (create: CreateLayoutComposable<LayoutResourceKey<Resources>>, states: {}) => ({
+              ...composables?.(create, states),
+              ...localComposables?.(create, states),
+            })
+          : undefined,
+      },
+    } as never);
+  }) as unknown as BoundDefineResourceLayout<
     Resources,
     Options,
-    Composables
+    Composables,
+    DefaultNamespace
   >;
 
   boundDefineResourceLayout.lazy = <Module extends Record<string, unknown>>(
