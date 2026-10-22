@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import {
   createDefinedResourceLayout,
   createComposableComponent,
@@ -60,6 +60,39 @@ describe('resource layout render states', () => {
     render(<Users.Loading />);
 
     expect(screen.getByText('Loading from defined options')).toBeInTheDocument();
+  });
+
+  it('passes factory composables to the render state context', () => {
+    const { createRenderState, defineResourceLayout: defineBoundLayout } =
+      createDefinedResourceLayout({
+        resources: ['users'],
+        composables: (create) => ({
+          Layout: create({ name: 'Layout' }),
+          Content: create({ name: 'Content' }),
+        }),
+      });
+    const Loading = createRenderState({
+      state: 'Loading',
+      render: (_, { composables }) => {
+        expectTypeOf(composables).toHaveProperty('Layout');
+        expectTypeOf(composables).toHaveProperty('Content');
+        expect(Object.keys(composables)).toEqual(['Layout', 'Content']);
+
+        return (
+          <composables.Layout>
+            <composables.Content>Loading users</composables.Content>
+          </composables.Layout>
+        );
+      },
+    });
+    const { createResourceLayout } = defineBoundLayout({
+      render: { default: () => <></>, ...Loading },
+    });
+    const Users = createResourceLayout({ resource: 'users', name: 'Users' });
+
+    render(<Users.Loading />);
+
+    expect(screen.getByText('Loading users')).toBeInTheDocument();
   });
 
   it('attaches independently configured states to the default component', () => {

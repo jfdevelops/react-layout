@@ -96,9 +96,12 @@ export type {
   RenderStateComposablesDefinition,
   RenderStateContext,
   RenderStateFragment,
+  RenderStateName,
+  RenderStateOverloads,
   RenderStateProps,
   TypedBuiltInRenderStates,
   TypedInlineRenderState,
+  TypedRenderStateCallback,
 } from './create-config';
 export {
   InvalidComponentError,
