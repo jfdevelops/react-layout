@@ -1792,7 +1792,7 @@ function defineResourceLayoutImpl<
       const rendered = (
         <ResourceProvider resource={layoutContext.resource}>
           <LayoutComposablePresetProvider value={composablePresetProps}>
-            <StateComposableContext.Provider value={{ scope: stateScope, props: layoutRenderProps }}>
+            <StateComposableContext.Provider value={{ scope: stateScope, props: layoutRenderProps, definitions: mergedResolvedInProps }}>
               <RenderDefaultState renderProps={layoutRenderProps} />
             </StateComposableContext.Provider>
           </LayoutComposablePresetProvider>
@@ -1848,7 +1848,7 @@ function defineResourceLayoutImpl<
 
         function createLazyState() {
           return lazy(async () => {
-            const stateDefinition = findDefinedRenderState(
+            const stateDefinition = await findDefinedRenderState(
               await loadState().catch((error: unknown) => {
                 throw new ResourceModuleLoadError(
                   String(layoutContext.resource),
@@ -2351,12 +2351,7 @@ export type DefinedResourceLayoutFromStates<
   AllStateIncludes<Render> extends LayoutIncludeProps<
     Resources, Options, Composables & AllStateComposables<Render>
   > ? AllStateIncludes<Render> : {},
-  RenderStateCustomProps<Render['default']> & IncludedComponentPropDefinitions<
-    MergedLayoutInProps<Resources, Options, Composables & AllStateComposables<Render>>,
-    ContextualRenderStateIncludeProps<
-      Resources, Options, Composables & AllStateComposables<Render>, Render['default']
-    >
-  >,
+  RenderStateCustomProps<Render['default']>,
   Render,
   DefaultNamespace
 >;

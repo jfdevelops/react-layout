@@ -238,6 +238,38 @@ schema is available; TypeScript cannot infer a callback's return value into its
 own arguments. Shared preset and option props retain their known value types.
 
 
+### Deriving render states
+
+`createRenderState` render callbacks expose the resource accessor as `context.resources`, including `resources.current` and the typed selection helpers.
+
+Use `fromState` to reuse a created state's prop contract and render it through `composables.Ref`:
+
+```tsx
+const Message = createRenderState({
+  state: 'Message',
+  props: { custom: { message: createProp.string() } },
+  render: ({ message }) => <p>{message}</p>,
+});
+
+const Notice = createRenderState.fromState({
+  ref: Message,
+  state: 'Notice',
+  props: { custom: { heading: createProp.string() } },
+  render: ({ heading }, { composables, resources }) => (
+    <section>
+      <h2>{heading} — {resources.current}</h2>
+      <composables.Ref />
+    </section>
+  ),
+});
+```
+
+Omitting `props.include` inherits all source props, preserving their validation, optionality, and config/component passthrough behavior. An explicit `props.include` selects a subset using the usual include-prop syntax; an empty object selects none. Excluded required source props must be supplied when rendering `Ref`. Selected values carry over automatically, and explicit JSX values override them.
+
+`props.custom` adds validators for the new state. Replacing an inherited key through `custom` gives the new state its own validator; supply the original value explicitly to `Ref`. A `composables` callback can add components to the new state; the name `Ref` is reserved. The source renders with its original composables.
+
+Eager, deferred, and lazy references are supported, including further `fromState` derivation. A lazy reference loads only when the derived state renders. Set `lazy: true` on `fromState` to defer only `composables.Ref` through `React.lazy` while the derived state renders normally. It defaults to `false` and preserves inherited prop validation; loading states work as usual. This schedules an existing ref without creating a separate bundle.
+
 ### Component namespaces
 
 By default, `createResourceLayout` returns a callable component with named state components attached. Set `namespace: true` to return a plain object instead, so autocomplete on `Users.` suggests only `Root` and the named states:

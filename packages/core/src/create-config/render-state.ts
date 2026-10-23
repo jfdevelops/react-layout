@@ -1,5 +1,7 @@
 import type { JSX } from 'react';
-import { withStateComposable, type StateComposable, type StateComposableHandle } from './state-composable';
+import { collectComposablePresetEntries, composablePresetMetaKey, type MergePresetProps, type ComposablePresetMeta } from '@jfdevelops/react-layout-composables';
+import { LayoutConfigurationError } from '../errors';
+import { createStateComposable, withStateComposable, type StateComposable, type StateComposableHandle } from './state-composable';
 import type { ResolveProps } from '@jfdevelops/react-layout-validator';
 import type {
   ComposableComponents,
@@ -12,6 +14,7 @@ import type {
   LayoutRenderProps,
   MergedLayoutInProps,
   ResolvedIncludedComponentProps,
+  ResolvedIncludedProps,
 } from '../props';
 import type { LayoutResourceKey, ResourceDefinition } from '../resource';
 import type { LayoutRenderResourcesAccessor } from './define-layout';
@@ -170,7 +173,9 @@ export type TypedRenderStateCallback<
 ) => JSX.Element;
 
 type NormalizeRenderStateDefinition<Input> =
-  Input extends DeferredRenderState<infer Definition>
+  Input extends LazyRenderState<infer Definition>
+    ? Definition
+    : Input extends DeferredRenderState<infer Definition>
     ? Definition
     : Input extends RenderStateCallback
       ? { render: Input; state: 'default' }
@@ -369,6 +374,127 @@ export interface RenderStateOverloads<
   >;
 }
 
+type RenderStateReference = (
+  | { readonly [definedRenderStateSymbol]: AnyRenderStateDefinition }
+  | LazyRenderState<AnyRenderStateDefinition>
+) & StateComposableHandle<any>;
+
+type ReferenceDefinition<Ref extends RenderStateReference> =
+  Ref extends LazyRenderState<infer Definition> ? Definition
+    : Ref extends { readonly [definedRenderStateSymbol]: infer Definition extends AnyRenderStateDefinition }
+      ? Definition : never;
+
+type FromStateEntry<Ref extends RenderStateReference, Definition extends AnyRenderStateDefinition> =
+  Ref extends LazyRenderState<AnyRenderStateDefinition> ? LazyRenderState<Definition>
+    : Extract<Ref[Exclude<keyof Ref, 'asComposable' | typeof definedRenderStateSymbol>], LazyRenderState<AnyRenderStateDefinition>> extends never
+      ? Definition : LazyRenderState<Definition>;
+type ReferenceSchemas<Ref extends RenderStateReference> =
+  StateCustomProps<ReferenceDefinition<Ref>> & MergePresetProps<StateLocalComposables<ReferenceDefinition<Ref>>>;
+
+type DefaultReferenceIncludes<Ref extends RenderStateReference, CustomProps> =
+  Omit<StateIncludes<ReferenceDefinition<Ref>>, keyof CustomProps | keyof StateCustomProps<ReferenceDefinition<Ref>>> & {
+    [Key in Exclude<keyof StateCustomProps<ReferenceDefinition<Ref>>, keyof CustomProps>]: {
+      visibility: StateCustomProps<ReferenceDefinition<Ref>>[Key] extends { visibility: infer Visibility }
+        ? Visibility : 'required';
+      passthrough: 'component';
+    };
+  };
+
+type ReferenceIncludes<Ref extends RenderStateReference, CustomProps, Include> =
+  Include extends object ? Include : DefaultReferenceIncludes<Ref, CustomProps>;
+
+type FromStateInProps<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  Shared extends ComposableComponents,
+  Ref extends RenderStateReference,
+  Local extends ComposableComponents,
+> = (MergedLayoutInProps<Resources, Options, Shared & StateLocalComposables<ReferenceDefinition<Ref>> & Local> &
+  StateCustomProps<ReferenceDefinition<Ref>>) extends infer Props extends InPropsObject ? Props : {};
+
+type SelectedReferenceSchemas<Ref extends RenderStateReference, Include> =
+  Pick<ReferenceSchemas<Ref>, Extract<keyof Include, keyof ReferenceSchemas<Ref>>> extends infer Selected extends InPropsObject
+    ? Selected : {};
+
+type ReferenceCarriedProps<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  Shared extends ComposableComponents,
+  Ref extends RenderStateReference,
+  Include,
+> = Pick<FromStateInProps<Resources, Options, Shared, Ref, {}>,
+  Extract<keyof Include, keyof FromStateInProps<Resources, Options, Shared, Ref, {}>>
+> extends infer Selected extends InPropsObject ? ResolveProps<Selected> : {};
+
+type ReferenceRenderProps<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  Shared extends ComposableComponents,
+  Ref extends RenderStateReference,
+> = RenderStateProps<Resources, Options, Shared & StateLocalComposables<ReferenceDefinition<Ref>>,
+  StateIncludes<ReferenceDefinition<Ref>> extends infer Include extends IncludedProps<MergedLayoutInProps<Resources, Options, Shared & StateLocalComposables<ReferenceDefinition<Ref>>>> ? Include : {},
+  StateCustomProps<ReferenceDefinition<Ref>>>;
+
+type FromStateComposables<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  Shared extends ComposableComponents,
+  Ref extends RenderStateReference,
+  Local extends ComposableComponents,
+  Include,
+> = Local & {
+  Ref: StateComposable<
+    ReferenceRenderProps<Resources, Options, Shared, Ref>,
+    Extract<keyof ReferenceCarriedProps<Resources, Options, Shared, Ref, Include>, keyof ReferenceRenderProps<Resources, Options, Shared, Ref>>
+  > & { [composablePresetMetaKey]: ComposablePresetMeta<SelectedReferenceSchemas<Ref, Include>> };
+};
+
+type FromStateDefinition<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  Shared extends ComposableComponents,
+  Ref extends RenderStateReference,
+  State extends string,
+  CustomProps extends InPropsObject,
+  Local extends ComposableComponents,
+  Include,
+> = {
+  state: State;
+  props?: { custom?: CustomProps; include?: ReferenceIncludes<Ref, CustomProps, Include> };
+  composables: RenderStateComposablesDefinition<Resources,
+    FromStateComposables<Resources, Options, Shared, Ref, Local, ReferenceIncludes<Ref, CustomProps, Include>>>;
+  render: (
+    props: ResolveProps<CustomProps> & ResolvedIncludedProps<FromStateInProps<Resources, Options, Shared, Ref, Local>,
+      ReferenceIncludes<Ref, CustomProps, Include> extends infer Selected extends IncludedProps<FromStateInProps<Resources, Options, Shared, Ref, Local>> ? Selected : {}>,
+    context: RenderStateContext<Shared & FromStateComposables<Resources, Options, Shared, Ref, Local, ReferenceIncludes<Ref, CustomProps, Include>>, Resources>,
+  ) => JSX.Element;
+};
+
+/** Creates a state with inherited props and a composable reference to its source. */
+export type CreateRenderStateFromState<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  Shared extends ComposableComponents,
+> = <
+  const Ref extends RenderStateReference,
+  const State extends RenderStateName = 'default',
+  const CustomProps extends InPropsObject = {},
+  const Local extends ComposableComponents = {},
+  const Include extends IncludedProps<FromStateInProps<Resources, Options, Shared, Ref, Local>> | undefined = undefined,
+>(definition: {
+  ref: Ref;
+  /** Defer Ref rendering through React.lazy. Defaults to false. */
+  lazy?: boolean;
+  state?: State;
+  props?: {
+    custom?: CustomProps;
+    include?: Include & Record<Exclude<keyof Include, keyof FromStateInProps<Resources, Options, Shared, Ref, Local>>, never>;
+  };
+  composables?: (create: CreateLayoutComposable<LayoutResourceKey<Resources>>, states: {}) => Local & { Ref?: never };
+  render: FromStateDefinition<Resources, Options, Shared, Ref, State, CustomProps, Local, Include>['render'];
+}) => BoundRenderStateFragment<Resources, Options, Shared,
+  FromStateEntry<Ref, FromStateDefinition<Resources, Options, Shared, Ref, State, CustomProps, Local, Include>>>;
+
 /**
  * Creates independently typed render-state fragments.
  *
@@ -377,12 +503,14 @@ export interface RenderStateOverloads<
  *   does not create a separate JavaScript chunk.
  * - `.lazy(() => import(...))` imports a complete named state definition as a
  *   separate chunk.
+ * - `.fromState({ ref, ... })` inherits a state's props and exposes it as `Ref`.
  */
 export interface CreateRenderState<
   Resources extends ReadonlyArray<ResourceDefinition> = ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources> = {},
   SharedComposables extends ComposableComponents = {},
 > extends RenderStateOverloads<Resources, Options, SharedComposables, false> {
+  fromState: CreateRenderStateFromState<Resources, Options, SharedComposables>;
   defer: RenderStateOverloads<Resources, Options, SharedComposables, true>;
   lazy<Module extends Record<string, unknown>>(
     load: () => Promise<Module>,
@@ -456,13 +584,94 @@ export function createRenderStateBuilder<
     return toFragment(normalizeDefinition(input));
   }
 
+  createRenderState.fromState = (input: {
+    ref: RenderStateReference;
+    lazy?: boolean;
+    state?: string;
+    props?: AnyRenderStateDefinition['props'];
+    composables?: AnyRenderStateDefinition['composables'];
+    render: AnyRenderStateDefinition['render'];
+  }): object => {
+    const entry = isLazyRenderState(input.ref) ? input.ref : Object.values(input.ref)[0];
+    if (isLazyRenderState(entry)) {
+      const lazyState = {
+        [lazyRenderStateSymbol]: async () => {
+          const source = await findDefinedRenderState(await entry[lazyRenderStateSymbol]());
+          return { Derived: createRenderState.fromState({ ...input, ref: toFragment(source) }) };
+        },
+      };
+      const name = input.state ?? 'default';
+      const fragment = { [name]: lazyState };
+      Object.defineProperty(fragment, definedRenderStateSymbol, { value: lazyState });
+      return withStateComposable(fragment, { input: lazyState, name });
+    }
+    const source = isDeferredRenderState(entry)
+      ? entry[deferredRenderStateSymbol]
+      : definedRenderStateSymbol in input.ref ? input.ref[definedRenderStateSymbol] : undefined;
+    if (!source || typeof source.render !== 'function') {
+      throw new LayoutConfigurationError('fromState requires a created render state');
+    }
+    const custom = input.props?.custom ?? {};
+    const includes = input.props?.include ?? Object.fromEntries(
+      Object.entries({
+        ...source.props?.include,
+        ...Object.fromEntries(Object.entries(source.props?.custom ?? {}).map(([key, prop]) => [
+          key, { visibility: prop.visibility, passthrough: 'component' },
+        ])),
+      }).filter(([key]) => !(key in custom)),
+    );
+    return toFragment({
+      state: input.state ?? 'default',
+      props: { custom, include: includes },
+      composables: (create, states) => {
+        const inherited = source.composables?.(create, states) ?? {};
+        const local = input.composables?.(create, states) ?? {};
+        if (Object.prototype.hasOwnProperty.call(local, 'Ref')) {
+          throw new LayoutConfigurationError('Composable name "Ref" is reserved by fromState');
+        }
+        const schemas = Object.assign({},
+          ...collectComposablePresetEntries(inherited).map(({ props }) => props),
+          source.props?.custom,
+        ) as InPropsObject;
+        const selected = Object.fromEntries(Object.entries(schemas).filter(([key]) => key in includes));
+        const referenceSource = {
+          ...source,
+          props: {
+            ...source.props,
+            include: Object.fromEntries(Object.entries(source.props?.include ?? {}).map(([key, behavior]) => [
+              key, {
+                visibility: behavior === 'optional' || (typeof behavior === 'object' && behavior !== null && 'visibility' in behavior && behavior.visibility === 'optional')
+                  ? 'optional' : 'required',
+                passthrough: 'component',
+              },
+            ])),
+          },
+        };
+        const Ref = createStateComposable({
+          input: input.lazy || isDeferredRenderState(entry) ? { [deferredRenderStateSymbol]: referenceSource } : referenceSource,
+          name: source.state ?? 'default',
+        }, {
+          props: { include: Object.fromEntries(Object.keys(includes).map((key) => [key, true as const])) },
+          normalizeIncludedKeys: true,
+        });
+        Object.defineProperty(Ref, composablePresetMetaKey, {
+          value: { key: 'Ref', props: selected },
+        });
+        return { ...local, Ref };
+      },
+      render: input.render,
+    });
+  };
+
   createRenderState.defer = (
     input: AnyRenderStateDefinition | RenderStateCallback,
   ) => {
     const definition = normalizeDefinition(input);
 
     const deferred = { [deferredRenderStateSymbol]: definition };
-    return withStateComposable({ [definition.state ?? 'default']: deferred }, {
+    const fragment = { [definition.state ?? 'default']: deferred };
+    Object.defineProperty(fragment, definedRenderStateSymbol, { value: definition });
+    return withStateComposable(fragment, {
       input: deferred, name: definition.state ?? 'default',
     });
   };
@@ -501,12 +710,12 @@ export function isLazyRenderState(
 }
 
 /**
- * Selects the single state definition exported by a lazy module. Throws when
- * the module exports none or more than one, avoiding ambiguous selection.
+ * Resolves the single state exported by a lazy module, including derived lazy
+ * states. Throws when a module exports none or more than one.
  */
-export function findDefinedRenderState(
+export async function findDefinedRenderState(
   module: Record<string, unknown>,
-): AnyRenderStateDefinition {
+): Promise<AnyRenderStateDefinition> {
   const definitions = Object.values(module).filter(
     (value) =>
       typeof value === 'object' && value !== null && definedRenderStateSymbol in value,
@@ -518,7 +727,10 @@ export function findDefinedRenderState(
     );
   }
 
-  return definitions[0][definedRenderStateSymbol];
+  const definition = definitions[0][definedRenderStateSymbol];
+  return isLazyRenderState(definition)
+    ? findDefinedRenderState(await definition[lazyRenderStateSymbol]())
+    : definition;
 }
 
 /** Identity helper that contextually types a reusable composables callback. */
