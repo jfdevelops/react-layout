@@ -1,5 +1,6 @@
-import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, expect, expectTypeOf, it } from 'vitest';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { Component, type ReactNode } from 'react';
+import { afterEach, expect, expectTypeOf, it, vi } from 'vitest';
 import { createDefinedResourceLayout, createProp, defineComposableComponent } from '../../src';
 
 afterEach(cleanup);
@@ -286,4 +287,78 @@ it.each([undefined, false, true])('can defer only the Ref component (lazy: %s)',
     expect(screen.queryByText('Loading ref')).not.toBeInTheDocument();
   }
   expect(await screen.findByText('Source ready')).toBeInTheDocument();
+});
+
+it('does not reuse the outer Loading state as a deferred Ref fallback', async () => {
+  const { createRenderState, defineResourceLayout } = createDefinedResourceLayout({ resources: ['users'] });
+  const Source = createRenderState({
+    state: 'Source',
+    props: { custom: { message: createProp.string() } },
+    render: ({ message }) => <p>{message}</p>,
+  });
+  const Loading = createRenderState.fromState({
+    ref: Source,
+    state: 'Loading',
+    lazy: true,
+    render: (_props, { composables }) => <section><h1>Derived loading</h1><composables.Ref message='Ready' /></section>,
+  });
+  const Users = defineResourceLayout({ render: { default: () => <></>, ...Loading } })
+    .createResourceLayout({ resource: 'users', name: 'Users' });
+
+  render(<Users.Loading message='Ready' />);
+
+  expect(screen.getByText('Derived loading')).toBeInTheDocument();
+  expect(await screen.findByText('Ready')).toBeInTheDocument();
+});
+
+it('does not reuse the outer Error state as a deferred Ref fallback', async () => {
+  const { createRenderState, defineResourceLayout } = createDefinedResourceLayout({ resources: ['users'] });
+  const Source = createRenderState({
+    state: 'Source',
+    render: () => { throw new Error('source failed'); },
+  });
+  let errorStateRenderCount = 0;
+  const ErrorState = createRenderState.fromState({
+    ref: Source,
+    state: 'Error',
+    lazy: true,
+    render: (_props, { composables }) => {
+      errorStateRenderCount += 1;
+      return <composables.Ref />;
+    },
+  });
+  const Users = defineResourceLayout({ render: { default: () => <></>, ...ErrorState } })
+    .createResourceLayout({ resource: 'users', name: 'Users' });
+
+  let error: Error | undefined;
+  class ErrorBoundary extends Component<{
+    children?: ReactNode;
+  }, { failed: boolean }> {
+    state = { failed: false };
+    static getDerivedStateFromError() {
+      return { failed: true };
+    }
+    componentDidCatch(caught: Error) {
+      error = caught;
+    }
+    render() {
+      return this.state.failed ? null : this.props.children;
+    }
+  }
+
+  const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  const suppressWindowError = (event: ErrorEvent) => event.preventDefault();
+  window.addEventListener('error', suppressWindowError);
+  try {
+    render(<ErrorBoundary><Users.Error /></ErrorBoundary>);
+    await waitFor(() => expect(error).toBeDefined());
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  } finally {
+    window.removeEventListener('error', suppressWindowError);
+    consoleError.mockRestore();
+  }
+
+  expect(error).toBeInstanceOf(Error);
+  expect(error?.message).toContain('source failed');
+  expect(errorStateRenderCount).toBe(1);
 });

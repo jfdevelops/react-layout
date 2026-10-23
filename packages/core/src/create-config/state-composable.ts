@@ -51,6 +51,8 @@ export type AsStateComposable<Props extends object> = <
 export type StateComposableSource = {
   input: unknown;
   name: string;
+  /** Fallback state that must not recursively render this reference. */
+  fallbackStateName?: string;
 };
 
 /** @internal Shared by all states in one created resource layout. */

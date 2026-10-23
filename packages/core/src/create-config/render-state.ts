@@ -650,6 +650,7 @@ export function createRenderStateBuilder<
         const Ref = createStateComposable({
           input: input.lazy || isDeferredRenderState(entry) ? { [deferredRenderStateSymbol]: referenceSource } : referenceSource,
           name: source.state ?? 'default',
+          fallbackStateName: input.state,
         }, {
           props: { include: Object.fromEntries(Object.keys(includes).map((key) => [key, true as const])) },
           normalizeIncludedKeys: true,
