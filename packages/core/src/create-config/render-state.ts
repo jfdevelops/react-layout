@@ -14,6 +14,7 @@ import type {
   ResolvedIncludedComponentProps,
 } from '../props';
 import type { LayoutResourceKey, ResourceDefinition } from '../resource';
+import type { LayoutRenderResourcesAccessor } from './define-layout';
 
 export const deferredRenderStateSymbol: unique symbol = Symbol(
   'deferredRenderState',
@@ -95,7 +96,9 @@ type BuilderRenderComposables<Composables extends ComposableComponents> = [
 /** Values available as the second argument of a created state's `render`. */
 export type RenderStateContext<
   Composables extends ComposableComponents,
+  Resources extends ReadonlyArray<ResourceDefinition> = ReadonlyArray<ResourceDefinition>,
 > = {
+  resources: LayoutRenderResourcesAccessor<Resources>;
   composables: BuilderRenderComposables<Composables>;
   retry?: () => void;
 };
@@ -148,7 +151,7 @@ type TypedRenderStateDefinition<
       IncludeProps,
       CustomProps
     >,
-    context: RenderStateContext<SharedComposables & StateComposables>,
+    context: RenderStateContext<SharedComposables & StateComposables, Resources>,
   ) => JSX.Element;
   state: State;
 };
@@ -163,7 +166,7 @@ export type TypedRenderStateCallback<
   SharedComposables extends ComposableComponents,
 > = (
   props: RenderStateProps<Resources, Options, SharedComposables, {}, {}>,
-  context: RenderStateContext<SharedComposables>,
+  context: RenderStateContext<SharedComposables, Resources>,
 ) => JSX.Element;
 
 type NormalizeRenderStateDefinition<Input> =
