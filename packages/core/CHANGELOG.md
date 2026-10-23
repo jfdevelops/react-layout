@@ -1,5 +1,15 @@
 # @jfdevelops/react-layout
 
+## 1.2.0
+
+### Minor Changes
+
+- ec45889: Add createRenderState.fromState({ ref, ... }) to inherit a created state's props and expose it as composables.Ref. Inherit all props by default, select subsets with props.include, and add or override validators with props.custom. Support eager, deferred, and lazy refs, including chained derivation. Preserve optional and component-valued props when forwarding inherited values. The optional lazy: true flag defers Ref rendering without deferring the derived state.
+
+### Patch Changes
+
+- 201ba42: Expose the existing resource accessor in createRenderState render callback context with the builder's bound resource types.
+
 ## 1.1.0
 
 ### Minor Changes
