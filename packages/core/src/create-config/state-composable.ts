@@ -7,6 +7,7 @@ import {
 } from 'react';
 import { LayoutConfigurationError } from '../errors';
 import type { IncludedProps } from '../props';
+import { capitalize } from '../utils/capitalize';
 
 /** Props selected here are inherited from the containing state's render props. */
 export type StateComposableOptions<
@@ -50,6 +51,8 @@ export type AsStateComposable<Props extends object> = <
 export type StateComposableSource = {
   input: unknown;
   name: string;
+  /** Fallback state that must not recursively render this reference. */
+  fallbackStateName?: string;
 };
 
 /** @internal Shared by all states in one created resource layout. */
@@ -62,12 +65,15 @@ export type RenderStateScope = {
 export const StateComposableContext = createContext<{
   scope: RenderStateScope;
   props: Record<string, unknown>;
+  definitions: Record<string, unknown>;
 } | undefined>(undefined);
 
 /** @internal Defers state resolution until render, allowing forward references. */
 export function createStateComposable(
   source: StateComposableSource,
-  options: StateComposableOptions<Record<string, unknown>, IncludedProps<Record<string, unknown>>> = {},
+  options: StateComposableOptions<Record<string, unknown>, IncludedProps<Record<string, unknown>>> & {
+    normalizeIncludedKeys?: boolean;
+  } = {},
 ): StateComposable<Record<string, unknown>> {
   function StateReference(callProps: Record<string, unknown>) {
     const context = useContext(StateComposableContext);
@@ -77,8 +83,12 @@ export function createStateComposable(
       );
     }
     const inherited = Object.fromEntries(
-      Object.keys(options.props?.include ?? {}).flatMap((key) =>
-        Object.prototype.hasOwnProperty.call(context.props, key)
+      Object.keys(options.props?.include ?? {}).map((key) => {
+        const definition = context.definitions[key];
+        return options.normalizeIncludedKeys && typeof definition === 'function' &&
+          'type' in definition && definition.type === 'JSX.Element' ? capitalize(key) : key;
+      }).flatMap((key) =>
+        Object.prototype.hasOwnProperty.call(context.props, key) && context.props[key] !== undefined
           ? [[key, context.props[key]]]
           : [],
       ),

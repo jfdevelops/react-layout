@@ -88,6 +88,7 @@ export type {
   CreateLayoutBuildingBlocksArguments,
   CreateLayoutBuildingBlocksResult,
   CreateRenderState,
+  CreateRenderStateFromState,
   CreateRenderStateBuilderArguments,
   CreateRenderStateBuilderResult,
   DefinedResourceLayoutInput,

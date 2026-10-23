@@ -1549,7 +1549,12 @@ function defineResourceLayoutImpl<
         }
         let reference = referenceComponents.get(source.input);
         if (!reference) {
-          reference = createStateComponent(source.name, source.input, false);
+          reference = createStateComponent(
+            source.name,
+            source.input,
+            false,
+            source.fallbackStateName,
+          );
           referenceComponents.set(source.input, reference);
         }
         return reference;
@@ -1792,7 +1797,7 @@ function defineResourceLayoutImpl<
       const rendered = (
         <ResourceProvider resource={layoutContext.resource}>
           <LayoutComposablePresetProvider value={composablePresetProps}>
-            <StateComposableContext.Provider value={{ scope: stateScope, props: layoutRenderProps }}>
+            <StateComposableContext.Provider value={{ scope: stateScope, props: layoutRenderProps, definitions: mergedResolvedInProps }}>
               <RenderDefaultState renderProps={layoutRenderProps} />
             </StateComposableContext.Provider>
           </LayoutComposablePresetProvider>
@@ -1842,13 +1847,14 @@ function defineResourceLayoutImpl<
       stateName: string,
       input: unknown,
       validateStateName = true,
+      fallbackStateName = stateName,
     ): (props: Record<string, unknown>) => JSX.Element {
       if (isLazyRenderState(input)) {
         const loadState = input[lazyRenderStateSymbol];
 
         function createLazyState() {
           return lazy(async () => {
-            const stateDefinition = findDefinedRenderState(
+            const stateDefinition = await findDefinedRenderState(
               await loadState().catch((error: unknown) => {
                 throw new ResourceModuleLoadError(
                   String(layoutContext.resource),
@@ -1880,9 +1886,9 @@ function defineResourceLayoutImpl<
           const LazyState = useRef(createLazyState());
           const CurrentLazyState = LazyState.current;
           const LoadingComponent =
-            stateName === 'Loading' ? undefined : stateComponents.Loading;
+            fallbackStateName === 'Loading' ? undefined : stateComponents.Loading;
           const ErrorComponent =
-            stateName === 'Error' ? undefined : stateComponents.Error;
+            fallbackStateName === 'Error' ? undefined : stateComponents.Error;
 
           function retry() {
             LazyState.current = createLazyState();
@@ -1955,9 +1961,9 @@ function defineResourceLayoutImpl<
 
       function DeferredStateComponent(props: Record<string, unknown>) {
         const LoadingComponent =
-          stateName === 'Loading' ? undefined : stateComponents.Loading;
+          fallbackStateName === 'Loading' ? undefined : stateComponents.Loading;
         const ErrorComponent =
-          stateName === 'Error' ? undefined : stateComponents.Error;
+          fallbackStateName === 'Error' ? undefined : stateComponents.Error;
         const rendered = (
           <Suspense fallback={LoadingComponent ? <LoadingComponent /> : null}>
             <DeferredState {...props} />
@@ -2351,12 +2357,7 @@ export type DefinedResourceLayoutFromStates<
   AllStateIncludes<Render> extends LayoutIncludeProps<
     Resources, Options, Composables & AllStateComposables<Render>
   > ? AllStateIncludes<Render> : {},
-  RenderStateCustomProps<Render['default']> & IncludedComponentPropDefinitions<
-    MergedLayoutInProps<Resources, Options, Composables & AllStateComposables<Render>>,
-    ContextualRenderStateIncludeProps<
-      Resources, Options, Composables & AllStateComposables<Render>, Render['default']
-    >
-  >,
+  RenderStateCustomProps<Render['default']>,
   Render,
   DefaultNamespace
 >;
