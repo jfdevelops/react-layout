@@ -22,6 +22,16 @@ export function HelpTooltip({
   const anchor = useRef<HTMLSpanElement>(null);
   const popup = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
+  const hovered = useRef(false);
+  const focused = useRef(false);
+  function hover(value: boolean) {
+    hovered.current = value;
+    if (value || !focused.current) setOpen(value);
+  }
+  function focus(value: boolean) {
+    focused.current = value;
+    if (value || !hovered.current) setOpen(value);
+  }
   const [position, setPosition] = useState({ left: 0, top: 0 });
   useLayoutEffect(() => {
     if (!open) return;
@@ -52,12 +62,14 @@ export function HelpTooltip({
     <span
       ref={anchor}
       style={{ display: 'inline-flex', maxWidth: '100%' }}
-      onPointerMove={() => setOpen(true)}
-      onMouseEnter={() => setOpen(true)}
-      onPointerLeave={() => setOpen(false)}
-      onMouseLeave={() => setOpen(false)}
-      onFocusCapture={() => setOpen(true)}
-      onBlurCapture={() => setOpen(false)}
+      onPointerMove={() => hover(true)}
+      onMouseEnter={() => hover(true)}
+      onPointerLeave={() => hover(false)}
+      onMouseLeave={() => hover(false)}
+      onFocusCapture={() => focus(true)}
+      onBlurCapture={(event) =>
+        focus(event.currentTarget.contains(event.relatedTarget as Node | null))
+      }
       onPointerDown={() => setOpen(false)}
       onKeyDownCapture={(event) => {
         if (event.key === 'Escape' && open) {

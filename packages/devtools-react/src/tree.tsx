@@ -1,5 +1,5 @@
 import { Button } from './components/ui/button';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   buildInspectionTree,
   type GraphSnapshot,
@@ -8,6 +8,8 @@ import {
 import type { ChipPalette, ReactLayoutDevtoolsConfig } from './config';
 export function InspectionTree({
   graph,
+  locateRequest = 0,
+  onLocate,
   palette,
   config,
   selected,
@@ -15,6 +17,8 @@ export function InspectionTree({
   onExpandedChange,
 }: {
   graph: GraphSnapshot;
+  locateRequest?: number;
+  onLocate?: (element: HTMLElement) => void;
   palette: ChipPalette;
   config?: ReactLayoutDevtoolsConfig['tree'];
   selected?: string;
@@ -32,6 +36,39 @@ export function InspectionTree({
     setCollapsed(new Set());
     setExpanded(new Set());
   }, [config?.initialExpanded]);
+  const tree = useRef<HTMLUListElement>(null);
+  const handledRequest = useRef(0);
+  const [revealing, setRevealing] = useState(false);
+  useEffect(() => {
+    if (!locateRequest || !selected || handledRequest.current === locateRequest)
+      return;
+    handledRequest.current = locateRequest;
+    function path(
+      entries: readonly InspectionTreeNode[],
+      parents: string[]
+    ): string[] | undefined {
+      for (const entry of entries) {
+        if (entry.node.id === selected) return parents;
+        const found = path(entry.children, [...parents, entry.node.id]);
+        if (found) return found;
+      }
+    }
+    const ancestors = path(roots, []);
+    if (!ancestors) return;
+    setExpanded((current) => new Set([...current, ...ancestors]));
+    setCollapsed(
+      (current) => new Set([...current].filter((id) => !ancestors.includes(id)))
+    );
+    setRevealing(true);
+  }, [locateRequest, selected, roots]);
+  useEffect(() => {
+    if (!revealing) return;
+    const element = tree.current?.querySelector<HTMLElement>(
+      '[aria-selected="true"]'
+    );
+    if (element) onLocate?.(element);
+    setRevealing(false);
+  }, [revealing, onLocate]);
   const isExpanded = (id: string) =>
     !collapsed.has(id) && (allExpanded || expanded.has(id));
   function open(id: string) {
@@ -266,6 +303,7 @@ export function InspectionTree({
         {'{'}
       </div>
       <ul
+        ref={tree}
         role="tree"
         aria-label="Layout hierarchy"
         style={{ padding: '0 0 0 10px', margin: 0, listStyle: 'none' }}

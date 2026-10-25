@@ -140,5 +140,8 @@ export function usePanelPreferences(
   function update(patch: Partial<Preferences>) {
     write(key, { ...resolve(read(key), defaults), ...patch });
   }
-  return [preferences, update] as const;
+  function reset() {
+    write(key, resolve(null, defaults));
+  }
+  return [preferences, update, reset] as const;
 }

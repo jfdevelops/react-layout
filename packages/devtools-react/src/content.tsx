@@ -41,7 +41,10 @@ export function ReactLayoutDevtoolsContent({
   className,
   style,
 }: ReactLayoutDevtoolsContentProps) {
-  const [config, updatePreferences] = usePanelPreferences(defaults, storageKey);
+  const [config, updatePreferences, resetPreferences] = usePanelPreferences(
+    defaults,
+    storageKey
+  );
   const arrowId = `layout-arrow-${useId().replaceAll(':', '')}`;
   const inspector = useMemo(() => getInspectionSource(source), [source]);
   const graph = useSyncExternalStore(
@@ -71,6 +74,42 @@ export function ReactLayoutDevtoolsContent({
       ),
     });
   const [selected, setSelected] = useState<string>();
+  const [treeRevision, setTreeRevision] = useState(0);
+  const [locateRequest, setLocateRequest] = useState(0);
+  const graphPane = useRef<HTMLDivElement>(null);
+  function reveal(element: HTMLElement) {
+    const pane = graphPane.current;
+    if (!pane) return;
+    const bounds = element.getBoundingClientRect();
+    const viewport = pane.getBoundingClientRect();
+    pane.scrollTo({
+      left:
+        pane.scrollLeft +
+        bounds.left -
+        viewport.left -
+        (pane.clientWidth - bounds.width) / 2,
+      top:
+        pane.scrollTop +
+        bounds.top -
+        viewport.top -
+        (pane.clientHeight - bounds.height) / 2,
+    });
+    element.focus({ preventScroll: true });
+  }
+  function locateSelection() {
+    setQuery('');
+    updatePreferences({
+      initialFilters: { activeOnly: false, showComposables: true },
+    });
+    setLocateRequest((request) => request + 1);
+  }
+  useEffect(() => {
+    if (!locateRequest || view !== 'graph') return;
+    const element = graphPane.current?.querySelector<HTMLElement>(
+      '[data-selected-node="true"]'
+    );
+    if (element) reveal(element);
+  }, [locateRequest, view]);
   const palette = resolveChipColors(config?.chipColors);
   const displayGraph = useMemo(() => {
     const candidates = graph.nodes.filter(
@@ -160,7 +199,28 @@ export function ReactLayoutDevtoolsContent({
               active states
             </div>
           </div>
-          <ViewSwitcher value={view} onChange={setView} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Button
+              type="button"
+              disabled={!selection}
+              onClick={locateSelection}
+              style={control}
+            >
+              Locate selection
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                resetPreferences();
+                setLocateRequest(0);
+                setTreeRevision((revision) => revision + 1);
+              }}
+              style={control}
+            >
+              Reset preferences
+            </Button>
+            <ViewSwitcher value={view} onChange={setView} />
+          </div>
         </div>
         <div
           style={{
@@ -255,6 +315,7 @@ export function ReactLayoutDevtoolsContent({
         style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}
       >
         <div
+          ref={graphPane}
           tabIndex={0}
           role="region"
           aria-label="Scrollable relationship graph"
@@ -274,6 +335,9 @@ export function ReactLayoutDevtoolsContent({
             </p>
           ) : view === 'tree' ? (
             <InspectionTree
+              key={treeRevision}
+              locateRequest={locateRequest}
+              onLocate={reveal}
               palette={palette}
               config={config?.tree}
               onExpandedChange={(initialExpanded) =>
@@ -335,6 +399,7 @@ export function ReactLayoutDevtoolsContent({
                     <foreignObject width={228} height={74}>
                       <Button
                         type="button"
+                        data-selected-node={selected === node.id}
                         aria-pressed={selected === node.id}
                         onClick={() => setSelected(node.id)}
                         style={{

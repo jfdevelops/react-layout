@@ -198,3 +198,34 @@ it('shows the sliding details pane only after selection and hides it when the se
   );
   expect(screen.queryByLabelText('Node details')).toBeNull();
 });
+
+it('locates a filtered selection and reveals collapsed tree ancestors', () => {
+  const source = createInspectionStore();
+  source.node({ id: 'layout', kind: 'layout', label: 'UsersLayout' });
+  source.node({ id: 'state', kind: 'state', label: 'Loading' });
+  source.edge('layout', 'state', 'defines');
+  const scroll = vi.fn();
+  const original = HTMLElement.prototype.scrollTo;
+  HTMLElement.prototype.scrollTo = scroll;
+  try {
+    render(<ReactLayoutDevtoolsContent source={source} />);
+    const locate = screen.getByRole('button', { name: 'Locate selection' });
+    expect(locate).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: /STATE.*Loading/i }));
+    fireEvent.click(locate);
+    expect(scroll).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('tab', { name: 'Tree' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse all' }));
+    fireEvent.change(screen.getByLabelText('Search graph'), {
+      target: { value: 'missing' },
+    });
+    scroll.mockClear();
+    fireEvent.click(locate);
+    expect(screen.getByLabelText('Search graph')).toHaveValue('');
+    const target = screen.getByRole('treeitem', { name: 'state Loading' });
+    expect(target).toHaveFocus();
+    expect(scroll).toHaveBeenCalledTimes(1);
+  } finally {
+    HTMLElement.prototype.scrollTo = original;
+  }
+});

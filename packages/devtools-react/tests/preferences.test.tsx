@@ -130,3 +130,33 @@ it('restores the dragged FAB location across remounts', () => {
     screen.getByRole('button', { name: 'Open React Layout Devtools' })
   ).toHaveStyle({ left: '130px', top: '160px' });
 });
+
+it('resets saved preferences to caller defaults and removes saved FAB coordinates', () => {
+  localStorage.setItem(
+    defaultStorageKey,
+    JSON.stringify({
+      initialView: 'tree',
+      initialZoom: 2,
+      fabPosition: { x: 20, y: 40 },
+      initialFilters: { activeOnly: true },
+    })
+  );
+  render(
+    <ReactLayoutDevtoolsContent
+      source={createInspectionStore()}
+      config={{ initialZoom: 1.5, chipColors: { active: 'lime' } }}
+    />
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Reset preferences' }));
+  expect(screen.getByRole('tab', { name: 'Graph' })).toHaveAttribute(
+    'aria-selected',
+    'true'
+  );
+  expect(screen.getByRole('button', { name: 'Reset zoom' })).toHaveTextContent(
+    '150%'
+  );
+  expect(screen.getByLabelText('Active only')).not.toBeChecked();
+  const saved = JSON.parse(localStorage.getItem(defaultStorageKey)!);
+  expect(saved.fabPosition).toBeUndefined();
+  expect(saved.chipColors.active).toBe('lime');
+});

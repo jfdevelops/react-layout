@@ -64,3 +64,14 @@ it('builds a resource-owned tree and represents cycles as reference leaves', asy
     tree[0].children[0].children[0].children[0].children[0].reference
   ).toBe(true);
 });
+
+it('honors initial activity without resetting live mounts during metadata updates', () => {
+  const store = createInspectionStore();
+  store.node({ id: 'existing', kind: 'layout', label: 'Existing', active: 2 });
+  expect(store.getSnapshot().nodes[0].active).toBe(2);
+  const unmount = store.mount('existing');
+  store.node({ id: 'existing', kind: 'layout', label: 'Renamed', active: 0 });
+  expect(store.getSnapshot().nodes[0].active).toBe(3);
+  unmount();
+  expect(store.getSnapshot().nodes[0].active).toBe(2);
+});

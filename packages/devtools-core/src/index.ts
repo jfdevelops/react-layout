@@ -98,7 +98,7 @@ export function createInspectionStore() {
         node.id,
         Object.freeze({
           ...node,
-          active: nodes.get(node.id)?.active ?? 0,
+          active: nodes.get(node.id)?.active ?? node.active ?? 0,
           details: node.details && Object.freeze({ ...node.details }),
         })
       );

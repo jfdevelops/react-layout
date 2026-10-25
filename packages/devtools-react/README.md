@@ -89,3 +89,12 @@ The details pane is absent until a node is selected, then slides in from the rig
 Panel preferences are stored under `react-layout-devtools:preferences:v1` in local storage. Saved settings are authoritative; expand/collapse-all also persists the tree default. `config` supplies defaults when no preference is saved. View mode, graph filters, zoom, chip colors, tree defaults, details visibility, and the dragged FAB position survive remounts and page reloads. Selection and search text remain temporary. Pass `storageKey` to either component to isolate multiple inspectors. Same-tab instances and other tabs synchronize through storage notifications. Invalid entries fall back to defaults; unavailable storage uses an in-memory fallback.
 
 Composable activity counts committed React instances rather than declarations. Repeated instances count separately, unused composables stay at zero, and unmounts clear their counts. Relationship edges still describe declared availability rather than JSX containment.
+
+Use **Locate selection** to reveal the selected node in either view. It clears the
+search and activity filters, enables composables, expands the selected node's tree
+ancestors, and centers and focuses the node without scrolling the host page.
+
+**Reset preferences** restores the defaults supplied through `config` (or the
+built-in defaults when omitted), including zoom, view, filters, chip colors, tree
+settings, and the FAB location. The reset is saved to the inspector's `storageKey`
+and synchronizes with other inspectors using that key.
