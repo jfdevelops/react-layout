@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  server: { allowedHosts: ['.localhost'] },
+  preview: { allowedHosts: ['.localhost'] },
   resolve: {
     alias: {
       '@jfdevelops/react-layout-validator': path.resolve(

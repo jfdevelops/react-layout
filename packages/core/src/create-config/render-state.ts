@@ -1,3 +1,4 @@
+import type { MergeContract } from './define-layout';
 import type { JSX } from 'react';
 import { collectComposablePresetEntries, composablePresetMetaKey, type MergePresetProps, type ComposablePresetMeta } from '@jfdevelops/react-layout-composables';
 import { LayoutConfigurationError } from '../errors';
@@ -140,6 +141,8 @@ type TypedRenderStateDefinition<
       SharedComposables & StateComposables
     >
   >,
+  SharedInclude extends IncludedProps<MergedLayoutInProps<Resources, Options, SharedComposables>> = {},
+  SharedCustom extends InPropsObject = {},
 > = {
   composables?: RenderStateComposablesDefinition<Resources, StateComposables>;
   props?: {
@@ -151,8 +154,8 @@ type TypedRenderStateDefinition<
       Resources,
       Options,
       SharedComposables & StateComposables,
-      IncludeProps,
-      CustomProps
+      MergeContract<SharedInclude, IncludeProps>,
+      MergeContract<SharedCustom, CustomProps>
     >,
     context: RenderStateContext<SharedComposables & StateComposables, Resources>,
   ) => JSX.Element;
@@ -167,8 +170,10 @@ export type TypedRenderStateCallback<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   SharedComposables extends ComposableComponents,
+  SharedInclude extends IncludedProps<MergedLayoutInProps<Resources, Options, SharedComposables>> = {},
+  SharedCustom extends InPropsObject = {},
 > = (
-  props: RenderStateProps<Resources, Options, SharedComposables, {}, {}>,
+  props: RenderStateProps<Resources, Options, SharedComposables, SharedInclude, SharedCustom>,
   context: RenderStateContext<SharedComposables, Resources>,
 ) => JSX.Element;
 
@@ -291,6 +296,8 @@ export interface RenderStateOverloads<
   Options extends InPropsDefinition<Resources>,
   SharedComposables extends ComposableComponents,
   Deferred extends boolean,
+  SharedInclude extends IncludedProps<MergedLayoutInProps<Resources, Options, SharedComposables>> = {},
+  SharedCustom extends InPropsObject = {},
 > {
   <
     const State extends RenderStateName,
@@ -311,7 +318,9 @@ export interface RenderStateOverloads<
       CustomProps,
       SharedComposables,
       StateComposables,
-      IncludeProps
+      IncludeProps,
+      SharedInclude,
+      SharedCustom
     >,
   ): BoundRenderStateFragment<Resources, Options, SharedComposables,
     RenderStateEntry<
@@ -322,7 +331,9 @@ export interface RenderStateOverloads<
         CustomProps,
         SharedComposables,
         StateComposables,
-        IncludeProps
+        IncludeProps,
+      SharedInclude,
+      SharedCustom
       >,
       Deferred
     >
@@ -346,7 +357,9 @@ export interface RenderStateOverloads<
         CustomProps,
         SharedComposables,
         StateComposables,
-        IncludeProps
+        IncludeProps,
+      SharedInclude,
+      SharedCustom
       >,
       'state'
     >,
@@ -359,16 +372,18 @@ export interface RenderStateOverloads<
         CustomProps,
         SharedComposables,
         StateComposables,
-        IncludeProps
+        IncludeProps,
+      SharedInclude,
+      SharedCustom
       >,
       Deferred
     >
   >;
   (
-    render: TypedRenderStateCallback<Resources, Options, SharedComposables>,
+    render: TypedRenderStateCallback<Resources, Options, SharedComposables, SharedInclude, SharedCustom>,
   ): BoundRenderStateFragment<Resources, Options, SharedComposables,
     RenderStateEntry<
-      TypedRenderStateCallback<Resources, Options, SharedComposables>,
+      TypedRenderStateCallback<Resources, Options, SharedComposables, SharedInclude, SharedCustom>,
       Deferred
     >
   >;
@@ -509,9 +524,11 @@ export interface CreateRenderState<
   Resources extends ReadonlyArray<ResourceDefinition> = ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources> = {},
   SharedComposables extends ComposableComponents = {},
-> extends RenderStateOverloads<Resources, Options, SharedComposables, false> {
+  SharedInclude extends IncludedProps<MergedLayoutInProps<Resources, Options, SharedComposables>> = {},
+  SharedCustom extends InPropsObject = {},
+> extends RenderStateOverloads<Resources, Options, SharedComposables, false, SharedInclude, SharedCustom> {
   fromState: CreateRenderStateFromState<Resources, Options, SharedComposables>;
-  defer: RenderStateOverloads<Resources, Options, SharedComposables, true>;
+  defer: RenderStateOverloads<Resources, Options, SharedComposables, true, SharedInclude, SharedCustom>;
   lazy<Module extends Record<string, unknown>>(
     load: () => Promise<Module>,
   ): LazyRenderState<DefinedRenderStateFromModule<Module>> & StateComposableHandle<
@@ -547,7 +564,10 @@ export type CreateRenderStateBuilderArguments<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   SharedComposables extends ComposableComponents = {},
+  SharedInclude extends IncludedProps<MergedLayoutInProps<Resources, Options, SharedComposables>> = {},
+  SharedCustom extends InPropsObject = {},
 > = {
+  props?: { include?: SharedInclude; custom?: SharedCustom };
   /** Shared composables whose components and preset props every state can use. */
   composables?: LayoutComposablesDefinition<Resources, SharedComposables>;
   /** Option props that individual states can expose through `props.include`. */
@@ -561,7 +581,9 @@ export type CreateRenderStateBuilderResult<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   SharedComposables extends ComposableComponents = {},
-> = CreateRenderState<Resources, Options, SharedComposables>;
+  SharedInclude extends IncludedProps<MergedLayoutInProps<Resources, Options, SharedComposables>> = {},
+  SharedCustom extends InPropsObject = {},
+> = CreateRenderState<Resources, Options, SharedComposables, SharedInclude, SharedCustom>;
 
 /**
  * Creates a state factory whose `props.include` keys are constrained by the
@@ -571,13 +593,17 @@ export function createRenderStateBuilder<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   SharedComposables extends ComposableComponents = {},
+  SharedInclude extends IncludedProps<MergedLayoutInProps<Resources, Options, SharedComposables>> = {},
+  SharedCustom extends InPropsObject = {},
 >(
   _arguments: CreateRenderStateBuilderArguments<
     Resources,
     Options,
-    SharedComposables
+    SharedComposables,
+    SharedInclude,
+    SharedCustom
   >,
-): CreateRenderStateBuilderResult<Resources, Options, SharedComposables> {
+): CreateRenderStateBuilderResult<Resources, Options, SharedComposables, SharedInclude, SharedCustom> {
   function createRenderState(
     input: AnyRenderStateDefinition | RenderStateCallback,
   ) {
@@ -686,7 +712,9 @@ export function createRenderStateBuilder<
   return createRenderState as unknown as CreateRenderStateBuilderResult<
     Resources,
     Options,
-    SharedComposables
+    SharedComposables,
+    SharedInclude,
+    SharedCustom
   >;
 }
 

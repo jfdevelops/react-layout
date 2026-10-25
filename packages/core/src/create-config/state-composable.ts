@@ -55,6 +55,8 @@ export type StateComposableSource = {
   fallbackStateName?: string;
 };
 
+export const stateReferenceSource = Symbol.for('@jfdevelops/react-layout/state-reference');
+
 /** @internal Shared by all states in one created resource layout. */
 export type RenderStateScope = {
   states: Record<string, StateComposable<Record<string, unknown>>>;
@@ -98,6 +100,7 @@ export function createStateComposable(
       ...callProps,
     });
   }
+  Object.defineProperty(StateReference, stateReferenceSource, { value: source });
   return withStateComposable(Object.assign(StateReference, {
     displayName: `State.${source.name}`,
     props: undefined as unknown as Record<string, unknown>,

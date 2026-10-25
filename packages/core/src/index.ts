@@ -188,3 +188,6 @@ export type {
 } from './resource';
 export { pick } from './utils';
 export type { BaseComponent, MergeIntersection, Show, UnionToIntersection } from './utils';
+
+export { defineLayoutName } from './create-config/layout-name';
+export type { LayoutNameContext, LayoutNameInput, LayoutNameParts, LayoutNameResolver, ResolvedLayoutName } from './create-config/layout-name';

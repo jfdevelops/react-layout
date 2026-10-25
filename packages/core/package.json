@@ -40,7 +40,8 @@
     "@jfdevelops/create-error": "0.2.0",
     "@jfdevelops/react-layout-composables": "workspace:*",
     "@jfdevelops/react-layout-validator": "workspace:*",
-    "arktype": "2.2.8"
+    "arktype": "2.2.8",
+    "@jfdevelops/react-layout-devtools-core": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=18",

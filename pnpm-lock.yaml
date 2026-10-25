@@ -199,6 +199,9 @@ importers:
       '@jfdevelops/react-layout-composables':
         specifier: workspace:*
         version: link:../composables
+      '@jfdevelops/react-layout-devtools-core':
+        specifier: workspace:*
+        version: link:../devtools-core
       '@jfdevelops/react-layout-validator':
         specifier: workspace:*
         version: link:../validators
