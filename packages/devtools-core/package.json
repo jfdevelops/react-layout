@@ -1,6 +1,6 @@
 {
   "name": "@jfdevelops/react-layout-devtools-core",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Framework-independent layout inspection protocol and graph store.",
   "repository": {
     "type": "git",
