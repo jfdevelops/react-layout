@@ -5,11 +5,28 @@
     "ignoreDeprecations": "6.0",
     "noEmit": true,
     "paths": {
-      "@/*": ["./src/*"],
-      "@jfdevelops/react-layout": ["../../packages/core/src/index.ts"],
-      "@jfdevelops/react-layout-composable-breadcrumb": ["../../packages/composable-breadcrumb/src/index.ts"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@jfdevelops/react-layout": [
+        "../../packages/core/src/index.ts"
+      ],
+      "@jfdevelops/react-layout-composable-breadcrumb": [
+        "../../packages/composable-breadcrumb/src/index.ts"
+      ],
+      "@jfdevelops/react-layout-devtools-react": [
+        "../../packages/devtools-react/src/index.ts"
+      ],
+      "@jfdevelops/react-layout-devtools-core": [
+        "../../packages/devtools-core/src/index.ts"
+      ]
     },
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   },
-  "include": ["src", "vite.config.ts"]
+  "include": [
+    "src",
+    "vite.config.ts"
+  ]
 }

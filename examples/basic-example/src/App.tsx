@@ -8,6 +8,7 @@ import {
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { type ComponentPropsWithRef } from 'react';
 import { createBreadcrumbComposable } from '@jfdevelops/react-layout-composable-breadcrumb';
+import { ReactLayoutDevtools } from '@jfdevelops/react-layout-devtools-react';
 import { createProp, defineResourceLayout } from '@jfdevelops/react-layout';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -63,7 +64,7 @@ function Description({ className, ...props }: ComponentPropsWithRef<'p'>) {
   );
 }
 
-const { createResourceLayout } = defineResourceLayout({
+const layoutDefinition = defineResourceLayout({
   resources: [
     {
       value: 'users',
@@ -166,6 +167,8 @@ const { createResourceLayout } = defineResourceLayout({
     },
   },
 });
+
+const { createResourceLayout } = layoutDefinition;
 
 const createUsersPage = createResourceLayout.forResource({ resource: 'users' });
 const UsersPage = createUsersPage({
@@ -276,6 +279,7 @@ function AppShell() {
       </header>
 
       <Outlet />
+      {import.meta.env.DEV && <ReactLayoutDevtools source={layoutDefinition} />}
     </main>
   );
 }

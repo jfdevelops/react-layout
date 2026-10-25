@@ -4,11 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "portless react-layout-example vite",
     "build": "tsc --noEmit && vite build",
     "shadcn:add": "pnpm dlx shadcn@latest add -c .",
     "typecheck": "tsc --noEmit",
-    "preview": "vite preview"
+    "preview": "portless react-layout-example vite preview"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
@@ -21,7 +21,8 @@
     "shadcn": "^4.10.0",
     "tailwind-merge": "^3.6.0",
     "@jfdevelops/react-layout": "workspace:*",
-    "@jfdevelops/react-layout-composable-breadcrumb": "workspace:*"
+    "@jfdevelops/react-layout-composable-breadcrumb": "workspace:*",
+    "@jfdevelops/react-layout-devtools-react": "workspace:*"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.0",

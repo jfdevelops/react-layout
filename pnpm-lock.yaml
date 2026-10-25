@@ -19,6 +19,9 @@ importers:
       husky:
         specifier: 9.1.7
         version: 9.1.7
+      portless:
+        specifier: ^0.15.9
+        version: 0.15.9
 
   examples/basic-example:
     dependencies:
@@ -28,6 +31,9 @@ importers:
       '@jfdevelops/react-layout-composable-breadcrumb':
         specifier: workspace:*
         version: link:../../packages/composable-breadcrumb
+      '@jfdevelops/react-layout-devtools-react':
+        specifier: workspace:*
+        version: link:../../packages/devtools-react
       '@radix-ui/react-slot':
         specifier: ^1.2.4
         version: 1.2.4(@types/react@18.3.28)(react@18.3.1)
@@ -2490,6 +2496,12 @@ packages:
   pkce-challenge@5.0.1:
     resolution: {integrity: sha512-wQ0b/W4Fr01qtpHlqSqspcj3EhBvimsdh0KlHhH8HRZnMsEa0ea2fTULOXOS9ccQr3om+GcGRk4e+isrZWV8qQ==}
     engines: {node: '>=16.20.0'}
+
+  portless@0.15.9:
+    resolution: {integrity: sha512-u3anBEEEdy5v5/Nc73JcYcfqCwbhjvOf0/v9q9P/kFKLSgPQo8yQa3H2yguJ410xz+pyuzGCXJP503R6MzLE4Q==}
+    engines: {node: '>=24'}
+    os: [darwin, linux, win32]
+    hasBin: true
 
   postcss-selector-parser@7.1.1:
     resolution: {integrity: sha512-orRsuYpJVw8LdAwqqLykBj9ecS5/cRHlI5+nvTo8LcCKmzDmqVORXtOIYEEQuL9D4BxtA1lm5isAqzQZCoQ6Eg==}
@@ -5219,6 +5231,8 @@ snapshots:
   pify@4.0.1: {}
 
   pkce-challenge@5.0.1: {}
+
+  portless@0.15.9: {}
 
   postcss-selector-parser@7.1.1:
     dependencies:
