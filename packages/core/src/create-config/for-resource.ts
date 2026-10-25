@@ -1,3 +1,4 @@
+import type { LayoutNameInput } from './layout-name';
 import type { ComposableComponents } from '@jfdevelops/react-layout-composables';
 import type {
   InPropsDefinition,
@@ -44,7 +45,7 @@ export type CreateResourceLayoutOptionsBase<
   Resource extends LayoutResourceKey<Resources>,
   Props extends InPropsObject = {},
 > = {
-  name: Name;
+  name: LayoutNameInput<Resource, string, Name>;
   resource: Resource;
   props?: Props;
 };

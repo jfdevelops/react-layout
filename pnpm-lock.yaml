@@ -19,6 +19,9 @@ importers:
       husky:
         specifier: 9.1.7
         version: 9.1.7
+      portless:
+        specifier: ^0.15.9
+        version: 0.15.9
 
   examples/basic-example:
     dependencies:
@@ -28,6 +31,9 @@ importers:
       '@jfdevelops/react-layout-composable-breadcrumb':
         specifier: workspace:*
         version: link:../../packages/composable-breadcrumb
+      '@jfdevelops/react-layout-devtools-react':
+        specifier: workspace:*
+        version: link:../../packages/devtools-react
       '@radix-ui/react-slot':
         specifier: ^1.2.4
         version: 1.2.4(@types/react@18.3.28)(react@18.3.1)
@@ -199,6 +205,9 @@ importers:
       '@jfdevelops/react-layout-composables':
         specifier: workspace:*
         version: link:../composables
+      '@jfdevelops/react-layout-devtools-core':
+        specifier: workspace:*
+        version: link:../devtools-core
       '@jfdevelops/react-layout-validator':
         specifier: workspace:*
         version: link:../validators
@@ -230,6 +239,69 @@ importers:
       '@vitest/ui':
         specifier: 4.1.5
         version: 4.1.5(vitest@4.1.5)
+      jsdom:
+        specifier: 29.0.2
+        version: 29.0.2(@noble/hashes@1.8.0)
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: 18.3.1
+        version: 18.3.1(react@18.3.1)
+      tsdown:
+        specifier: 0.22.1
+        version: 0.22.1(typescript@6.0.3)(unrun@0.3.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      unrun:
+        specifier: 0.3.0
+        version: 0.3.0
+      vite:
+        specifier: 8.0.10
+        version: 8.0.10(@types/node@24.10.1)(jiti@2.7.0)
+      vitest:
+        specifier: 4.1.5
+        version: 4.1.5(@types/node@24.10.1)(@vitest/coverage-v8@4.1.5)(@vitest/ui@4.1.5)(jsdom@29.0.2(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@24.10.1)(typescript@6.0.3))(vite@8.0.10(@types/node@24.10.1)(jiti@2.7.0))
+
+  packages/devtools-core:
+    devDependencies:
+      '@types/node':
+        specifier: 24.10.1
+        version: 24.10.1
+      tsdown:
+        specifier: 0.22.1
+        version: 0.22.1(typescript@6.0.3)(unrun@0.3.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: 4.1.5
+        version: 4.1.5(@types/node@24.10.1)(@vitest/coverage-v8@4.1.5)(@vitest/ui@4.1.5)(jsdom@29.0.2(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@24.10.1)(typescript@6.0.3))(vite@8.0.10(@types/node@24.10.1)(jiti@2.7.0))
+
+  packages/devtools-react:
+    devDependencies:
+      '@jfdevelops/react-layout-devtools-core':
+        specifier: workspace:*
+        version: link:../devtools-core
+      '@testing-library/jest-dom':
+        specifier: 6.9.1
+        version: 6.9.1
+      '@testing-library/react':
+        specifier: 16.3.2
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@18.3.7(@types/react@18.3.28))(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@types/node':
+        specifier: 24.10.1
+        version: 24.10.1
+      '@types/react':
+        specifier: 18.3.28
+        version: 18.3.28
+      '@types/react-dom':
+        specifier: 18.3.7
+        version: 18.3.7(@types/react@18.3.28)
+      '@vitejs/plugin-react':
+        specifier: 6.0.1
+        version: 6.0.1(vite@8.0.10(@types/node@24.10.1)(jiti@2.7.0))
       jsdom:
         specifier: 29.0.2
         version: 29.0.2(@noble/hashes@1.8.0)
@@ -2424,6 +2496,12 @@ packages:
   pkce-challenge@5.0.1:
     resolution: {integrity: sha512-wQ0b/W4Fr01qtpHlqSqspcj3EhBvimsdh0KlHhH8HRZnMsEa0ea2fTULOXOS9ccQr3om+GcGRk4e+isrZWV8qQ==}
     engines: {node: '>=16.20.0'}
+
+  portless@0.15.9:
+    resolution: {integrity: sha512-u3anBEEEdy5v5/Nc73JcYcfqCwbhjvOf0/v9q9P/kFKLSgPQo8yQa3H2yguJ410xz+pyuzGCXJP503R6MzLE4Q==}
+    engines: {node: '>=24'}
+    os: [darwin, linux, win32]
+    hasBin: true
 
   postcss-selector-parser@7.1.1:
     resolution: {integrity: sha512-orRsuYpJVw8LdAwqqLykBj9ecS5/cRHlI5+nvTo8LcCKmzDmqVORXtOIYEEQuL9D4BxtA1lm5isAqzQZCoQ6Eg==}
@@ -5153,6 +5231,8 @@ snapshots:
   pify@4.0.1: {}
 
   pkce-challenge@5.0.1: {}
+
+  portless@0.15.9: {}
 
   postcss-selector-parser@7.1.1:
     dependencies:

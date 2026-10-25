@@ -27,20 +27,21 @@
     "node": "^20.19.0 || >=22.12.0"
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "portless react-layout vite",
     "build": "tsdown",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "preview": "vite preview"
+    "preview": "portless react-layout vite preview"
   },
   "dependencies": {
     "@jfdevelops/create-error": "0.2.0",
     "@jfdevelops/react-layout-composables": "workspace:*",
     "@jfdevelops/react-layout-validator": "workspace:*",
-    "arktype": "2.2.8"
+    "arktype": "2.2.8",
+    "@jfdevelops/react-layout-devtools-core": "workspace:*"
   },
   "peerDependencies": {
     "react": ">=18",

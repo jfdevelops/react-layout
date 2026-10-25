@@ -1,0 +1,46 @@
+{
+  "name": "@jfdevelops/react-layout-devtools-core",
+  "version": "0.0.0",
+  "description": "Framework-independent layout inspection protocol and graph store.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jfdevelops/react-layout.git",
+    "directory": "packages/devtools-core"
+  },
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {},
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "tsdown": "0.22.1",
+    "typescript": "6.0.3",
+    "vitest": "4.1.5"
+  }
+}

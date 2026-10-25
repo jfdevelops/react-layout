@@ -1,0 +1,61 @@
+{
+  "name": "@jfdevelops/react-layout-devtools-react",
+  "version": "0.0.0",
+  "description": "React graph inspector for react-layout.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jfdevelops/react-layout.git",
+    "directory": "packages/devtools-react"
+  },
+  "type": "module",
+  "files": [
+    "dist",
+    "THIRD_PARTY_NOTICES"
+  ],
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.2",
+    "@types/node": "24.10.1",
+    "@types/react": "18.3.28",
+    "@types/react-dom": "18.3.7",
+    "@vitejs/plugin-react": "6.0.1",
+    "jsdom": "29.0.2",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "tsdown": "0.22.1",
+    "typescript": "6.0.3",
+    "unrun": "0.3.0",
+    "vite": "8.0.10",
+    "vitest": "4.1.5",
+    "@jfdevelops/react-layout-devtools-core": "workspace:*"
+  }
+}

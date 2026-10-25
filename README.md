@@ -364,3 +364,9 @@ pnpm add --save-dev skills-npm
 
 This synchronization belongs in the consuming application so each project can
 choose which agents and skill directories it supports.
+
+## Optional devtools and shared defaults
+
+Use `ReactLayoutDevtools` from `@jfdevelops/react-layout-devtools-react` for a floating graph inspector, or embed `ReactLayoutDevtoolsContent` in TanStack Devtools. Pass the result of `createDefinedResourceLayout` or `defineResourceLayout` as `source`; no provider is required. The separate `@jfdevelops/react-layout-devtools-core` package exposes the inspection protocol for other adapters.
+
+See [devtools and shared defaults](docs/devtools-and-shared-defaults.md) for setup, global prop contracts, reusable naming conventions, and local overrides.

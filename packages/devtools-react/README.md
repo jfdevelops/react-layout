@@ -1,0 +1,91 @@
+# React Layout Devtools
+
+Optional, provider-free devtools for `@jfdevelops/react-layout`.
+
+```sh
+pnpm add @jfdevelops/react-layout-devtools-react
+```
+
+Keep the full result of your factory (or of a standalone `defineResourceLayout` call) and pass it as `source`:
+
+```tsx
+import { ReactLayoutDevtools } from '@jfdevelops/react-layout-devtools-react';
+
+const layouts = createDefinedResourceLayout({ resources: ['users', 'settings'] });
+export const { defineResourceLayout, createRenderState } = layouts;
+
+function App() {
+  return <>
+    <YourApp />
+    {import.meta.env.DEV && <ReactLayoutDevtools source={layouts} />}
+  </>;
+}
+```
+
+`ReactLayoutDevtools` displays a floating action button. Opening it animates the panel into view and hides the button. Close the panel with its close button or Escape; the button reappears and regains focus. Reduced motion preferences are respected. Optional `initialIsOpen` and `position` (`bottom-right`, `bottom-left`, `top-right`, `top-left`) configure its presentation.
+
+`ReactLayoutDevtoolsContent` renders only the inspector, with no floating button or portal. Use it in your own debug page or as a TanStack Devtools plugin:
+
+```tsx
+import { TanStackDevtools } from '@tanstack/react-devtools';
+import { ReactLayoutDevtoolsContent } from '@jfdevelops/react-layout-devtools-react';
+
+<TanStackDevtools plugins={[{
+  name: 'React Layout',
+  render: <ReactLayoutDevtoolsContent source={layouts} />,
+}]} />
+```
+
+This follows [TanStack's custom plugin contract](https://tanstack.com/devtools/latest/docs/framework/react/guides/custom-plugins). TanStack is not a dependency of this adapter. Both components accept `source`, `className`, and `style`.
+
+Switch between Graph and Tree views in either component. Tree branches support individual toggles, Expand all / Collapse all, keyboard navigation, and live activity. Explicit references appear as leaf links to avoid cycles.
+
+The graph shows resources, definitions, created layouts, render states, and explicit state references. Select a node to inspect its prop contracts and related nodes. Search and the active filter retain ancestors to preserve context. Composables are available through the Composables toggle; these edges indicate declared availability, not actual JSX containment. Scroll to pan and use the zoom controls to inspect larger graphs.
+
+Green nodes are currently mounted, including multiple simultaneous instances. The inspector can be opened after components have mounted. A factory collects definitions made through that factory. Lazy declarations appear before import and resolve after loading. Modules which have never been imported cannot contribute their private definitions. Arbitrary JSX nesting, state transitions, prop values, and navigation history are not inferred.
+
+See [devtools-core](../devtools-core/README.md) for the framework-independent inspection protocol.
+
+## Configuration
+
+Both components accept the same optional, typed `config`. Import `ReactLayoutDevtoolsConfig` when sharing a configuration between callers.
+
+```tsx
+<ReactLayoutDevtools source={layouts} config={{
+  chipColors: {
+    resource: '#22d3ee',
+    state: { color: '#c4b5fd', background: '#2e1065' },
+    active: { color: 'var(--success)', background: 'var(--success-muted)' },
+  },
+  initialView: 'tree',
+  initialFilters: { showComposables: true },
+  tree: { stickyScopes: true, initialExpanded: true },
+}} />
+```
+
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| `chipColors` | Built-in palette | Partial overrides for `definition`, `resource`, `layout`, `state`, `composable`, `lazy`, `reference`, `active`, `inactive`, `unresolved`, `required`, `optional`, `included`, `custom`, `component`, and `config`. |
+| `initialView` | `'graph'` | Starting view. |
+| `initialFilters.activeOnly` | `false` | Start with the active filter enabled. |
+| `initialFilters.showComposables` | `false` | Include declared composables initially. |
+| `initialZoom` | `1` | Starting graph scale, clamped to `0.25–2`; non-finite values use `1`. |
+| `tree.initialExpanded` | `true` | Start branches expanded or collapsed. |
+| `tree.stickyScopes` | `true` | Keep the current ancestor chain visible while scrolling. |
+| `showDetails` | `true` | Display the node-details pane. |
+
+Each color override accepts a CSS color string (including named colors and CSS variables), or `{ color, background }`. When background is omitted, a subtle tint is derived using CSS `color-mix`. Node colors also apply to graph labels/borders and details so the views remain consistent. Color, sticky-scope, and details settings update when config changes. `initial*` settings initialize local UI state; they do not reset user choices on re-render. Tree expansion initializes each time the tree view is mounted.
+
+Floating-button `position` and `initialIsOpen` remain standalone component props. `position` sets its starting corner. Drag the button with a mouse, touch, or pen to place it elsewhere; dragging does not open the panel. Its location survives panel open/close cycles while the component remains mounted and is kept inside the viewport when the window resizes. Keyboard users can move it with Alt+Arrow keys (10px), or Alt+Shift+Arrow keys (50px). A normal click, Enter, or Space opens the panel.
+
+Selected-node details show a filterable Props section instead of a JSON dump. Search by name or type and filter by included/custom or required/optional. Each row shows the prop name, readable type (when its schema is available), requirement, origin, and the permitted supply locations for included props. All chips have hover/focus explanations using the same tooltip as the Graph/Tree switcher. Customize chips through `config.chipColors`, including `required`, `optional`, `included`, `custom`, `component`, and `config`.
+
+Included props reuse existing options or composable props; custom props define additional inputs. `true` means required in creation config. `'optional'` permits omission and accepts values in config or on the component. The object form sets `visibility` and `passthrough` explicitly: required values use the chosen location; optional values can be supplied at either location. Inspection reads metadata without executing validators or render callbacks.
+
+The React adapter has no runtime package dependencies. It bundles the framework-independent devtools core at build time and uses only the host app’s React and React DOM peers. Controls and shared tooltips use native React and DOM APIs, with no Tailwind, CSS imports, or provider setup. Some control styles were originally adapted from shadcn/ui; see `THIRD_PARTY_NOTICES` for attribution.
+
+The details pane is absent until a node is selected, then slides in from the right (respecting reduced-motion preferences). Every selected node uses the same inspector layout: a clickable ancestor path, a node-kind badge, a mounted-count indicator, configuration/props when available, and a relationship tree. Relationships always use expandable tree branches grouped by direction and relationship kind, independent of the main Graph/Tree switcher. Selecting a relationship node opens its inspector. Breadcrumbs remain available regardless of graph/tree filters. The mounted indicator uses `chipColors.active` or `chipColors.inactive`; a separate `unresolved` chip identifies implementations that have not loaded.
+
+Panel preferences are stored under `react-layout-devtools:preferences:v1` in local storage. Saved settings are authoritative; expand/collapse-all also persists the tree default. `config` supplies defaults when no preference is saved. View mode, graph filters, zoom, chip colors, tree defaults, details visibility, and the dragged FAB position survive remounts and page reloads. Selection and search text remain temporary. Pass `storageKey` to either component to isolate multiple inspectors. Same-tab instances and other tabs synchronize through storage notifications. Invalid entries fall back to defaults; unavailable storage uses an in-memory fallback.
+
+Composable activity counts committed React instances rather than declarations. Repeated instances count separately, unused composables stay at zero, and unmounts clear their counts. Relationship edges still describe declared availability rather than JSX containment.
