@@ -2351,7 +2351,7 @@ function defineResourceLayoutImpl<
 
     return {
       ...resolvedInProps,
-      ...(defaultState?.props ?? layout.props)?.custom,
+      ...mergeLayoutProps(layout.props, defaultState?.props)?.custom,
     };
   }
 

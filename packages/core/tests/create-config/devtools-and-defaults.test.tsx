@@ -1,4 +1,4 @@
-import { StrictMode } from 'react';
+import { StrictMode, createElement } from 'react';
 import { act, render, screen } from '@testing-library/react';
 import { expectTypeOf, expect, it } from 'vitest';
 import { getInspectionSource } from '@jfdevelops/react-layout-devtools-core';
@@ -447,4 +447,48 @@ it('counts actual composable instances and excludes unrendered declarations', ()
   expect(count('Item')).toBe(2);
   view.unmount();
   expect(count('Item')).toBe(0);
+});
+
+it('forwards merged factory layout and default-state custom props through scoped Root', () => {
+  const factory = createDefinedResourceLayout({
+    resources: ['users'],
+    props: { custom: { factoryValue: createProp.string() } },
+  });
+  const definition = factory.defineResourceLayout({
+    props: { custom: { layoutValue: createProp.string() } },
+    render: {
+      default: {
+        props: { custom: { stateValue: createProp.string().optional() } },
+        render: ({ factoryValue, layoutValue, stateValue }) => (
+          <h1>
+            {factoryValue}:{layoutValue}:{stateValue}
+          </h1>
+        ),
+      },
+    },
+  });
+  const Directory = definition.createResourceLayout
+    .forResources('users')
+    .createComponent({
+      props: {
+        include: {
+          factoryValue: true,
+          layoutValue: true,
+          stateValue: 'optional',
+        },
+      },
+      resources: { users: { render: () => null } },
+      render: (_props, { Root }) => createElement(Root),
+    });
+  render(
+    <Directory
+      resource="users"
+      factoryValue="Factory"
+      layoutValue="Layout"
+      stateValue="State"
+    />
+  );
+  expect(
+    screen.getByRole('heading', { name: 'Factory:Layout:State' })
+  ).toBeTruthy();
 });
