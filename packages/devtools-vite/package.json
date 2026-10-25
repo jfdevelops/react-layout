@@ -1,0 +1,59 @@
+{
+  "name": "@jfdevelops/react-layout-devtools-vite",
+  "version": "0.0.0",
+  "description": "Opt-in Vite development source locations and render-state previews for react-layout.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jfdevelops/react-layout.git",
+    "directory": "packages/devtools-vite"
+  },
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "typescript": "6.0.3",
+    "magic-string": "0.30.21"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "tsdown": "0.22.1",
+    "typescript": "6.0.3",
+    "vitest": "4.1.5",
+    "vite": "8.0.10"
+  },
+  "peerDependencies": {
+    "vite": "^6.0.0 || ^7.0.0 || ^8.0.0"
+  },
+  "keywords": [
+    "vite-plugin",
+    "react",
+    "devtools",
+    "react-layout"
+  ]
+}

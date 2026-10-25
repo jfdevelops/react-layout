@@ -75,3 +75,30 @@ it('honors initial activity without resetting live mounts during metadata update
   unmount();
   expect(store.getSnapshot().nodes[0].active).toBe(2);
 });
+
+it('routes preview commands through composed stores and resets only after the final inspector disconnects', () => {
+  const parent = createInspectionStore(),
+    child = createInspectionStore();
+  const calls: (string | undefined)[] = [];
+  parent.connect(child);
+  child.registerPreview(
+    {
+      id: 'instance',
+      layout: 'layout',
+      state: 'default',
+      states: ['default', 'loading'],
+    },
+    (state) => calls.push(state)
+  );
+  const first = parent.connectPreview(),
+    second = parent.connectPreview();
+  parent.preview('instance', 'loading');
+  expect(parent.getSnapshot().instances?.[0].forcedState).toBe('loading');
+  expect(() => parent.preview('instance', 'unknown')).toThrow(
+    'Unknown render state'
+  );
+  first();
+  expect(calls).toEqual(['loading']);
+  second();
+  expect(calls).toEqual(['loading', undefined]);
+});

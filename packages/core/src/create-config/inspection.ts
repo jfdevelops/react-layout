@@ -8,14 +8,15 @@ import {
   createInspectionStore,
   inspectionId,
   type InspectionStore,
+  type SourceLocation,
 } from '@jfdevelops/react-layout-devtools-core';
 import type { ResourceDefinition } from '../resource';
-export function inspectDefinition(resources: readonly ResourceDefinition[]) {
+export function inspectDefinition(resources: readonly ResourceDefinition[], source?: SourceLocation) {
   const store = createInspectionStore();
   const definition = store.node({
     id: inspectionId('definition'),
     kind: 'definition',
-    label: 'Layout definition',
+    label: 'Layout definition', source,
   });
   const resourceIds = new Map<string, string>();
   function visit(
@@ -29,7 +30,7 @@ export function inspectDefinition(resources: readonly ResourceDefinition[]) {
       const id = store.node({
         id: inspectionId('resource'),
         kind: 'resource',
-        label: path,
+        label: path, source,
         details: { path },
       });
       resourceIds.set(path, id);

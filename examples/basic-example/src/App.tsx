@@ -141,7 +141,10 @@ const layoutDefinition = defineResourceLayout({
         className: createProp.string().optional(),
       },
     },
-    render: (props, { composables, resource }) => {
+    render: {
+      Loading: () => <UiCard className="p-6"><h2>Loading preview</h2><p>Waiting for this resource…</p></UiCard>,
+      Empty: () => <UiCard className="p-6"><h2>Empty preview</h2><p>No records found for this resource.</p></UiCard>,
+      default: (props, { composables, resource }) => {
       return (
         <composables.Layout
           className={cn(
@@ -164,6 +167,7 @@ const layoutDefinition = defineResourceLayout({
           <composables.Content>{props.children}</composables.Content>
         </composables.Layout>
       );
+      },
     },
   },
 });

@@ -1,3 +1,9 @@
+export * from './debug';
+import type {
+  SourceLocation,
+  PreviewInstance,
+  PreviewController,
+} from './debug';
 /** Shared inspection protocol. This package has no React or DOM dependency. */
 export const layoutInspection = Symbol.for(
   '@jfdevelops/react-layout/inspection'
@@ -15,6 +21,8 @@ export interface GraphNode {
   readonly label: string;
   readonly active: number;
   readonly unresolved?: boolean;
+  readonly source?: SourceLocation;
+  readonly registrationSource?: SourceLocation;
   readonly details?: Readonly<Record<string, unknown>>;
 }
 export interface GraphEdge {
@@ -31,10 +39,13 @@ export interface GraphEdge {
 export interface GraphSnapshot {
   readonly nodes: readonly GraphNode[];
   readonly edges: readonly GraphEdge[];
+  readonly instances?: readonly PreviewInstance[];
 }
 export interface InspectionSource {
   getSnapshot(): GraphSnapshot;
   subscribe(listener: () => void): () => void;
+  preview?(instance: string, state?: string): void;
+  connectPreview?(): () => void;
 }
 let sequence = 0;
 export function inspectionId(prefix: string): string {
@@ -63,6 +74,10 @@ export function createInspectionStore() {
   const edges = new Map<string, GraphEdge>();
   const listeners = new Set<() => void>();
   const children = new Map<InspectionSource, () => void>();
+  const instances = new Map<string, PreviewInstance>();
+  const controllers = new Map<string, PreviewController>();
+  const sessions = new Set<symbol>();
+  const childSessions = new Map<InspectionSource, () => void>();
   let snapshot: GraphSnapshot | undefined;
   function changed() {
     snapshot = undefined;
@@ -79,6 +94,10 @@ export function createInspectionStore() {
             ...nodes.values(),
             ...childSnapshots.flatMap((s) => s.nodes),
           ]),
+          instances: Object.freeze([
+            ...instances.values(),
+            ...childSnapshots.flatMap((s) => s.instances ?? []),
+          ]),
           edges: Object.freeze([
             ...edges.values(),
             ...childSnapshots.flatMap((s) => s.edges),
@@ -93,11 +112,73 @@ export function createInspectionStore() {
         listeners.delete(listener);
       };
     },
+    registerPreview(instance: PreviewInstance, controller: PreviewController) {
+      instances.set(instance.id, Object.freeze({ ...instance }));
+      controllers.set(instance.id, controller);
+      changed();
+      return () => {
+        instances.delete(instance.id);
+        controllers.delete(instance.id);
+        changed();
+      };
+    },
+    preview(instanceId: string, state?: string) {
+      const instance = instances.get(instanceId);
+      if (!instance) {
+        for (const child of children.keys()) {
+          if (
+            child
+              .getSnapshot()
+              .instances?.some((entry) => entry.id === instanceId)
+          ) {
+            child.preview?.(instanceId, state);
+            return;
+          }
+        }
+        return;
+      }
+      if (state !== undefined && !instance.states.includes(state))
+        throw new Error('Unknown render state');
+      controllers.get(instanceId)?.(state);
+      instances.set(
+        instanceId,
+        Object.freeze({ ...instance, forcedState: state, error: undefined })
+      );
+      changed();
+    },
+    previewError(instanceId: string, error: string) {
+      const instance = instances.get(instanceId);
+      if (instance) {
+        instances.set(instanceId, Object.freeze({ ...instance, error }));
+        changed();
+      }
+    },
+    connectPreview() {
+      const token = Symbol();
+      sessions.add(token);
+      if (sessions.size === 1) {
+        for (const child of children.keys()) {
+          if (child.connectPreview)
+            childSessions.set(child, child.connectPreview());
+        }
+      }
+      return () => {
+        if (!sessions.delete(token) || sessions.size) return;
+        for (const instance of instances.values()) {
+          if (instance.forcedState !== undefined) store.preview(instance.id);
+        }
+        for (const release of childSessions.values()) release();
+        childSessions.clear();
+      };
+    },
     node(node: Omit<GraphNode, 'active'> & { active?: number }) {
       nodes.set(
         node.id,
         Object.freeze({
           ...node,
+          source: node.source ?? nodes.get(node.id)?.source,
+          registrationSource:
+            node.registrationSource ?? nodes.get(node.id)?.registrationSource,
           active: nodes.get(node.id)?.active ?? node.active ?? 0,
           details: node.details && Object.freeze({ ...node.details }),
         })
@@ -142,6 +223,8 @@ export function createInspectionStore() {
       const child = getInspectionSource(value);
       if (child === store || children.has(child)) return;
       children.set(child, child.subscribe(changed));
+      if (sessions.size && child.connectPreview)
+        childSessions.set(child, child.connectPreview());
       changed();
     },
     attach<T extends object>(value: T): T {

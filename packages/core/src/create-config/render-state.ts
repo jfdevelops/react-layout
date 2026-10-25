@@ -1,3 +1,4 @@
+import { getLayoutDebug, layoutDebug } from '@jfdevelops/react-layout-devtools-core';
 import type { MergeContract } from './define-layout';
 import type { JSX } from 'react';
 import { collectComposablePresetEntries, composablePresetMetaKey, type MergePresetProps, type ComposablePresetMeta } from '@jfdevelops/react-layout-composables';
@@ -607,7 +608,9 @@ export function createRenderStateBuilder<
   function createRenderState(
     input: AnyRenderStateDefinition | RenderStateCallback,
   ) {
-    return toFragment(normalizeDefinition(input));
+    const definition = normalizeDefinition(input);
+    const debug = getLayoutDebug(input);
+    return toFragment(debug ? { ...definition, [layoutDebug]: debug } : definition);
   }
 
   createRenderState.fromState = (input: {
@@ -647,6 +650,7 @@ export function createRenderStateBuilder<
       }).filter(([key]) => !(key in custom)),
     );
     return toFragment({
+      [layoutDebug]: getLayoutDebug(input),
       state: input.state ?? 'default',
       props: { custom, include: includes },
       composables: (create, states) => {
@@ -695,7 +699,7 @@ export function createRenderStateBuilder<
   ) => {
     const definition = normalizeDefinition(input);
 
-    const deferred = { [deferredRenderStateSymbol]: definition };
+    const deferred = { [deferredRenderStateSymbol]: { ...definition, [layoutDebug]: getLayoutDebug(input) }, [layoutDebug]: getLayoutDebug(input) };
     const fragment = { [definition.state ?? 'default']: deferred };
     Object.defineProperty(fragment, definedRenderStateSymbol, { value: definition });
     return withStateComposable(fragment, {
@@ -705,7 +709,7 @@ export function createRenderStateBuilder<
   createRenderState.lazy = (
     load: () => Promise<Record<string, unknown>>,
   ) => {
-    const lazyState = { [lazyRenderStateSymbol]: load };
+    const lazyState = { [lazyRenderStateSymbol]: load, [layoutDebug]: getLayoutDebug(load) };
     return withStateComposable(lazyState, { input: lazyState, name: 'lazy' });
   };
 

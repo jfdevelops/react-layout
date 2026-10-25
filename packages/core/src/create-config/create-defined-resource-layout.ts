@@ -1,4 +1,4 @@
-import { createInspectionStore, inspectionId, layoutInspection, getInspectionSource } from '@jfdevelops/react-layout-devtools-core';
+import { getLayoutDebug, layoutDebug, createInspectionStore, inspectionId, layoutInspection, getInspectionSource } from '@jfdevelops/react-layout-devtools-core';
 import { mergeLayoutProps } from './merge-layout-props';
 import type { LayoutNameInput } from './layout-name';
 import type { MergeContract } from './define-layout';
@@ -286,6 +286,7 @@ export function createDefinedResourceLayout<
   const boundDefineResourceLayout = ((layout: Record<string, unknown>) => {
     const localComposables = layout.composables as LayoutComposablesDefinition<Resources, ComposableComponents> | undefined;
     const definition = defineBoundLayout({
+      [layoutDebug]: getLayoutDebug(layout) ?? getLayoutDebug(configuration),
       options,
       name: layout.name ?? configuration.name,
       namespace: layout.namespace ?? configuration.namespace,

@@ -22,3 +22,11 @@ Snapshots have readonly `nodes` and `edges`; node IDs remain stable for the life
 Core exports `InspectionSource`, `GraphSnapshot`, `GraphNode`, `GraphEdge`, `layoutInspection`, `createInspectionStore`, `inspectionId`, and `layoutGraph`, and `buildInspectionTree`. The producer API registers metadata and mount lifecycles; consumers should depend on `InspectionSource`. Sources retain metadata for their factory/definition lifetime; activity is removed on unmount.
 
 `describePropValidator` and `formatInspectionDetails` turn validator metadata into readable types without calling validators or render callbacks. Descriptions include required/optional visibility, literal/enum values, unions, nested object properties, records, React nodes/elements, and render-prop signatures. Ordinary functions remain explicitly labeled as functions; circular structures are handled safely.
+
+Development adapters may supply `source` / `registrationSource` on graph nodes
+and opt into the `layoutDebug` metadata symbol. Source locations contain a file,
+line, column, and optional same-origin editor URL. Producers can register mounted
+`PreviewInstance` entries with `registerPreview`; adapters use the optional
+`preview(instanceId, stateId?)` command and `connectPreview()` session lifetime.
+Omitting the state returns an instance to Auto. Composed stores route commands to
+the owning producer; the final inspector disconnect resets forced instances.

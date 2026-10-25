@@ -1,5 +1,6 @@
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { reactLayoutDevtools } from '../../packages/devtools-vite/src';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
@@ -9,7 +10,7 @@ const rootDir = dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   server: { allowedHosts: ['.localhost'] },
   preview: { allowedHosts: ['.localhost'] },
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), reactLayoutDevtools()],
   resolve: {
     alias: {
       '@jfdevelops/react-layout-devtools-react': resolve(rootDir, '../../packages/devtools-react/src/index.ts'),

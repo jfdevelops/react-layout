@@ -1,8 +1,10 @@
+import { NodeSource, StatePreview } from './node-debug';
 import { useMemo } from 'react';
 import {
   buildInspectionTree,
   type GraphNode,
   type GraphSnapshot,
+  type InspectionSource,
   type InspectionTreeNode,
 } from '@jfdevelops/react-layout-devtools-core';
 import { Badge } from './components/ui/badge';
@@ -36,7 +38,9 @@ export function SelectedNode({
   graph,
   palette,
   onSelect,
+  inspector,
 }: {
+  inspector?: InspectionSource;
   node: GraphNode;
   graph: GraphSnapshot;
   palette: ChipPalette;
@@ -153,6 +157,8 @@ export function SelectedNode({
           )}
         </div>
       </header>
+      <NodeSource node={node} />
+      <StatePreview layout={path.find((part) => part.kind === 'layout')?.id} state={node.kind === 'state' ? node.id : undefined} graph={graph} inspector={inspector} palette={palette} />
       <InspectionDetails
         key={node.id}
         details={node.details ?? {}}

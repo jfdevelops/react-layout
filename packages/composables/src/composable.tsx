@@ -430,7 +430,10 @@ export function createComposableComponent<
 
   Composable.displayName = name;
 
+  const debugKey = Symbol.for('@jfdevelops/react-layout/debug');
+  const debug = (options as unknown as Record<symbol, unknown>)[debugKey];
   return Object.assign(Composable, {
+    ...(debug ? { [debugKey]: debug } : {}),
     props: undefined as unknown as ResolveProps<InProps>,
   }) as unknown as ComposableComponent<Name, Wrapper, InProps, OutProps>;
 }
@@ -534,7 +537,10 @@ export function defineComposableComponent<
 
     PresetComposable.displayName = name;
 
+    const debugKey = Symbol.for('@jfdevelops/react-layout/debug');
+    const debug = (options as unknown as Record<symbol, unknown>)[debugKey];
     const presetComponent = Object.assign(PresetComposable, {
+      ...(debug ? { [debugKey]: debug } : {}),
       props: undefined as unknown as Show<ResolveProps<Props>>,
       [composablePresetMetaKey]: {
         key: name,

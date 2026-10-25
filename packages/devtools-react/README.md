@@ -98,3 +98,10 @@ ancestors, and centers and focuses the node without scrolling the host page.
 built-in defaults when omitted), including zoom, view, filters, chip colors, tree
 settings, and the FAB location. The reset is saved to the inspector's `storageKey`
 and synchronizes with other inspectors using that key.
+
+For development source locations, editor links, and per-instance render-state
+preview controls, add the optional
+[`@jfdevelops/react-layout-devtools-vite`](../devtools-vite/README.md) plugin.
+The React adapter discovers these capabilities through devtools-core and does not
+import or depend on Vite. Preview overrides are transient and excluded from saved
+preferences.

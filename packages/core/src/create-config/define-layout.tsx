@@ -1,7 +1,8 @@
 import { stateReferenceSource, type StateComposableSource } from './state-composable';
 import type { LayoutNameInput, LayoutNameContext, LayoutNameResolver, ResolvedLayoutName } from './layout-name';
 import { mergeLayoutProps } from './merge-layout-props';
-import { inspectionId } from '@jfdevelops/react-layout-devtools-core';
+import { createPreviewComponent } from './preview';
+import { getLayoutDebug, layoutPreviewFixtures, inspectionId } from '@jfdevelops/react-layout-devtools-core';
 import { inspectDefinition, trackComposable, type ActiveInspection } from './inspection';
 import {
   Component as ReactComponent,
@@ -1540,8 +1541,8 @@ function defineResourceLayoutImpl<
   // can tell its own pages apart from ones belonging to another definition.
   const shellId = (options as { shellId?: symbol }).shellId;
 
-  const inspection = inheritedInspection ? undefined : inspectDefinition(resources);
-  if (inspection) inspection.store.node({ id: inspection.definition, kind: 'definition', label: 'Layout definition', details: {
+  const inspection = inheritedInspection ? undefined : inspectDefinition(resources, getLayoutDebug(options)?.source ?? getLayoutDebug(layout)?.source);
+  if (inspection) inspection.store.node({ id: inspection.definition, kind: 'definition', label: 'Layout definition', source: getLayoutDebug(options)?.source ?? getLayoutDebug(layout)?.source, details: {
     props: layout.props,
     propSchemas: typeof inProps === 'function' ? undefined : inProps,
     options: typeof inProps === 'function' ? 'Resource-specific schemas' : Object.keys(inProps),
@@ -1640,6 +1641,8 @@ function defineResourceLayoutImpl<
     const inspectionStore = inheritedInspection?.store ?? inspection!.store;
     const layoutId = inheritedInspection?.layout ?? inspectionStore.node({
       id: inspectionId('layout'), kind: 'layout', label: name ?? String(layoutOptionProps.resource),
+      source: getLayoutDebug(layoutOptions)?.source ?? getLayoutDebug(options)?.source ?? getLayoutDebug(layout)?.source,
+      registrationSource: getLayoutDebug(options)?.source ?? getLayoutDebug(layout)?.source,
       details: { resource: layoutOptionProps.resource, props: legacyLayoutProps, propSchemas: rawResolvedOptions },
     });
     const resourceId = inheritedInspection?.resource ?? inspection?.resourceIds.get(String(layoutOptionProps.resource));
@@ -1649,6 +1652,8 @@ function defineResourceLayoutImpl<
     }
     const stateIds = new Map(Object.keys(renderStates).map(state => [state,
       inheritedInspection?.state ?? inspectionStore.node({ id: inspectionId('state'), kind: 'state', label: state,
+        source: getLayoutDebug(renderStates[state])?.source ?? getLayoutDebug(options)?.source ?? getLayoutDebug(layout)?.source,
+        registrationSource: getLayoutDebug(options)?.source ?? getLayoutDebug(layout)?.source,
         unresolved: isLazyRenderState(renderStates[state]) || isDeferredRenderState(renderStates[state]),
       }),
     ]));
@@ -1741,7 +1746,7 @@ function defineResourceLayoutImpl<
       ? { ...resolveLayoutComposables(defaultComposables as never, layoutContext) }
       : undefined;
     for (const [key, component] of Object.entries(resolvedComposables ?? {})) {
-      const id = inspectionStore.node({ id: inspectionId('composable'), kind: 'composable', label: key,
+      const id = inspectionStore.node({ id: inspectionId('composable'), kind: 'composable', label: key, source: getLayoutDebug(component)?.source,
         details: { displayName: (component as { displayName?: string }).displayName, relationship: 'declared; may not be rendered' } });
       inspectionStore.edge(activeInspection.state, id, 'declares');
       resolvedComposables![key] = trackComposable(component, inspectionStore, id);
@@ -2148,7 +2153,7 @@ function defineResourceLayoutImpl<
       definition: AnyRenderStateDefinition,
       inspectedState = stateIds.get(stateName),
     ) {
-      if (inspectedState) inspectionStore.node({ id: inspectedState, kind: 'state', label: stateName, unresolved: false, details: { props: mergeLayoutProps(legacyLayoutProps, definition.props), propSchemas: rawResolvedOptions } });
+      if (inspectedState) inspectionStore.node({ id: inspectedState, kind: 'state', label: stateName, unresolved: false, source: getLayoutDebug(definition)?.source, details: { props: mergeLayoutProps(legacyLayoutProps, definition.props), propSchemas: rawResolvedOptions } });
       const stateComposables = composables || definition.composables
         ? (create: CreateLayoutComposable<LayoutResourceKey<Resources>>) => ({
             ...(composables?.(create, stateScope.states) ?? {}),
@@ -2249,7 +2254,19 @@ function defineResourceLayoutImpl<
         return [[key, componentDefinition]];
       }),
     );
-    const createdComponent = Object.assign(Component, {
+    const previewEnabled = !inheritedInspection && (getLayoutDebug(layoutOptions)?.preview ?? getLayoutDebug(options)?.preview ?? getLayoutDebug(layout)?.preview) === true;
+    const previewTargets = { default: Component, ...stateComponents } as unknown as Record<string, (props: Record<string, unknown>) => JSX.Element>;
+    let previewRoot: object;
+    const previewOptions = {
+      store: inspectionStore, layout: layoutId, states: stateIds, components: previewTargets,
+      fixtures: () => (previewRoot as Record<symbol, Record<string, Record<string, unknown>>>)[layoutPreviewFixtures],
+    };
+    const exposedStates = previewEnabled ? Object.fromEntries(Object.entries(stateComponents).map(([key, component]) => [key,
+      createPreviewComponent(component, { ...previewOptions, state: stateIds.get(key)! }),
+    ])) : stateComponents;
+    const createdComponent = Object.assign(previewEnabled ? createPreviewComponent(Component as never, {
+      ...previewOptions, state: activeInspection.state,
+    }) : Component, {
       displayName: name,
       props: undefined as unknown as Show<
         ResolveProps<CustomProps> &
@@ -2263,10 +2280,11 @@ function defineResourceLayoutImpl<
         components: resolvedComposables as Composables | undefined,
         name,
       }),
-      ...stateComponents,
+      ...exposedStates,
       [definedResourceLayoutComponentSymbol]: true as const,
     });
 
+    previewRoot = createdComponent;
     inspectionStore.attach(createdComponent);
     const rootComponent = attachComponentPropDefinitions(createdComponent, {
       ...customLayoutProps,
@@ -2279,7 +2297,7 @@ function defineResourceLayoutImpl<
           'Render state name "Root" is reserved when namespace is true',
         );
       }
-      return { Root: rootComponent, ...stateComponents };
+      return { Root: rootComponent, ...exposedStates };
     }
     return rootComponent;
   }) as unknown as CreateResourceLayoutFnImpl<

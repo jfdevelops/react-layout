@@ -191,3 +191,5 @@ export type { BaseComponent, MergeIntersection, Show, UnionToIntersection } from
 
 export { defineLayoutName } from './create-config/layout-name';
 export type { LayoutNameContext, LayoutNameInput, LayoutNameParts, LayoutNameResolver, ResolvedLayoutName } from './create-config/layout-name';
+export { defineLayoutPreview } from './create-config/preview';
+export type { LayoutPreviewProps } from './create-config/preview';

@@ -197,3 +197,5 @@ export type {
 
 export type { AsStateComposable, StateComposable, StateComposableOptions } from './state-composable';
 export type { RenderStateCallProps, RenderStateReferences } from './render-state';
+export { defineLayoutPreview } from './preview';
+export type { LayoutPreviewProps } from './preview';

@@ -52,6 +52,7 @@ export function ReactLayoutDevtoolsContent({
     inspector.getSnapshot,
     inspector.getSnapshot
   );
+  useEffect(() => inspector.connectPreview?.(), [inspector]);
   const [query, setQuery] = useState('');
   const view = config.initialView;
   const activeOnly = config.initialFilters.activeOnly;
@@ -473,6 +474,7 @@ export function ReactLayoutDevtoolsContent({
             }}
           >
             <SelectedNode
+              inspector={inspector}
               key={selection.id}
               node={selection}
               graph={graph}
