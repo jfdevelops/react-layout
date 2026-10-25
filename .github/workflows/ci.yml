@@ -49,6 +49,8 @@ jobs:
             "@jfdevelops/react-layout-composables"
             "@jfdevelops/react-layout-composable-breadcrumb"
             "@jfdevelops/react-layout"
+            "@jfdevelops/react-layout-devtools-core"
+            "@jfdevelops/react-layout-devtools-react"
           )
 
           for package in "${packages[@]}"; do
