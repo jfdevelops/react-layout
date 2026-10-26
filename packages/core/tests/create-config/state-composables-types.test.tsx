@@ -207,3 +207,28 @@ it('uses inferred layout presets in state-local reference callbacks', () => {
     },
   });
 });
+
+it('includes spread preset props in shared factory and local layout contracts', () => {
+  const breadcrumb = defineComposableComponent({
+    name: 'Breadcrumb',
+    props: { segments: createProp.string() },
+  })(() => null);
+  const { defineResourceLayout: defineLayout } = createDefinedResourceLayout({
+    resources: ['users'],
+    composables: () => ({ ...breadcrumb }),
+    props: { include: { segments: 'optional' } },
+  });
+  defineLayout({ render: ({ segments }) => {
+    expectTypeOf(segments).toEqualTypeOf<string | undefined>();
+    return <></>;
+  } });
+  const { defineResourceLayout: defineLocal } = createDefinedResourceLayout({ resources: ['users'] });
+  defineLocal({
+    composables: () => ({ ...breadcrumb }),
+    props: { include: { segments: 'optional' } },
+    render: { default: ({ segments }) => {
+      expectTypeOf(segments).toEqualTypeOf<string | undefined>();
+      return <></>;
+    } },
+  });
+});
