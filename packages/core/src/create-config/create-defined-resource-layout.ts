@@ -64,7 +64,10 @@ export type CreateDefinedResourceLayoutOptions<
   /** Default naming convention; explicit definition and component names override it. */
   name?: DefaultNaming;
   /** Shared prop contracts, merged by key with layout and state contracts. */
-  props?: { include?: SharedInclude; custom?: SharedCustom };
+  props?: {
+    include?: LayoutIncludeProps<Resources, Options, Composables> & SharedInclude;
+    custom?: SharedCustom;
+  };
   /** Resources supported by every layout created from this factory. */
   resources: Resources;
   /** Props that render states can opt into through `props.include`. */
@@ -135,7 +138,7 @@ export type BoundDefineResourceLayout<
     const IncludeProps extends LayoutIncludeProps<
       Resources,
       Options,
-      Composables
+      BoundLayoutComposables<Composables, LocalComposables>
     > = {},
     CustomProps extends InPropsObject = {},
     const Naming extends
@@ -160,7 +163,14 @@ export type BoundDefineResourceLayout<
       'composables' | 'name' | 'props'
     > & {
       name?: Naming;
-      props?: { include?: IncludeProps; custom?: CustomProps };
+      props?: {
+        include?: LayoutIncludeProps<
+          Resources,
+          Options,
+          BoundLayoutComposables<Composables, LocalComposables>
+        > & IncludeProps;
+        custom?: CustomProps;
+      };
       composables?: (
         create: CreateLayoutComposable<LayoutResourceKey<Resources>>,
         states: RenderStateReferences<Resources, Options, Composables, Render>
@@ -204,7 +214,14 @@ export type BoundDefineResourceLayout<
       'composables' | 'name' | 'props'
     > & {
       name?: Naming;
-      props?: { include?: IncludeProps; custom?: CustomProps };
+      props?: {
+        include?: LayoutIncludeProps<
+          Resources,
+          Options,
+          BoundLayoutComposables<Composables, LocalComposables>
+        > & IncludeProps;
+        custom?: CustomProps;
+      };
       composables?: (
         create: CreateLayoutComposable<LayoutResourceKey<Resources>>,
         states: {}

@@ -8,8 +8,12 @@ it.each(['empty', 'populated'])('suggests state names in %s render objects acros
   const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
   const file = `${root}/tests/create-config/autocomplete-probe.tsx`;
   const source = `
-    import { defineResourceLayout, createDefinedResourceLayout, createProp } from '../../src';
+    import { defineResourceLayout, createDefinedResourceLayout, createProp, defineComposableComponent } from '../../src';
+    const breadcrumb = { ...defineComposableComponent({ name: 'Breadcrumb', props: { segments: createProp.string() } })(() => null) };
+    createDefinedResourceLayout({ resources: ['users'], options: { title: createProp.string() }, composables: () => ({ ...breadcrumb }), props: { include: { /*sharedInclude*/ } } });
     const { defineResourceLayout: bound } = createDefinedResourceLayout({ resources: ['users'], options: { title: createProp.string() } });
+    bound({ composables: () => ({ ...breadcrumb }), props: { include: { /*localFunctionInclude*/ } }, render: () => <></> });
+    bound({ composables: () => ({ ...breadcrumb }), props: { include: { /*localStatesInclude*/ } }, render: { default: () => <></> } });
     defineResourceLayout({ resources: ['users'], layout: { render: { /*top*/ } } });
     bound({ render: { /*bound*/ } });
     defineResourceLayout.forResources('users')({ layout: { render: { /*resources*/ } } });
@@ -39,7 +43,8 @@ it.each(['empty', 'populated'])('suggests state names in %s render objects acros
       composables: (_create, states) => ({ Other: states./*shellStates*/ }),
       render: { default: () => <></>, Preview: () => <></> },
     } });
-  `.replace(/\/\*(top|bound|resources|shell)\*\//g,
+  `.replace(/\/\*(sharedInclude|localFunctionInclude|localStatesInclude)\*\//g,
+    (marker) => stage === 'populated' ? `title: true, ${marker}` : marker).replace(/\/\*(top|bound|resources|shell)\*\//g,
     (marker) => stage === 'populated' ? `default: () => <></>, ${marker}` : marker);
   const config = ts.readConfigFile(`${root}/tsconfig.json`, ts.sys.readFile);
   const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, root);
@@ -81,6 +86,12 @@ it.each(['empty', 'populated'])('suggests state names in %s render objects acros
       file, source.indexOf('/*namespaceMembers*/'), {},
     );
     expect(namespaceMembers?.entries.map(({ name }) => name).sort()).toEqual(['Preview', 'Root']);
+    for (const marker of ['sharedInclude', 'localFunctionInclude', 'localStatesInclude']) {
+      const completions = service.getCompletionsAtPosition(file, source.indexOf(`/*${marker}*/`), {});
+      expect(completions?.entries.map(({ name }) => name), marker).toEqual(
+        expect.arrayContaining(stage === 'empty' ? ['title', 'segments'] : ['segments']),
+      );
+    }
     const functionProps = service.getCompletionsAtPosition(
       file, source.indexOf('/*functionProps*/'), {},
     );
