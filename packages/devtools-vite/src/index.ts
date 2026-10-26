@@ -99,9 +99,24 @@ export function annotate(value, metadata) {
         true,
         /\.[jt]sx$/.test(file) ? ts.ScriptKind.TSX : ts.ScriptKind.TS
       );
-      const names = new Map<string, string>();
-      const owners = new Set<string>();
-      const creators = new Set<ts.ParameterDeclaration>();
+      // Resolve actual bindings so names in different lexical scopes never collide.
+      const program = ts.createProgram(
+        [file],
+        { noLib: true, noResolve: true },
+        {
+          ...ts.createCompilerHost({}),
+          getSourceFile: (name) => (name === file ? source : undefined),
+          writeFile: () => {},
+        }
+      );
+      const checker = program.getTypeChecker();
+
+      const binding = (node: ts.Node) =>
+        checker.getSymbolAtLocation(node) ?? node;
+
+      const names = new Map<ts.Symbol | ts.Node, string>();
+      const owners = new Set<ts.Symbol | ts.Node>();
+      const creators = new Set<ts.Symbol | ts.Node>();
 
       for (const statement of source.statements) {
         if (
@@ -126,16 +141,19 @@ export function annotate(value, metadata) {
         const bindings = statement.importClause?.namedBindings;
 
         if (bindings && ts.isNamespaceImport(bindings))
-          owners.add(bindings.name.text);
+          owners.add(binding(bindings.name));
 
         if (bindings && ts.isNamedImports(bindings))
-          for (const binding of bindings.elements) {
-            if (binding.isTypeOnly) continue;
+          for (const importedBinding of bindings.elements) {
+            if (importedBinding.isTypeOnly) continue;
 
-            const imported = (binding.propertyName ?? binding.name).text;
+            const imported = (
+              importedBinding.propertyName ?? importedBinding.name
+            ).text;
 
-            if (api.has(imported)) names.set(binding.name.text, imported);
-            else owners.add(binding.name.text);
+            if (api.has(imported))
+              names.set(binding(importedBinding.name), imported);
+            else owners.add(binding(importedBinding.name));
           }
       }
 
@@ -149,26 +167,11 @@ export function annotate(value, metadata) {
           return 'defineResourceLayout';
 
         if (ts.isIdentifier(expression)) {
-          for (
-            let parent: ts.Node | undefined = expression.parent;
-            parent;
-            parent = parent.parent
-          ) {
-            if (ts.isFunctionLike(parent)) {
-              const parameter = parent.parameters.find(
-                (parameter) =>
-                  ts.isIdentifier(parameter.name) &&
-                  parameter.name.text === expression.text
-              );
+          const symbol = binding(expression);
 
-              if (parameter)
-                return creators.has(parameter)
-                  ? 'createComposableComponent'
-                  : undefined;
-            }
-          }
-
-          return names.get(expression.text);
+          return creators.has(symbol)
+            ? 'createComposableComponent'
+            : names.get(symbol);
         }
 
         if (!ts.isPropertyAccessExpression(expression)) return;
@@ -178,9 +181,20 @@ export function annotate(value, metadata) {
         if (
           api.has(member) &&
           ts.isIdentifier(expression.expression) &&
-          owners.has(expression.expression.text)
+          owners.has(binding(expression.expression))
         )
           return member;
+
+        if (api.has(member) && ts.isCallExpression(expression.expression)) {
+          const producer = callName(expression.expression.expression);
+
+          if (
+            producer === 'createDefinedResourceLayout' ||
+            (producer === 'defineResourceLayout' &&
+              member === 'createResourceLayout')
+          )
+            return member;
+        }
 
         if (
           ['lazy', 'defer', 'fromState', 'withLayout', 'forResource'].includes(
@@ -190,33 +204,51 @@ export function annotate(value, metadata) {
           return callName(expression.expression);
       }
 
+      function collectCreators(node: ts.Node | undefined) {
+        if (!node || !ts.isObjectLiteralExpression(node)) return;
+
+        for (const property of node.properties) {
+          if (!ts.isPropertyAssignment(property)) continue;
+
+          const key = property.name.getText(source).replaceAll(/['"]/g, '');
+
+          if (
+            key === 'composables' &&
+            (ts.isArrowFunction(property.initializer) ||
+              ts.isFunctionExpression(property.initializer))
+          ) {
+            const parameter = property.initializer.parameters[0];
+
+            if (parameter && ts.isIdentifier(parameter.name))
+              creators.add(binding(parameter.name));
+          } else {
+            collectCreators(property.initializer);
+          }
+        }
+      }
+
       // Propagate bindings from factory/definition results and destructured helpers.
       function collect(node: ts.Node) {
-        if (
-          ts.isPropertyAssignment(node) &&
-          node.name.getText(source) === 'composables' &&
-          (ts.isArrowFunction(node.initializer) ||
-            ts.isFunctionExpression(node.initializer)) &&
-          node.initializer.parameters[0]
-        )
-          creators.add(node.initializer.parameters[0]);
+        if (ts.isCallExpression(node) && callName(node.expression)) {
+          collectCreators(node.arguments[0]);
+        }
 
         if (
           ts.isVariableDeclaration(node) &&
           ts.isObjectBindingPattern(node.name) &&
           node.initializer &&
           ts.isIdentifier(node.initializer) &&
-          owners.has(node.initializer.text)
+          owners.has(binding(node.initializer))
         ) {
-          for (const binding of node.name.elements) {
-            if (!ts.isIdentifier(binding.name)) continue;
+          for (const element of node.name.elements) {
+            if (!ts.isIdentifier(element.name)) continue;
 
             const key =
-              binding.propertyName && ts.isIdentifier(binding.propertyName)
-                ? binding.propertyName.text
-                : binding.name.text;
+              element.propertyName && ts.isIdentifier(element.propertyName)
+                ? element.propertyName.text
+                : element.name.text;
 
-            if (api.has(key)) names.set(binding.name.text, key);
+            if (api.has(key)) names.set(binding(element.name), key);
           }
         }
 
@@ -231,20 +263,20 @@ export function annotate(value, metadata) {
               ts.isPropertyAccessExpression(node.initializer.expression) &&
               node.initializer.expression.name.text === 'forResource'
             )
-              names.set(node.name.text, 'createResourceLayout');
-            else owners.add(node.name.text);
+              names.set(binding(node.name), 'createResourceLayout');
+            else owners.add(binding(node.name));
           }
 
           if (ts.isObjectBindingPattern(node.name))
-            for (const binding of node.name.elements) {
-              if (!ts.isIdentifier(binding.name)) continue;
+            for (const element of node.name.elements) {
+              if (!ts.isIdentifier(element.name)) continue;
 
               const key =
-                binding.propertyName && ts.isIdentifier(binding.propertyName)
-                  ? binding.propertyName.text
-                  : binding.name.text;
+                element.propertyName && ts.isIdentifier(element.propertyName)
+                  ? element.propertyName.text
+                  : element.name.text;
 
-              if (api.has(key)) names.set(binding.name.text, key);
+              if (api.has(key)) names.set(binding(element.name), key);
             }
         }
 
@@ -258,7 +290,7 @@ export function annotate(value, metadata) {
           callName(node.initializer.expression.expression) ===
             'defineResourceLayout'
         )
-          names.set(node.name.text, 'defineResourceLayout');
+          names.set(binding(node.name), 'defineResourceLayout');
 
         ts.forEachChild(node, collect);
       }

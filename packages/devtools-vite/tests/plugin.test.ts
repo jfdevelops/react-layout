@@ -217,3 +217,40 @@ it('resolves the production inspector to an empty entry by default and supports 
     ]);
   }
 });
+
+it('does not instrument unrelated composables callbacks', async () => {
+  expect(
+    await transform(
+      'const config = { composables: (create) => create({ unrelated: true }) };'
+    )
+  ).toBeUndefined();
+});
+
+it('respects local bindings and shadowed namespace owners', async () => {
+  const result =
+    await transform(`import { defineResourceLayout, createDefinedResourceLayout } from '@jfdevelops/react-layout';
+import * as layouts from '@jfdevelops/react-layout';
+{ const defineResourceLayout = (value) => value; defineResourceLayout({}); }
+function unrelated(layouts) { layouts.defineResourceLayout({}); }
+function first() { const factory = createDefinedResourceLayout({ resources: ['users'] }); }
+function second(factory) { factory.defineResourceLayout({}); }`);
+
+  expect(result?.code).toContain('defineResourceLayout({}); }');
+  expect(result?.code).toContain('layouts.defineResourceLayout({});');
+  expect(result?.code).toContain('factory.defineResourceLayout({});');
+  expect(result?.code.match(/__reactLayoutDebug\(/g)).toHaveLength(1);
+});
+
+it('instruments chained factory definitions and their inline states', async () => {
+  const result =
+    await transform(`import { createDefinedResourceLayout } from '@jfdevelops/react-layout';
+const definition = createDefinedResourceLayout({ resources: ['users'] }).defineResourceLayout({
+  render: { default: () => null },
+  composables: (create) => ({ Root: create({ name: 'Root' }) }),
+});`);
+
+  expect(result?.code).toContain('.defineResourceLayout(__reactLayoutDebug(');
+  expect(result?.code).toContain('default: __reactLayoutDebug(');
+  expect(result?.code).toContain('create(__reactLayoutDebug(');
+  expect(result?.code).toContain('"line":3');
+});
