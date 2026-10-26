@@ -7,6 +7,10 @@ export default defineConfig({
   preview: { allowedHosts: ['.localhost'] },
   resolve: {
     alias: {
+      '@jfdevelops/react-layout-composable-breadcrumb': path.resolve(
+        __dirname,
+        '../composable-breadcrumb/src/index.ts',
+      ),
       '@jfdevelops/react-layout-devtools-core': path.resolve(
         __dirname,
         '../devtools-core/src/index.ts',

@@ -1,4 +1,5 @@
 import { StrictMode, createElement } from 'react';
+import { createBreadcrumbComposable } from '@jfdevelops/react-layout-composable-breadcrumb';
 import { act, render, screen } from '@testing-library/react';
 import { expectTypeOf, expect, it } from 'vitest';
 import { getInspectionSource } from '@jfdevelops/react-layout-devtools-core';
@@ -273,13 +274,32 @@ it('registers lazy declarations and resolves their metadata after loading', asyn
 });
 
 it('allows breadcrumb segments to be configured once as global component passthrough', () => {
-  const Breadcrumb = defineComposableComponent({
-    name: 'Breadcrumb',
-    props: { segments: createProp.string() },
-  })(({ segments }) => <nav>{segments}</nav>);
+  const breadcrumbComposable = createBreadcrumbComposable(({ segments }) => (
+    <nav>
+      {Object.entries(segments).map(([key, segment]) => (
+        <span key={key}>
+          {typeof segment === 'string' ? segment : segment.value}
+        </span>
+      ))}
+    </nav>
+  ));
   const factory = createDefinedResourceLayout({
     resources: ['users'],
-    composables: () => Breadcrumb,
+    options: {
+      title: createProp.component({ type: 'ReactNode' }),
+      description: createProp.component({ type: 'ReactNode' }).optional(),
+    },
+    composables: (create) => ({
+      Layout: create({
+        name: ({ capitalize, resource }) => `${capitalize(resource)}Layout`,
+        wrapWith: 'main',
+      }),
+      ...breadcrumbComposable,
+      Header: create({
+        name: ({ capitalize, resource }) => `${capitalize(resource)}Header`,
+        wrapWith: 'header',
+      }),
+    }),
     props: {
       include: {
         segments: { visibility: 'optional', passthrough: 'component' },
@@ -288,7 +308,13 @@ it('allows breadcrumb segments to be configured once as global component passthr
   });
   const definition = factory.defineResourceLayout({
     render: (_props, { composables }) => (
-      <composables.Breadcrumb segments="Users" />
+      <composables.Layout>
+        <composables.Header>
+          <composables.Breadcrumb
+            segments={{ users: { value: 'Users', isActive: true } }}
+          />
+        </composables.Header>
+      </composables.Layout>
     ),
   });
   const Users = definition.createResourceLayout({

@@ -218,6 +218,9 @@ importers:
         specifier: 2.2.8
         version: 2.2.8
     devDependencies:
+      '@jfdevelops/react-layout-composable-breadcrumb':
+        specifier: workspace:*
+        version: link:../composable-breadcrumb
       '@testing-library/jest-dom':
         specifier: 6.9.1
         version: 6.9.1

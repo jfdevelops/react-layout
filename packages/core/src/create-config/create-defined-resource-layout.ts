@@ -331,11 +331,7 @@ export function createDefinedResourceLayout<
   const Options extends InPropsDefinition<Resources> = {},
   Composables extends ComposableComponents = {},
   DefaultNamespace extends boolean = false,
-  const SharedInclude extends LayoutIncludeProps<
-    Resources,
-    Options,
-    Composables
-  > = {},
+  const SharedInclude extends object = {},
   const SharedCustom extends InPropsObject = {},
   const DefaultNaming extends
     | LayoutNameInput<LayoutResourceKey<Resources>>

@@ -53,7 +53,9 @@ export type ExtractPropValue<Prop extends AnyBaseProp> =
 export interface AnyBuiltPropDefinition {
   (value: unknown): unknown;
   visibility: PropVisibility;
-  _baseProp?: AnyBaseProp;
+  // Keep the public shape so definitions from another installed version do
+  // not inherit BaseProp's protected-member identity.
+  _baseProp?: Pick<AnyBaseProp, keyof AnyBaseProp>;
 }
 
 export interface BuiltPropShape {
