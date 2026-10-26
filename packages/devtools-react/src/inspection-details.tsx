@@ -174,7 +174,7 @@ export function InspectionDetails({
             <div
               style={{
                 display: 'flex',
-                flexWrap: 'wrap',
+                flexWrap: 'nowrap',
                 gap: 8,
                 marginBottom: 14,
               }}
@@ -184,13 +184,18 @@ export function InspectionDetails({
                 placeholder="Find a prop or type…"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                style={{ flex: '1 1 100%', fontSize: 12 }}
+                style={{ flex: '1 1 0', minWidth: 0, fontSize: 12 }}
               />
               <select
                 aria-label="Filter prop kind"
                 value={kind}
                 onChange={(event) => setKind(event.target.value)}
-                style={{ ...control, flex: '1 1 auto', fontSize: 12 }}
+                style={{
+                  ...control,
+                  flex: '0 1 auto',
+                  minWidth: 0,
+                  fontSize: 12,
+                }}
               >
                 <option value="all">All props</option>
                 <option value="included">Included</option>
@@ -200,7 +205,12 @@ export function InspectionDetails({
                 aria-label="Filter prop requirement"
                 value={visibility}
                 onChange={(event) => setVisibility(event.target.value)}
-                style={{ ...control, flex: '1 1 auto', fontSize: 12 }}
+                style={{
+                  ...control,
+                  flex: '0 1 auto',
+                  minWidth: 0,
+                  fontSize: 12,
+                }}
               >
                 <option value="all">Any requirement</option>
                 <option value="required">Required</option>
