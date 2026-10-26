@@ -29,6 +29,7 @@ it.each(['empty', 'populated'])('suggests state and include keys in %s objects a
     const { defineResourceLayout: bound } = createDefinedResourceLayout({ resources: ['users'], options: { title: createProp.string() } });
     bound({ composables: (create) => ({ Layout: create({ name: ({ capitalize, resource }) => capitalize(resource) + 'Layout', wrapWith: AdminLayout }), ...breadcrumb, Header: create({ name: ({ capitalize, resource }) => capitalize(resource) + 'Header', wrapWith: AdminLayout }) }), props: { include: { /*localFunctionInclude*/ } }, render: () => <></> });
     bound({ composables: (create) => ({ Layout: create({ name: ({ capitalize, resource }) => capitalize(resource) + 'Layout', wrapWith: AdminLayout }), ...breadcrumb, Header: create({ name: ({ capitalize, resource }) => capitalize(resource) + 'Header', wrapWith: AdminLayout }) }), props: { include: { /*localStatesInclude*/ } }, render: { default: () => <></> } });
+    bound({ props: { include: { title: { /*includeBehavior*/ } } }, render: () => <></> });
     defineResourceLayout({ resources: ['users'], layout: { render: { /*top*/ } } });
     bound({ render: { /*bound*/ } });
     defineResourceLayout.forResources('users')({ layout: { render: { /*resources*/ } } });
@@ -121,6 +122,13 @@ it.each(['empty', 'populated'])('suggests state and include keys in %s objects a
       expect(completions?.entries.map(({ name }) => name), marker).toEqual(
         expect.arrayContaining(stage === 'empty' ? ['title', 'segments'] : ['segments']),
       );
+    }
+    const behaviorEntries = service.getCompletionsAtPosition(file, source.indexOf('/*includeBehavior*/'), {})?.entries;
+    expect(behaviorEntries?.map(({ name }) => name)).toEqual(
+      expect.arrayContaining(['required', 'suppliedVia', 'visibility', 'passthrough']),
+    );
+    for (const name of ['visibility', 'passthrough']) {
+      expect(behaviorEntries?.find(entry => entry.name === name)?.kindModifiers).toContain('deprecated');
     }
     const functionProps = service.getCompletionsAtPosition(
       file, source.indexOf('/*functionProps*/'), {},

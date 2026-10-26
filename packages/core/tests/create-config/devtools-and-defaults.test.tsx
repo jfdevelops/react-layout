@@ -302,7 +302,7 @@ it('allows breadcrumb segments to be configured once as global component passthr
     }),
     props: {
       include: {
-        segments: { visibility: 'optional', passthrough: 'component' },
+        segments: { required: false, suppliedVia: 'component' },
       },
     },
   });
