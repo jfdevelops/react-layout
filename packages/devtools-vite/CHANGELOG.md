@@ -1,5 +1,11 @@
 # @jfdevelops/react-layout-devtools-vite
 
+## 0.1.1
+
+### Patch Changes
+
+- 3beec66: Respect lexical bindings when discovering layout APIs, avoid instrumenting unrelated composables callbacks, and preserve source locations for chained factory calls.
+
 ## 0.1.0
 
 ### Minor Changes
