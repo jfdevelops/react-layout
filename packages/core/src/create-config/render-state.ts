@@ -36,16 +36,19 @@ import type { LayoutRenderResourcesAccessor } from './define-layout';
 
 export const deferredRenderStateSymbol: unique symbol = Symbol(
   'deferredRenderState'
-) as never;
+);
+
 export const lazyRenderStateSymbol: unique symbol = Symbol(
   'lazyRenderState'
-) as never;
+);
+
 export const definedRenderStateSymbol: unique symbol = Symbol.for(
   '@jfdevelops/react-layout/render-state'
-) as never;
+);
+
 export const definedResourceLayoutComponentSymbol: unique symbol = Symbol.for(
   '@jfdevelops/react-layout/resource-layout-component'
-) as never;
+);
 
 /** Runtime-compatible render-state shape used when inspecting lazy modules. */
 export type AnyRenderStateDefinition = {
