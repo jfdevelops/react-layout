@@ -33,6 +33,7 @@ export interface ReactLayoutDevtoolsContentProps
 export function ReactLayoutDevtoolsToolbar() {
   const {
     resetPreferences,
+    config,
     graph,
     query,
     setQuery,
@@ -48,6 +49,7 @@ export function ReactLayoutDevtoolsToolbar() {
     selection,
     compact,
     pane,
+    backToExplorer,
   } = useDevtoolsContext();
 
   return (
@@ -69,15 +71,41 @@ export function ReactLayoutDevtoolsToolbar() {
             padding: '12px 16px',
           }}
         >
-          <div>
-            <strong style={{ fontSize: 15 }}>Layouts</strong>
-            <div style={{ color: '#94a3b8', fontSize: 12, marginTop: 2 }}>
-              {graph.nodes.filter((n) => n.kind === 'layout').length} layouts ·{' '}
-              {
-                graph.nodes.filter((n) => n.kind === 'state' && n.active > 0)
-                  .length
-              }{' '}
-              active states
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {compact &&
+              pane === 'inspector' &&
+              selection &&
+              config.showDetails && (
+                <HelpTooltip content="Back to explorer">
+                  <Button
+                    aria-label="Back to explorer"
+                    onClick={backToExplorer}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      aria-hidden="true"
+                    >
+                      <path d="M19 12H5m7-7-7 7 7 7" />
+                    </svg>
+                  </Button>
+                </HelpTooltip>
+              )}
+            <div>
+              <strong style={{ fontSize: 15 }}>Layouts</strong>
+              <div style={{ color: '#94a3b8', fontSize: 12, marginTop: 2 }}>
+                {graph.nodes.filter((n) => n.kind === 'layout').length} layouts
+                ·{' '}
+                {
+                  graph.nodes.filter((n) => n.kind === 'state' && n.active > 0)
+                    .length
+                }{' '}
+                active states
+              </div>
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -459,42 +487,29 @@ export function ReactLayoutDevtoolsFooter() {
 }
 
 export function ReactLayoutDevtoolsWorkspace() {
-  const { compact, pane, setPane, selection, config } = useDevtoolsContext();
+  const { compact, pane, selection, config } = useDevtoolsContext();
   const details =
     compact && pane === 'inspector' && selection && config.showDetails;
 
   return (
     <>
       <ReactLayoutDevtoolsToolbar />
-      {compact && (
-        <nav
-          aria-label="Inspector panes"
-          style={{
-            display: 'flex',
-            gap: 6,
-            padding: '6px 12px',
-            flexShrink: 0,
-            borderBottom: '1px solid #334155',
-          }}
-        >
-          <Button aria-pressed={!details} onClick={() => setPane('explorer')}>
-            Explorer
-          </Button>
-          {config.showDetails && (
-            <Button
-              aria-pressed={Boolean(details)}
-              disabled={!selection}
-              onClick={() => setPane('inspector')}
-            >
-              Details
-            </Button>
-          )}
-        </nav>
-      )}
+
       <div
         style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}
       >
-        {(!compact || !details) && <ReactLayoutDevtoolsExplorer />}
+        <div
+          hidden={Boolean(details)}
+          style={{
+            display: details ? 'none' : 'flex',
+            flex: '3 1 0%',
+            minWidth: 0,
+            minHeight: 0,
+            overflow: 'hidden',
+          }}
+        >
+          <ReactLayoutDevtoolsExplorer />
+        </div>
         {(!compact || details) && <ReactLayoutDevtoolsInspector />}
       </div>
       <ReactLayoutDevtoolsFooter />

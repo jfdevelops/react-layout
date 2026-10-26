@@ -94,6 +94,26 @@ function useController({
   const [locateRequest, setLocateRequest] = useState(0);
   const graphPane = useRef<HTMLDivElement>(null);
   const explorerScroll = useRef({ left: 0, top: 0 });
+  const restoreExplorerFocus = useRef(false);
+
+  function backToExplorer() {
+    restoreExplorerFocus.current = true;
+
+    setPane('explorer');
+  }
+
+  useEffect(() => {
+    if (pane !== 'explorer' || !restoreExplorerFocus.current) return;
+
+    restoreExplorerFocus.current = false;
+
+    const element =
+      graphPane.current?.querySelector<HTMLElement>(
+        '[aria-selected="true"], [data-selected-node="true"]'
+      ) ?? graphPane.current;
+
+    element?.focus({ preventScroll: true });
+  }, [pane]);
 
   function resetPreferences() {
     resetSavedPreferences();
@@ -233,6 +253,7 @@ function useController({
     setLocateRequest,
     graphPane,
     explorerScroll,
+    backToExplorer,
     reveal,
     locateSelection,
     palette,
@@ -285,6 +306,8 @@ export function useReactLayoutDevtools() {
   return {
     graph: value.graph,
     selection: value.selection,
+    pane: value.pane,
+    backToExplorer: value.backToExplorer,
     selectNode: value.setSelected,
     query: value.query,
     setQuery: value.setQuery,

@@ -158,7 +158,8 @@ it. Both handles also support arrow keys; hold Shift for larger steps. Expand an
 Dock controls provide a larger workspace. Position, size, and mode are saved with
 the React panel preferences and cleared by Reset preferences.
 
-Compact content uses Explorer and Details buttons; selecting a node opens Details.
+Compact content starts in Explorer without pane-switching buttons. Selecting a
+node opens Details, where a back arrow returns to Explorer.
 The header and navigation stay fixed while the content scrolls. Wider embedded
 containers use the explorer and inspector side by side. `layout="auto"` is the
 default and observes the host width; use `layout="compact"` or `layout="split"`

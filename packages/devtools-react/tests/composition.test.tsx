@@ -21,19 +21,33 @@ function source() {
 it('switches between explorer and details instead of squeezing panes in compact content', () => {
   render(<ReactLayoutDevtoolsContent source={source()} layout="compact" />);
 
-  expect(screen.getByRole('button', { name: 'Details' })).toBeDisabled();
+  expect(screen.queryByRole('button', { name: 'Details' })).toBeNull();
+
+  expect(screen.queryByRole('button', { name: 'Back to explorer' })).toBeNull();
 
   fireEvent.click(screen.getByRole('button', { name: /LAYOUT.*UsersPage/i }));
 
   expect(screen.getByRole('heading', { name: 'UsersPage' })).toBeTruthy();
 
-  expect(screen.queryByLabelText('Scrollable relationship graph')).toBeNull();
+  expect(
+    screen.getByLabelText('Scrollable relationship graph')
+  ).not.toBeVisible();
 
-  fireEvent.click(screen.getByRole('button', { name: 'Explorer' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Back to explorer' }));
 
   expect(screen.getByLabelText('Scrollable relationship graph')).toBeTruthy();
 
+  expect(
+    screen.getByRole('button', { name: /LAYOUT.*UsersPage/i })
+  ).toHaveFocus();
+
   expect(screen.queryByLabelText('Node details')).toBeNull();
+
+  expect(screen.queryByRole('button', { name: 'Back to explorer' })).toBeNull();
+
+  fireEvent.click(screen.getByRole('button', { name: /LAYOUT.*UsersPage/i }));
+
+  expect(screen.getByRole('heading', { name: 'UsersPage' })).toBeTruthy();
 });
 
 it('shares selection across separately composed controls and panes', () => {
@@ -172,7 +186,7 @@ it('adapts embedded content to a narrow host without imposing floating dimension
   try {
     render(<ReactLayoutDevtoolsContent source={source()} />);
 
-    expect(screen.getByLabelText('Inspector panes')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Details' })).toBeNull();
 
     expect(screen.queryByRole('dialog')).toBeNull();
 
@@ -180,8 +194,32 @@ it('adapts embedded content to a narrow host without imposing floating dimension
 
     expect(screen.getByRole('heading', { name: 'UsersPage' })).toBeTruthy();
 
-    expect(screen.queryByLabelText('Scrollable relationship graph')).toBeNull();
+    expect(
+      screen.getByLabelText('Scrollable relationship graph')
+    ).not.toBeVisible();
   } finally {
     vi.unstubAllGlobals();
   }
+});
+
+it('preserves collapsed tree branches when navigating back from Details', () => {
+  const store = source();
+
+  store.node({ id: 'state', kind: 'state', label: 'Loading' });
+  store.edge('layout', 'state', 'defines');
+
+  render(
+    <ReactLayoutDevtoolsContent
+      source={store}
+      layout="compact"
+      config={{ initialView: 'tree' }}
+    />
+  );
+
+  fireEvent.click(screen.getByRole('button', { name: 'Collapse UsersPage' }));
+  fireEvent.click(screen.getByRole('treeitem', { name: 'layout UsersPage' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Back to explorer' }));
+
+  expect(screen.getByRole('button', { name: 'Expand UsersPage' })).toBeTruthy();
+  expect(screen.queryByRole('treeitem', { name: 'state Loading' })).toBeNull();
 });
