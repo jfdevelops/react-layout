@@ -25,7 +25,13 @@ it('switches between explorer and details instead of squeezing panes in compact 
 
   expect(screen.queryByRole('button', { name: 'Back to explorer' })).toBeNull();
 
-  fireEvent.click(screen.getByRole('button', { name: /LAYOUT.*UsersPage/i }));
+  const node = screen.getByRole('button', { name: /LAYOUT.*UsersPage/i });
+
+  node.focus();
+
+  fireEvent.click(node);
+
+  expect(screen.getByLabelText('Node details')).toHaveFocus();
 
   expect(screen.getByRole('heading', { name: 'UsersPage' })).toBeTruthy();
 

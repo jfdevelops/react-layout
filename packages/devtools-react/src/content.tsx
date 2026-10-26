@@ -435,6 +435,7 @@ export function ReactLayoutDevtoolsInspector() {
       {config?.showDetails !== false && selection && (
         <aside
           ref={detailsPane}
+          tabIndex={-1}
           data-react-layout-details
           aria-label="Node details"
           style={{
