@@ -1,5 +1,23 @@
 # @jfdevelops/react-layout
 
+## 1.5.0
+
+### Minor Changes
+
+- 56e781b: Add required and suppliedVia to props.include behavior objects. Keep visibility and passthrough as deprecated aliases until the next major version. Allow mixed spellings during migration, with the new names taking precedence when both are present.
+
+### Patch Changes
+
+- ea3f501: Restore breadcrumb segments inference and props.include suggestions when presets come from a separately installed composables version. Recognize preset metadata across distinct declaration symbols for the shared runtime key.
+
+  Accept the public base-prop shape across validator versions without requiring the same protected class identity.
+
+  Preserve shared include inference when a packaged breadcrumb is spread alongside locally created composables.
+
+- Updated dependencies [ea3f501]
+  - @jfdevelops/react-layout-composables@0.3.1
+  - @jfdevelops/react-layout-validator@0.3.1
+
 ## 1.4.1
 
 ### Patch Changes
