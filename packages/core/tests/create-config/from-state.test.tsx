@@ -41,7 +41,10 @@ it('inherits all reference props and exposes a Ref composable', () => {
   expect(screen.getByText('Title: Message 0')).toBeInTheDocument();
 });
 
-it('selects inherited props and requires excluded Ref props explicitly', () => {
+it.each([
+  { required: true, suppliedVia: 'component' },
+  { visibility: 'required', passthrough: 'component' },
+] as const)('selects inherited props and requires excluded Ref props explicitly (%j)', (behavior) => {
   const { createRenderState, defineResourceLayout } = createDefinedResourceLayout({ resources: ['users'] });
   const Source = createRenderState({
     props: { custom: { message: createProp.string(), count: createProp.number() } },
@@ -49,7 +52,7 @@ it('selects inherited props and requires excluded Ref props explicitly', () => {
   });
   const Derived = createRenderState.fromState({
     ref: Source, state: 'Selected',
-    props: { include: { message: { visibility: 'required', passthrough: 'component' } } },
+    props: { include: { message: behavior } },
     render: (props, { composables }) => {
       expectTypeOf(props.message).toEqualTypeOf<string>();
       () => {

@@ -2,18 +2,34 @@
 import * as ts from 'typescript';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { expect, it } from 'vitest';
 
-it.each(['empty', 'populated'])('suggests state names in %s render objects across every API', (stage) => {
+it.each(['empty', 'populated'])('suggests state and include keys in %s objects across every API', (stage) => {
   const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
   const file = `${root}/tests/create-config/autocomplete-probe.tsx`;
   const source = `
-    import { defineResourceLayout, createDefinedResourceLayout, createProp, defineComposableComponent } from '../../src';
-    const breadcrumb = { ...defineComposableComponent({ name: 'Breadcrumb', props: { segments: createProp.string() } })(() => null) };
-    createDefinedResourceLayout({ resources: ['users'], options: { title: createProp.string() }, composables: () => ({ ...breadcrumb }), props: { include: { /*sharedInclude*/ } } });
+    import { defineResourceLayout, createDefinedResourceLayout, createProp } from '../../src';
+    import { createBreadcrumbComposable } from '@jfdevelops/react-layout-composable-breadcrumb';
+    const AdminLayout = ({ children }: { children?: import('react').ReactNode }) => <main>{children}</main>;
+    const breadcrumb = createBreadcrumbComposable(({ segments }) => <nav>{Object.keys(segments).join(',')}</nav>);
+    const { defineResourceLayout: shared, createRenderState, defineLazyDefaults, resources } = createDefinedResourceLayout({
+      resources: ['users', { value: 'builder', subResources: ['homepage'] }],
+      options: {
+        title: createProp.component({ type: 'ReactNode' }),
+        description: createProp.component({ type: 'ReactNode' }).optional(),
+      },
+      composables: (create) => ({
+        Layout: create({ name: ({ capitalize, resource }) => capitalize(resource) + 'Layout', wrapWith: AdminLayout }),
+        ...breadcrumb,
+        Header: create({ name: ({ capitalize, resource }) => capitalize(resource) + 'Header', wrapWith: AdminLayout }),
+      }),
+      props: { include: { /*sharedInclude*/ } },
+    });
     const { defineResourceLayout: bound } = createDefinedResourceLayout({ resources: ['users'], options: { title: createProp.string() } });
-    bound({ composables: () => ({ ...breadcrumb }), props: { include: { /*localFunctionInclude*/ } }, render: () => <></> });
-    bound({ composables: () => ({ ...breadcrumb }), props: { include: { /*localStatesInclude*/ } }, render: { default: () => <></> } });
+    bound({ composables: (create) => ({ Layout: create({ name: ({ capitalize, resource }) => capitalize(resource) + 'Layout', wrapWith: AdminLayout }), ...breadcrumb, Header: create({ name: ({ capitalize, resource }) => capitalize(resource) + 'Header', wrapWith: AdminLayout }) }), props: { include: { /*localFunctionInclude*/ } }, render: () => <></> });
+    bound({ composables: (create) => ({ Layout: create({ name: ({ capitalize, resource }) => capitalize(resource) + 'Layout', wrapWith: AdminLayout }), ...breadcrumb, Header: create({ name: ({ capitalize, resource }) => capitalize(resource) + 'Header', wrapWith: AdminLayout }) }), props: { include: { /*localStatesInclude*/ } }, render: { default: () => <></> } });
+    bound({ props: { include: { title: { /*includeBehavior*/ } } }, render: () => <></> });
     defineResourceLayout({ resources: ['users'], layout: { render: { /*top*/ } } });
     bound({ render: { /*bound*/ } });
     defineResourceLayout.forResources('users')({ layout: { render: { /*resources*/ } } });
@@ -46,13 +62,21 @@ it.each(['empty', 'populated'])('suggests state names in %s render objects acros
   `.replace(/\/\*(sharedInclude|localFunctionInclude|localStatesInclude)\*\//g,
     (marker) => stage === 'populated' ? `title: true, ${marker}` : marker).replace(/\/\*(top|bound|resources|shell)\*\//g,
     (marker) => stage === 'populated' ? `default: () => <></>, ${marker}` : marker);
+  const breadcrumbFile = `${root}/tests/create-config/devtools-and-defaults.test.tsx`;
+  const breadcrumbTest = readFileSync(breadcrumbFile, 'utf8');
+  const testStart = breadcrumbTest.indexOf("it('allows breadcrumb segments");
+  const includeStart = breadcrumbTest.indexOf('include: {', testStart) + 'include: {'.length;
+  const includeEnd = breadcrumbTest.indexOf('\n      },', includeStart);
+  const breadcrumbSource = breadcrumbTest.slice(0, includeStart)
+    + (stage === 'populated' ? 'title: true, ' : '')
+    + '/*breadcrumbInclude*/' + breadcrumbTest.slice(includeEnd);
   const config = ts.readConfigFile(`${root}/tsconfig.json`, ts.sys.readFile);
   const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, root);
   const service = ts.createLanguageService({
-    getScriptFileNames: () => [file],
+    getScriptFileNames: () => [file, breadcrumbFile],
     getScriptVersion: () => '1',
     getScriptSnapshot: (name) => {
-      const contents = name === file ? source : ts.sys.readFile(name);
+      const contents = name === file ? source : name === breadcrumbFile ? breadcrumbSource : ts.sys.readFile(name);
       return contents === undefined ? undefined : ts.ScriptSnapshot.fromString(contents);
     },
     getCurrentDirectory: () => root,
@@ -64,6 +88,13 @@ it.each(['empty', 'populated'])('suggests state names in %s render objects acros
   });
 
   try {
+    service.getSemanticDiagnostics(breadcrumbFile);
+    const breadcrumbEntries = service.getCompletionsAtPosition(
+      breadcrumbFile, breadcrumbSource.indexOf('/*breadcrumbInclude*/'), {},
+    );
+    expect(breadcrumbEntries?.entries.map(({ name }) => name), 'actual breadcrumb test').toEqual(
+      expect.arrayContaining(stage === 'empty' ? ['title', 'description', 'segments'] : ['description', 'segments']),
+    );
     for (const marker of ['top', 'bound', 'resources', 'shell']) {
       const completions = service.getCompletionsAtPosition(
         file, source.indexOf(`/*${marker}*/`), {},
@@ -91,6 +122,13 @@ it.each(['empty', 'populated'])('suggests state names in %s render objects acros
       expect(completions?.entries.map(({ name }) => name), marker).toEqual(
         expect.arrayContaining(stage === 'empty' ? ['title', 'segments'] : ['segments']),
       );
+    }
+    const behaviorEntries = service.getCompletionsAtPosition(file, source.indexOf('/*includeBehavior*/'), {})?.entries;
+    expect(behaviorEntries?.map(({ name }) => name)).toEqual(
+      expect.arrayContaining(['required', 'suppliedVia', 'visibility', 'passthrough']),
+    );
+    for (const name of ['visibility', 'passthrough']) {
+      expect(behaviorEntries?.find(entry => entry.name === name)?.kindModifiers).toContain('deprecated');
     }
     const functionProps = service.getCompletionsAtPosition(
       file, source.indexOf('/*functionProps*/'), {},

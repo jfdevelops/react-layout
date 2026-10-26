@@ -22,7 +22,11 @@ import type {
   ComposableComponents,
   CreateLayoutComposable,
 } from '@jfdevelops/react-layout-composables';
-import type { InPropsObject } from '../props';
+import {
+  getIncludedPropBehavior,
+  type InPropsObject,
+  type NormalizedIncludedPropBehavior,
+} from '../props';
 import type {
   IncludedProps,
   InPropsDefinition,
@@ -274,14 +278,14 @@ type StateLocalComposables<Input> = NormalizeStateInput<Input> extends {
  * even when their value types are not yet available in the callback context.
  */
 type UnresolvedStateComponentProps<Props, Includes> = {
-  [Key in Exclude<keyof Includes, keyof Props> as Includes[Key] extends {
+  [Key in Exclude<keyof Includes, keyof Props> as NormalizedIncludedPropBehavior<Includes[Key]> extends {
     visibility: 'required';
     passthrough: 'component';
   }
     ? Key
     : never]: unknown;
 } & {
-  [Key in Exclude<keyof Includes, keyof Props> as Includes[Key] extends
+  [Key in Exclude<keyof Includes, keyof Props> as NormalizedIncludedPropBehavior<Includes[Key]> extends
     | 'optional'
     | { visibility: 'optional'; passthrough: 'component' }
     ? Key
@@ -987,10 +991,7 @@ export function createRenderStateBuilder<
                   {
                     visibility:
                       behavior === 'optional' ||
-                      (typeof behavior === 'object' &&
-                        behavior !== null &&
-                        'visibility' in behavior &&
-                        behavior.visibility === 'optional')
+                      getIncludedPropBehavior(behavior)?.visibility === 'optional'
                         ? 'optional'
                         : 'required',
                     passthrough: 'component',

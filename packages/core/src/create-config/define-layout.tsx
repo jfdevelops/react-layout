@@ -69,7 +69,9 @@ import {
 import {
   IncludedProps,
   IncludedComponentPropDefinitions,
-  type IncludedPropBehavior,
+  type IncludedPropVisibility,
+  type NormalizedIncludedPropBehavior,
+  getIncludedPropBehavior,
   InferredInProps,
   InPropsDefinition,
   InPropsObject,
@@ -487,18 +489,6 @@ function readLayoutOptionValue(
   return undefined;
 }
 
-function getIncludedPropBehavior(value: unknown): IncludedPropBehavior | null {
-  if (
-    value !== null &&
-    typeof value === 'object' &&
-    'visibility' in value &&
-    'passthrough' in value
-  ) {
-    return value as IncludedPropBehavior;
-  }
-
-  return null;
-}
 
 function isIncludedPropRequired(value: unknown) {
   return (
@@ -1153,8 +1143,10 @@ type ResourceLayoutStateComponents<
           ResolveProps<RenderStateCustomProps<States[State]>> &
             ResolvedIncludedComponentProps<
               MergedLayoutInProps<Resources, Options, Composables>,
-              RenderStateIncludeProps<States[State]> &
+              Extract<
+                RenderStateIncludeProps<States[State]>,
                 LayoutIncludeProps<Resources, Options, Composables>
+              >
             >
         >
       > &
@@ -1163,8 +1155,10 @@ type ResourceLayoutStateComponents<
             ResolveProps<RenderStateCustomProps<States[State]>> &
               ResolvedIncludedComponentProps<
                 MergedLayoutInProps<Resources, Options, Composables>,
-                RenderStateIncludeProps<States[State]> &
+                Extract<
+                  RenderStateIncludeProps<States[State]>,
                   LayoutIncludeProps<Resources, Options, Composables>
+                >
               >
           >
         ) => JSX.Element) & {
@@ -2959,14 +2953,14 @@ type UnionValue<U, K extends PropertyKey> = U extends unknown
     : never
   : never;
 
-type CombinedInclude<Value> = [
-  Extract<Value, true | { visibility: 'required'; passthrough: 'config' }>
+type CombinedInclude<Value, Normalized = NormalizedIncludedPropBehavior<Value>> = [
+  Extract<Normalized, true | { visibility: 'required'; passthrough: 'config' }>
 ] extends [never]
-  ? 'optional' extends Value
+  ? 'optional' extends Normalized
     ? 'optional'
-    : [Extract<Value, { visibility: 'optional' }>] extends [never]
-    ? Value
-    : 'optional'
+    : [Extract<Normalized, { visibility: 'optional' }>] extends [never]
+      ? Value
+      : 'optional'
   : true;
 
 type AllStateIncludes<

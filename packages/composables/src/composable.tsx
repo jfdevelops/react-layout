@@ -234,11 +234,23 @@ export type ComposableComponentCallable = {
   (...args: any[]): ReactNode;
 };
 
+// Separate installed versions declare distinct unique symbols for the same
+// Symbol.for key. Read the metadata structurally so their presets interoperate.
+type PresetPropsFromMetadata<Component> = {
+  [Key in keyof Component]-?: Key extends symbol
+    ? Component[Key] extends ComposablePresetMeta<infer Props>
+      ? Props
+      : never
+    : never;
+}[keyof Component];
+
 export type PresetPropsFromComposable<Component> = Component extends {
   [composablePresetMetaKey]: ComposablePresetMeta<infer Props>;
 }
   ? Props
-  : {};
+  : [PresetPropsFromMetadata<Component>] extends [never]
+    ? {}
+    : PresetPropsFromMetadata<Component>;
 
 export type MergePresetProps<Composables extends ComposableComponents> = Show<
   UnionToIntersection<PresetPropsFromComposable<Composables[keyof Composables]>>

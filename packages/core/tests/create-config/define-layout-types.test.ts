@@ -268,7 +268,7 @@ describe('defineResourceLayout types', () => {
     };
   });
 
-  it('preserves include visibility and passthrough through scoped factories', () => {
+  it('preserves include requirements and supply sources through scoped factories', () => {
     const { createResourceLayout } = defineResourceLayout({
       resources: ['detail', 'create'],
       options: {
@@ -283,20 +283,20 @@ describe('defineResourceLayout types', () => {
           include: {
             title: true,
             componentLabel: {
-              visibility: 'optional',
-              passthrough: 'component',
+              required: false,
+              suppliedVia: 'component',
             },
             configLabel: {
-              visibility: 'optional',
-              passthrough: 'config',
+              required: false,
+              suppliedVia: 'config',
             },
             requiredComponentLabel: {
-              visibility: 'required',
-              passthrough: 'component',
+              required: true,
+              suppliedVia: 'component',
             },
             requiredConfigLabel: {
-              visibility: 'required',
-              passthrough: 'config',
+              required: true,
+              suppliedVia: 'config',
             },
           },
         },
