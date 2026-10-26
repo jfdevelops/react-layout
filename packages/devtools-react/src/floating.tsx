@@ -7,12 +7,16 @@ import {
 } from './content';
 import { control } from './theme';
 import { useDraggableFab } from './use-draggable-fab';
+import { HelpTooltip } from './components/ui/tooltip';
+import { useFloatingPanel } from './use-floating-panel';
 import { usePanelPreferences } from './preferences';
+
 export interface ReactLayoutDevtoolsProps
   extends ReactLayoutDevtoolsContentProps {
   initialIsOpen?: boolean;
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
 }
+
 /** Floating launcher and panel. Use Content directly inside another devtools host. */
 export function ReactLayoutDevtools({
   initialIsOpen = false,
@@ -34,10 +38,19 @@ export function ReactLayoutDevtools({
   const fab = useDraggableFab(trigger, preferences.fabPosition, (fabPosition) =>
     updatePreferences({ fabPosition })
   );
+  const panel = useFloatingPanel(
+    preferences.panel,
+    (value) => updatePreferences({ panel: value }),
+    position
+  );
+
   const panelId = useId();
+
   useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     if (phase !== 'opening' && phase !== 'closing') return;
+
     // Complete even if a host stylesheet disables animation events.
     const timeout = setTimeout(
       () =>
@@ -50,21 +63,34 @@ export function ReactLayoutDevtools({
         ),
       phase === 'opening' ? 280 : 220
     );
+
     return () => clearTimeout(timeout);
   }, [phase]);
+
   useEffect(() => {
     if (mounted && open) close.current?.focus();
   }, [mounted, open]);
+
   useEffect(() => {
     if (mounted && phase === 'closed' && hasOpened.current)
       trigger.current?.focus();
   }, [mounted, phase]);
+
   function hide() {
     setPhase('closing');
   }
+
   if (!mounted) return null;
+
   const horizontal = position.endsWith('right') ? { right: 16 } : { left: 16 };
   const vertical = position.startsWith('bottom') ? { bottom: 16 } : { top: 16 };
+  const panelControl = {
+    ...control,
+    padding: '5px 7px',
+    minWidth: 28,
+    height: 28,
+  };
+
   return createPortal(
     <>
       <style>{`
@@ -80,6 +106,7 @@ export function ReactLayoutDevtools({
           aria-label="React Layout Devtools"
           onAnimationEnd={(event) => {
             if (event.target !== event.currentTarget) return;
+
             setPhase((current) =>
               current === 'closing'
                 ? 'closed'
@@ -91,21 +118,23 @@ export function ReactLayoutDevtools({
           onKeyDown={(event) => {
             if (event.key === 'Escape') {
               event.stopPropagation();
+
               hide();
             }
           }}
           style={{
             position: 'fixed',
-            ...horizontal,
-            bottom: 16,
+            left: panel.rect.x,
+            top: panel.rect.y,
             animation:
               phase === 'opening'
                 ? 'react-layout-devtools-enter 280ms cubic-bezier(0.22, 1, 0.36, 1) both'
                 : phase === 'closing'
                 ? 'react-layout-devtools-exit 220ms cubic-bezier(0.4, 0, 1, 1) both'
                 : undefined,
-            width: 'min(1400px, calc(100vw - 32px))',
-            height: 'min(74vh, 820px)',
+            width: panel.rect.width,
+            height: panel.rect.height,
+            boxSizing: 'border-box',
             zIndex: 99999,
             display: 'flex',
             flexDirection: 'column',
@@ -124,24 +153,121 @@ export function ReactLayoutDevtools({
               alignItems: 'center',
               justifyContent: 'space-between',
               flexShrink: 0,
-              padding: '8px 16px',
+              padding: '8px 12px',
               borderBottom: '1px solid #334155',
             }}
           >
             <strong>React Layout</strong>
-            <Button
-              ref={close}
-              type="button"
-              aria-label="Close React Layout Devtools"
-              onClick={hide}
-              style={{ ...control, cursor: 'pointer' }}
-            >
-              Close ×
-            </Button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              {panel.mode === 'floating' && (
+                <HelpTooltip content="Move panel · Arrow keys move; Shift moves faster">
+                  <Button
+                    aria-label="Move devtools panel"
+                    {...panel.move}
+                    style={{
+                      ...panelControl,
+                      cursor: 'grab',
+                      touchAction: 'none',
+                    }}
+                  >
+                    ⠿
+                  </Button>
+                </HelpTooltip>
+              )}
+              <HelpTooltip
+                content={
+                  panel.mode === 'expanded'
+                    ? 'Restore compact panel'
+                    : 'Expand panel'
+                }
+              >
+                <Button
+                  style={panelControl}
+                  aria-label={
+                    panel.mode === 'expanded'
+                      ? 'Restore compact panel'
+                      : 'Expand panel'
+                  }
+                  onClick={() =>
+                    panel.setMode(
+                      panel.mode === 'expanded' ? 'floating' : 'expanded'
+                    )
+                  }
+                >
+                  ⛶
+                </Button>
+              </HelpTooltip>
+              <HelpTooltip
+                content={
+                  panel.mode === 'docked' ? 'Undock panel' : 'Dock panel'
+                }
+              >
+                <Button
+                  style={panelControl}
+                  aria-label={
+                    panel.mode === 'docked' ? 'Undock panel' : 'Dock panel'
+                  }
+                  onClick={() =>
+                    panel.setMode(
+                      panel.mode === 'docked' ? 'floating' : 'docked'
+                    )
+                  }
+                >
+                  ▤
+                </Button>
+              </HelpTooltip>
+              <Button
+                ref={close}
+                type="button"
+                aria-label="Close React Layout Devtools"
+                onClick={hide}
+                style={panelControl}
+              >
+                ×
+              </Button>
+            </div>
           </div>
+          {panel.mode !== 'expanded' && (
+            <Button
+              aria-label="Resize devtools panel"
+              title="Drag up or left to enlarge · Arrow keys resize"
+              {...panel.resize}
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                zIndex: 2,
+                width: 14,
+                height: 14,
+                border: 0,
+                padding: 0,
+                color: '#94a3b8',
+                background: 'transparent',
+                cursor: panel.mode === 'docked' ? 'ns-resize' : 'nwse-resize',
+                touchAction: 'none',
+              }}
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M2 10L10 2M2 6L6 2" />
+              </svg>
+            </Button>
+          )}
           <div style={{ overflow: 'hidden', flex: 1, minHeight: 0 }}>
             <ReactLayoutDevtoolsContent
               {...content}
+              layout={
+                content.layout ??
+                (panel.mode === 'floating' && panel.rect.width < 760
+                  ? 'compact'
+                  : 'auto')
+              }
               style={{ border: 0, borderRadius: 0, ...content.style }}
             />
           </div>
@@ -159,9 +285,12 @@ export function ReactLayoutDevtools({
           onClick={(event) => {
             if (fab.consumeClick(event.detail)) {
               event.preventDefault();
+
               return;
             }
+
             hasOpened.current = true;
+
             setPhase('opening');
           }}
           style={{

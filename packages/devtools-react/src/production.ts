@@ -1,7 +1,19 @@
 export { ReactLayoutDevtools } from './floating';
 export type { ReactLayoutDevtoolsProps } from './floating';
-export { ReactLayoutDevtoolsContent } from './content';
-export type { ReactLayoutDevtoolsContentProps } from './content';
+export {
+  ReactLayoutDevtoolsContent,
+  ReactLayoutDevtoolsProvider,
+  ReactLayoutDevtoolsToolbar,
+  ReactLayoutDevtoolsExplorer,
+  ReactLayoutDevtoolsInspector,
+  ReactLayoutDevtoolsFooter,
+  ReactLayoutDevtoolsWorkspace,
+  useReactLayoutDevtools,
+} from './content';
+export type {
+  ReactLayoutDevtoolsContentProps,
+  ReactLayoutDevtoolsProviderProps,
+} from './content';
 export type {
   DevtoolsConfig,
   DevtoolsPreferences,

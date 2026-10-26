@@ -149,3 +149,48 @@ The React adapter owns browser storage access, storage-event synchronization,
 React hooks, and saved FAB coordinates. Search and selection use the shared
 session-state type and remain transient. Existing saved settings and storage keys
 continue to work without migration.
+
+## Compact panel and composable content
+
+The floating panel starts at up to 560 × 480 pixels and stays within the viewport.
+Use its move handle to drag it, or drag the top-left resize grip up/left to enlarge
+it. Both handles also support arrow keys; hold Shift for larger steps. Expand and
+Dock controls provide a larger workspace. Position, size, and mode are saved with
+the React panel preferences and cleared by Reset preferences.
+
+Compact content uses Explorer and Details buttons; selecting a node opens Details.
+The header and navigation stay fixed while the content scrolls. Wider embedded
+containers use the explorer and inspector side by side. `layout="auto"` is the
+default and observes the host width; use `layout="compact"` or `layout="split"`
+for explicit control.
+
+`ReactLayoutDevtoolsContent` accepts custom children and supplies shared state:
+
+```tsx
+import {
+  ReactLayoutDevtoolsContent,
+  ReactLayoutDevtoolsToolbar,
+  ReactLayoutDevtoolsExplorer,
+  ReactLayoutDevtoolsInspector,
+} from '@jfdevelops/react-layout-devtools-react';
+
+// Render this inside the container supplied by TanStack Devtools or another host.
+<ReactLayoutDevtoolsContent source={layouts} layout="split">
+  <ReactLayoutDevtoolsToolbar />
+  <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+    <ReactLayoutDevtoolsExplorer />
+    <ReactLayoutDevtoolsInspector />
+  </div>
+</ReactLayoutDevtoolsContent>;
+```
+
+For a completely custom outer layout, use `ReactLayoutDevtoolsProvider` with the
+same `source`, `config`, and `storageKey` props. The provider adds no DOM, portal,
+positioning, or fixed dimensions. `useReactLayoutDevtools()` exposes the graph,
+selection, search, preferences, and their actions for custom controls.
+`ReactLayoutDevtoolsFooter` and `ReactLayoutDevtoolsWorkspace` are optional pieces;
+the workspace renders the default responsive arrangement.
+
+All composed components must share a provider. Their default imports are disabled
+in production just like the floating inspector; the `/production` entry enables
+the entire composition API explicitly.

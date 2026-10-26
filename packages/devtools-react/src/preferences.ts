@@ -7,6 +7,7 @@ import {
   type DevtoolsPreferences,
   type DevtoolsConfig,
 } from '@jfdevelops/react-layout-devtools-core';
+import type { PanelPreferences } from './use-floating-panel';
 import type { ReactLayoutDevtoolsConfig } from './config';
 
 export const defaultStorageKey = defaultDevtoolsStorageKey;
@@ -15,9 +16,11 @@ const memory = new Map<string, string>();
 
 type Preferences = DevtoolsPreferences & {
   fabPosition?: { x: number; y: number };
+  panel?: PanelPreferences;
 };
 
-type PreferencesPatch = DevtoolsConfig & Pick<Preferences, 'fabPosition'>;
+type PreferencesPatch = DevtoolsConfig &
+  Pick<Preferences, 'fabPosition' | 'panel'>;
 
 function read(key: string): string | null {
   try {
@@ -32,6 +35,7 @@ function write(key: string, value: Preferences) {
   const serialized = JSON.stringify({
     ...shared,
     fabPosition: value.fabPosition,
+    panel: value.panel,
   });
 
   try {
@@ -49,11 +53,30 @@ function resolve(
   raw: string | null,
   defaults?: ReactLayoutDevtoolsConfig
 ): Preferences {
-  const shared = parseDevtoolsPreferences(raw, defaults);
+  const shared: Preferences = parseDevtoolsPreferences(raw, defaults);
 
   try {
     const saved = JSON.parse(raw ?? '{}');
     const point = saved?.fabPosition;
+    const panel = saved?.panel;
+
+    if (
+      panel &&
+      [panel.x, panel.y, panel.width, panel.height].every(
+        (value) => typeof value === 'number' && Number.isFinite(value)
+      ) &&
+      panel.width > 0 &&
+      panel.height > 0 &&
+      ['floating', 'docked', 'expanded'].includes(panel.mode)
+    ) {
+      shared.panel = {
+        x: panel.x,
+        y: panel.y,
+        width: panel.width,
+        height: panel.height,
+        mode: panel.mode,
+      };
+    }
 
     if (
       point &&
@@ -113,7 +136,13 @@ export function usePanelPreferences(
     const fabPosition =
       'fabPosition' in patch ? patch.fabPosition : current.fabPosition;
 
-    write(key, { ...mergeDevtoolsPreferences(current, patch), fabPosition });
+    const panel = 'panel' in patch ? patch.panel : current.panel;
+
+    write(key, {
+      ...mergeDevtoolsPreferences(current, patch),
+      fabPosition,
+      panel,
+    });
   }
 
   function reset() {

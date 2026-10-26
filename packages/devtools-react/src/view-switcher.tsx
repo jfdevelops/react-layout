@@ -2,7 +2,9 @@ import { HelpTooltip } from './components/ui/tooltip';
 import { Button } from './components/ui/button';
 
 type View = 'graph' | 'tree';
+
 const views: readonly View[] = ['graph', 'tree'];
+
 export function ViewSwitcher({
   value,
   onChange,
@@ -25,6 +27,7 @@ export function ViewSwitcher({
     >
       {views.map((view) => {
         const label = view === 'graph' ? 'Graph' : 'Tree';
+
         return (
           <HelpTooltip key={view} content={`${label} view`}>
             <Button
@@ -41,7 +44,9 @@ export function ViewSwitcher({
                   )
                 )
                   return;
+
                 event.preventDefault();
+
                 const next =
                   event.key === 'Home'
                     ? 'graph'
@@ -50,7 +55,9 @@ export function ViewSwitcher({
                     : view === 'graph'
                     ? 'tree'
                     : 'graph';
+
                 onChange(next);
+
                 event.currentTarget
                   .closest('[role="tablist"]')
                   ?.querySelector<HTMLButtonElement>(
