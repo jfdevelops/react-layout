@@ -1,8 +1,10 @@
+import { NodeSource, StatePreview } from './node-debug';
 import { useMemo } from 'react';
 import {
   buildInspectionTree,
   type GraphNode,
   type GraphSnapshot,
+  type InspectionSource,
   type InspectionTreeNode,
 } from '@jfdevelops/react-layout-devtools-core';
 import { Badge } from './components/ui/badge';
@@ -18,25 +20,35 @@ function ancestry(graph: GraphSnapshot, id: string): GraphNode[] {
     parents: GraphNode[]
   ): GraphNode[] | undefined {
     if (branch.reference) return;
+
     const path = [...parents, branch.node];
+
     if (branch.node.id === id) return path;
+
     for (const child of branch.children) {
       const result = find(child, path);
+
       if (result) return result;
     }
   }
+
   for (const root of buildInspectionTree(graph)) {
     const result = find(root, []);
+
     if (result) return result;
   }
+
   return graph.nodes.filter((node) => node.id === id);
 }
+
 export function SelectedNode({
   node,
   graph,
   palette,
   onSelect,
+  inspector,
 }: {
+  inspector?: InspectionSource;
   node: GraphNode;
   graph: GraphSnapshot;
   palette: ChipPalette;
@@ -47,6 +59,7 @@ export function SelectedNode({
     (edge) => edge.source === node.id || edge.target === node.id
   );
   const status = node.active > 0 ? palette.active : palette.inactive;
+
   return (
     <article style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <nav aria-label="Selected node path">
@@ -153,6 +166,14 @@ export function SelectedNode({
           )}
         </div>
       </header>
+      <NodeSource node={node} />
+      <StatePreview
+        layout={path.find((part) => part.kind === 'layout')?.id}
+        state={node.kind === 'state' ? node.id : undefined}
+        graph={graph}
+        inspector={inspector}
+        palette={palette}
+      />
       <InspectionDetails
         key={node.id}
         details={node.details ?? {}}

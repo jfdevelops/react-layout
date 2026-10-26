@@ -89,3 +89,147 @@ The details pane is absent until a node is selected, then slides in from the rig
 Panel preferences are stored under `react-layout-devtools:preferences:v1` in local storage. Saved settings are authoritative; expand/collapse-all also persists the tree default. `config` supplies defaults when no preference is saved. View mode, graph filters, zoom, chip colors, tree defaults, details visibility, and the dragged FAB position survive remounts and page reloads. Selection and search text remain temporary. Pass `storageKey` to either component to isolate multiple inspectors. Same-tab instances and other tabs synchronize through storage notifications. Invalid entries fall back to defaults; unavailable storage uses an in-memory fallback.
 
 Composable activity counts committed React instances rather than declarations. Repeated instances count separately, unused composables stay at zero, and unmounts clear their counts. Relationship edges still describe declared availability rather than JSX containment.
+
+Use **Locate selection** to reveal the selected node in either view. It clears the
+search and activity filters, enables composables, expands the selected node's tree
+ancestors, and centers and focuses the node without scrolling the host page.
+
+**Reset preferences** restores the defaults supplied through `config` (or the
+built-in defaults when omitted), including zoom, view, filters, chip colors, tree
+settings, and the FAB location. The reset is saved to the inspector's `storageKey`
+and synchronizes with other inspectors using that key.
+
+For development source locations, editor links, and per-instance render-state
+preview controls, add the optional
+[`@jfdevelops/react-layout-devtools-vite`](../devtools-vite/README.md) plugin.
+The React adapter discovers these capabilities through devtools-core and does not
+import or depend on Vite. Preview overrides are transient and excluded from saved
+preferences.
+
+## Production bundles
+
+The default import renders nothing when `process.env.NODE_ENV` is `production`.
+Bundlers that replace that expression (including Vite's normal application build)
+can remove the inspector implementation, styles, and UI dependencies. Development
+imports continue to render the full inspector.
+
+With the optional Vite plugin, the default production build resolves directly to
+an empty entry. To deliberately include the inspector:
+
+```ts
+reactLayoutDevtools({ production: true });
+```
+
+Without the Vite plugin, use the explicit always-enabled entry:
+
+```tsx
+import {
+  ReactLayoutDevtools,
+  ReactLayoutDevtoolsContent,
+} from '@jfdevelops/react-layout-devtools-react/production';
+```
+
+`@jfdevelops/react-layout-devtools-react/disabled` always provides empty
+components. All entries expose the same component props and public types. Build
+systems using the default entry must replace `process.env.NODE_ENV` at build time
+for bundle removal; a runtime `enabled` prop cannot remove imported code. The
+library's existing inspection protocol remains part of the library runtime.
+Production opt-in includes the inspector UI; source-location instrumentation and
+state-preview injection remain development-only.
+
+## Shared adapter configuration
+
+`ReactLayoutDevtoolsConfig` extends `DevtoolsConfig` from devtools-core. Existing
+React configuration works unchanged; defaults, color resolution, validation,
+nested merging, and shared preference serialization are owned by devtools-core.
+`DevtoolsConfig`, `DevtoolsPreferences`, and `DevtoolsSessionState` are also
+re-exported as types from the React entry points.
+
+The React adapter owns browser storage access, storage-event synchronization,
+React hooks, and saved FAB coordinates. Search and selection use the shared
+session-state type and remain transient. Existing saved settings and storage keys
+continue to work without migration.
+
+## Compact panel and composable content
+
+The floating panel starts at up to 560 × 480 pixels and stays within the viewport.
+Use its move handle to drag it, or drag the top-left resize grip up/left to enlarge
+it. Both handles also support arrow keys; hold Shift for larger steps. Expand and
+Dock controls provide a larger workspace. Position, size, and mode are saved with
+the React panel preferences and cleared by Reset preferences.
+
+Compact content starts in Explorer without pane-switching buttons. Selecting a
+node opens Details, where a back arrow returns to Explorer.
+The header and navigation stay fixed while the content scrolls. Wider embedded
+containers use the explorer and inspector side by side. `layout="auto"` is the
+default and observes the host width; use `layout="compact"` or `layout="split"`
+for explicit control.
+
+`ReactLayoutDevtoolsContent` accepts custom children and supplies shared state:
+
+```tsx
+import {
+  ReactLayoutDevtoolsContent,
+  ReactLayoutDevtoolsToolbar,
+  ReactLayoutDevtoolsExplorer,
+  ReactLayoutDevtoolsInspector,
+} from '@jfdevelops/react-layout-devtools-react';
+
+// Render this inside the container supplied by TanStack Devtools or another host.
+<ReactLayoutDevtoolsContent source={layouts} layout="split">
+  <ReactLayoutDevtoolsToolbar />
+  <div style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+    <ReactLayoutDevtoolsExplorer />
+    <ReactLayoutDevtoolsInspector />
+  </div>
+</ReactLayoutDevtoolsContent>;
+```
+
+For a completely custom outer layout, use `ReactLayoutDevtoolsProvider` with the
+same `source`, `config`, and `storageKey` props. The provider adds no DOM, portal,
+positioning, or fixed dimensions. `useReactLayoutDevtools()` exposes the graph,
+selection, search, preferences, and their actions for custom controls.
+`ReactLayoutDevtoolsFooter` and `ReactLayoutDevtoolsWorkspace` are optional pieces;
+the workspace renders the default responsive arrangement.
+
+All composed components must share a provider. Their default imports are disabled
+in production just like the floating inspector; the `/production` entry enables
+the entire composition API explicitly.
+
+## Content Security Policy
+
+If the host authorizes styles with a CSP nonce, pass the current response's nonce
+as a prop. It applies to the shared animation/reduced-motion stylesheet across
+floating, embedded, and custom provider compositions:
+
+```tsx
+<ReactLayoutDevtools source={layouts} nonce={responseNonce} />
+```
+
+`nonce` is request-specific and is never stored in preferences. `styleMode` is also
+a render-time prop, rather than a saved setting.
+
+For hosts that permit external stylesheets instead of inline `<style>` elements:
+
+```tsx
+import '@jfdevelops/react-layout-devtools-react/styles.css';
+
+<ReactLayoutDevtoolsContent source={layouts} styleMode="external" />;
+```
+
+Load that stylesheet through the host's allowed CSS pipeline or stylesheet link,
+in the same document or shadow root as the inspector. Development bundlers may
+inject CSS imports into `<style>` tags; in that case configure the bundler's CSP
+nonce support or use an actual allowed stylesheet link.
+In external mode, the inspector injects no `<style>` element. For production
+exclusion, load the external stylesheet only where the inspector is enabled too.
+
+Inspector UI is client-only, so server rendering emits no devtools style tags or
+style attributes. Client layout, dragging, colors, and tooltips use React's
+individual DOM style-property assignments. CSP permits these assignments even
+with `style-src-attr 'none'`; this differs from setting a `style` attribute or
+`cssText`, which is blocked. A nonce authorizes a `<style>` element, not style
+attributes. The host still needs to allow the application scripts themselves.
+
+The development fixture at `/csp.html` in the Portless example runs with a nonce
+style policy and `style-src-attr 'none'`, and displays a style-violation counter.

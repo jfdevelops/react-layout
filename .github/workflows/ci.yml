@@ -51,6 +51,7 @@ jobs:
             "@jfdevelops/react-layout"
             "@jfdevelops/react-layout-devtools-core"
             "@jfdevelops/react-layout-devtools-react"
+            "@jfdevelops/react-layout-devtools-vite"
           )
 
           for package in "${packages[@]}"; do

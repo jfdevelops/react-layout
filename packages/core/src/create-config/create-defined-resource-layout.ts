@@ -1,8 +1,18 @@
-import { createInspectionStore, inspectionId, layoutInspection, getInspectionSource } from '@jfdevelops/react-layout-devtools-core';
+import {
+  getLayoutDebug,
+  layoutDebug,
+  createInspectionStore,
+  inspectionId,
+  layoutInspection,
+  getInspectionSource,
+} from '@jfdevelops/react-layout-devtools-core';
 import { mergeLayoutProps } from './merge-layout-props';
 import type { LayoutNameInput } from './layout-name';
 import type { MergeContract } from './define-layout';
-import type { ComposableComponents, CreateLayoutComposable } from '@jfdevelops/react-layout-composables';
+import type {
+  ComposableComponents,
+  CreateLayoutComposable,
+} from '@jfdevelops/react-layout-composables';
 import { LayoutConfigurationError } from '../errors';
 import type { InPropsDefinition, InPropsObject } from '../props';
 import type { LayoutResourceKey, ResourceDefinition } from '../resource';
@@ -31,7 +41,7 @@ import {
 /** A resource tuple with at least one entry, preserving literal and nested paths. */
 export type NonEmptyResources = readonly [
   ResourceDefinition,
-  ...ResourceDefinition[],
+  ...ResourceDefinition[]
 ];
 
 /** Configuration shared by every layout created from one defined-layout factory. */
@@ -40,9 +50,15 @@ export type CreateDefinedResourceLayoutOptions<
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
   DefaultNamespace extends boolean = false,
-  SharedInclude extends LayoutIncludeProps<Resources, Options, Composables> = {},
+  SharedInclude extends LayoutIncludeProps<
+    Resources,
+    Options,
+    Composables
+  > = {},
   SharedCustom extends InPropsObject = {},
-  DefaultNaming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = undefined,
+  DefaultNaming extends
+    | LayoutNameInput<LayoutResourceKey<Resources>>
+    | undefined = undefined
 > = {
   namespace?: DefaultNamespace;
   /** Default naming convention; explicit definition and component names override it. */
@@ -65,7 +81,7 @@ export type DefinedResourceLayoutInput<
   IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
   CustomProps extends InPropsObject,
   Render,
-  Namespace extends boolean = false,
+  Namespace extends boolean = false
 > = Omit<
   CreateViewMapFunctionRenderOptions<
     Resources,
@@ -79,12 +95,15 @@ export type DefinedResourceLayoutInput<
 
 type BoundLayoutComposables<
   Shared extends ComposableComponents,
-  Local extends ComposableComponents,
+  Local extends ComposableComponents
 > = Omit<Shared, keyof Local> & Local;
 
 /** Flattens a definition's layout while preserving its namespace setting. */
-type BoundLayoutInput<Definition extends { layout: unknown; namespace?: boolean }> =
-  Definition['layout'] & Pick<Definition, 'namespace'> & (Definition extends { name?: infer Name } ? { name?: Name } : {});
+type BoundLayoutInput<
+  Definition extends { layout: unknown; namespace?: boolean }
+> = Definition['layout'] &
+  Pick<Definition, 'namespace'> &
+  (Definition extends { name?: infer Name } ? { name?: Name } : {});
 
 /** A `defineResourceLayout` function with its shared configuration pre-bound. */
 export type BoundDefineResourceLayout<
@@ -92,9 +111,15 @@ export type BoundDefineResourceLayout<
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
   DefaultNamespace extends boolean = false,
-  SharedInclude extends LayoutIncludeProps<Resources, Options, Composables> = {},
+  SharedInclude extends LayoutIncludeProps<
+    Resources,
+    Options,
+    Composables
+  > = {},
   SharedCustom extends InPropsObject = {},
-  DefaultNaming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = undefined,
+  DefaultNaming extends
+    | LayoutNameInput<LayoutResourceKey<Resources>>
+    | undefined = undefined
 > = {
   /**
    * Defines a layout whose `render` map contains the required `default` state
@@ -107,22 +132,50 @@ export type BoundDefineResourceLayout<
     const Render extends { default: unknown } & Record<string, unknown>,
     LocalComposables extends ComposableComponents = {},
     Namespace extends boolean = DefaultNamespace,
-    const IncludeProps extends LayoutIncludeProps<Resources, Options, Composables> = {},
+    const IncludeProps extends LayoutIncludeProps<
+      Resources,
+      Options,
+      Composables
+    > = {},
     CustomProps extends InPropsObject = {},
-    const Naming extends LayoutNameInput<LayoutResourceKey<Resources>, ('default' | keyof Render) & string> | undefined = DefaultNaming,
+    const Naming extends
+      | LayoutNameInput<
+          LayoutResourceKey<Resources>,
+          ('default' | keyof Render) & string
+        >
+      | undefined = DefaultNaming
   >(
     layout: Omit<
-      BoundLayoutInput<CreateViewMapRenderStatesOptions<Resources, Options, BoundLayoutComposables<Composables, LocalComposables>, MergeContract<SharedInclude, IncludeProps>, MergeContract<SharedCustom, CustomProps>, Render, Namespace>>,
+      BoundLayoutInput<
+        CreateViewMapRenderStatesOptions<
+          Resources,
+          Options,
+          BoundLayoutComposables<Composables, LocalComposables>,
+          MergeContract<SharedInclude, IncludeProps>,
+          MergeContract<SharedCustom, CustomProps>,
+          Render,
+          Namespace
+        >
+      >,
       'composables' | 'name' | 'props'
     > & {
       name?: Naming;
       props?: { include?: IncludeProps; custom?: CustomProps };
       composables?: (
         create: CreateLayoutComposable<LayoutResourceKey<Resources>>,
-        states: RenderStateReferences<Resources, Options, Composables, Render>,
+        states: RenderStateReferences<Resources, Options, Composables, Render>
       ) => LocalComposables;
-    },
-  ): DefinedResourceLayoutFromStates<Resources, Options, BoundLayoutComposables<Composables, LocalComposables>, Render, Namespace, MergeContract<SharedInclude, IncludeProps>, MergeContract<SharedCustom, CustomProps>, Naming>;
+    }
+  ): DefinedResourceLayoutFromStates<
+    Resources,
+    Options,
+    BoundLayoutComposables<Composables, LocalComposables>,
+    Render,
+    Namespace,
+    MergeContract<SharedInclude, IncludeProps>,
+    MergeContract<SharedCustom, CustomProps>,
+    Naming
+  >;
   /** Defines a layout whose `render` value is a single default-state callback. */
   <
     const IncludeProps extends LayoutIncludeProps<
@@ -133,26 +186,30 @@ export type BoundDefineResourceLayout<
     CustomProps extends InPropsObject = {},
     LocalComposables extends ComposableComponents = {},
     Namespace extends boolean = DefaultNamespace,
-    const Naming extends LayoutNameInput<LayoutResourceKey<Resources>, 'default'> | undefined = DefaultNaming,
+    const Naming extends
+      | LayoutNameInput<LayoutResourceKey<Resources>, 'default'>
+      | undefined = DefaultNaming
   >(
     layout: Omit<
-      BoundLayoutInput<CreateViewMapFunctionRenderOptions<
-        Resources,
-        Options,
-        BoundLayoutComposables<Composables, LocalComposables>,
-        MergeContract<SharedInclude, IncludeProps>,
-        MergeContract<SharedCustom, CustomProps>,
-        Namespace
-      >>,
+      BoundLayoutInput<
+        CreateViewMapFunctionRenderOptions<
+          Resources,
+          Options,
+          BoundLayoutComposables<Composables, LocalComposables>,
+          MergeContract<SharedInclude, IncludeProps>,
+          MergeContract<SharedCustom, CustomProps>,
+          Namespace
+        >
+      >,
       'composables' | 'name' | 'props'
     > & {
       name?: Naming;
       props?: { include?: IncludeProps; custom?: CustomProps };
       composables?: (
         create: CreateLayoutComposable<LayoutResourceKey<Resources>>,
-        states: {},
+        states: {}
       ) => LocalComposables;
-    },
+    }
   ): DefinedResourceLayout<
     Resources,
     Options,
@@ -170,7 +227,7 @@ export type BoundDefineResourceLayout<
    * @param options - Resource path and named-module import callback.
    */
   lazy<Module extends Record<string, unknown>>(
-    options: LazyResourceLayoutOptions<Resources, Module>,
+    options: LazyResourceLayoutOptions<Resources, Module>
   ): ReturnType<typeof createLazyResourceLayout<Resources, Module>>;
 };
 
@@ -190,12 +247,24 @@ export type CreateDefinedResourceLayoutResult<
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
   DefaultNamespace extends boolean = false,
-  SharedInclude extends LayoutIncludeProps<Resources, Options, Composables> = {},
+  SharedInclude extends LayoutIncludeProps<
+    Resources,
+    Options,
+    Composables
+  > = {},
   SharedCustom extends InPropsObject = {},
-  DefaultNaming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = undefined,
+  DefaultNaming extends
+    | LayoutNameInput<LayoutResourceKey<Resources>>
+    | undefined = undefined
 > = {
   /** Creates eager, deferred, or separately imported render-state fragments. */
-  createRenderState: CreateRenderState<Resources, Options, Composables, SharedInclude, SharedCustom>;
+  createRenderState: CreateRenderState<
+    Resources,
+    Options,
+    Composables,
+    SharedInclude,
+    SharedCustom
+  >;
   /** Sets the shared loading and module-error UI used by lazy layouts. */
   defineLazyDefaults: DefineLazyDefaults;
   /** Defines a layout using the resources, options, and composables already bound. */
@@ -245,9 +314,15 @@ export function createDefinedResourceLayout<
   const Options extends InPropsDefinition<Resources> = {},
   Composables extends ComposableComponents = {},
   DefaultNamespace extends boolean = false,
-  const SharedInclude extends LayoutIncludeProps<Resources, Options, Composables> = {},
+  const SharedInclude extends LayoutIncludeProps<
+    Resources,
+    Options,
+    Composables
+  > = {},
   const SharedCustom extends InPropsObject = {},
-  const DefaultNaming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = undefined,
+  const DefaultNaming extends
+    | LayoutNameInput<LayoutResourceKey<Resources>>
+    | undefined = undefined
 >(
   configuration: CreateDefinedResourceLayoutOptions<
     Resources,
@@ -257,8 +332,16 @@ export function createDefinedResourceLayout<
     SharedInclude,
     SharedCustom,
     DefaultNaming
-  >,
-): CreateDefinedResourceLayoutResult<Resources, Options, Composables, DefaultNamespace, SharedInclude, SharedCustom, DefaultNaming> {
+  >
+): CreateDefinedResourceLayoutResult<
+  Resources,
+  Options,
+  Composables,
+  DefaultNamespace,
+  SharedInclude,
+  SharedCustom,
+  DefaultNaming
+> {
   const { resources, options = {} as Options, composables } = configuration;
   const defineBoundLayout = defineResourceLayout.forResources(...resources);
   const inspection = createInspectionStore();
@@ -269,38 +352,51 @@ export function createDefinedResourceLayout<
   function defineLazyDefaults(defaults: LazyResourceStates): void {
     if (lazyDefaultsDefined) {
       throw new LayoutConfigurationError(
-        'Lazy resource defaults can only be defined once.',
+        'Lazy resource defaults can only be defined once.'
       );
     }
 
     if (lazyLayoutCreated) {
       throw new LayoutConfigurationError(
-        'Lazy resource defaults must be defined before creating a lazy resource layout.',
+        'Lazy resource defaults must be defined before creating a lazy resource layout.'
       );
     }
 
     lazyDefaults = defaults;
+
     lazyDefaultsDefined = true;
   }
 
   const boundDefineResourceLayout = ((layout: Record<string, unknown>) => {
-    const localComposables = layout.composables as LayoutComposablesDefinition<Resources, ComposableComponents> | undefined;
+    const localComposables = layout.composables as
+      | LayoutComposablesDefinition<Resources, ComposableComponents>
+      | undefined;
     const definition = defineBoundLayout({
+      [layoutDebug]: getLayoutDebug(layout) ?? getLayoutDebug(configuration),
       options,
       name: layout.name ?? configuration.name,
       namespace: layout.namespace ?? configuration.namespace,
       layout: {
         ...layout,
-        props: mergeLayoutProps(configuration.props, layout.props as { include?: object; custom?: object }),
-        composables: composables || localComposables
-          ? (create: CreateLayoutComposable<LayoutResourceKey<Resources>>, states: {}) => ({
-              ...composables?.(create, states),
-              ...localComposables?.(create, states),
-            })
-          : undefined,
+        props: mergeLayoutProps(
+          configuration.props,
+          layout.props as { include?: object; custom?: object }
+        ),
+        composables:
+          composables || localComposables
+            ? (
+                create: CreateLayoutComposable<LayoutResourceKey<Resources>>,
+                states: {}
+              ) => ({
+                ...composables?.(create, states),
+                ...localComposables?.(create, states),
+              })
+            : undefined,
       },
     } as never);
+
     inspection.connect(definition);
+
     return definition;
   }) as unknown as BoundDefineResourceLayout<
     Resources,
@@ -313,25 +409,54 @@ export function createDefinedResourceLayout<
   >;
 
   boundDefineResourceLayout.lazy = <Module extends Record<string, unknown>>(
-    lazyOptions: LazyResourceLayoutOptions<Resources, Module>,
+    lazyOptions: LazyResourceLayoutOptions<Resources, Module>
   ): ReturnType<typeof createLazyResourceLayout<Resources, Module>> => {
     lazyLayoutCreated = true;
+
     const id = inspectionId('lazy');
     const label = (lazyOptions as unknown as { resource: string }).resource;
+
     inspection.node({ id, kind: 'lazy', label, unresolved: true });
-    return createLazyResourceLayout({ ...lazyOptions, load: async () => {
-      const module: Record<string, unknown> = await lazyOptions.load();
-      for (const entry of Object.values(module)) {
-        const component = entry && typeof entry === 'object' && 'Root' in entry ? entry.Root : entry;
-        if ((typeof component === 'object' && component !== null || typeof component === 'function') && layoutInspection in component) {
-          inspection.connect(component);
-          const target = getInspectionSource(component).getSnapshot().nodes.find(n => n.kind === 'layout' && n.label === (component as { displayName?: string }).displayName);
-          if (target) inspection.edge(id, target.id, 'references');
-        }
-      }
-      inspection.node({ id, kind: 'lazy', label, unresolved: false });
-      return module as Module;
-    } }, lazyDefaults);
+
+    return createLazyResourceLayout(
+      {
+        ...lazyOptions,
+        load: async () => {
+          const module: Record<string, unknown> = await lazyOptions.load();
+
+          for (const entry of Object.values(module)) {
+            const component =
+              entry && typeof entry === 'object' && 'Root' in entry
+                ? entry.Root
+                : entry;
+
+            if (
+              ((typeof component === 'object' && component !== null) ||
+                typeof component === 'function') &&
+              layoutInspection in component
+            ) {
+              inspection.connect(component);
+
+              const target = getInspectionSource(component)
+                .getSnapshot()
+                .nodes.find(
+                  (n) =>
+                    n.kind === 'layout' &&
+                    n.label ===
+                      (component as { displayName?: string }).displayName
+                );
+
+              if (target) inspection.edge(id, target.id, 'references');
+            }
+          }
+
+          inspection.node({ id, kind: 'lazy', label, unresolved: false });
+
+          return module as Module;
+        },
+      },
+      lazyDefaults
+    );
   };
 
   return inspection.attach({

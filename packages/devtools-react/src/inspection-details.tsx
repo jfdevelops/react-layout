@@ -10,10 +10,12 @@ import { Input } from './components/ui/input';
 import { control } from './theme';
 
 type Bag = Record<string, unknown>;
+
 const bag = (value: unknown): Bag =>
   value && typeof value === 'object' && !Array.isArray(value)
     ? (value as Bag)
     : {};
+
 const explanations = {
   included:
     'Included props reuse existing option or composable prop definitions. Their settings control whether values are required and where they can be supplied.',
@@ -26,6 +28,7 @@ const explanations = {
   component:
     "Component: supply this value on the rendered layout component using passthrough: 'component'. Optional inputs accept values in either location; 'optional' is shorthand for this flexible behavior.",
 };
+
 interface PropRow {
   name: string;
   kind: 'included' | 'custom';
@@ -33,9 +36,11 @@ interface PropRow {
   type?: string;
   locations: ('component' | 'config')[];
 }
+
 function propsFor(details: Bag): PropRow[] {
   const props = bag(details.props);
   const schemas = bag(details.propSchemas);
+
   return [
     ...Object.entries(bag(props.include)).map(([name, behavior]): PropRow => {
       const settings = bag(behavior);
@@ -45,6 +50,7 @@ function propsFor(details: Bag): PropRow[] {
           : 'required';
       const location =
         settings.passthrough === 'component' ? 'component' : 'config';
+
       return {
         name,
         kind: 'included',
@@ -56,6 +62,7 @@ function propsFor(details: Bag): PropRow[] {
     }),
     ...Object.entries(bag(props.custom)).map(([name, validator]): PropRow => {
       const description = inspectPropValidator(validator);
+
       return {
         name,
         kind: 'custom',
@@ -66,6 +73,7 @@ function propsFor(details: Bag): PropRow[] {
     }),
   ];
 }
+
 export function InspectionDetails({
   details,
   palette,
@@ -76,16 +84,21 @@ export function InspectionDetails({
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState('all');
   const [visibility, setVisibility] = useState('all');
+  const [propType, setPropType] = useState('');
   const info = bag(details);
   const rows = propsFor(info);
+  const types = [...new Set(rows.map((row) => row.type ?? 'Unknown'))].sort();
+
   const filtered = rows.filter(
     (row) =>
+      (propType === '' || (row.type ?? 'Unknown') === propType) &&
       (kind === 'all' || row.kind === kind) &&
       (visibility === 'all' || row.visibility === visibility) &&
       `${row.name} ${row.type ?? ''}`
         .toLowerCase()
         .includes(query.toLowerCase())
   );
+
   function chip(label: string, color: DevtoolsChipKind, help: string) {
     return (
       <HelpTooltip key={`${color}-${label}`} content={help}>
@@ -95,23 +108,29 @@ export function InspectionDetails({
       </HelpTooltip>
     );
   }
+
   const other = Object.fromEntries(
     Object.entries(info).filter(
       ([key]) => key !== 'props' && key !== 'propSchemas' && key !== 'path'
     )
   );
   const safe = bag(mapInspectionDetails(other, (prop) => prop.type));
+
   function valueText(value: unknown): string {
     if (value == null) return 'Not specified';
+
     if (Array.isArray(value)) return value.map(valueText).join(', ') || 'None';
+
     if (typeof value === 'object')
       return (
         Object.entries(value)
           .map(([key, child]) => `${key}: ${valueText(child)}`)
           .join(' · ') || 'None'
       );
+
     return String(value);
   }
+
   return (
     <>
       {Object.keys(safe).length > 0 && (
@@ -174,7 +193,7 @@ export function InspectionDetails({
             <div
               style={{
                 display: 'flex',
-                flexWrap: 'wrap',
+                flexWrap: 'nowrap',
                 gap: 8,
                 marginBottom: 14,
               }}
@@ -184,13 +203,36 @@ export function InspectionDetails({
                 placeholder="Find a prop or type…"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                style={{ flex: '1 1 100%', fontSize: 12 }}
+                style={{ flex: '1 1 0', minWidth: 0, fontSize: 12 }}
               />
+              <select
+                aria-label="Filter prop type"
+                value={propType}
+                onChange={(event) => setPropType(event.target.value)}
+                style={{
+                  ...control,
+                  flex: '0 1 auto',
+                  minWidth: 0,
+                  fontSize: 12,
+                }}
+              >
+                <option value="">All types</option>
+                {types.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
               <select
                 aria-label="Filter prop kind"
                 value={kind}
                 onChange={(event) => setKind(event.target.value)}
-                style={{ ...control, flex: '1 1 auto', fontSize: 12 }}
+                style={{
+                  ...control,
+                  flex: '0 1 auto',
+                  minWidth: 0,
+                  fontSize: 12,
+                }}
               >
                 <option value="all">All props</option>
                 <option value="included">Included</option>
@@ -200,7 +242,12 @@ export function InspectionDetails({
                 aria-label="Filter prop requirement"
                 value={visibility}
                 onChange={(event) => setVisibility(event.target.value)}
-                style={{ ...control, flex: '1 1 auto', fontSize: 12 }}
+                style={{
+                  ...control,
+                  flex: '0 1 auto',
+                  minWidth: 0,
+                  fontSize: 12,
+                }}
               >
                 <option value="all">Any requirement</option>
                 <option value="required">Required</option>

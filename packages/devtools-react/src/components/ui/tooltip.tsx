@@ -22,11 +22,40 @@ export function HelpTooltip({
   const anchor = useRef<HTMLSpanElement>(null);
   const popup = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
+  const hovered = useRef(false);
+  const focused = useRef(false);
+  const dismissed = useRef(false);
+
+  function dismiss() {
+    dismissed.current = true;
+
+    setOpen(false);
+  }
+
+  function hover(value: boolean) {
+    hovered.current = value;
+
+    if (!value) dismissed.current = false;
+
+    if (!dismissed.current && (value || !focused.current)) setOpen(value);
+  }
+
+  function focus(value: boolean) {
+    focused.current = value;
+
+    if (!value && !hovered.current) dismissed.current = false;
+
+    if (!dismissed.current && (value || !hovered.current)) setOpen(value);
+  }
+
   const [position, setPosition] = useState({ left: 0, top: 0 });
+
   useLayoutEffect(() => {
     if (!open) return;
+
     const rect = anchor.current!.getBoundingClientRect();
     const bounds = popup.current!.getBoundingClientRect();
+
     setPosition({
       left: Math.max(
         8,
@@ -40,29 +69,39 @@ export function HelpTooltip({
           ? rect.top - bounds.height - 6
           : Math.min(rect.bottom + 6, window.innerHeight - bounds.height - 8),
     });
-    const dismiss = () => setOpen(false);
+
     window.addEventListener('resize', dismiss);
+
     window.addEventListener('scroll', dismiss, true);
+
     return () => {
       window.removeEventListener('resize', dismiss);
+
       window.removeEventListener('scroll', dismiss, true);
     };
   }, [open, content]);
+
   return (
     <span
       ref={anchor}
       style={{ display: 'inline-flex', maxWidth: '100%' }}
-      onPointerMove={() => setOpen(true)}
-      onMouseEnter={() => setOpen(true)}
-      onPointerLeave={() => setOpen(false)}
-      onMouseLeave={() => setOpen(false)}
-      onFocusCapture={() => setOpen(true)}
-      onBlurCapture={() => setOpen(false)}
-      onPointerDown={() => setOpen(false)}
+      onPointerMove={() => hover(true)}
+      onMouseEnter={() => hover(true)}
+      onPointerLeave={() => hover(false)}
+      onMouseLeave={() => hover(false)}
+      onFocusCapture={() => focus(true)}
+      onBlurCapture={(event) =>
+        focus(event.currentTarget.contains(event.relatedTarget as Node | null))
+      }
+      onPointerDown={dismiss}
+      onClickCapture={dismiss}
       onKeyDownCapture={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') dismiss();
+
         if (event.key === 'Escape' && open) {
           event.stopPropagation();
-          setOpen(false);
+
+          dismiss();
         }
       }}
     >

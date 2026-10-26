@@ -110,17 +110,17 @@ const layoutDefinition = defineResourceLayout({
       }),
       ...createBreadcrumbComposable(({ segments }) => (
         <nav
-          aria-label='Breadcrumb'
-          className='flex flex-wrap items-center gap-1 text-xs text-muted-foreground'
+          aria-label="Breadcrumb"
+          className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground"
         >
           {Object.entries(segments).map(([key, segment], index) => {
             const label = typeof segment === 'string' ? segment : segment.value;
             const isActive =
-              typeof segment === 'string' ? false : (segment.isActive ?? false);
+              typeof segment === 'string' ? false : segment.isActive ?? false;
 
             return (
-              <span key={key} className='inline-flex items-center gap-1'>
-                {index > 0 ? <span aria-hidden='true'>/</span> : null}
+              <span key={key} className="inline-flex items-center gap-1">
+                {index > 0 ? <span aria-hidden="true">/</span> : null}
                 <span className={cn(isActive && 'font-medium text-foreground')}>
                   {label}
                 </span>
@@ -141,29 +141,43 @@ const layoutDefinition = defineResourceLayout({
         className: createProp.string().optional(),
       },
     },
-    render: (props, { composables, resource }) => {
-      return (
-        <composables.Layout
-          className={cn(
-            'border-white/10 bg-card/90 shadow-2xl shadow-black/25 backdrop-blur-md',
-            props.className,
-          )}
-        >
-          <CardHeader className='flex justify-between space-y-4'>
-            <div className='space-y-2'>
-              <composables.Breadcrumb segments={props.segments} />
-              <composables.Title>{props.title}</composables.Title>
-              <composables.Description className='max-w-2xl text-sm leading-6 text-muted-foreground'>
-                {props.description}
-              </composables.Description>
-            </div>
-            <div className='text-xs font-medium uppercase tracking-[0.18em] text-lime-300'>
-              Resource: <code>{resource}</code>
-            </div>
-          </CardHeader>
-          <composables.Content>{props.children}</composables.Content>
-        </composables.Layout>
-      );
+    render: {
+      Loading: () => (
+        <UiCard className="p-6">
+          <h2>Loading preview</h2>
+          <p>Waiting for this resource…</p>
+        </UiCard>
+      ),
+      Empty: () => (
+        <UiCard className="p-6">
+          <h2>Empty preview</h2>
+          <p>No records found for this resource.</p>
+        </UiCard>
+      ),
+      default: (props, { composables, resource }) => {
+        return (
+          <composables.Layout
+            className={cn(
+              'border-white/10 bg-card/90 shadow-2xl shadow-black/25 backdrop-blur-md',
+              props.className
+            )}
+          >
+            <CardHeader className="flex justify-between space-y-4">
+              <div className="space-y-2">
+                <composables.Breadcrumb segments={props.segments} />
+                <composables.Title>{props.title}</composables.Title>
+                <composables.Description className="max-w-2xl text-sm leading-6 text-muted-foreground">
+                  {props.description}
+                </composables.Description>
+              </div>
+              <div className="text-xs font-medium uppercase tracking-[0.18em] text-lime-300">
+                Resource: <code>{resource}</code>
+              </div>
+            </CardHeader>
+            <composables.Content>{props.children}</composables.Content>
+          </composables.Layout>
+        );
+      },
     },
   },
 });
@@ -228,14 +242,14 @@ const activeNavButtonClass = buttonVariants({
 
 function AppShell() {
   return (
-    <main className='mx-auto min-h-screen w-full max-w-5xl px-4 py-8 md:px-6 md:py-14'>
-      <header className='mb-7 flex flex-col gap-6 md:flex-row md:items-end md:justify-between'>
-        <div className='space-y-3'>
-          <div className='space-y-3'>
-            <h1 className='text-4xl font-semibold tracking-tight'>
+    <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-8 md:px-6 md:py-14">
+      <header className="mb-7 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+        <div className="space-y-3">
+          <div className="space-y-3">
+            <h1 className="text-4xl font-semibold tracking-tight">
               Basic Example
             </h1>
-            <p className='max-w-2xl text-sm leading-6 text-muted-foreground md:text-base'>
+            <p className="max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
               A basic example where every page is built from{' '}
               <code>createResourceLayout</code>. This example showcases the
               ability to create a page shell for a resource and then reuse it
@@ -245,9 +259,9 @@ function AppShell() {
           </div>
         </div>
 
-        <nav className='flex flex-wrap gap-2' aria-label='Example pages'>
+        <nav className="flex flex-wrap gap-2" aria-label="Example pages">
           <Link
-            to='/'
+            to="/"
             className={cn(navButtonClass, 'text-muted-foreground')}
             activeOptions={{ exact: true }}
             activeProps={{ className: activeNavButtonClass }}
@@ -255,21 +269,21 @@ function AppShell() {
             Users
           </Link>
           <Link
-            to='/admin-users'
+            to="/admin-users"
             className={cn(navButtonClass, 'text-muted-foreground')}
             activeProps={{ className: activeNavButtonClass }}
           >
             Admin Users
           </Link>
           <Link
-            to='/groups'
+            to="/groups"
             className={cn(navButtonClass, 'text-muted-foreground')}
             activeProps={{ className: activeNavButtonClass }}
           >
             Groups
           </Link>
           <Link
-            to='/roles'
+            to="/roles"
             className={cn(navButtonClass, 'text-muted-foreground')}
             activeProps={{ className: activeNavButtonClass }}
           >
@@ -279,35 +293,35 @@ function AppShell() {
       </header>
 
       <Outlet />
-      {import.meta.env.DEV && <ReactLayoutDevtools source={layoutDefinition} />}
+      <ReactLayoutDevtools source={layoutDefinition} />
     </main>
   );
 }
 
 function Users({ users }: { users: User[] }) {
   return (
-    <div className='space-y-4'>
+    <div className="space-y-4">
       {users.map(({ id, name, description, role }) => (
-        <UiCard key={id} className='border-white/10 bg-white/4 shadow-none'>
-          <CardHeader className='gap-3 md:flex-row md:items-start md:justify-between'>
-            <div className='space-y-2'>
-              <CardTitle className='text-xl'>{name}</CardTitle>
-              <CardDescription className='max-w-xl text-sm leading-6 text-muted-foreground'>
+        <UiCard key={id} className="border-white/10 bg-white/4 shadow-none">
+          <CardHeader className="gap-3 md:flex-row md:items-start md:justify-between">
+            <div className="space-y-2">
+              <CardTitle className="text-xl">{name}</CardTitle>
+              <CardDescription className="max-w-xl text-sm leading-6 text-muted-foreground">
                 {description}
               </CardDescription>
             </div>
-            <span className='inline-flex w-fit items-center rounded-full border border-lime-300/20 bg-lime-300/10 px-3 py-1 text-xs font-medium text-lime-100'>
+            <span className="inline-flex w-fit items-center rounded-full border border-lime-300/20 bg-lime-300/10 px-3 py-1 text-xs font-medium text-lime-100">
               {role}
             </span>
           </CardHeader>
-          <CardContent className='flex flex-wrap items-center justify-between gap-3 pt-0'>
-            <span className='text-sm text-muted-foreground'>
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-0">
+            <span className="text-sm text-muted-foreground">
               Route: <code>/users/{id}</code>
             </span>
             <Button asChild>
-              <Link to='/users/$userId' params={{ userId: id }}>
+              <Link to="/users/$userId" params={{ userId: id }}>
                 View user
-                <ArrowRight className='size-4' />
+                <ArrowRight className="size-4" />
               </Link>
             </Button>
           </CardContent>
@@ -319,7 +333,7 @@ function Users({ users }: { users: User[] }) {
 
 function UsersIndexPage() {
   return (
-    <UsersPage className='rounded-3xl'>
+    <UsersPage className="rounded-3xl">
       <Users users={users} />
     </UsersPage>
   );
@@ -327,7 +341,7 @@ function UsersIndexPage() {
 
 function AdminUsers() {
   return (
-    <AdminUsersPage className='rounded-3xl'>
+    <AdminUsersPage className="rounded-3xl">
       <Users users={users.filter((user) => user.role === 'Admin')} />
     </AdminUsersPage>
   );
@@ -339,14 +353,14 @@ function UserShowPage() {
 
   return (
     <UserDetailPage>
-      <div className='grid gap-4'>
-        <div className='flex items-center gap-2'>
-          <Button asChild variant='ghost' className='w-fit'>
-            <Link to='/'>
-              <ArrowLeft className='size-4' />
+      <div className="grid gap-4">
+        <div className="flex items-center gap-2">
+          <Button asChild variant="ghost" className="w-fit">
+            <Link to="/">
+              <ArrowLeft className="size-4" />
             </Link>
           </Button>
-          <div className='flex flex-col gap-2'>
+          <div className="flex flex-col gap-2">
             <UserDetailPage.Title>Users / {user.name}</UserDetailPage.Title>
             <UserDetailPage.Description>
               This page is composed from <code>UsersPage.makeComposable</code>.
@@ -356,18 +370,18 @@ function UserShowPage() {
           </div>
         </div>
 
-        <UserDetailPage.Content className='space-y-4'>
-          <div className='rounded-2xl border border-white/10 bg-black/10 p-4'>
-            <p className='mb-2 text-xs font-medium uppercase tracking-[0.18em] text-lime-300'>
+        <UserDetailPage.Content className="space-y-4">
+          <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
+            <p className="mb-2 text-xs font-medium uppercase tracking-[0.18em] text-lime-300">
               User ID
             </p>
-            <p className='text-sm text-foreground/90'>{user.id}</p>
+            <p className="text-sm text-foreground/90">{user.id}</p>
           </div>
-          <div className='rounded-2xl border border-white/10 bg-black/10 p-4'>
-            <p className='mb-2 text-xs font-medium uppercase tracking-[0.18em] text-lime-300'>
+          <div className="rounded-2xl border border-white/10 bg-black/10 p-4">
+            <p className="mb-2 text-xs font-medium uppercase tracking-[0.18em] text-lime-300">
               Layout reuse
             </p>
-            <p className='text-sm leading-6 text-muted-foreground'>
+            <p className="text-sm leading-6 text-muted-foreground">
               This route is composed from <code>UsersPage.makeComposable</code>,
               so it keeps the same users layout contract.
             </p>

@@ -30,7 +30,10 @@ export type {
   RequiredPresetRenderProps,
   ResolveLayoutComposables,
 } from '@jfdevelops/react-layout-composables';
-export { createDefinedResourceLayout, defineResourceLayout } from './create-config';
+export {
+  createDefinedResourceLayout,
+  defineResourceLayout,
+} from './create-config';
 export type {
   ComponentTypes,
   CreateResourceConfigForResource,
@@ -187,7 +190,20 @@ export type {
   ResourceTree,
 } from './resource';
 export { pick } from './utils';
-export type { BaseComponent, MergeIntersection, Show, UnionToIntersection } from './utils';
+export type {
+  BaseComponent,
+  MergeIntersection,
+  Show,
+  UnionToIntersection,
+} from './utils';
 
 export { defineLayoutName } from './create-config/layout-name';
-export type { LayoutNameContext, LayoutNameInput, LayoutNameParts, LayoutNameResolver, ResolvedLayoutName } from './create-config/layout-name';
+export type {
+  LayoutNameContext,
+  LayoutNameInput,
+  LayoutNameParts,
+  LayoutNameResolver,
+  ResolvedLayoutName,
+} from './create-config/layout-name';
+export { defineLayoutPreview } from './create-config/preview';
+export type { LayoutPreviewProps } from './create-config/preview';

@@ -1,13 +1,16 @@
 import { Button } from './components/ui/button';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   buildInspectionTree,
   type GraphSnapshot,
   type InspectionTreeNode,
 } from '@jfdevelops/react-layout-devtools-core';
 import type { ChipPalette, ReactLayoutDevtoolsConfig } from './config';
+
 export function InspectionTree({
   graph,
+  locateRequest = 0,
+  onLocate,
   palette,
   config,
   selected,
@@ -15,6 +18,8 @@ export function InspectionTree({
   onExpandedChange,
 }: {
   graph: GraphSnapshot;
+  locateRequest?: number;
+  onLocate?: (element: HTMLElement) => void;
   palette: ChipPalette;
   config?: ReactLayoutDevtoolsConfig['tree'];
   selected?: string;
@@ -27,27 +32,86 @@ export function InspectionTree({
   const [allExpanded, setAllExpanded] = useState(
     config?.initialExpanded ?? true
   );
+
   useEffect(() => {
     setAllExpanded(config?.initialExpanded ?? true);
+
     setCollapsed(new Set());
+
     setExpanded(new Set());
   }, [config?.initialExpanded]);
+
+  const tree = useRef<HTMLUListElement>(null);
+  const handledRequest = useRef(0);
+  const [revealing, setRevealing] = useState(false);
+
+  useEffect(() => {
+    if (!locateRequest || !selected || handledRequest.current === locateRequest)
+      return;
+
+    handledRequest.current = locateRequest;
+
+    function path(
+      entries: readonly InspectionTreeNode[],
+      parents: string[]
+    ): string[] | undefined {
+      for (const entry of entries) {
+        if (entry.node.id === selected) return parents;
+
+        const found = path(entry.children, [...parents, entry.node.id]);
+
+        if (found) return found;
+      }
+    }
+
+    const ancestors = path(roots, []);
+
+    if (!ancestors) return;
+
+    setExpanded((current) => new Set([...current, ...ancestors]));
+
+    setCollapsed(
+      (current) => new Set([...current].filter((id) => !ancestors.includes(id)))
+    );
+
+    setRevealing(true);
+  }, [locateRequest, selected, roots]);
+
+  useEffect(() => {
+    if (!revealing) return;
+
+    const element = tree.current?.querySelector<HTMLElement>(
+      '[aria-selected="true"]'
+    );
+
+    if (element) onLocate?.(element);
+
+    setRevealing(false);
+  }, [revealing, onLocate]);
+
   const isExpanded = (id: string) =>
     !collapsed.has(id) && (allExpanded || expanded.has(id));
+
   function open(id: string) {
     setExpanded((current) => new Set([...current, id]));
+
     setCollapsed((current) => {
       const next = new Set(current);
+
       next.delete(id);
+
       return next;
     });
   }
+
   function close(id: string) {
     setCollapsed((current) => new Set([...current, id]));
   }
+
   function toggle(id: string) {
     isExpanded(id) ? close(id) : open(id);
   }
+
   function row(entry: InspectionTreeNode, key: string, depth = 0) {
     const expanded = isExpanded(entry.node.id);
     const hasChildren = entry.children.length > 0;
@@ -56,6 +120,7 @@ export function InspectionTree({
       node.kind === 'resource'
         ? node.label.split('.').at(-1) ?? node.label
         : node.label;
+
     return (
       <li role="none" key={key}>
         <div
@@ -109,20 +174,26 @@ export function InspectionTree({
             onKeyDown={(event) => {
               if (event.key === 'ArrowRight' && hasChildren) {
                 event.preventDefault();
+
                 open(node.id);
               }
+
               if (event.key === 'ArrowLeft' && hasChildren) {
                 event.preventDefault();
+
                 close(node.id);
               }
+
               if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
                 event.preventDefault();
+
                 const rows = Array.from(
                   event.currentTarget
                     .closest('[role="tree"]')!
                     .querySelectorAll<HTMLButtonElement>('[data-tree-node]')
                 );
                 const index = rows.indexOf(event.currentTarget);
+
                 rows[index + (event.key === 'ArrowDown' ? 1 : -1)]?.focus();
               }
             }}
@@ -216,6 +287,7 @@ export function InspectionTree({
       </li>
     );
   }
+
   return (
     <div
       style={{
@@ -236,7 +308,9 @@ export function InspectionTree({
           }}
           onClick={() => {
             setAllExpanded(true);
+
             onExpandedChange?.(true);
+
             setCollapsed(new Set());
           }}
         >
@@ -254,8 +328,11 @@ export function InspectionTree({
           }}
           onClick={() => {
             setAllExpanded(false);
+
             onExpandedChange?.(false);
+
             setExpanded(new Set());
+
             setCollapsed(new Set());
           }}
         >
@@ -266,6 +343,7 @@ export function InspectionTree({
         {'{'}
       </div>
       <ul
+        ref={tree}
         role="tree"
         aria-label="Layout hierarchy"
         style={{ padding: '0 0 0 10px', margin: 0, listStyle: 'none' }}
