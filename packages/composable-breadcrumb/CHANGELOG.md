@@ -1,5 +1,12 @@
 # @jfdevelops/react-layout-composable-breadcrumb
 
+## 0.2.9
+
+### Patch Changes
+
+- Updated dependencies [5bc1c23]
+  - @jfdevelops/react-layout-composables@0.3.0
+
 ## 0.2.8
 
 ### Patch Changes

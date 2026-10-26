@@ -1,5 +1,11 @@
 # @jfdevelops/react-layout-composables
 
+## 0.3.0
+
+### Minor Changes
+
+- 5bc1c23: Add an opt-in Vite development plugin that supplies source locations and enables per-instance render-state previews. Show declaration and registration files with Open in editor actions in the inspector. Add typed defineLayoutPreview fixtures, Auto controls, forced-state indicators, recoverable preview errors, and cleanup when the last inspector disconnects. Production builds and server-side transforms are not instrumented.
+
 ## 0.2.8
 
 ### Patch Changes
