@@ -1,6 +1,6 @@
 {
   "name": "@jfdevelops/react-layout-devtools-vite",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Opt-in Vite development source locations and render-state previews for react-layout.",
   "repository": {
     "type": "git",
