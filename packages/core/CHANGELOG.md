@@ -1,5 +1,20 @@
 # @jfdevelops/react-layout
 
+## 1.4.0
+
+### Minor Changes
+
+- 5bc1c23: Add an opt-in Vite development plugin that supplies source locations and enables per-instance render-state previews. Show declaration and registration files with Open in editor actions in the inspector. Add typed defineLayoutPreview fixtures, Auto controls, forced-state indicators, recoverable preview errors, and cleanup when the last inspector disconnects. Production builds and server-side transforms are not instrumented.
+
+### Patch Changes
+
+- b55ca99: Preserve declaration source metadata through defineResourceLayout.withLayout.
+- Updated dependencies [37d6484]
+- Updated dependencies [120a747]
+- Updated dependencies [5bc1c23]
+  - @jfdevelops/react-layout-devtools-core@0.2.0
+  - @jfdevelops/react-layout-composables@0.3.0
+
 ## 1.3.0
 
 ### Minor Changes
