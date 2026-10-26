@@ -12,6 +12,7 @@ import { mergeLayoutProps } from './merge-layout-props';
 import { createPreviewComponent } from './preview';
 import {
   getLayoutDebug,
+  layoutDebug,
   layoutPreviewFixtures,
   inspectionId,
 } from '@jfdevelops/react-layout-devtools-core';
@@ -3993,6 +3994,7 @@ function defineResourceLayoutWithLayoutImpl(
   const shellId = Symbol('resourceLayoutShell');
 
   const base = defineResourceLayoutImpl({
+    [layoutDebug]: getLayoutDebug(options),
     resources,
     options: inProps,
     layout: resolvedLayout,
