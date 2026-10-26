@@ -9,6 +9,7 @@ import {
   createDefinedResourceLayout,
   createProp,
   defineLayoutPreview,
+  defineResourceLayout,
 } from '../../src';
 
 afterEach(cleanup);
@@ -294,4 +295,28 @@ it('can preview deferred states and return control to the mounted default', asyn
   act(() => source.preview!(instance.id));
 
   expect(screen.getByText('Normal content')).toBeTruthy();
+});
+
+
+it('preserves withLayout declaration metadata for definitions and resources', () => {
+  const location = { file: 'shell.tsx', line: 12, column: 3 };
+  const definition = defineResourceLayout.withLayout(
+    Object.assign(
+      {
+        resources: ['users'] as const,
+        shell: { render: () => <main /> },
+      },
+      { [layoutDebug]: { source: location } }
+    )
+  );
+  const graph = getInspectionSource(definition).getSnapshot();
+  const nodes = graph.nodes.filter(
+    (node) => node.kind === 'definition' || node.kind === 'resource'
+  );
+
+  expect(nodes).toHaveLength(2);
+
+  for (const node of nodes) {
+    expect(node.source).toEqual(location);
+  }
 });
