@@ -1,0 +1,35 @@
+@keyframes react-layout-devtools-enter {
+  from {
+    transform: translateY(calc(100% + 16px));
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes react-layout-devtools-exit {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(calc(100% + 16px));
+  }
+}
+
+@keyframes react-layout-details-enter {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-react-layout-devtools-panel] {
+    animation-duration: 1ms !important;
+  }
+  [data-react-layout-details] {
+    animation: none !important;
+  }
+}

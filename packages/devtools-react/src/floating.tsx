@@ -93,11 +93,6 @@ export function ReactLayoutDevtools({
 
   return createPortal(
     <>
-      <style>{`
-      @keyframes react-layout-devtools-enter { from { transform: translateY(calc(100% + 16px)); } to { transform: translateY(0); } }
-      @keyframes react-layout-devtools-exit { from { transform: translateY(0); } to { transform: translateY(calc(100% + 16px)); } }
-      @media (prefers-reduced-motion: reduce) { [data-react-layout-devtools-panel] { animation-duration: 1ms !important; } }
-    `}</style>
       {phase !== 'closed' && (
         <div
           data-react-layout-devtools-panel

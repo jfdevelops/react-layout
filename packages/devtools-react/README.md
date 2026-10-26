@@ -195,3 +195,41 @@ the workspace renders the default responsive arrangement.
 All composed components must share a provider. Their default imports are disabled
 in production just like the floating inspector; the `/production` entry enables
 the entire composition API explicitly.
+
+## Content Security Policy
+
+If the host authorizes styles with a CSP nonce, pass the current response's nonce
+as a prop. It applies to the shared animation/reduced-motion stylesheet across
+floating, embedded, and custom provider compositions:
+
+```tsx
+<ReactLayoutDevtools source={layouts} nonce={responseNonce} />
+```
+
+`nonce` is request-specific and is never stored in preferences. `styleMode` is also
+a render-time prop, rather than a saved setting.
+
+For hosts that permit external stylesheets instead of inline `<style>` elements:
+
+```tsx
+import '@jfdevelops/react-layout-devtools-react/styles.css';
+
+<ReactLayoutDevtoolsContent source={layouts} styleMode="external" />;
+```
+
+Load that stylesheet through the host's allowed CSS pipeline or stylesheet link,
+in the same document or shadow root as the inspector. Development bundlers may
+inject CSS imports into `<style>` tags; in that case configure the bundler's CSP
+nonce support or use an actual allowed stylesheet link.
+In external mode, the inspector injects no `<style>` element. For production
+exclusion, load the external stylesheet only where the inspector is enabled too.
+
+Inspector UI is client-only, so server rendering emits no devtools style tags or
+style attributes. Client layout, dragging, colors, and tooltips use React's
+individual DOM style-property assignments. CSP permits these assignments even
+with `style-src-attr 'none'`; this differs from setting a `style` attribute or
+`cssText`, which is blocked. A nonce authorizes a `<style>` element, not style
+attributes. The host still needs to allow the application scripts themselves.
+
+The development fixture at `/csp.html` in the Portless example runs with a nonce
+style policy and `style-src-attr 'none'`, and displays a style-violation counter.

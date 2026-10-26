@@ -19,10 +19,15 @@ import {
   resolveChipColors,
   type ReactLayoutDevtoolsConfig,
 } from './config';
+import { DevtoolsStyles } from './styles';
 import { usePanelPreferences } from './preferences';
 
 export interface ReactLayoutDevtoolsProviderProps {
   source: object;
+  /** Per-response CSP nonce. Never persisted to preferences. */
+  nonce?: string;
+  /** Use external when the host loads the exported styles.css asset. */
+  styleMode?: 'inline' | 'external';
   config?: ReactLayoutDevtoolsConfig;
   storageKey?: string;
   layout?: 'compact' | 'split';
@@ -280,9 +285,16 @@ export function ReactLayoutDevtoolsProvider({
   ...props
 }: ReactLayoutDevtoolsProviderProps) {
   const controller = useController(props);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  // Inspector UI is client-only: SSR must not emit blocked style attributes.
+  if (!mounted) return null;
 
   return (
     <DevtoolsContext.Provider value={controller}>
+      <DevtoolsStyles nonce={props.nonce} styleMode={props.styleMode} />
       {children}
     </DevtoolsContext.Provider>
   );

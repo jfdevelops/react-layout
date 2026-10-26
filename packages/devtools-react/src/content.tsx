@@ -1,7 +1,6 @@
 import {
   useEffect,
   useLayoutEffect,
-  useRef,
   useState,
   type CSSProperties,
   type ReactNode,
@@ -520,6 +519,8 @@ export function ReactLayoutDevtoolsWorkspace() {
 /** Default composition; uses only the space supplied by its host. */
 export function ReactLayoutDevtoolsContent({
   source,
+  nonce,
+  styleMode,
   config,
   storageKey,
   layout = 'auto',
@@ -527,13 +528,13 @@ export function ReactLayoutDevtoolsContent({
   className,
   style,
 }: ReactLayoutDevtoolsContentProps) {
-  const container = useRef<HTMLElement>(null);
+  const [container, setContainer] = useState<HTMLElement | null>(null);
   const [narrow, setNarrow] = useState(false);
 
   useEffect(() => {
     if (
       layout !== 'auto' ||
-      !container.current ||
+      !container ||
       typeof ResizeObserver === 'undefined'
     )
       return;
@@ -542,20 +543,22 @@ export function ReactLayoutDevtoolsContent({
       setNarrow(entry.contentRect.width < 760)
     );
 
-    observer.observe(container.current);
+    observer.observe(container);
 
     return () => observer.disconnect();
-  }, [layout]);
+  }, [layout, container]);
 
   return (
     <ReactLayoutDevtoolsProvider
       source={source}
+      nonce={nonce}
+      styleMode={styleMode}
       config={config}
       storageKey={storageKey}
       layout={layout === 'auto' ? (narrow ? 'compact' : 'split') : layout}
     >
       <section
-        ref={container}
+        ref={setContainer}
         aria-label="Layout devtools"
         className={className}
         style={{
@@ -574,10 +577,6 @@ export function ReactLayoutDevtoolsContent({
           ...style,
         }}
       >
-        <style>{`
-        @keyframes react-layout-details-enter { from { transform: translateX(100%); } to { transform: translateX(0); } }
-        @media (prefers-reduced-motion: reduce) { [data-react-layout-details] { animation: none !important; } }
-      `}</style>
         {children ?? <ReactLayoutDevtoolsWorkspace />}
       </section>
     </ReactLayoutDevtoolsProvider>

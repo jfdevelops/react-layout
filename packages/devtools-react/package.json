@@ -10,9 +10,12 @@
   "type": "module",
   "files": [
     "dist",
-    "THIRD_PARTY_NOTICES"
+    "THIRD_PARTY_NOTICES",
+    "styles.css"
   ],
-  "sideEffects": false,
+  "sideEffects": [
+    "./styles.css"
+  ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.mts",
@@ -32,7 +35,8 @@
       "types": "./dist/disabled.d.mts",
       "import": "./dist/disabled.mjs",
       "require": "./dist/disabled.cjs"
-    }
+    },
+    "./styles.css": "./styles.css"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
