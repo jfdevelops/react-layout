@@ -3,6 +3,7 @@ export const layoutDebug = Symbol.for('@jfdevelops/react-layout/debug');
 export const layoutPreviewFixtures = Symbol.for(
   '@jfdevelops/react-layout/preview-fixtures'
 );
+
 export interface SourceLocation {
   readonly file: string;
   readonly line: number;
@@ -10,10 +11,12 @@ export interface SourceLocation {
   /** Adapter-provided, same-origin development editor endpoint. */
   readonly editorUrl?: string;
 }
+
 export interface LayoutDebugMetadata {
   readonly source?: SourceLocation;
   readonly preview?: boolean;
 }
+
 export function getLayoutDebug(
   value: unknown
 ): LayoutDebugMetadata | undefined {
@@ -28,6 +31,7 @@ export function getLayoutDebug(
         (value as Record<symbol, LayoutDebugMetadata>)[layoutDebug]
     : undefined;
 }
+
 export interface PreviewInstance {
   readonly id: string;
   readonly layout: string;
@@ -36,4 +40,5 @@ export interface PreviewInstance {
   readonly forcedState?: string;
   readonly error?: string;
 }
+
 export type PreviewController = (state: string | undefined) => void;

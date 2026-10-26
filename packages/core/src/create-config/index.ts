@@ -70,9 +70,7 @@ export type {
   TypedBuiltInRenderStates,
   TypedInlineRenderState,
 } from './define-layout';
-export type {
-  ResourceLayoutShellPublisher,
-} from './shell-context';
+export type { ResourceLayoutShellPublisher } from './shell-context';
 export type {
   CreatedResourceHref,
   CreatedResourceLink,
@@ -103,10 +101,7 @@ export type {
   ResolveResourceIconInput,
   ValidateResource,
 } from './create-resource-links';
-export {
-  createGetComponent,
-  createResourceConfig,
-} from './get-component';
+export { createGetComponent, createResourceConfig } from './get-component';
 export type {
   ComponentTypes,
   CreateResourceConfigForResource,
@@ -195,7 +190,14 @@ export type {
   SubResourceConfigComponentsFor,
 } from './types';
 
-export type { AsStateComposable, StateComposable, StateComposableOptions } from './state-composable';
-export type { RenderStateCallProps, RenderStateReferences } from './render-state';
+export type {
+  AsStateComposable,
+  StateComposable,
+  StateComposableOptions,
+} from './state-composable';
+export type {
+  RenderStateCallProps,
+  RenderStateReferences,
+} from './render-state';
 export { defineLayoutPreview } from './preview';
 export type { LayoutPreviewProps } from './preview';
