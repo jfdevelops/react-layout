@@ -13,6 +13,7 @@ import {
   getInspectionSource,
   layoutGraph,
   type GraphNode,
+  type DevtoolsSessionState,
 } from '@jfdevelops/react-layout-devtools-core';
 import { control } from './theme';
 import {
@@ -24,6 +25,7 @@ import { InspectionTree } from './tree';
 import { ViewSwitcher } from './view-switcher';
 import { SelectedNode } from './selected-node';
 import { usePanelPreferences } from './preferences';
+
 export interface ReactLayoutDevtoolsContentProps {
   /** A defineResourceLayout result or createDefinedResourceLayout factory. */
   source: object;
@@ -33,6 +35,7 @@ export interface ReactLayoutDevtoolsContentProps {
   className?: string;
   style?: CSSProperties;
 }
+
 /** Optional, provider-free layout graph. All inspection logic lives in devtools-core. */
 export function ReactLayoutDevtoolsContent({
   source,
@@ -52,37 +55,57 @@ export function ReactLayoutDevtoolsContent({
     inspector.getSnapshot,
     inspector.getSnapshot
   );
+
   useEffect(() => inspector.connectPreview?.(), [inspector]);
-  const [query, setQuery] = useState('');
+
+  const [session, setSession] = useState<DevtoolsSessionState>({ query: '' });
+  const { query, selectedNode: selected } = session;
+
+  function setQuery(query: string) {
+    setSession((current) => ({ ...current, query }));
+  }
+
+  function setSelected(selectedNode: string) {
+    setSession((current) => ({ ...current, selectedNode }));
+  }
+
   const view = config.initialView;
   const activeOnly = config.initialFilters.activeOnly;
   const showComposables = config.initialFilters.showComposables;
   const zoom = config.initialZoom;
+
   const setView = (initialView: 'graph' | 'tree') =>
     updatePreferences({ initialView });
+
   const setActiveOnly = (activeOnly: boolean) =>
     updatePreferences({
       initialFilters: { ...config.initialFilters, activeOnly },
     });
+
   const setShowComposables = (showComposables: boolean) =>
     updatePreferences({
       initialFilters: { ...config.initialFilters, showComposables },
     });
+
   const setZoom = (change: number | ((previous: number) => number)) =>
     updatePreferences({
       initialZoom: initialGraphZoom(
         typeof change === 'function' ? change(zoom) : change
       ),
     });
-  const [selected, setSelected] = useState<string>();
+
   const [treeRevision, setTreeRevision] = useState(0);
   const [locateRequest, setLocateRequest] = useState(0);
   const graphPane = useRef<HTMLDivElement>(null);
+
   function reveal(element: HTMLElement) {
     const pane = graphPane.current;
+
     if (!pane) return;
+
     const bounds = element.getBoundingClientRect();
     const viewport = pane.getBoundingClientRect();
+
     pane.scrollTo({
       left:
         pane.scrollLeft +
@@ -95,22 +118,30 @@ export function ReactLayoutDevtoolsContent({
         viewport.top -
         (pane.clientHeight - bounds.height) / 2,
     });
+
     element.focus({ preventScroll: true });
   }
+
   function locateSelection() {
     setQuery('');
+
     updatePreferences({
       initialFilters: { activeOnly: false, showComposables: true },
     });
+
     setLocateRequest((request) => request + 1);
   }
+
   useEffect(() => {
     if (!locateRequest || view !== 'graph') return;
+
     const element = graphPane.current?.querySelector<HTMLElement>(
       '[data-selected-node="true"]'
     );
+
     if (element) reveal(element);
   }, [locateRequest, view]);
+
   const palette = resolveChipColors(config?.chipColors);
   const displayGraph = useMemo(() => {
     const candidates = graph.nodes.filter(
@@ -129,17 +160,22 @@ export function ReactLayoutDevtoolsContent({
     );
     // Retain ancestors so filtering preserves the explanation of each match.
     let added = true;
+
     while (added) {
       added = false;
+
       for (const edge of graph.edges) {
         if (visible.has(edge.target) && !visible.has(edge.source)) {
           visible.add(edge.source);
+
           added = true;
         }
       }
     }
+
     const nodes = candidates.filter((node) => visible.has(node.id));
     const nodeIds = new Set(nodes.map((node) => node.id));
+
     return {
       nodes,
       edges: graph.edges.filter(
@@ -151,11 +187,14 @@ export function ReactLayoutDevtoolsContent({
   const positions = new Map(positioned.map((p) => [p.node.id, p]));
   const selection = graph.nodes.find((n) => n.id === selected);
   const detailsPane = useRef<HTMLElement>(null);
+
   useEffect(() => {
     if (detailsPane.current) detailsPane.current.scrollTop = 0;
   }, [selection?.id]);
+
   const width = Math.max(800, ...positioned.map((p) => p.x + 260));
   const height = Math.max(360, ...positioned.map((p) => p.y + 92));
+
   return (
     <section
       aria-label="Layout devtools"
@@ -213,7 +252,9 @@ export function ReactLayoutDevtoolsContent({
               type="button"
               onClick={() => {
                 resetPreferences();
+
                 setLocateRequest(0);
+
                 setTreeRevision((revision) => revision + 1);
               }}
               style={control}
@@ -372,10 +413,13 @@ export function ReactLayoutDevtoolsContent({
                 {displayGraph.edges.map((edge) => {
                   const a = positions.get(edge.source),
                     b = positions.get(edge.target);
+
                   if (!a || !b) return null;
+
                   const x = a.x + 224,
                     y = a.y + 32,
                     targetY = b.y + 32;
+
                   return (
                     <g key={edge.id}>
                       <path

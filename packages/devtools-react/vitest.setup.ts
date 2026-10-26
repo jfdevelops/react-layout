@@ -4,6 +4,8 @@ import { expect } from 'vitest';
 expect.extend(matchers);
 
 import { afterEach, beforeEach } from 'vitest';
-beforeEach(() => localStorage.clear());
+beforeEach(() => {
+  if (typeof localStorage !== 'undefined') localStorage.clear();
+});
 import { cleanup } from '@testing-library/react';
 afterEach(cleanup);

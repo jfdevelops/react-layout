@@ -22,7 +22,17 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./production": {
+      "types": "./dist/production.d.mts",
+      "import": "./dist/production.mjs",
+      "require": "./dist/production.cjs"
+    },
+    "./disabled": {
+      "types": "./dist/disabled.d.mts",
+      "import": "./dist/disabled.mjs",
+      "require": "./dist/disabled.cjs"
+    }
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"

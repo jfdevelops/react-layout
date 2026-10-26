@@ -19,8 +19,11 @@ function SourceLink({
 }) {
   const [error, setError] = useState<string>();
   const url = location.editorUrl;
+  const path = `${location.file}:${location.line}:${location.column}`;
+
   // Adapters may only request the same-origin Vite editor endpoint.
   const canOpen = url?.startsWith('/') && !url.startsWith('//');
+
   return (
     <div
       style={{
@@ -31,17 +34,28 @@ function SourceLink({
       }}
     >
       <span style={{ color: '#94a3b8' }}>{label}</span>
-      <code style={{ overflowWrap: 'anywhere' }}>
-        {location.file}:{location.line}:{location.column}
-      </code>
-      {canOpen && (
+      {canOpen ? (
         <Button
           type="button"
-          style={control}
+          title="Open in editor"
+          style={{
+            background: 'transparent',
+            border: 0,
+            padding: 0,
+            color: '#7dd3fc',
+            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+            textDecoration: 'underline',
+            textUnderlineOffset: 3,
+            textAlign: 'left',
+            whiteSpace: 'normal',
+            overflowWrap: 'anywhere',
+          }}
           onClick={async () => {
             try {
               const response = await fetch(url!);
+
               if (!response.ok) throw new Error('Editor request failed');
+
               setError(undefined);
             } catch {
               setError(
@@ -50,18 +64,30 @@ function SourceLink({
             }
           }}
         >
-          Open in editor
+          {path}
         </Button>
+      ) : (
+        <span
+          style={{
+            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+            overflowWrap: 'anywhere',
+          }}
+        >
+          {path}
+        </span>
       )}
       {error && <span role="alert">{error}</span>}
     </div>
   );
 }
+
 export function NodeSource({ node }: { node: GraphNode }) {
   if (!node.source && !node.registrationSource) return null;
+
   const separate =
     node.registrationSource &&
     JSON.stringify(node.registrationSource) !== JSON.stringify(node.source);
+
   return (
     <section aria-label="Source" style={{ display: 'grid', gap: 8 }}>
       <h4 style={{ margin: 0, fontSize: 13 }}>Source</h4>
@@ -72,6 +98,7 @@ export function NodeSource({ node }: { node: GraphNode }) {
     </section>
   );
 }
+
 export function StatePreview({
   layout,
   state,
@@ -93,8 +120,11 @@ export function StatePreview({
     instances.find((entry) => entry.id === chosen) ??
     instances.find((entry) => (entry.forcedState ?? entry.state) === state) ??
     instances[0];
+
   if (!instance || !inspector?.preview) return null;
+
   const byId = new Map(graph.nodes.map((node) => [node.id, node]));
+
   return (
     <section aria-label="State preview" style={{ display: 'grid', gap: 10 }}>
       <h4 style={{ margin: 0, fontSize: 13 }}>State preview</h4>

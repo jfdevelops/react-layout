@@ -30,3 +30,45 @@ line, column, and optional same-origin editor URL. Producers can register mounte
 `preview(instanceId, stateId?)` command and `connectPreview()` session lifetime.
 Omitting the state returns an instance to Auto. Composed stores route commands to
 the owning producer; the final inspector disconnect resets forced instances.
+
+## Shared settings and preferences
+
+Every UI adapter can use `DevtoolsConfig`, `DevtoolsPreferences`, and
+`DevtoolsSessionState`. Core owns the palette, graph/tree settings, zoom bounds,
+filters, details visibility, defaults, validation, nested merging, and the saved
+preference schema. It has no React, DOM, or storage dependency.
+
+```ts
+import {
+  defaultDevtoolsStorageKey,
+  parseDevtoolsPreferences,
+  mergeDevtoolsPreferences,
+  serializeDevtoolsPreferences,
+  resolveChipColors,
+} from '@jfdevelops/react-layout-devtools-core';
+
+const config = { initialZoom: 0.75 };
+const preferences = parseDevtoolsPreferences(storage.read(defaultDevtoolsStorageKey), config);
+const updated = mergeDevtoolsPreferences(preferences, {
+  initialFilters: { activeOnly: true },
+});
+
+storage.write(defaultDevtoolsStorageKey, serializeDevtoolsPreferences(updated));
+const palette = resolveChipColors(updated.chipColors);
+
+// Reset to the caller's configuration, falling back to the shared defaults.
+const reset = parseDevtoolsPreferences(null, config);
+```
+
+The adapter supplies `storage.read` / `storage.write` and subscription events.
+Malformed saved values fall back to caller defaults; nested updates merge by key.
+The existing `react-layout-devtools:preferences:v1` key and flat saved format are
+retained for compatibility. `defaultDevtoolsPreferences` exposes the built-in
+values without requiring storage.
+
+`DevtoolsSessionState` describes temporary search and selection. Mounted instances
+and forced render states remain part of the inspection protocol. None of these
+are included by `serializeDevtoolsPreferences`. Adapter-specific settings, such
+as the React FAB coordinates, are handled by that adapter rather than added to
+the shared schema. Build-tool options such as production inclusion and source
+instrumentation remain with the build adapter.

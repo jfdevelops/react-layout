@@ -105,3 +105,47 @@ preview controls, add the optional
 The React adapter discovers these capabilities through devtools-core and does not
 import or depend on Vite. Preview overrides are transient and excluded from saved
 preferences.
+
+## Production bundles
+
+The default import renders nothing when `process.env.NODE_ENV` is `production`.
+Bundlers that replace that expression (including Vite's normal application build)
+can remove the inspector implementation, styles, and UI dependencies. Development
+imports continue to render the full inspector.
+
+With the optional Vite plugin, the default production build resolves directly to
+an empty entry. To deliberately include the inspector:
+
+```ts
+reactLayoutDevtools({ production: true });
+```
+
+Without the Vite plugin, use the explicit always-enabled entry:
+
+```tsx
+import {
+  ReactLayoutDevtools,
+  ReactLayoutDevtoolsContent,
+} from '@jfdevelops/react-layout-devtools-react/production';
+```
+
+`@jfdevelops/react-layout-devtools-react/disabled` always provides empty
+components. All entries expose the same component props and public types. Build
+systems using the default entry must replace `process.env.NODE_ENV` at build time
+for bundle removal; a runtime `enabled` prop cannot remove imported code. The
+library's existing inspection protocol remains part of the library runtime.
+Production opt-in includes the inspector UI; source-location instrumentation and
+state-preview injection remain development-only.
+
+## Shared adapter configuration
+
+`ReactLayoutDevtoolsConfig` extends `DevtoolsConfig` from devtools-core. Existing
+React configuration works unchanged; defaults, color resolution, validation,
+nested merging, and shared preference serialization are owned by devtools-core.
+`DevtoolsConfig`, `DevtoolsPreferences`, and `DevtoolsSessionState` are also
+re-exported as types from the React entry points.
+
+The React adapter owns browser storage access, storage-event synchronization,
+React hooks, and saved FAB coordinates. Search and selection use the shared
+session-state type and remain transient. Existing saved settings and storage keys
+continue to work without migration.

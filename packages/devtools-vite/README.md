@@ -25,7 +25,7 @@ layout calls are needed.
 ## Source locations
 
 The selected-node panel shows declaration and registration locations when they
-differ. **Open in editor** uses Vite's development editor endpoint and its editor
+differ. Clicking a file location opens it using Vite's development editor endpoint and its editor
 configuration (`LAUNCH_EDITOR` when needed). Paths displayed in the panel are
 relative to the Vite root. Editor requests stay on the development server origin.
 
@@ -72,7 +72,8 @@ state. `default` supplies fixtures for the default render state. Namespace layou
 
 ```ts
 reactLayoutDevtools({
-  statePreview: false, // source locations only; defaults to true
+  production: false, // omit the inspector from production builds; defaults to false
+  statePreview: false, // development source locations only; defaults to true
   imports: ['my-layout-wrapper'], // extra packages that re-export the layout API
   include: /\/src\//,
   exclude: /\.test\.[jt]sx?$/,
@@ -81,7 +82,9 @@ reactLayoutDevtools({
 
 Relative imports and `@/` aliases are recognized automatically. For other aliases,
 add the import specifier to `imports`. The plugin runs before React transforms,
-returns source maps, skips dependencies and SSR transforms, and is disabled in
-production builds. It uses Vite's development transform and editor integration;
+returns source maps, skips dependencies and SSR transforms, and does not instrument
+production builds. In production, it resolves the React inspector to empty
+components by default; set `production: true` to include the inspector instead.
+It uses Vite's development transform and editor integration;
 other bundler adapters can provide the same optional devtools-core metadata and
 preview capabilities.

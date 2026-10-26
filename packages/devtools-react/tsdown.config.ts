@@ -3,6 +3,8 @@ import { defineConfig } from 'tsdown';
 export default defineConfig({
   entry: {
     index: 'src/index.ts',
+    production: 'src/production.ts',
+    disabled: 'src/disabled.ts',
   },
   deps: { alwaysBundle: ['@jfdevelops/react-layout-devtools-core'] },
   sourcemap: true,
