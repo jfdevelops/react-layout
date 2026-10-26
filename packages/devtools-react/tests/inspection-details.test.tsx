@@ -102,3 +102,40 @@ it('handles empty contracts and safe non-prop descriptions', () => {
   expect(screen.getByText(/circular reference/)).toBeTruthy();
   expect(screen.queryByLabelText('Filter props')).toBeNull();
 });
+
+it('filters by available prop types alongside the other filters', () => {
+  const { details } = fixture();
+
+  render(
+    <InspectionDetails
+      details={details}
+      palette={resolveChipColors(undefined)}
+    />
+  );
+
+  const list = screen.getByRole('list', { name: 'Prop list' });
+  const types = screen.getByLabelText('Filter prop type');
+
+  expect(within(types).getByRole('option', { name: 'ReactNode' })).toBeTruthy();
+  expect(within(types).getByRole('option', { name: 'string' })).toBeTruthy();
+  expect(within(types).getByRole('option', { name: 'Unknown' })).toBeTruthy();
+
+  fireEvent.change(types, { target: { value: 'ReactNode' } });
+
+  expect(within(list).getAllByRole('listitem')).toHaveLength(1);
+  expect(within(list).getByText('children')).toBeTruthy();
+
+  fireEvent.change(types, { target: { value: 'string' } });
+  fireEvent.change(screen.getByLabelText('Filter prop kind'), {
+    target: { value: 'custom' },
+  });
+
+  expect(within(list).getAllByRole('listitem')).toHaveLength(1);
+  expect(within(list).getByText('className')).toBeTruthy();
+
+  fireEvent.change(screen.getByLabelText('Filter prop requirement'), {
+    target: { value: 'required' },
+  });
+
+  expect(screen.getByText('No props match these filters.')).toBeTruthy();
+});

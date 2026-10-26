@@ -76,10 +76,14 @@ export function InspectionDetails({
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState('all');
   const [visibility, setVisibility] = useState('all');
+  const [propType, setPropType] = useState('');
   const info = bag(details);
   const rows = propsFor(info);
+  const types = [...new Set(rows.map((row) => row.type ?? 'Unknown'))].sort();
+
   const filtered = rows.filter(
     (row) =>
+      (propType === '' || (row.type ?? 'Unknown') === propType) &&
       (kind === 'all' || row.kind === kind) &&
       (visibility === 'all' || row.visibility === visibility) &&
       `${row.name} ${row.type ?? ''}`
@@ -186,6 +190,24 @@ export function InspectionDetails({
                 onChange={(event) => setQuery(event.target.value)}
                 style={{ flex: '1 1 0', minWidth: 0, fontSize: 12 }}
               />
+              <select
+                aria-label="Filter prop type"
+                value={propType}
+                onChange={(event) => setPropType(event.target.value)}
+                style={{
+                  ...control,
+                  flex: '0 1 auto',
+                  minWidth: 0,
+                  fontSize: 12,
+                }}
+              >
+                <option value="">All types</option>
+                {types.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
               <select
                 aria-label="Filter prop kind"
                 value={kind}
