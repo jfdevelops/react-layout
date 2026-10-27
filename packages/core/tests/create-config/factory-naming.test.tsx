@@ -3,6 +3,9 @@ import { afterEach, expect, it } from 'vitest';
 import {
   Appointments,
   TypedParts,
+  OmittedNumericPart,
+  ZeroNumericPart,
+  SuppliedNumericPart,
   CallbackParts,
   EmptyParts,
   StringParts,
@@ -92,4 +95,14 @@ it('resolves declared string and number parts with literal names and optional va
   expect(StringParts.displayName).toBe('AdminUsersPage');
   render(<TypedParts />);
   expect(screen.getByText('Typed naming parts')).toBeInTheDocument();
+});
+
+it('narrows optional numeric parts before formatting omitted, zero, and supplied values', () => {
+  expect(OmittedNumericPart.displayName).toBe('UsersV');
+  expect(ZeroNumericPart.displayName).toBe('UsersV0');
+  expect(SuppliedNumericPart.displayName).toBe('UsersV2');
+  render(<OmittedNumericPart />);
+  expect(
+    screen.getByText('Optional numeric naming parts')
+  ).toBeInTheDocument();
 });

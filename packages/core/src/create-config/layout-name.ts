@@ -60,7 +60,7 @@ export type LayoutNamePartValues<
 type PatternParts<Definitions extends LayoutNamePartDefinitions> = {
   [Key in keyof Definitions & string]: NamePlaceholder<
     `part:${Key}`,
-    PartValue<Definitions[Key]>
+    PartValue<Definitions[Key]> | ''
   >;
 };
 type PartText<Value> = Value extends string | number ? `${Value}` : '';
@@ -270,6 +270,8 @@ function createNamingFactory<
  * The pattern controls where parts appear; their names do not impose an order.
  * Part values are optional and omitted values render as empty text. Supply an
  * object for fixed values, or a callback when values depend on the resource.
+ * Numeric placeholders can also be empty text inside the pattern. Narrow them
+ * with `typeof value === 'number'` before using number-only methods.
  * Each returned naming resolver can be passed to a factory, definition, or
  * component creation call through its `name` option.
  *
@@ -330,6 +332,20 @@ function createNamingFactory<
  * const adminV2 = versionedName({ section: 'Admin', version: 2 });
  * // Used for 'users', this produces 'AdminUsersV2'.
  * // versionedName({ version: '2' }) is rejected: version must be a number.
+ * ```
+ *
+ * @example
+ * Guard optional numeric values before formatting them with number methods.
+ * Plain interpolation, as above, already handles empty values.
+ * ```ts
+ * const formattedName = defineLayoutName
+ *   .defineParts({ version: 'number' })
+ *   .namingFn(({ resource, capitalize }, parts) => {
+ *     const version = typeof parts.version === 'number'
+ *       ? parts.version.toFixed(0)
+ *       : '';
+ *     return `${capitalize(resource)}V${version}`;
+ *   });
  * ```
  */
 export function defineLayoutName<const Pattern extends string>(

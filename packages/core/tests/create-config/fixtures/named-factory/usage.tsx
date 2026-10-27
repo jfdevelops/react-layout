@@ -159,7 +159,8 @@ const typedNaming = defineLayoutName
   .defineParts({ section: 'string', version: 'number' })
   .namingFn(({ resource, capitalize }, parts) => {
     expectTypeOf(parts.section).toBeString();
-    expectTypeOf(parts.version).toBeNumber();
+    expectTypeOf(parts.version).toMatchTypeOf<number | ''>();
+    expectTypeOf(parts.version).extract<''>().not.toBeNever();
     return `${parts.section}${capitalize(resource)}V${parts.version}`;
   });
 const typedNamingDefinition = createDefinedResourceLayout({
@@ -197,7 +198,40 @@ export const StringParts = typedNamingDefinition.createResourceLayout({
 });
 expectTypeOf(StringParts.displayName).toEqualTypeOf<'AdminUsersPage'>();
 
+const formattedNumberName = defineLayoutName
+  .defineParts({ version: 'number' })
+  .namingFn(({ resource, capitalize }, parts) => {
+    const version =
+      typeof parts.version === 'number' ? parts.version.toFixed(0) : '';
+    return `${capitalize(resource)}V${version}`;
+  });
+const formattedNumberDefinition = createDefinedResourceLayout({
+  resources: ['users'],
+  name: formattedNumberName()
+}).defineResourceLayout({
+  render: () => <p>Optional numeric naming parts</p>
+});
+export const OmittedNumericPart =
+  formattedNumberDefinition.createResourceLayout({ resource: 'users' });
+export const ZeroNumericPart =
+  formattedNumberDefinition.createResourceLayout({
+    resource: 'users',
+    name: formattedNumberName({ version: 0 })
+  });
+export const SuppliedNumericPart =
+  formattedNumberDefinition.createResourceLayout({
+    resource: 'users',
+    name: formattedNumberName({ version: 2 })
+  });
+
 export function checkInvalidCalls() {
+  defineLayoutName
+    .defineParts({ version: 'number' })
+    .namingFn((_context, parts) => {
+      // @ts-expect-error optional numeric parts must be narrowed before using number methods
+      return parts.version.toFixed(0);
+    });
+
   // @ts-expect-error number parts reject strings
   typedNaming({ version: '2' });
   // @ts-expect-error string parts reject numbers

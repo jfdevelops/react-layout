@@ -93,6 +93,19 @@ const userName = versionedName({ section: 'Admin', version: 2 });
 // When used for users: "AdminUsersV2"
 ```
 
+Numeric placeholders are `number | ''` inside the pattern because omission produces empty text. Plain interpolation works for either case; narrow before calling number-only methods:
+
+```tsx
+const formattedName = defineLayoutName
+  .defineParts({ version: 'number' })
+  .namingFn(({ resource, capitalize }, parts) => {
+    const version = typeof parts.version === 'number'
+      ? parts.version.toFixed(0)
+      : '';
+    return `${capitalize(resource)}V${version}`;
+  });
+```
+
 Declared slots are optional; omitted values render as empty text. Supplied values must match their declared kind. The default shorthand still supports `prefix`, `beforeSuffix`, and `append`, with key completions for objects and callback returns.
 
 The customization argument is optional and may be a plain object or a callback receiving the same runtime naming context. Defaults apply in order **factory → definition → creation call**. Standalone `defineResourceLayout` accepts `name` alongside `resources` and `layout`. If no naming default exists, `name` can be omitted: resource `'users'` generates `'UsersLayout'` at runtime and as an exact TypeScript literal. This fallback also applies to scoped builders and namespaces. An explicit component name overrides the definition default, which overrides the factory default, which overrides the generated resource name. Naming resolves when components are created; it does not change with mounted state.
