@@ -149,3 +149,69 @@ it('validates the default string parts and custom spread-defined parts', () => {
     Reflect.apply(custom, undefined, [{ extra: 'Admin' }])
   ).toThrowError(InvalidPartError);
 });
+
+it.each(['object', 'callback'])(
+  'skips part key and value validation in unchecked %s mode',
+  (source) => {
+    const naming = defineLayoutName
+      .defineParts({ section: 'string', version: 'number' })
+      .namingFn(
+        ({ capitalize, resource }, parts) =>
+          `${parts.section}${capitalize(resource)}V${parts.version}${
+            parts.extra
+          }`,
+        { strict: false }
+      );
+    const values = { section: 7, version: 'two', extra: 'Extra' };
+    const resolver =
+      source === 'callback' ? naming(() => values) : naming(values);
+    const Users = createDefinedResourceLayout({
+      resources: ['users'],
+      name: resolver
+    })
+      .defineResourceLayout({ render: () => createElement('div') })
+      .createResourceLayout({ resource: 'users' });
+    expect(Users.displayName).toBe('7UsersVtwoExtra');
+  }
+);
+
+it('keeps explicitly strict conventions validated', () => {
+  const naming = defineLayoutName
+    .defineParts({ version: 'number' })
+    .namingFn((_context, parts) => `${parts.version}`, { strict: true });
+  expect(() =>
+    Reflect.apply(naming, undefined, [{ version: '2' }])
+  ).toThrowError(InvalidPartTypeError);
+  expect(() =>
+    Reflect.apply(naming, undefined, [{ extra: 'x' }])
+  ).toThrowError(InvalidPartError);
+});
+
+it('supports unchecked default and spread-defined string parts', () => {
+  const standard = defineLayoutName(
+    (_context, parts) => `${parts.extra}${parts.prefix}`,
+    { strict: false }
+  );
+  const spread = defineLayoutName
+    .defineParts('section')
+    .namingFn((_context, parts) => `${parts.section}${parts.extra}`, {
+      strict: false
+    });
+  const create = createDefinedResourceLayout({
+    resources: ['users']
+  }).defineResourceLayout({
+    render: () => createElement('div')
+  }).createResourceLayout;
+  expect(
+    create({
+      resource: 'users',
+      name: standard({ extra: true, prefix: 2 })
+    }).displayName
+  ).toBe('true2');
+  expect(
+    create({
+      resource: 'users',
+      name: spread({ section: false, extra: 2 })
+    }).displayName
+  ).toBe('false2');
+});

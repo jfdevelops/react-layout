@@ -11,3 +11,5 @@ Add defineLayoutName.defineParts(...names).namingFn(pattern) and schema-based st
 Reflect omitted numeric parts as empty text in the pattern input type, requiring narrowing before number-only operations while preserving exact names for interpolated values.
 
 Validate supplied naming parts at runtime for objects and callbacks. Export InvalidPartError for undeclared keys and InvalidPartTypeError for incorrect value kinds, including structured error context.
+
+Add a strict option, enabled by default. Setting strict to false disables part-key and value checking in TypeScript and at runtime for naming conventions; unchecked results are typed as string.

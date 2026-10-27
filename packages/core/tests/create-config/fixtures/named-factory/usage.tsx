@@ -224,7 +224,56 @@ export const SuppliedNumericPart =
     name: formattedNumberName({ version: 2 })
   });
 
+const uncheckedNaming = defineLayoutName
+  .defineParts({ section: 'string', version: 'number' })
+  .namingFn(
+    ({ resource, capitalize }, parts) => {
+      expectTypeOf(parts.version).toBeAny();
+      expectTypeOf(parts.extra).toBeAny();
+      return `${parts.section}${capitalize(resource)}V${parts.version}${
+        parts.extra
+      }`;
+    },
+    { strict: false }
+  );
+const uncheckedDefinition = createDefinedResourceLayout({
+  resources: ['users'],
+  name: uncheckedNaming({ section: 7, version: 'two', extra: 'Extra' })
+}).defineResourceLayout({ render: () => <p>Unchecked naming</p> });
+export const UncheckedParts = uncheckedDefinition.createResourceLayout({
+  resource: 'users'
+});
+expectTypeOf(UncheckedParts.displayName).toEqualTypeOf<string>();
+export const UncheckedCallbackParts =
+  uncheckedDefinition.createResourceLayout({
+    resource: 'users',
+    name: uncheckedNaming(() => ({
+      section: 8,
+      version: 'three',
+      extra: 'Callback'
+    }))
+  });
+const uncheckedDefaultNaming = defineLayoutName(
+  (_context, parts) => `${parts.extra}${parts.prefix}`,
+  { strict: false }
+);
+uncheckedDefaultNaming({ extra: true, prefix: 2 });
+const uncheckedStringNaming = defineLayoutName
+  .defineParts('section')
+  .namingFn((_context, parts) => `${parts.section}${parts.extra}`, {
+    strict: false
+  });
+uncheckedStringNaming({ section: false, extra: 2 });
+
 export function checkInvalidCalls() {
+  const explicitlyStrict = defineLayoutName
+    .defineParts({ version: 'number' })
+    .namingFn((_context, parts) => `${parts.version}`, { strict: true });
+  // @ts-expect-error explicit strict mode rejects incorrect part kinds
+  explicitlyStrict({ version: '2' });
+  // @ts-expect-error explicit strict mode rejects unknown keys
+  explicitlyStrict({ extra: 'Admin' });
+
   defineLayoutName
     .defineParts({ version: 'number' })
     .namingFn((_context, parts) => {

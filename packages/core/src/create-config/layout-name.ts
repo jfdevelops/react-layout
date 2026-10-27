@@ -49,6 +49,24 @@ export type LayoutNamePartDefinitions = Readonly<
   Record<string, LayoutNamePartType>
 >;
 
+/**
+ * Controls checking of supplied part keys and values. Strict checking defaults to true.
+ */
+export interface LayoutNameOptions<Strict extends boolean = true> {
+  /**
+   * Set to false to skip part type checking and runtime validation.
+   */
+  strict?: Strict;
+}
+
+/**
+ * Part values are intentionally unchecked when strict is false.
+ */
+type UncheckedNamingParts<Definitions extends LayoutNamePartDefinitions> =
+  {
+    [Key in keyof Definitions]?: any;
+  } & Record<string, any>;
+
 type PartValue<Type extends LayoutNamePartType> = Type extends 'number'
   ? number
   : string;
@@ -173,16 +191,19 @@ type ResolvedParts<
 
 type NamingPattern<
   Definitions extends LayoutNamePartDefinitions,
-  Pattern extends string
+  Pattern extends string,
+  Strict extends boolean = true
 > = (
   context: PatternNameContext,
-  parts: PatternParts<Definitions>
+  parts: [Strict] extends [false]
+    ? UncheckedNamingParts<Definitions>
+    : PatternParts<Definitions>
 ) => Pattern;
 
 /**
  * Supplies optional part values while preserving their literal types in names.
  */
-export interface LayoutNameFactory<
+interface CheckedLayoutNameFactory<
   Definitions extends LayoutNamePartDefinitions,
   Pattern extends string
 > {
@@ -201,15 +222,44 @@ export interface LayoutNameFactory<
   ): LayoutNameResolver<Pattern, ResolvedParts<Definitions, Parts>>;
 }
 
+interface UncheckedLayoutNameFactory<
+  Definitions extends LayoutNamePartDefinitions
+> {
+  (
+    parts?:
+      | UncheckedNamingParts<Definitions>
+      | ((
+          context: PatternNameContext
+        ) => UncheckedNamingParts<Definitions>)
+  ): LayoutNameResolver<string>;
+}
+
+/**
+ * Supplies optional naming parts. Strict conventions preserve literal names;
+ * unchecked conventions accept arbitrary keys and values and return string names.
+ */
+export type LayoutNameFactory<
+  Definitions extends LayoutNamePartDefinitions,
+  Pattern extends string,
+  Strict extends boolean = true
+> = [Strict] extends [false]
+  ? UncheckedLayoutNameFactory<Definitions>
+  : CheckedLayoutNameFactory<Definitions, Pattern>;
+
 interface DefinedLayoutNameParts<
   Definitions extends LayoutNamePartDefinitions
 > {
   /**
-   * Defines the naming pattern using only the declared part placeholders.
+   * Defines the naming pattern and optional strict-checking policy.
+   * Strict defaults to true; false accepts unchecked part keys and values.
    */
-  namingFn<const Pattern extends string>(
-    pattern: NamingPattern<Definitions, Pattern>
-  ): LayoutNameFactory<Definitions, Pattern>;
+  namingFn<
+    const Pattern extends string,
+    const Strict extends boolean = true
+  >(
+    pattern: NamingPattern<Definitions, Pattern, Strict>,
+    options?: LayoutNameOptions<Strict>
+  ): LayoutNameFactory<Definitions, Pattern, Strict>;
 }
 
 const defaultPartDefinitions = {
@@ -268,11 +318,14 @@ function validatePartValues(
 
 function createNamingFactory<
   Definitions extends LayoutNamePartDefinitions,
-  const Pattern extends string
+  const Pattern extends string,
+  Strict extends boolean = true
 >(
   definitions: Definitions,
-  pattern: NamingPattern<Definitions, Pattern>
-): LayoutNameFactory<Definitions, Pattern> {
+  pattern: NamingPattern<Definitions, Pattern, Strict>,
+  options: LayoutNameOptions<Strict> = {}
+): LayoutNameFactory<Definitions, Pattern, Strict> {
+  const strict = options.strict !== false;
   const defaults = Object.fromEntries(
     Object.keys(definitions).map((key) => [key, ''])
   );
@@ -283,20 +336,28 @@ function createNamingFactory<
       | NamingPartsInput<Definitions, Parts>
       | NamingPartsCallback<Definitions, Parts>
   ): LayoutNameResolver<Pattern, ResolvedParts<Definitions, Parts>> {
-    if (typeof parts !== 'function')
+    if (strict && typeof parts !== 'function')
       validatePartValues(definitions, parts);
     const resolver = ((context: LayoutNameContext) => {
       const values =
         typeof parts === 'function'
           ? parts(context as unknown as PatternNameContext)
           : parts;
-      const supplied = validatePartValues(definitions, values);
+      const supplied = strict
+        ? validatePartValues(definitions, values)
+        : Object.fromEntries(
+            Object.entries(values ?? {}).filter(
+              ([, value]) => value !== undefined
+            )
+          );
       return pattern(
         context as unknown as PatternNameContext,
         {
           ...defaults,
           ...supplied
-        } as PatternParts<Definitions>
+        } as [Strict] extends [false]
+          ? UncheckedNamingParts<Definitions>
+          : PatternParts<Definitions>
       );
     }) as unknown as LayoutNameResolver<
       Pattern,
@@ -305,7 +366,7 @@ function createNamingFactory<
     Object.defineProperty(resolver, layoutNamePattern, { value: {} });
     return resolver;
   }
-  return name;
+  return name as LayoutNameFactory<Definitions, Pattern, Strict>;
 }
 
 /**
@@ -336,8 +397,13 @@ function createNamingFactory<
  * Each returned naming resolver can be passed to a factory, definition, or
  * component creation call through its `name` option.
  *
+ * Strict checking defaults to true. Pass `{ strict: false }` as the second
+ * argument here or to namingFn to accept unchecked part keys and values in
+ * both TypeScript and runtime calls. Unchecked conventions return string names.
+ *
  * @param pattern - Combines the resource, capitalization helper, and part
  * placeholders into the shared name structure.
+ * @param options - Controls strict part checking, enabled by default.
  * @returns A function accepting optional part values or a context callback.
  * Calling it with no arguments leaves every part empty.
  *
@@ -408,11 +474,27 @@ function createNamingFactory<
  *     return `${capitalize(resource)}V${version}`;
  *   });
  * ```
+ *
+ * @example
+ * Opt out of part checking when a convention intentionally accepts external
+ * keys and mixed value types. The resulting displayName is typed as string.
+ * ```ts
+ * const externalName = defineLayoutName
+ *   .defineParts({ version: 'number' })
+ *   .namingFn(({ resource }, parts) => `${resource}${parts.version}${parts.extra}`,
+ *     { strict: false },
+ *   );
+ * const legacy = externalName({ version: 'legacy', extra: true });
+ * ```
  */
-export function defineLayoutName<const Pattern extends string>(
-  pattern: NamingPattern<typeof defaultPartDefinitions, Pattern>
-): LayoutNameFactory<typeof defaultPartDefinitions, Pattern> {
-  return createNamingFactory(defaultPartDefinitions, pattern);
+export function defineLayoutName<
+  const Pattern extends string,
+  const Strict extends boolean = true
+>(
+  pattern: NamingPattern<typeof defaultPartDefinitions, Pattern, Strict>,
+  options?: LayoutNameOptions<Strict>
+): LayoutNameFactory<typeof defaultPartDefinitions, Pattern, Strict> {
+  return createNamingFactory(defaultPartDefinitions, pattern, options);
 }
 
 /**
@@ -437,8 +519,8 @@ function defineParts(
       ? input[0]
       : Object.fromEntries(input.map((key) => [key, 'string']));
   return {
-    namingFn(pattern) {
-      return createNamingFactory(definitions, pattern);
+    namingFn(pattern, options) {
+      return createNamingFactory(definitions, pattern, options);
     }
   };
 }
