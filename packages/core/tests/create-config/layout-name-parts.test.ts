@@ -155,13 +155,13 @@ it.each(['object', 'callback'])(
   (source) => {
     const naming = defineLayoutName
       .defineParts({ section: 'string', version: 'number' })
-      .namingFn(
-        ({ capitalize, resource }, parts) =>
+      .namingFn({
+        pattern: ({ capitalize, resource }, parts) =>
           `${parts.section}${capitalize(resource)}V${parts.version}${
             parts.extra
           }`,
-        { strict: false }
-      );
+        strict: false
+      });
     const values = { section: 7, version: 'two', extra: 'Extra' };
     const resolver =
       source === 'callback' ? naming(() => values) : naming(values);
@@ -178,7 +178,10 @@ it.each(['object', 'callback'])(
 it('keeps explicitly strict conventions validated', () => {
   const naming = defineLayoutName
     .defineParts({ version: 'number' })
-    .namingFn((_context, parts) => `${parts.version}`, { strict: true });
+    .namingFn({
+      pattern: (_context, parts) => `${parts.version}`,
+      strict: true
+    });
   expect(() =>
     Reflect.apply(naming, undefined, [{ version: '2' }])
   ).toThrowError(InvalidPartTypeError);
@@ -188,13 +191,14 @@ it('keeps explicitly strict conventions validated', () => {
 });
 
 it('supports unchecked default and spread-defined string parts', () => {
-  const standard = defineLayoutName(
-    (_context, parts) => `${parts.extra}${parts.prefix}`,
-    { strict: false }
-  );
+  const standard = defineLayoutName({
+    pattern: (_context, parts) => `${parts.extra}${parts.prefix}`,
+    strict: false
+  });
   const spread = defineLayoutName
     .defineParts('section')
-    .namingFn((_context, parts) => `${parts.section}${parts.extra}`, {
+    .namingFn({
+      pattern: (_context, parts) => `${parts.section}${parts.extra}`,
       strict: false
     });
   const create = createDefinedResourceLayout({
@@ -214,4 +218,16 @@ it('supports unchecked default and spread-defined string parts', () => {
       name: spread({ section: false, extra: 2 })
     }).displayName
   ).toBe('false2');
+});
+
+it('defaults to strict checking with a pattern-only configuration object', () => {
+  const naming = defineLayoutName({
+    pattern: (_context, parts) => `${parts.prefix}`
+  });
+  expect(() =>
+    Reflect.apply(naming, undefined, [{ prefix: 2 }])
+  ).toThrowError(InvalidPartTypeError);
+  expect(() =>
+    Reflect.apply(naming, undefined, [{ extra: true }])
+  ).toThrowError(InvalidPartError);
 });

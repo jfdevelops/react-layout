@@ -226,16 +226,16 @@ export const SuppliedNumericPart =
 
 const uncheckedNaming = defineLayoutName
   .defineParts({ section: 'string', version: 'number' })
-  .namingFn(
-    ({ resource, capitalize }, parts) => {
+  .namingFn({
+    pattern: ({ resource, capitalize }, parts) => {
       expectTypeOf(parts.version).toBeAny();
       expectTypeOf(parts.extra).toBeAny();
       return `${parts.section}${capitalize(resource)}V${parts.version}${
         parts.extra
       }`;
     },
-    { strict: false }
-  );
+    strict: false
+  });
 const uncheckedDefinition = createDefinedResourceLayout({
   resources: ['users'],
   name: uncheckedNaming({ section: 7, version: 'two', extra: 'Extra' })
@@ -253,22 +253,51 @@ export const UncheckedCallbackParts =
       extra: 'Callback'
     }))
   });
-const uncheckedDefaultNaming = defineLayoutName(
-  (_context, parts) => `${parts.extra}${parts.prefix}`,
-  { strict: false }
-);
+const uncheckedDefaultNaming = defineLayoutName({
+  pattern: (_context, parts) => `${parts.extra}${parts.prefix}`,
+  strict: false
+});
 uncheckedDefaultNaming({ extra: true, prefix: 2 });
 const uncheckedStringNaming = defineLayoutName
   .defineParts('section')
-  .namingFn((_context, parts) => `${parts.section}${parts.extra}`, {
+  .namingFn({
+    pattern: (_context, parts) => `${parts.section}${parts.extra}`,
     strict: false
   });
 uncheckedStringNaming({ section: false, extra: 2 });
 
+const strictObjectNaming = defineLayoutName({
+  pattern: ({ resource, capitalize }, parts) =>
+    `${parts.prefix}${capitalize(resource)}Object`
+});
+export const StrictObjectName = createDefinedResourceLayout({
+  resources: ['users'],
+  name: strictObjectNaming({ prefix: 'Admin' })
+})
+  .defineResourceLayout({
+    render: () => <p>Object naming configuration</p>
+  })
+  .createResourceLayout({ resource: 'users' });
+expectTypeOf(
+  StrictObjectName.displayName
+).toEqualTypeOf<'AdminUsersObject'>();
+
 export function checkInvalidCalls() {
+  // @ts-expect-error strict defaults to true in object form
+  strictObjectNaming({ prefix: 2 });
+  // @ts-expect-error configuration is supplied in a single object
+  defineLayoutName(() => 'Users', { strict: false });
+  defineLayoutName
+    .defineParts('prefix')
+    // @ts-expect-error namingFn configuration is supplied in a single object
+    .namingFn(() => 'Users', { strict: false });
+
   const explicitlyStrict = defineLayoutName
     .defineParts({ version: 'number' })
-    .namingFn((_context, parts) => `${parts.version}`, { strict: true });
+    .namingFn({
+      pattern: (_context, parts) => `${parts.version}`,
+      strict: true
+    });
   // @ts-expect-error explicit strict mode rejects incorrect part kinds
   explicitlyStrict({ version: '2' });
   // @ts-expect-error explicit strict mode rejects unknown keys

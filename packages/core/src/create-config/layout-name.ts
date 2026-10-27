@@ -50,9 +50,17 @@ export type LayoutNamePartDefinitions = Readonly<
 >;
 
 /**
- * Controls checking of supplied part keys and values. Strict checking defaults to true.
+ * Defines the naming pattern and strict-checking policy. Strict defaults to true.
  */
-export interface LayoutNameOptions<Strict extends boolean = true> {
+export interface LayoutNameOptions<
+  Definitions extends LayoutNamePartDefinitions,
+  Pattern extends string,
+  Strict extends boolean = true
+> {
+  /**
+   * Combines the naming context and part placeholders into a name.
+   */
+  pattern: NamingPattern<Definitions, Pattern, Strict>;
   /**
    * Set to false to skip part type checking and runtime validation.
    */
@@ -200,6 +208,14 @@ type NamingPattern<
     : PatternParts<Definitions>
 ) => Pattern;
 
+type NamingDefinition<
+  Definitions extends LayoutNamePartDefinitions,
+  Pattern extends string,
+  Strict extends boolean
+> =
+  | NamingPattern<Definitions, Pattern, Strict>
+  | LayoutNameOptions<Definitions, Pattern, Strict>;
+
 /**
  * Supplies optional part values while preserving their literal types in names.
  */
@@ -257,8 +273,7 @@ interface DefinedLayoutNameParts<
     const Pattern extends string,
     const Strict extends boolean = true
   >(
-    pattern: NamingPattern<Definitions, Pattern, Strict>,
-    options?: LayoutNameOptions<Strict>
+    definition: NamingDefinition<Definitions, Pattern, Strict>
   ): LayoutNameFactory<Definitions, Pattern, Strict>;
 }
 
@@ -322,10 +337,12 @@ function createNamingFactory<
   Strict extends boolean = true
 >(
   definitions: Definitions,
-  pattern: NamingPattern<Definitions, Pattern, Strict>,
-  options: LayoutNameOptions<Strict> = {}
+  definition: NamingDefinition<Definitions, Pattern, Strict>
 ): LayoutNameFactory<Definitions, Pattern, Strict> {
-  const strict = options.strict !== false;
+  const pattern =
+    typeof definition === 'function' ? definition : definition.pattern;
+  const strict =
+    typeof definition === 'function' || definition.strict !== false;
   const defaults = Object.fromEntries(
     Object.keys(definitions).map((key) => [key, ''])
   );
@@ -397,15 +414,14 @@ function createNamingFactory<
  * Each returned naming resolver can be passed to a factory, definition, or
  * component creation call through its `name` option.
  *
- * Strict checking defaults to true. Pass `{ strict: false }` as the second
- * argument here or to namingFn to accept unchecked part keys and values in
- * both TypeScript and runtime calls. Unchecked conventions return string names.
+ * Strict checking defaults to true. Use `{ pattern, strict: false }` here or
+ * in namingFn to accept unchecked part keys and values in both TypeScript
+ * and runtime calls. Unchecked conventions return string names.
  *
- * @param pattern - Combines the resource, capitalization helper, and part
- * placeholders into the shared name structure.
- * @param options - Controls strict part checking, enabled by default.
+ * @param definition - A pattern callback, or an object containing the pattern
+ * and optional strict-checking policy.
  * @returns A function accepting optional part values or a context callback.
- * Calling it with no arguments leaves every part empty.
+ * Calling it with no arguments leaves every declared part empty.
  *
  * @example
  * Use the default string parts for a shared convention with occasional variants.
@@ -481,9 +497,10 @@ function createNamingFactory<
  * ```ts
  * const externalName = defineLayoutName
  *   .defineParts({ version: 'number' })
- *   .namingFn(({ resource }, parts) => `${resource}${parts.version}${parts.extra}`,
- *     { strict: false },
- *   );
+ *   .namingFn({
+ *     pattern: ({ resource }, parts) => `${resource}${parts.version}${parts.extra}`,
+ *     strict: false,
+ *   });
  * const legacy = externalName({ version: 'legacy', extra: true });
  * ```
  */
@@ -491,10 +508,13 @@ export function defineLayoutName<
   const Pattern extends string,
   const Strict extends boolean = true
 >(
-  pattern: NamingPattern<typeof defaultPartDefinitions, Pattern, Strict>,
-  options?: LayoutNameOptions<Strict>
+  definition: NamingDefinition<
+    typeof defaultPartDefinitions,
+    Pattern,
+    Strict
+  >
 ): LayoutNameFactory<typeof defaultPartDefinitions, Pattern, Strict> {
-  return createNamingFactory(defaultPartDefinitions, pattern, options);
+  return createNamingFactory(defaultPartDefinitions, definition);
 }
 
 /**
@@ -519,8 +539,8 @@ function defineParts(
       ? input[0]
       : Object.fromEntries(input.map((key) => [key, 'string']));
   return {
-    namingFn(pattern, options) {
-      return createNamingFactory(definitions, pattern, options);
+    namingFn(definition) {
+      return createNamingFactory(definitions, definition);
     }
   };
 }

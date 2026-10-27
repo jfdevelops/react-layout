@@ -42,6 +42,8 @@ it.each(['typescript-5-9', 'typescript'])(
       const naming = defineLayoutName(({ resource, capitalize }, parts) =>
         \`\${parts.prefix}\${capitalize(resource)}\${parts.beforeSuffix}Layout\${parts.append}\`
       );
+      defineLayoutName({ /*defaultDefinition*/ });
+      defineLayoutName.defineParts('section').namingFn({ /*customDefinition*/ });
       naming({ /*defaultEmpty*/ });
       naming({ prefix: 'Admin', /*defaultPopulated*/ });
       naming(() => ({ /*defaultCallback*/ }));
@@ -77,6 +79,8 @@ it.each(['typescript-5-9', 'typescript'])(
     });
     try {
       for (const [marker, expected] of Object.entries({
+        defaultDefinition: ['pattern', 'strict'],
+        customDefinition: ['pattern', 'strict'],
         defaultEmpty: ['prefix', 'beforeSuffix', 'append'],
         defaultPopulated: ['beforeSuffix', 'append'],
         defaultCallback: ['prefix', 'beforeSuffix', 'append'],
