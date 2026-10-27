@@ -6,6 +6,7 @@ import {
   defineLayoutName,
   InvalidPartError,
   InvalidPartTypeError,
+  LayoutConfigurationError,
   ReactLayoutError
 } from '../../src';
 
@@ -16,11 +17,13 @@ describe.each(['object', 'callback'])(
       const pattern = vi.fn();
       const naming = defineLayoutName
         .defineParts({ section: 'string', version: 'number' })
-        .namingFn(({ resource, capitalize }, parts) => {
-          pattern();
-          return `${parts.section}${capitalize(resource)}V${
-            parts.version
-          }`;
+        .namingFn({
+          pattern: ({ resource, capitalize }, parts) => {
+            pattern();
+            return `${parts.section}${capitalize(resource)}V${
+              parts.version
+            }`;
+          }
         });
       function createLayout(values: unknown) {
         const resolver = Reflect.apply(naming, undefined, [
@@ -130,12 +133,14 @@ describe.each(['object', 'callback'])(
 );
 
 it('validates the default string parts and custom spread-defined parts', () => {
-  const standard = defineLayoutName(
-    (_context, parts) => `${parts.prefix}${parts.append}`
-  );
+  const standard = defineLayoutName({
+    pattern: (_context, parts) => `${parts.prefix}${parts.append}`
+  });
   const custom = defineLayoutName
     .defineParts('section', 'suffix')
-    .namingFn((_context, parts) => `${parts.section}${parts.suffix}`);
+    .namingFn({
+      pattern: (_context, parts) => `${parts.section}${parts.suffix}`
+    });
   expect(() =>
     Reflect.apply(standard, undefined, [{ prefix: 2 }])
   ).toThrowError(InvalidPartTypeError);
@@ -195,12 +200,10 @@ it('supports unchecked default and spread-defined string parts', () => {
     pattern: (_context, parts) => `${parts.extra}${parts.prefix}`,
     strict: false
   });
-  const spread = defineLayoutName
-    .defineParts('section')
-    .namingFn({
-      pattern: (_context, parts) => `${parts.section}${parts.extra}`,
-      strict: false
-    });
+  const spread = defineLayoutName.defineParts('section').namingFn({
+    pattern: (_context, parts) => `${parts.section}${parts.extra}`,
+    strict: false
+  });
   const create = createDefinedResourceLayout({
     resources: ['users']
   }).defineResourceLayout({
@@ -230,4 +233,14 @@ it('defaults to strict checking with a pattern-only configuration object', () =>
   expect(() =>
     Reflect.apply(naming, undefined, [{ extra: true }])
   ).toThrowError(InvalidPartError);
+});
+
+it('rejects callback-only definitions at runtime', () => {
+  expect(() =>
+    Reflect.apply(defineLayoutName, undefined, [() => 'Users'])
+  ).toThrowError(LayoutConfigurationError);
+  const builder = defineLayoutName.defineParts('prefix');
+  expect(() =>
+    Reflect.apply(builder.namingFn, undefined, [() => 'Users'])
+  ).toThrowError(LayoutConfigurationError);
 });

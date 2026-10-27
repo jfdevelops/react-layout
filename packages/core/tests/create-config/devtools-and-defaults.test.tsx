@@ -11,12 +11,12 @@ import {
   defineComposableComponent,
 } from '../../src';
 
-const naming = defineLayoutName(
-  ({ resource, capitalize }, parts) =>
-    `${parts.prefix}${capitalize(resource)}${parts.beforeSuffix}ResourceLayout${
-      parts.append
-    }`
-);
+const naming = defineLayoutName({
+  pattern: ({ resource, capitalize }, parts) =>
+    `${parts.prefix}${capitalize(resource)}${
+      parts.beforeSuffix
+    }ResourceLayout${parts.append}`
+});
 
 it('narrows default naming to the selected resource and supports optional variations', () => {
   const factory = createDefinedResourceLayout({
@@ -326,7 +326,9 @@ it('allows breadcrumb segments to be configured once as global component passthr
 });
 
 it('allows conventions to inspect resource values and preserves raw resource names', () => {
-  const raw = defineLayoutName(({ resource }) => `${resource}Layout`);
+  const raw = defineLayoutName({
+    pattern: ({ resource }) => `${resource}Layout`
+  });
   const definition = defineResourceLayout({
     resources: ['users'],
     name: raw(),
@@ -334,11 +336,12 @@ it('allows conventions to inspect resource values and preserves raw resource nam
   });
   const Users = definition.createResourceLayout({ resource: 'users' });
   expectTypeOf(Users.displayName).toEqualTypeOf<'usersLayout'>();
-  const conditional = defineLayoutName(({ resource, capitalize }, parts) =>
-    resource === 'users'
-      ? `${parts.prefix}${capitalize(resource)}Users`
-      : `${capitalize(resource)}Other`
-  );
+  const conditional = defineLayoutName({
+    pattern: ({ resource, capitalize }, parts) =>
+      resource === 'users'
+        ? `${parts.prefix}${capitalize(resource)}Users`
+        : `${capitalize(resource)}Other`
+  });
   const Named = definition.createResourceLayout({
     resource: 'users',
     name: conditional(({ resource }) => ({
