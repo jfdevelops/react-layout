@@ -108,6 +108,8 @@ const formattedName = defineLayoutName
 
 Declared slots are optional; omitted values render as empty text. Supplied values must match their declared kind. The default shorthand still supports `prefix`, `beforeSuffix`, and `append`, with key completions for objects and callback returns.
 
+Parts are also validated at runtime, without coercion. An unknown key throws `InvalidPartError`; a value with the wrong kind throws `InvalidPartTypeError`. Fixed values are checked when the naming function is called, and callback results are checked when a layout name is resolved. Both errors extend `ReactLayoutError` and provide structured context: the invalid key and available parts, or the part name and expected/received types.
+
 The customization argument is optional and may be a plain object or a callback receiving the same runtime naming context. Defaults apply in order **factory → definition → creation call**. Standalone `defineResourceLayout` accepts `name` alongside `resources` and `layout`. If no naming default exists, `name` can be omitted: resource `'users'` generates `'UsersLayout'` at runtime and as an exact TypeScript literal. This fallback also applies to scoped builders and namespaces. An explicit component name overrides the definition default, which overrides the factory default, which overrides the generated resource name. Naming resolves when components are created; it does not change with mounted state.
 
 ## Local preview

@@ -9,3 +9,5 @@ Use distinct placeholder types for naming parts and resource tokens, so literal 
 Add defineLayoutName.defineParts(...names).namingFn(pattern) and schema-based string/number parts. Restore IntelliSense for supplying default and custom parts, including callback returns, while retaining literal component names.
 
 Reflect omitted numeric parts as empty text in the pattern input type, requiring narrowing before number-only operations while preserving exact names for interpolated values.
+
+Validate supplied naming parts at runtime for objects and callbacks. Export InvalidPartError for undeclared keys and InvalidPartTypeError for incorrect value kinds, including structured error context.

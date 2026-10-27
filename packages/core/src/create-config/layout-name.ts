@@ -1,4 +1,9 @@
 import { capitalize } from '../utils/capitalize';
+import {
+  InvalidPartError,
+  InvalidPartTypeError,
+  LayoutConfigurationError
+} from '../errors';
 /**
  * Each slot has a distinct type identity, so ordinary text cannot become a slot.
  */
@@ -181,6 +186,14 @@ export interface LayoutNameFactory<
   Definitions extends LayoutNamePartDefinitions,
   Pattern extends string
 > {
+  /**
+   * Supplies values for declared parts without coercing their types.
+   * Fixed values are checked immediately; callback results are checked when
+   * the layout name is resolved for a resource.
+   *
+   * @throws {InvalidPartError} A supplied part has not been declared.
+   * @throws {InvalidPartTypeError} A supplied value has the wrong kind.
+   */
   <const Parts extends LayoutNamePartValues<Definitions> = {}>(
     parts?:
       | NamingPartsInput<Definitions, Parts>
@@ -205,6 +218,54 @@ const defaultPartDefinitions = {
   append: 'string'
 } satisfies { [Key in keyof LayoutNameParts]-?: 'string' };
 
+function validatePartValues(
+  definitions: LayoutNamePartDefinitions,
+  values: unknown
+): Record<string, string | number> {
+  if (values === undefined) return {};
+  if (
+    values === null ||
+    typeof values !== 'object' ||
+    Array.isArray(values)
+  ) {
+    throw new LayoutConfigurationError(
+      'Naming part values must be an object.'
+    );
+  }
+
+  const supplied: Array<[string, string | number]> = [];
+  for (const part of Reflect.ownKeys(values)) {
+    if (typeof part !== 'string' || !Object.hasOwn(definitions, part)) {
+      throw new InvalidPartError({
+        part: String(part),
+        validParts: Object.keys(definitions)
+      });
+    }
+    const value: unknown = Reflect.get(values, part);
+    if (value === undefined) continue;
+
+    const expectedType = definitions[part];
+    if (
+      (expectedType === 'string' && typeof value === 'string') ||
+      (expectedType === 'number' && typeof value === 'number')
+    ) {
+      supplied.push([part, value]);
+    } else {
+      throw new InvalidPartTypeError({
+        part,
+        expectedType,
+        receivedType:
+          value === null
+            ? 'null'
+            : Array.isArray(value)
+            ? 'array'
+            : typeof value
+      });
+    }
+  }
+  return Object.fromEntries(supplied);
+}
+
 function createNamingFactory<
   Definitions extends LayoutNamePartDefinitions,
   const Pattern extends string
@@ -222,16 +283,14 @@ function createNamingFactory<
       | NamingPartsInput<Definitions, Parts>
       | NamingPartsCallback<Definitions, Parts>
   ): LayoutNameResolver<Pattern, ResolvedParts<Definitions, Parts>> {
+    if (typeof parts !== 'function')
+      validatePartValues(definitions, parts);
     const resolver = ((context: LayoutNameContext) => {
       const values =
         typeof parts === 'function'
           ? parts(context as unknown as PatternNameContext)
           : parts;
-      const supplied = Object.fromEntries(
-        Object.entries(values ?? {}).filter(
-          ([, value]) => value !== undefined
-        )
-      );
+      const supplied = validatePartValues(definitions, values);
       return pattern(
         context as unknown as PatternNameContext,
         {
@@ -272,6 +331,8 @@ function createNamingFactory<
  * object for fixed values, or a callback when values depend on the resource.
  * Numeric placeholders can also be empty text inside the pattern. Narrow them
  * with `typeof value === 'number'` before using number-only methods.
+ * Supplied keys and value kinds are also validated at runtime. Unknown parts
+ * throw InvalidPartError; incorrect value kinds throw InvalidPartTypeError.
  * Each returned naming resolver can be passed to a factory, definition, or
  * component creation call through its `name` option.
  *

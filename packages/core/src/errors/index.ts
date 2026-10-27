@@ -17,6 +17,12 @@ export type { InvalidSubResourceContext } from './invalid-sub-resource';
 export { InvalidComponentError } from './invalid-component';
 export type { InvalidComponentContext } from './invalid-component';
 
+export { InvalidPartError } from './invalid-part';
+export type { InvalidPartContext } from './invalid-part';
+
+export { InvalidPartTypeError } from './invalid-part-type';
+export type { InvalidPartTypeContext } from './invalid-part-type';
+
 export { MissingPathVariableError } from './missing-path-variable';
 export type { MissingPathVariableContext } from './missing-path-variable';
 
