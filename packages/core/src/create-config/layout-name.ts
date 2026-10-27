@@ -208,14 +208,6 @@ type NamingPattern<
     : PatternParts<Definitions>
 ) => Pattern;
 
-type NamingDefinition<
-  Definitions extends LayoutNamePartDefinitions,
-  Pattern extends string,
-  Strict extends boolean
-> =
-  | NamingPattern<Definitions, Pattern, Strict>
-  | LayoutNameOptions<Definitions, Pattern, Strict>;
-
 /**
  * Supplies optional part values while preserving their literal types in names.
  */
@@ -273,7 +265,7 @@ interface DefinedLayoutNameParts<
     const Pattern extends string,
     const Strict extends boolean = true
   >(
-    definition: NamingDefinition<Definitions, Pattern, Strict>
+    definition: LayoutNameOptions<Definitions, Pattern, Strict>
   ): LayoutNameFactory<Definitions, Pattern, Strict>;
 }
 
@@ -337,12 +329,19 @@ function createNamingFactory<
   Strict extends boolean = true
 >(
   definitions: Definitions,
-  definition: NamingDefinition<Definitions, Pattern, Strict>
+  definition: LayoutNameOptions<Definitions, Pattern, Strict>
 ): LayoutNameFactory<Definitions, Pattern, Strict> {
-  const pattern =
-    typeof definition === 'function' ? definition : definition.pattern;
-  const strict =
-    typeof definition === 'function' || definition.strict !== false;
+  if (
+    definition === null ||
+    typeof definition !== 'object' ||
+    typeof definition.pattern !== 'function'
+  ) {
+    throw new LayoutConfigurationError(
+      'Naming configuration must be an object containing a pattern function.'
+    );
+  }
+  const { pattern } = definition;
+  const strict = definition.strict !== false;
   const defaults = Object.fromEntries(
     Object.keys(definitions).map((key) => [key, ''])
   );
@@ -397,11 +396,11 @@ function createNamingFactory<
  *
  * Choose the form that matches the values your convention needs:
  *
- * - `defineLayoutName(pattern)` provides the string parts `prefix`,
+ * - `defineLayoutName({ pattern })` provides the string parts `prefix`,
  *   `beforeSuffix`, and `append` for common naming variations.
- * - `defineLayoutName.defineParts(...names).namingFn(pattern)` provides custom
+ * - `defineLayoutName.defineParts(...names).namingFn({ pattern })` provides custom
  *   string parts when domain-specific names make the pattern clearer.
- * - `defineLayoutName.defineParts(schema).namingFn(pattern)` declares each
+ * - `defineLayoutName.defineParts(schema).namingFn({ pattern })` declares each
  *   part as `'string'` or `'number'` when supplied values need different types.
  *
  * The pattern controls where parts appear; their names do not impose an order.
@@ -418,29 +417,32 @@ function createNamingFactory<
  * in namingFn to accept unchecked part keys and values in both TypeScript
  * and runtime calls. Unchecked conventions return string names.
  *
- * @param definition - A pattern callback, or an object containing the pattern
- * and optional strict-checking policy.
+ * @param definition - An object containing the naming pattern and optional
+ * strict-checking policy.
  * @returns A function accepting optional part values or a context callback.
  * Calling it with no arguments leaves every declared part empty.
  *
  * @example
  * Use the default string parts for a shared convention with occasional variants.
  * ```tsx
- * const layoutName = defineLayoutName(({ resource, capitalize }, parts) =>
- *   `${parts.prefix}${capitalize(resource)}${parts.beforeSuffix}Layout${parts.append}`,
- * );
+ * const layoutName = defineLayoutName({
+ *   pattern: ({ resource, capitalize }, parts) =>
+ *     `${parts.prefix}${capitalize(resource)}${parts.beforeSuffix}Layout${
+ *       parts.append
+ *     }`
+ * });
  * const factory = createDefinedResourceLayout({
  *   resources: ['users'],
- *   name: layoutName(),
+ *   name: layoutName()
  * });
  * const { createResourceLayout } = factory.defineResourceLayout({
- *   render: () => <div />,
+ *   render: () => <div />
  * });
  * const Users = createResourceLayout({ resource: 'users' });
  * // Users.displayName is typed as 'UsersLayout'.
  * const AdminUsers = createResourceLayout({
  *   resource: 'users',
- *   name: layoutName({ prefix: 'Admin', beforeSuffix: 'Detail' }),
+ *   name: layoutName({ prefix: 'Admin', beforeSuffix: 'Detail' })
  * });
  * // AdminUsers.displayName is typed as 'AdminUsersDetailLayout'.
  * ```
@@ -451,13 +453,14 @@ function createNamingFactory<
  * ```ts
  * const pageName = defineLayoutName
  *   .defineParts('section', 'variant')
- *   .namingFn(({ resource, capitalize }, parts) =>
- *     `${parts.section}${capitalize(resource)}${parts.variant}Page`,
- *   );
+ *   .namingFn({
+ *     pattern: ({ resource, capitalize }, parts) =>
+ *       `${parts.section}${capitalize(resource)}${parts.variant}Page`
+ *   });
  * const adminPage = pageName({ section: 'Admin', variant: 'Detail' });
  * // Used for 'users', this produces 'AdminUsersDetailPage'.
  * const resourcePage = pageName(({ resource }) => ({
- *   section: resource === 'users' ? 'Admin' : 'Public',
+ *   section: resource === 'users' ? 'Admin' : 'Public'
  * }));
  * // Used for 'users', this produces 'AdminUsersPage'.
  * // Other resources receive the 'Public' section instead.
@@ -469,9 +472,10 @@ function createNamingFactory<
  * ```ts
  * const versionedName = defineLayoutName
  *   .defineParts({ section: 'string', version: 'number' })
- *   .namingFn(({ resource, capitalize }, parts) =>
- *     `${parts.section}${capitalize(resource)}V${parts.version}`,
- *   );
+ *   .namingFn({
+ *     pattern: ({ resource, capitalize }, parts) =>
+ *       `${parts.section}${capitalize(resource)}V${parts.version}`
+ *   });
  * const adminV2 = versionedName({ section: 'Admin', version: 2 });
  * // Used for 'users', this produces 'AdminUsersV2'.
  * // versionedName({ version: '2' }) is rejected: version must be a number.
@@ -483,11 +487,12 @@ function createNamingFactory<
  * ```ts
  * const formattedName = defineLayoutName
  *   .defineParts({ version: 'number' })
- *   .namingFn(({ resource, capitalize }, parts) => {
- *     const version = typeof parts.version === 'number'
- *       ? parts.version.toFixed(0)
- *       : '';
- *     return `${capitalize(resource)}V${version}`;
+ *   .namingFn({
+ *     pattern: ({ resource, capitalize }, parts) => {
+ *       const version =
+ *         typeof parts.version === 'number' ? parts.version.toFixed(0) : '';
+ *       return `${capitalize(resource)}V${version}`;
+ *     }
  *   });
  * ```
  *
@@ -498,8 +503,9 @@ function createNamingFactory<
  * const externalName = defineLayoutName
  *   .defineParts({ version: 'number' })
  *   .namingFn({
- *     pattern: ({ resource }, parts) => `${resource}${parts.version}${parts.extra}`,
- *     strict: false,
+ *     pattern: ({ resource }, parts) =>
+ *       `${resource}${parts.version}${parts.extra}`,
+ *     strict: false
  *   });
  * const legacy = externalName({ version: 'legacy', extra: true });
  * ```
@@ -508,7 +514,7 @@ export function defineLayoutName<
   const Pattern extends string,
   const Strict extends boolean = true
 >(
-  definition: NamingDefinition<
+  definition: LayoutNameOptions<
     typeof defaultPartDefinitions,
     Pattern,
     Strict

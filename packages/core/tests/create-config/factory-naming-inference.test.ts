@@ -39,8 +39,8 @@ it.each(['typescript-5-9', 'typescript'])(
     );
     const completionSource = `
       import { defineLayoutName } from '@jfdevelops/react-layout';
-      const naming = defineLayoutName(({ resource, capitalize }, parts) =>
-        \`\${parts.prefix}\${capitalize(resource)}\${parts.beforeSuffix}Layout\${parts.append}\`
+      const naming = defineLayoutName({ pattern: ({ resource, capitalize }, parts) =>
+        \`\${parts.prefix}\${capitalize(resource)}\${parts.beforeSuffix}Layout\${parts.append}\` }
       );
       defineLayoutName({ /*defaultDefinition*/ });
       defineLayoutName.defineParts('section').namingFn({ /*customDefinition*/ });
@@ -48,14 +48,14 @@ it.each(['typescript-5-9', 'typescript'])(
       naming({ prefix: 'Admin', /*defaultPopulated*/ });
       naming(() => ({ /*defaultCallback*/ }));
       const custom = defineLayoutName.defineParts({ section: 'string', version: 'number' })
-        .namingFn(({ capitalize, resource }, parts) =>
-          \`\${parts./*customPattern*/section}\${capitalize(resource)}V\${parts.version}\`
+        .namingFn({ pattern: ({ capitalize, resource }, parts) =>
+          \`\${parts./*customPattern*/section}\${capitalize(resource)}V\${parts.version}\` }
         );
       custom({ /*customEmpty*/ });
       custom({ section: 'Admin', /*customPopulated*/ });
       custom(() => ({ /*customCallback*/ }));
       const strings = defineLayoutName.defineParts('section', 'suffix')
-        .namingFn(({ resource }, parts) => \`\${parts.section}\${resource}\${parts.suffix}\`);
+        .namingFn({ pattern: ({ resource }, parts) => \`\${parts.section}\${resource}\${parts.suffix}\` });
       strings({ /*stringParts*/ });
     `;
     const service = ts.createLanguageService({

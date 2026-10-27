@@ -130,14 +130,14 @@ expectTypeOf(FactoryScoped.displayName).toEqualTypeOf<'FactoryUsers'>();
 export const FactoryBound = scopedFactoryNamed.forResource('users')();
 expectTypeOf(FactoryBound.displayName).toEqualTypeOf<'FactoryUsers'>();
 
-const placeholderName = defineLayoutName(
-  ({ resource, capitalize }, parts) =>
+const placeholderName = defineLayoutName({
+  pattern: ({ resource, capitalize }, parts) =>
     `${parts.prefix}${capitalize(resource)}${
       parts.beforeSuffix
     }${resource}${parts.append}${
       parts.prefix
     }__layout_prefix__LayoutCapitalizedResourceToken`
-);
+});
 const placeholderFactory = createDefinedResourceLayout({
   resources: ['users'],
   name: placeholderName({
@@ -157,11 +157,13 @@ expectTypeOf(
 
 const typedNaming = defineLayoutName
   .defineParts({ section: 'string', version: 'number' })
-  .namingFn(({ resource, capitalize }, parts) => {
-    expectTypeOf(parts.section).toBeString();
-    expectTypeOf(parts.version).toMatchTypeOf<number | ''>();
-    expectTypeOf(parts.version).extract<''>().not.toBeNever();
-    return `${parts.section}${capitalize(resource)}V${parts.version}`;
+  .namingFn({
+    pattern: ({ resource, capitalize }, parts) => {
+      expectTypeOf(parts.section).toBeString();
+      expectTypeOf(parts.version).toMatchTypeOf<number | ''>();
+      expectTypeOf(parts.version).extract<''>().not.toBeNever();
+      return `${parts.section}${capitalize(resource)}V${parts.version}`;
+    }
   });
 const typedNamingDefinition = createDefinedResourceLayout({
   resources: ['users', 'settings'],
@@ -188,10 +190,10 @@ export const EmptyParts = typedNamingDefinition.createResourceLayout({
 expectTypeOf(EmptyParts.displayName).toEqualTypeOf<'UsersV'>();
 const stringParts = defineLayoutName
   .defineParts('resource', 'suffix')
-  .namingFn(
-    ({ resource, capitalize }, parts) =>
+  .namingFn({
+    pattern: ({ resource, capitalize }, parts) =>
       `${parts.resource}${capitalize(resource)}${parts.suffix}`
-  );
+  });
 export const StringParts = typedNamingDefinition.createResourceLayout({
   resource: 'users',
   name: stringParts({ resource: 'Admin', suffix: 'Page' })
@@ -200,10 +202,12 @@ expectTypeOf(StringParts.displayName).toEqualTypeOf<'AdminUsersPage'>();
 
 const formattedNumberName = defineLayoutName
   .defineParts({ version: 'number' })
-  .namingFn(({ resource, capitalize }, parts) => {
-    const version =
-      typeof parts.version === 'number' ? parts.version.toFixed(0) : '';
-    return `${capitalize(resource)}V${version}`;
+  .namingFn({
+    pattern: ({ resource, capitalize }, parts) => {
+      const version =
+        typeof parts.version === 'number' ? parts.version.toFixed(0) : '';
+      return `${capitalize(resource)}V${version}`;
+    }
   });
 const formattedNumberDefinition = createDefinedResourceLayout({
   resources: ['users'],
@@ -283,6 +287,11 @@ expectTypeOf(
 ).toEqualTypeOf<'AdminUsersObject'>();
 
 export function checkInvalidCalls() {
+  // @ts-expect-error defineLayoutName requires a configuration object
+  defineLayoutName(() => 'Users');
+  // @ts-expect-error namingFn requires a configuration object
+  defineLayoutName.defineParts('prefix').namingFn(() => 'Users');
+
   // @ts-expect-error strict defaults to true in object form
   strictObjectNaming({ prefix: 2 });
   // @ts-expect-error configuration is supplied in a single object
@@ -303,12 +312,12 @@ export function checkInvalidCalls() {
   // @ts-expect-error explicit strict mode rejects unknown keys
   explicitlyStrict({ extra: 'Admin' });
 
-  defineLayoutName
-    .defineParts({ version: 'number' })
-    .namingFn((_context, parts) => {
+  defineLayoutName.defineParts({ version: 'number' }).namingFn({
+    pattern: (_context, parts) => {
       // @ts-expect-error optional numeric parts must be narrowed before using number methods
       return parts.version.toFixed(0);
-    });
+    }
+  });
 
   // @ts-expect-error number parts reject strings
   typedNaming({ version: '2' });
@@ -324,9 +333,11 @@ export function checkInvalidCalls() {
   stringParts({ suffix: 2 });
   // @ts-expect-error unsupported part descriptors are rejected
   defineLayoutName.defineParts({ enabled: 'boolean' });
-  defineLayoutName.defineParts('section').namingFn((_context, parts) => {
-    // @ts-expect-error undeclared parts are unavailable in the pattern
-    return `${parts.missing}`;
+  defineLayoutName.defineParts('section').namingFn({
+    pattern: (_context, parts) => {
+      // @ts-expect-error undeclared parts are unavailable in the pattern
+      return `${parts.missing}`;
+    }
   });
 
   // @ts-expect-error final component props still require children
