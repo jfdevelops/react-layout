@@ -1,4 +1,4 @@
-import type { LayoutNameInput } from './layout-name';
+import type { LayoutNameInput, ResolvedLayoutName } from './layout-name';
 import type { ComposableComponents } from '@jfdevelops/react-layout-composables';
 import type {
   InPropsDefinition,
@@ -44,8 +44,13 @@ export type CreateResourceLayoutOptionsBase<
   Name extends string,
   Resource extends LayoutResourceKey<Resources>,
   Props extends InPropsObject = {},
+  Naming extends LayoutNameInput<Resource, any, Name> | undefined =
+    LayoutNameInput<Resource, string, Name>,
 > = {
-  name: LayoutNameInput<Resource, string, Name>;
+  /**
+   * Overrides the definition or factory name; otherwise the resource supplies the name.
+   */
+  name?: Naming;
   resource: Resource;
   props?: Props;
 };
@@ -59,8 +64,10 @@ export type CreateResourceLayoutOptions<
   Resource extends LayoutResourceKey<Resources>,
   Props extends InPropsObject = {},
   Namespace extends boolean = false,
+  Naming extends LayoutNameInput<Resource, any, Name> | undefined =
+    LayoutNameInput<Resource, string, Name>,
 > = LayoutPropsForResource<Resources, InProps, Composables, IncludeProps> &
-  CreateResourceLayoutOptionsBase<Resources, Name, Resource, Props> & {
+  CreateResourceLayoutOptionsBase<Resources, Name, Resource, Props, Naming> & {
     /** Return a component namespace with `Root` instead of a callable component. Defaults to false. */
     namespace?: Namespace;
   };
@@ -453,6 +460,7 @@ export type CreateLayoutForResource<
   CustomProps extends InPropsObject = {},
   DefaultNamespace extends boolean = false,
   States = {},
+  DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
 > = {
   /**
    * Creates a layout builder for one resource without a default name.
@@ -470,7 +478,7 @@ export type CreateLayoutForResource<
     InProps,
     Composables,
     IncludeProps,
-    string,
+    ResolvedLayoutName<DefaultNaming, Resource>,
     Resource,
     CustomProps,
     DefaultNamespace,
@@ -523,7 +531,7 @@ export type CreateLayoutForResource<
    */
   <
     const Resource extends LayoutResourceKey<Resources>,
-    const Name extends string = string,
+    const Name extends string = ResolvedLayoutName<DefaultNaming, Resource>,
   >(
     options: CreateLayoutForResourceOptions<Resources, Name, Resource>,
   ): ResourceLayoutBuilder<

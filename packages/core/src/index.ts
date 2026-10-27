@@ -116,6 +116,8 @@ export {
   InvalidComponentError,
   InvalidConfigError,
   InvalidPathError,
+  InvalidPartError,
+  InvalidPartTypeError,
   InvalidResourceError,
   InvalidSubResourceError,
   LayoutConfigurationError,
@@ -129,6 +131,8 @@ export type {
   InvalidComponentContext,
   InvalidConfigContext,
   InvalidPathContext,
+  InvalidPartContext,
+  InvalidPartTypeContext,
   InvalidResourceContext,
   InvalidSubResourceContext,
   LayoutConfigurationErrorContext,
@@ -199,6 +203,12 @@ export type {
 
 export { defineLayoutName } from './create-config/layout-name';
 export type {
+  LayoutNameFactory,
+  LayoutNameOptions,
+  LayoutNamePartDefinitions,
+  LayoutNamePartType,
+  LayoutNamePartValues,
+  LayoutNameCallback,
   LayoutNameContext,
   LayoutNameInput,
   LayoutNameParts,

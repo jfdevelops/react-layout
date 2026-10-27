@@ -7,7 +7,7 @@ import {
   getInspectionSource,
 } from '@jfdevelops/react-layout-devtools-core';
 import { mergeLayoutProps } from './merge-layout-props';
-import type { LayoutNameContext, LayoutNameInput } from './layout-name';
+import type { LayoutNameInput } from './layout-name';
 import type { MergeContract } from './define-layout';
 import type {
   ComposableComponents,
@@ -299,6 +299,11 @@ export type CreateDefinedResourceLayoutResult<
 };
 
 /**
+ * A configuration that may omit its name cannot guarantee a naming default.
+ */
+type DefinedFactoryNaming<Naming> = undefined extends Naming ? undefined : Naming;
+
+/**
  * Creates type-linked layout helpers from one shared configuration. The returned
  * `defineResourceLayout` accepts the layout directly, while `createRenderState`
  * carries the same resource and option types across file boundaries.
@@ -306,11 +311,6 @@ export type CreateDefinedResourceLayoutResult<
  * @param configuration - Resources and optional shared props/composables to
  * bind to every returned helper.
  * @returns Helpers that share the configuration's inferred literal types.
- *
- * Callback names have a dedicated overload so their resource context is typed
- * before dependent composable and prop contracts are inferred. The fallback
- * overload preserves string names and the requirement for explicit names when
- * no factory default is supplied.
  *
  * @example
  * ```tsx
@@ -333,35 +333,6 @@ export type CreateDefinedResourceLayoutResult<
  */
 export function createDefinedResourceLayout<
   const Resources extends NonEmptyResources,
-  const Naming extends (
-    context: LayoutNameContext<LayoutResourceKey<Resources>>
-  ) => string,
-  const Options extends InPropsDefinition<Resources> = {},
-  Composables extends ComposableComponents = {},
-  DefaultNamespace extends boolean = false,
-  const SharedInclude extends object = {},
-  const SharedCustom extends InPropsObject = {}
->(
-  configuration: CreateDefinedResourceLayoutOptions<
-    Resources,
-    Options,
-    Composables,
-    DefaultNamespace,
-    SharedInclude,
-    SharedCustom,
-    Naming
-  > & { name: Naming }
-): CreateDefinedResourceLayoutResult<
-  Resources,
-  Options,
-  Composables,
-  DefaultNamespace,
-  SharedInclude,
-  SharedCustom,
-  Naming
->;
-export function createDefinedResourceLayout<
-  const Resources extends NonEmptyResources,
   const Options extends InPropsDefinition<Resources> = {},
   Composables extends ComposableComponents = {},
   DefaultNamespace extends boolean = false,
@@ -369,7 +340,7 @@ export function createDefinedResourceLayout<
   const SharedCustom extends InPropsObject = {},
   const DefaultNaming extends
     | LayoutNameInput<LayoutResourceKey<Resources>>
-    | undefined = undefined
+    | undefined = LayoutNameInput<LayoutResourceKey<Resources>> | undefined
 >(
   configuration: CreateDefinedResourceLayoutOptions<
     Resources,
@@ -387,36 +358,7 @@ export function createDefinedResourceLayout<
   DefaultNamespace,
   SharedInclude,
   SharedCustom,
-  DefaultNaming
->;
-export function createDefinedResourceLayout<
-  const Resources extends NonEmptyResources,
-  const Options extends InPropsDefinition<Resources> = {},
-  Composables extends ComposableComponents = {},
-  DefaultNamespace extends boolean = false,
-  const SharedInclude extends object = {},
-  const SharedCustom extends InPropsObject = {},
-  const DefaultNaming extends
-    | LayoutNameInput<LayoutResourceKey<Resources>>
-    | undefined = undefined
->(
-  configuration: CreateDefinedResourceLayoutOptions<
-    Resources,
-    Options,
-    Composables,
-    DefaultNamespace,
-    SharedInclude,
-    SharedCustom,
-    DefaultNaming
-  >
-): CreateDefinedResourceLayoutResult<
-  Resources,
-  Options,
-  Composables,
-  DefaultNamespace,
-  SharedInclude,
-  SharedCustom,
-  DefaultNaming
+  DefinedFactoryNaming<DefaultNaming>
 > {
   const { resources, options = {} as Options, composables } = configuration;
   const defineBoundLayout = defineResourceLayout.forResources(...resources);
@@ -481,7 +423,7 @@ export function createDefinedResourceLayout<
     DefaultNamespace,
     SharedInclude,
     SharedCustom,
-    DefaultNaming
+    DefinedFactoryNaming<DefaultNaming>
   >;
 
   boundDefineResourceLayout.lazy = <Module extends Record<string, unknown>>(

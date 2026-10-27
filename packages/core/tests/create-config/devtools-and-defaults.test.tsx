@@ -21,7 +21,7 @@ const naming = defineLayoutName(
 it('narrows default naming to the selected resource and supports optional variations', () => {
   const factory = createDefinedResourceLayout({
     resources: ['settings', 'users'],
-    name: naming(),
+    name: naming({}),
   });
   const definition = factory.defineResourceLayout({
     render: { default: () => <p>Ready</p>, Loading: () => <p>Loading</p> },
@@ -53,15 +53,14 @@ it('narrows default naming to the selected resource and supports optional variat
   expect(Inline.displayName).toBe('UsersInline');
 });
 
-it('requires an explicit name without a naming default', () => {
+it('derives a resource name without a naming default', () => {
   const definition = defineResourceLayout({
     resources: ['users'],
     layout: { render: () => <></> },
   });
-  () => {
-    // @ts-expect-error no naming default
-    definition.createResourceLayout({ resource: 'users' });
-  };
+  const Users = definition.createResourceLayout({ resource: 'users' });
+  expectTypeOf(Users.displayName).toEqualTypeOf<'UsersLayout'>();
+  expect(Users.displayName).toBe('UsersLayout');
 });
 
 it('merges factory props and local overrides by key', () => {

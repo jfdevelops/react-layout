@@ -67,7 +67,67 @@ const Settings = definition.createResourceLayout({
 // "AdminSettingsDetailResourceLayoutPreview"
 ```
 
-The customization argument is optional and may be a plain object or a callback receiving the same runtime naming context. Defaults apply in order **factory → definition → creation call**. Standalone `defineResourceLayout` accepts `name` alongside `resources` and `layout`. If no naming default exists, the direct creation call still requires `name`. Naming resolves when components are created; it does not change with mounted state.
+Declare custom string slots with `defineParts(...names)`, then provide the pattern to `namingFn`:
+
+```tsx
+const pageName = defineLayoutName
+  .defineParts('section', 'suffix')
+  .namingFn(({ resource, capitalize }, parts) =>
+    `${parts.section}${capitalize(resource)}${parts.suffix}`,
+  );
+
+const userName = pageName({ section: 'Admin', suffix: 'Page' });
+// When used for users: "AdminUsersPage"
+```
+
+Use an object to declare string and number slots. Both the pattern and supplied values suggest only the declared keys:
+
+```tsx
+const versionedName = defineLayoutName
+  .defineParts({ section: 'string', version: 'number' })
+  .namingFn(({ resource, capitalize }, parts) =>
+    `${parts.section}${capitalize(resource)}V${parts.version}`,
+  );
+
+const userName = versionedName({ section: 'Admin', version: 2 });
+// When used for users: "AdminUsersV2"
+```
+
+Numeric placeholders are `number | ''` inside the pattern because omission produces empty text. Plain interpolation works for either case; narrow before calling number-only methods:
+
+```tsx
+const formattedName = defineLayoutName
+  .defineParts({ version: 'number' })
+  .namingFn(({ resource, capitalize }, parts) => {
+    const version = typeof parts.version === 'number'
+      ? parts.version.toFixed(0)
+      : '';
+    return `${capitalize(resource)}V${version}`;
+  });
+```
+
+Declared slots are optional; omitted values render as empty text. Supplied values must match their declared kind. The default shorthand still supports `prefix`, `beforeSuffix`, and `append`, with key completions for objects and callback returns.
+
+Parts are also validated at runtime, without coercion. An unknown key throws `InvalidPartError`; a value with the wrong kind throws `InvalidPartTypeError`. Fixed values are checked when the naming function is called, and callback results are checked when a layout name is resolved. Both errors extend `ReactLayoutError` and provide structured context: the invalid key and available parts, or the part name and expected/received types.
+
+Strict checking defaults to `true`. To opt out of both TypeScript part constraints and runtime validation, use an object containing the pattern and `strict: false`:
+
+```tsx
+const uncheckedName = defineLayoutName
+  .defineParts({ version: 'number' })
+  .namingFn({
+    pattern: ({ resource, capitalize }, parts) =>
+      `${capitalize(resource)}V${parts.version}${parts.extra}`,
+    strict: false,
+  });
+
+uncheckedName({ version: 'legacy', extra: true });
+uncheckedName(() => ({ version: 'legacy', extra: true }));
+```
+
+The default-parts helper accepts the same object form: `defineLayoutName({ pattern, strict: false })`. Unchecked conventions accept arbitrary part keys and value types, including inside the pattern, and their generated names are typed as `string`. Strict conventions retain schema checks, key suggestions, runtime errors, and exact literal names.
+
+The customization argument is optional and may be a plain object or a callback receiving the same runtime naming context. Defaults apply in order **factory → definition → creation call**. Standalone `defineResourceLayout` accepts `name` alongside `resources` and `layout`. If no naming default exists, `name` can be omitted: resource `'users'` generates `'UsersLayout'` at runtime and as an exact TypeScript literal. This fallback also applies to scoped builders and namespaces. An explicit component name overrides the definition default, which overrides the factory default, which overrides the generated resource name. Naming resolves when components are created; it does not change with mounted state.
 
 ## Local preview
 
