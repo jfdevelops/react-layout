@@ -1,5 +1,11 @@
 # @jfdevelops/react-layout
 
+## 1.6.1
+
+### Patch Changes
+
+- 27d8c03: Require a single configuration object containing pattern and optional strict in defineLayoutName and namingFn. Update all naming usages, editor-completion checks, and documentation to use the object form.
+
 ## 1.6.0
 
 ### Minor Changes
