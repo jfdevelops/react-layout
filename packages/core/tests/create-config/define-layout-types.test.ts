@@ -176,10 +176,8 @@ describe('defineResourceLayout types', () => {
     expectTypeOf(UsersPage.resource).toEqualTypeOf<'users'>();
     expectTypeOf(layouts.resources).toEqualTypeOf<'users' | 'admins'>();
 
-    () => {
-      // @ts-expect-error a name is required when no default was configured
-      layouts({ resource: 'users' });
-    };
+    const GeneratedUsers = layouts({ resource: 'users', title: 'Users', description: 'Manage users' });
+    expectTypeOf(GeneratedUsers.displayName).toEqualTypeOf<'UsersLayout'>();
     () => {
       // @ts-expect-error unselected resources cannot be used
       layouts({ resource: 'posts', name: 'PostsPage' });

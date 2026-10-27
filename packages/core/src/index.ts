@@ -199,6 +199,11 @@ export type {
 
 export { defineLayoutName } from './create-config/layout-name';
 export type {
+  LayoutNameFactory,
+  LayoutNamePartDefinitions,
+  LayoutNamePartType,
+  LayoutNamePartValues,
+  LayoutNameCallback,
   LayoutNameContext,
   LayoutNameInput,
   LayoutNameParts,

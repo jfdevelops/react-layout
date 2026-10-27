@@ -7,7 +7,11 @@ import { expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
 const root = fileURLToPath(new URL('../..', import.meta.url));
-const published = process.env.REACT_LAYOUT_TYPE_ENTRY === 'dist';
+const typeEntry = process.env.REACT_LAYOUT_TYPE_ENTRY;
+const declarationEntry = typeEntry
+  ? resolve(root, typeEntry === 'dist' ? 'dist/index.d.mts' : typeEntry)
+  : undefined;
+const published = declarationEntry !== undefined;
 
 it.each(['typescript-5-9', 'typescript'])(
   `preserves the app's factory → state → layout → JSX types with %s (${
@@ -19,22 +23,95 @@ it.each(['typescript-5-9', 'typescript'])(
       resolve(root, 'tsconfig.json'),
       ts.sys.readFile
     );
-    const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, root);
+    const parsed = ts.parseJsonConfigFileContent(
+      config.config,
+      ts.sys,
+      root
+    );
     const paths = published
       ? {
-          '@jfdevelops/react-layout': [resolve(root, 'dist/index.d.mts')],
+          '@jfdevelops/react-layout': [declarationEntry]
         }
       : parsed.options.paths;
+    const completionFile = resolve(
+      root,
+      'tests/create-config/naming-parts-probe.ts'
+    );
+    const completionSource = `
+      import { defineLayoutName } from '@jfdevelops/react-layout';
+      const naming = defineLayoutName(({ resource, capitalize }, parts) =>
+        \`\${parts.prefix}\${capitalize(resource)}\${parts.beforeSuffix}Layout\${parts.append}\`
+      );
+      naming({ /*defaultEmpty*/ });
+      naming({ prefix: 'Admin', /*defaultPopulated*/ });
+      naming(() => ({ /*defaultCallback*/ }));
+      const custom = defineLayoutName.defineParts({ section: 'string', version: 'number' })
+        .namingFn(({ capitalize, resource }, parts) =>
+          \`\${parts./*customPattern*/section}\${capitalize(resource)}V\${parts.version}\`
+        );
+      custom({ /*customEmpty*/ });
+      custom({ section: 'Admin', /*customPopulated*/ });
+      custom(() => ({ /*customCallback*/ }));
+      const strings = defineLayoutName.defineParts('section', 'suffix')
+        .namingFn(({ resource }, parts) => \`\${parts.section}\${resource}\${parts.suffix}\`);
+      strings({ /*stringParts*/ });
+    `;
+    const service = ts.createLanguageService({
+      getScriptFileNames: () => [completionFile],
+      getScriptVersion: () => '1',
+      getScriptSnapshot: (file) => {
+        const contents =
+          file === completionFile
+            ? completionSource
+            : ts.sys.readFile(file);
+        return contents === undefined
+          ? undefined
+          : ts.ScriptSnapshot.fromString(contents);
+      },
+      getCurrentDirectory: () => root,
+      getCompilationSettings: () => ({ ...parsed.options, paths }),
+      getDefaultLibFileName: ts.getDefaultLibFilePath,
+      fileExists: ts.sys.fileExists,
+      readFile: ts.sys.readFile,
+      readDirectory: ts.sys.readDirectory
+    });
+    try {
+      for (const [marker, expected] of Object.entries({
+        defaultEmpty: ['prefix', 'beforeSuffix', 'append'],
+        defaultPopulated: ['beforeSuffix', 'append'],
+        defaultCallback: ['prefix', 'beforeSuffix', 'append'],
+        customPattern: ['section', 'version'],
+        customEmpty: ['section', 'version'],
+        customPopulated: ['version'],
+        customCallback: ['section', 'version'],
+        stringParts: ['section', 'suffix']
+      })) {
+        const entries = service.getCompletionsAtPosition(
+          completionFile,
+          completionSource.indexOf('/*' + marker + '*/'),
+          {}
+        );
+        expect(
+          entries?.entries.map(({ name }) => name),
+          marker
+        ).toEqual(expect.arrayContaining(expected));
+      }
+    } finally {
+      service.dispose();
+    }
     const program = ts.createProgram({
       rootNames: [
-        resolve(root, 'tests/create-config/fixtures/named-factory/usage.tsx'),
-        resolve(root, 'vitest.setup.ts'),
+        resolve(
+          root,
+          'tests/create-config/fixtures/named-factory/usage.tsx'
+        ),
+        resolve(root, 'vitest.setup.ts')
       ],
-      options: { ...parsed.options, paths },
+      options: { ...parsed.options, paths }
     });
     expect(
       program.getSourceFile(
-        resolve(root, published ? 'dist/index.d.mts' : 'src/index.ts')
+        declarationEntry ?? resolve(root, 'src/index.ts')
       )
     ).toBeDefined();
     const fixtureRoot = resolve(
@@ -49,7 +126,7 @@ it.each(['typescript-5-9', 'typescript'])(
       ...program
         .getSourceFiles()
         .filter((file) => file.fileName.startsWith(fixtureRoot))
-        .flatMap((file) => program.getSemanticDiagnostics(file)),
+        .flatMap((file) => program.getSemanticDiagnostics(file))
     ];
     expect(
       diagnostics.map((d) => {
@@ -59,7 +136,9 @@ it.each(['typescript-5-9', 'typescript'])(
                 d.file.getLineAndCharacterOfPosition(d.start).line + 1
               }: `
             : '';
-        return location + ts.flattenDiagnosticMessageText(d.messageText, '\n');
+        return (
+          location + ts.flattenDiagnosticMessageText(d.messageText, '\n')
+        );
       })
     ).toEqual([]);
   },

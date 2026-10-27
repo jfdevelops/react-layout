@@ -1,3 +1,4 @@
+import type { LayoutNameInput, ResolvedLayoutName } from '../layout-name';
 import type { LayoutResourceKey, ResourceDefinition } from '../../resource';
 
 export type CapitalizedResource<Resource extends string> = Resource extends Resource
@@ -100,7 +101,15 @@ export type NormalizeCapitalizedResourceNameMatch<
     : never
   : never;
 
-export type SelectedResourceLayoutName<Arguments, Resource extends string> =
+export type SelectedResourceLayoutName<
+  Arguments,
+  Resource extends string,
+  DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
+> = HasResourceLayoutName<Arguments, Resource> extends true
+  ? ConfiguredResourceLayoutName<Arguments, Resource>
+  : ResolvedLayoutName<DefaultNaming, Resource>;
+
+type ConfiguredResourceLayoutName<Arguments, Resource extends string> =
   Arguments extends ReadonlyArray<string>
     ? string
     : Arguments extends readonly [infer Options]
