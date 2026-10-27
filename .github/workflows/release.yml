@@ -30,10 +30,21 @@ jobs:
     needs: ci
 
     steps:
+      - name: Verify release token
+        env:
+          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          if [ -z "$RELEASE_TOKEN" ]; then
+            echo "::error::Add the RELEASE_TOKEN repository secret with Contents and Pull requests write permissions to allow release PRs to merge and trigger publishing."
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # Use the same token for git pushes so release PR checks run automatically.
+          token: ${{ secrets.RELEASE_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -53,12 +64,21 @@ jobs:
         run: pnpm build
 
       - name: Publish
+        id: changesets
         uses: changesets/action@v1
         with:
           publish: pnpm release
           commit: 'ci(changesets): version packages'
           title: 'ci(changesets): version packages'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Auto-merge release PR
+        if: steps.changesets.outputs.pullRequestNumber != ''
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.changesets.outputs.pullRequestNumber }}
+        run: gh pr merge "$PR_NUMBER" --auto --squash
