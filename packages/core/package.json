@@ -31,6 +31,7 @@
     "build": "tsdown",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:types:published": "REACT_LAYOUT_TYPE_ENTRY=dist vitest run tests/create-config/factory-naming-inference.test.ts",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
@@ -66,6 +67,7 @@
     "react-dom": "18.3.1",
     "tsdown": "0.22.1",
     "typescript": "6.0.3",
+    "typescript-5-9": "npm:typescript@5.9.3",
     "unrun": "0.3.0",
     "vite": "8.0.10",
     "vitest": "4.1.5"

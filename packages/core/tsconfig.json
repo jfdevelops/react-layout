@@ -8,6 +8,9 @@
       "@testing-library/jest-dom"
     ],
     "paths": {
+      "@jfdevelops/react-layout": [
+        "./src/index.ts"
+      ],
       "@jfdevelops/react-layout-composable-breadcrumb": [
         "../composable-breadcrumb/src/index.ts"
       ],
