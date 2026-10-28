@@ -169,11 +169,6 @@ type LayoutRenderContext<
   composables: LayoutRenderComposables<Composables>;
   inProps: Record<string, unknown>;
   /**
-   * @deprecated Use `resources.current` instead. `resource` will be removed in
-   * the next major version.
-   */
-  resource: LayoutResourceKey<Resources>;
-  /**
    * Accessor for the resources bound to this definition. Read `resources.current`
    * for the resource this instance renders, call `resources()` for normalized
    * definitions, `resources.raw()` for the original value, use
@@ -2072,7 +2067,6 @@ function defineResourceLayoutImpl<
     );
     const mergedRenderContext = {
       composables: resolvedComposables as LayoutRenderComposables<Composables>,
-      resource: layoutContext.resource,
       resources: createLayoutRenderResourcesAccessor(
         resources as Resources,
         layoutContext.resource

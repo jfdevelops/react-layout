@@ -888,7 +888,7 @@ describe('createComponent', () => {
         },
         render: ({ children, title }, context) => (
           <section>
-            <h1>{`${context.resource}/${context.name}: ${title}`}</h1>
+            <h1>{`${context.resources.current}/${context.name}: ${title}`}</h1>
             {children}
           </section>
         ),

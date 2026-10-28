@@ -71,7 +71,7 @@ it('merges factory props and local overrides by key', () => {
   });
   const definition = factory.defineResourceLayout({
     props: {
-      include: { title: { visibility: 'required', passthrough: 'component' } },
+      include: { title: { required: true, suppliedVia: 'component' } },
     },
     render: () => <p>Content</p>,
   });
@@ -153,7 +153,7 @@ it('exposes globally included props in inline states and separately created stat
       Preview: {
         props: {
           include: {
-            title: { visibility: 'required', passthrough: 'component' },
+            title: { required: true, suppliedVia: 'component' },
           },
         },
         render: ({ title, count }) => {

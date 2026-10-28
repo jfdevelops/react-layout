@@ -154,7 +154,7 @@ const layoutDefinition = defineResourceLayout({
           <p>No records found for this resource.</p>
         </UiCard>
       ),
-      default: (props, { composables, resource }) => {
+      default: (props, { composables, resources }) => {
         return (
           <composables.Layout
             className={cn(
@@ -171,7 +171,7 @@ const layoutDefinition = defineResourceLayout({
                 </composables.Description>
               </div>
               <div className="text-xs font-medium uppercase tracking-[0.18em] text-lime-300">
-                Resource: <code>{resource}</code>
+                Resource: <code>{resources.current}</code>
               </div>
             </CardHeader>
             <composables.Content>{props.children}</composables.Content>

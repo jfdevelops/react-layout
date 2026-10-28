@@ -148,7 +148,7 @@ describe('defineResourceLayout', () => {
       layout: {
         render: (_props, context) => (
           <section>
-            <span>{context.resource}</span>
+            <span>{context.resources.current}</span>
           </section>
         ),
       },
@@ -188,7 +188,7 @@ describe('defineResourceLayout', () => {
         render: (props, context) => (
           <section>
             <span>{context.name}</span>
-            <span>{context.resource}</span>
+            <span>{context.resources.current}</span>
             <h1>{props.title}</h1>
           </section>
         ),
@@ -254,7 +254,7 @@ describe('defineResourceLayout', () => {
       resources: ['admins'],
       layout: {
         render: (_props, context) => (
-          <span>{`${context.resource}:${context.name}`}</span>
+          <span>{`${context.resources.current}:${context.name}`}</span>
         ),
       },
     });
@@ -290,7 +290,7 @@ describe('defineResourceLayout', () => {
       resources: ['admins'],
       layout: {
         render: (_props, context) => (
-          <span>{`${context.resource}:${context.name}`}</span>
+          <span>{`${context.resources.current}:${context.name}`}</span>
         ),
       },
     });
@@ -318,7 +318,7 @@ describe('defineResourceLayout', () => {
       resources: ['admins'],
       layout: {
         render: (_props, context) => (
-          <span>{`${context.resource}:${context.name}`}</span>
+          <span>{`${context.resources.current}:${context.name}`}</span>
         ),
       },
     });
@@ -357,7 +357,7 @@ describe('defineResourceLayout', () => {
           },
         },
         render: (props, context) => (
-          <span>{`${context.resource}:${context.name}:${props.title}`}</span>
+          <span>{`${context.resources.current}:${context.name}:${props.title}`}</span>
         ),
       },
     });
@@ -383,7 +383,7 @@ describe('defineResourceLayout', () => {
         render: (_props, context) => (
           <section>
             <span>{context.name}</span>
-            <span>{context.resource}</span>
+            <span>{context.resources.current}</span>
           </section>
         ),
       },
@@ -672,7 +672,7 @@ describe('defineResourceLayout', () => {
         render: (props, context) => (
           <section>
             <span>{context.name}</span>
-            <span>{context.resource}</span>
+            <span>{context.resources.current}</span>
             <span>{props.title}</span>
             <span>{String(Object.keys(context.inProps).length)}</span>
           </section>
@@ -853,12 +853,12 @@ describe('defineResourceLayout', () => {
         props: {
           include: {
             segments: {
-              visibility: 'optional',
-              passthrough: 'component',
+              required: false,
+              suppliedVia: 'component',
             },
             configLabel: {
-              visibility: 'optional',
-              passthrough: 'config',
+              required: false,
+              suppliedVia: 'config',
             },
           },
         },
@@ -896,8 +896,8 @@ describe('defineResourceLayout', () => {
         props: {
           include: {
             label: {
-              visibility: 'optional',
-              passthrough: 'component',
+              required: false,
+              suppliedVia: 'component',
             },
           },
         },
@@ -1099,7 +1099,7 @@ describe('defineResourceLayout', () => {
         layout: {
           render: (_props, context) => {
             captured = {
-              resource: context.resource,
+              resource: context.resources.current,
               current: context.resources.current,
               isUsers: context.resources.isResource('users'),
               isNope: context.resources.isResource('nope'),

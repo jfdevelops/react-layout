@@ -125,10 +125,10 @@ it.each(['empty', 'populated'])('suggests state and include keys in %s objects a
     }
     const behaviorEntries = service.getCompletionsAtPosition(file, source.indexOf('/*includeBehavior*/'), {})?.entries;
     expect(behaviorEntries?.map(({ name }) => name)).toEqual(
-      expect.arrayContaining(['required', 'suppliedVia', 'visibility', 'passthrough']),
+      expect.arrayContaining(['required', 'suppliedVia']),
     );
     for (const name of ['visibility', 'passthrough']) {
-      expect(behaviorEntries?.find(entry => entry.name === name)?.kindModifiers).toContain('deprecated');
+      expect(behaviorEntries?.map(entry => entry.name)).not.toContain(name);
     }
     const functionProps = service.getCompletionsAtPosition(
       file, source.indexOf('/*functionProps*/'), {},

@@ -29,7 +29,7 @@ function defineAdminLayout(onSidebarMount?: () => void) {
       }),
       props: {
         include: {
-          title: { visibility: 'optional', passthrough: 'component' },
+          title: { required: false, suppliedVia: 'component' },
         },
       },
       render: ({ title }, { resource, resources, children }) => (

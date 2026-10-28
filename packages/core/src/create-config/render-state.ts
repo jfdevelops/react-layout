@@ -538,12 +538,8 @@ type DefaultReferenceIncludes<
     keyof StateCustomProps<ReferenceDefinition<Ref>>,
     keyof CustomProps
   >]: {
-    visibility: StateCustomProps<ReferenceDefinition<Ref>>[Key] extends {
-      visibility: infer Visibility;
-    }
-      ? Visibility
-      : 'required';
-    passthrough: 'component';
+    required: StateCustomProps<ReferenceDefinition<Ref>>[Key] extends { visibility: 'optional' } ? false : true;
+    suppliedVia: 'component';
   };
 };
 
@@ -960,7 +956,7 @@ export function createRenderStateBuilder<
           ...Object.fromEntries(
             Object.entries(source.props?.custom ?? {}).map(([key, prop]) => [
               key,
-              { visibility: prop.visibility, passthrough: 'component' },
+              { required: prop.visibility !== 'optional', suppliedVia: 'component' },
             ])
           ),
         }).filter(([key]) => !(key in custom))
@@ -999,12 +995,9 @@ export function createRenderStateBuilder<
                 ([key, behavior]) => [
                   key,
                   {
-                    visibility:
-                      behavior === 'optional' ||
-                      getIncludedPropBehavior(behavior)?.visibility === 'optional'
-                        ? 'optional'
-                        : 'required',
-                    passthrough: 'component',
+                    required: !(behavior === 'optional' ||
+                      getIncludedPropBehavior(behavior)?.visibility === 'optional'),
+                    suppliedVia: 'component',
                   },
                 ]
               )

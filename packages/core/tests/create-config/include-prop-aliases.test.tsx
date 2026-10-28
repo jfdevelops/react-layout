@@ -1,44 +1,15 @@
+import { getIncludedPropBehavior } from '../../src/props';
 import { render, screen } from '@testing-library/react';
 import { expect, expectTypeOf, it } from 'vitest';
-import { createDefinedResourceLayout, createProp } from '../../src';
+import {
+  createDefinedResourceLayout,
+  createProp,
+  type IncludedPropBehavior,
+} from '../../src';
 
-it.each([
-  {
-    name: 'new names',
-    component: { required: false, suppliedVia: 'component' },
-    config: { required: true, suppliedVia: 'config' },
-  },
-  {
-    name: 'deprecated names',
-    component: { visibility: 'optional', passthrough: 'component' },
-    config: { visibility: 'required', passthrough: 'config' },
-  },
-  {
-    name: 'mixed requirement',
-    component: { required: false, passthrough: 'component' },
-    config: { required: true, passthrough: 'config' },
-  },
-  {
-    name: 'mixed supply source',
-    component: { visibility: 'optional', suppliedVia: 'component' },
-    config: { visibility: 'required', suppliedVia: 'config' },
-  },
-  {
-    name: 'new names take precedence',
-    component: {
-      required: false,
-      visibility: 'required',
-      suppliedVia: 'component',
-      passthrough: 'config',
-    },
-    config: {
-      required: true,
-      visibility: 'optional',
-      suppliedVia: 'config',
-      passthrough: 'component',
-    },
-  },
-] as const)('supports $name for included props', ({ component, config }) => {
+it('supports canonical include requirements and supply sources', () => {
+  const component = { required: false, suppliedVia: 'component' } as const;
+  const config = { required: true, suppliedVia: 'config' } as const;
   const factory = createDefinedResourceLayout({
     resources: ['users'],
     options: { label: createProp.string(), title: createProp.string() },
@@ -82,7 +53,7 @@ it.each([
   expect(screen.getByText('Configured: Component')).toBeInTheDocument();
   view.rerender(<Users.Preview label="Preview component" />);
   expect(
-    screen.getByText('Preview Configured: Preview component')
+    screen.getByText('Preview Configured: Preview component'),
   ).toBeInTheDocument();
   view.unmount();
   () => {
@@ -94,4 +65,54 @@ it.each([
     // @ts-expect-error config props are not accepted as component props
     Users({ title: 'Wrong source' });
   };
+});
+
+it('rejects removed include aliases at runtime and in public types', () => {
+  expect(() =>
+    getIncludedPropBehavior({ visibility: 'required', passthrough: 'config' }),
+  ).toThrow('removed');
+  expect(() =>
+    getIncludedPropBehavior({
+      required: true,
+      suppliedVia: 'config',
+      visibility: 'required',
+    }),
+  ).toThrow('removed');
+  () => {
+    const oldRequirement: IncludedPropBehavior = {
+      required: true,
+      suppliedVia: 'config',
+      // @ts-expect-error visibility was removed in version 2
+      visibility: 'required',
+    };
+    const oldSupply: IncludedPropBehavior = {
+      required: true,
+      suppliedVia: 'config',
+      // @ts-expect-error passthrough was removed in version 2
+      passthrough: 'component',
+    };
+    return [oldRequirement, oldSupply];
+  };
+});
+
+it('removes the deprecated resource context field while preserving the resource accessor', () => {
+  const factory = createDefinedResourceLayout({ resources: ['users'] });
+  const definition = factory.defineResourceLayout({
+    render: (_, context) => {
+      expect(Object.hasOwn(context, 'resource')).toBe(false);
+      expectTypeOf(context.resources.current).toEqualTypeOf<'users'>();
+      () => {
+        // @ts-expect-error use resources.current in render contexts
+        context.resource;
+      };
+      return <p>{context.resources.current}</p>;
+    },
+  });
+  const Users = definition.createResourceLayout({
+    resource: 'users',
+    name: 'Users',
+  });
+  const view = render(<Users />);
+  expect(screen.getByText('users')).toBeInTheDocument();
+  view.unmount();
 });

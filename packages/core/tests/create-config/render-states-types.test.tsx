@@ -100,8 +100,8 @@ it('uses default-state props for the root component contract', () => {
           props: {
             include: {
               title: {
-                visibility: 'required',
-                passthrough: 'component',
+                required: true,
+                suppliedVia: 'component',
               },
             },
             custom: {
@@ -349,8 +349,8 @@ it('lifts included component props with their call-site optionality', () => {
       props: {
         include: {
           title: {
-            visibility: 'optional',
-            passthrough: 'component',
+            required: false,
+            suppliedVia: 'component',
           },
         },
       },
@@ -420,7 +420,7 @@ it('infers custom inline states from the complete render map', () => {
       default: () => <></>,
       Preview: {
         props: {
-          include: { title: { visibility: 'required', passthrough: 'component' } },
+          include: { title: { required: true, suppliedVia: 'component' } },
           custom: { count: createProp.number() },
         },
         composables: () => ({ Frame: createComposableComponent({ name: 'PreviewFrame' }) }),

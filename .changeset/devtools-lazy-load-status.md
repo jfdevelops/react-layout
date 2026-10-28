@@ -1,7 +1,7 @@
 ---
-"@jfdevelops/react-layout": major
-"@jfdevelops/react-layout-devtools-core": minor
-"@jfdevelops/react-layout-devtools-react": minor
+'@jfdevelops/react-layout': major
+'@jfdevelops/react-layout-devtools-core': minor
+'@jfdevelops/react-layout-devtools-react': minor
 ---
 
 Report lazy resource load status (`unresolved`, `loading`, `resolved`, `error`) to devtools, and show the failed load's error and `cause` chain in the node details.
@@ -11,3 +11,5 @@ Unify lazy resources, render states, and scoped components around a cached loade
 **Breaking:** lazy error boundaries now handle only the closed `LazyResourceError` union. Ordinary page render errors propagate to an enclosing route boundary instead of a configured lazy `Error` component. Lazy proxy compound states must start with a capital letter; lowercase and React/Promise statics no longer synthesize state components.
 
 Lazy defaults receive the factory's resource path union in `resource`, plus typed errors discriminated by `code`. Add type-only `defineLazyDefaults.errors` and `createErrorComponent` (render callback or optional code handlers with fallback, including custom props). Import error messages include the original cause; configuration failures use distinct shape and missing-state errors that retain `LayoutConfigurationError` compatibility.
+
+Remove the deprecated include settings `visibility` and `passthrough`; use `required` and `suppliedVia`. Legacy settings now produce a configuration error. Remove the deprecated layout render-context `resource` property; read `resources.current` instead. Naming callbacks and resource/error props retain their non-deprecated `resource` fields. Migrate examples, tests, autocomplete, and devtools guidance to the supported API.

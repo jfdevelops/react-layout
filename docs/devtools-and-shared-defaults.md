@@ -31,7 +31,7 @@ const Users = definition.createResourceLayout({
 
 Use `required: true | false` to control whether a prop is required, and `suppliedVia: 'component' | 'config'` to select where its value is supplied. Optional component props still accept configuration-time defaults.
 
-`visibility: 'required' | 'optional'` and `passthrough: 'component' | 'config'` remain supported as deprecated aliases until the next major version. The new and old names can be mixed during migration. If both names for the same setting are present, `required` and `suppliedVia` take precedence. The existing `true` and `'optional'` shorthand forms remain supported.
+Version 2 removes the `visibility` and `passthrough` aliases. Replace `visibility: 'required'` / `'optional'` with `required: true` / `false`, and replace `passthrough` with `suppliedVia`. The `true` and `'optional'` shorthand forms remain supported. Layout render callbacks remove `context.resource`; use `context.resources.current`. Naming callbacks and resource props retain their `resource` field.
 
 Merge precedence is **factory → layout → state**. Each `include` or `custom` key is merged independently. The closer declaration replaces the entire entry for that prop. Omitted keys inherit; an empty object preserves the defaults. State callbacks created separately with `createRenderState` are typed against their factory contract; changing a layout contract must remain compatible with those callbacks. Inline state callbacks receive the effective layout/state contract.
 
