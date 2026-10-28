@@ -28,15 +28,16 @@ function composableScope() {
   return { definition, scope, Calendar };
 }
 
-it('exposes the same typed, renderable parts as a directly bound resource layout', () => {
+it('exposes the same typed, renderable parts as a directly created resource layout', () => {
   const { definition, Calendar } = composableScope();
   const Availability = Calendar.asHOF()('availability');
   const Detail = Availability.makeComposable({
     name: 'AvailabilityDetailPage',
   });
-  const Direct = definition.createResourceLayout
-    .forResource('availability')({ name: 'AvailabilityPage' })
-    .makeComposable({ name: 'AvailabilityDetailPage' });
+  const Direct = definition.createResourceLayout({
+    resource: 'availability',
+    name: 'AvailabilityPage',
+  }).makeComposable({ name: 'AvailabilityDetailPage' });
 
   expect(Detail.displayName).toBe('AvailabilityDetailPage');
   expectTypeOf(Detail.Header).toEqualTypeOf<typeof Direct.Header>();
