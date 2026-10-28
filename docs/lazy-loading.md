@@ -7,7 +7,7 @@ the failed import and React's lazy cache so the next attempt imports again.
 
 ```tsx
 const factory = createDefinedResourceLayout({
-  resources: ["appointments", "availability"],
+  resources: ['appointments', 'availability'],
 });
 const { defineLazyDefaults, defineResourceLayout, createRenderState } = factory;
 
@@ -29,8 +29,8 @@ defineLazyDefaults({
 });
 
 export const Appointments = defineResourceLayout.lazy({
-  resource: "appointments",
-  load: () => import("./appointments-layout"),
+  resource: 'appointments',
+  load: () => import('./appointments-layout'),
   fallback: <p>Downloading appointments…</p>,
 });
 
@@ -38,7 +38,7 @@ export const Appointments = defineResourceLayout.lazy({
 await Appointments.preload();
 
 export const Audit = createRenderState.lazy({
-  load: () => import("./audit-state"),
+  load: () => import('./audit-state'),
   fallback: <p>Downloading audit…</p>,
 });
 // The existing createRenderState.lazy(() => import('./audit-state')) also works.
@@ -115,27 +115,27 @@ place of `render`. The two are mutually exclusive. Pass an import callback or
 const { createResourceLayout } = defineResourceLayout({
   render: () => <main />,
 });
-const scope = createResourceLayout.forResources("appointments", "availability");
+const scope = createResourceLayout.forResources('appointments', 'availability');
 
 const appointments = scope.createResourceComponents({
-  resource: "appointments",
+  resource: 'appointments',
   components: {
-    Grid: { lazy: () => import("./appointments-grid") },
+    Grid: { lazy: () => import('./appointments-grid') },
     Calendar: {
       lazy: {
-        load: () => import("./appointments-calendar"),
+        load: () => import('./appointments-calendar'),
         fallback: <p>Loading calendar…</p>,
       },
     },
   },
-  lazy: () => import("./appointments-content"),
+  lazy: () => import('./appointments-content'),
 });
 
 const CalendarPage = scope.createComponent({
   resources: { appointments },
   render: (_, ctx) => <ctx.Appointments />,
 });
-export const AppointmentsPage = CalendarPage.asHOF()("appointments");
+export const AppointmentsPage = CalendarPage.asHOF()('appointments');
 ```
 
 The imported scoped module exports exactly one render function, React
@@ -154,3 +154,27 @@ Every lazy declaration appears in devtools before loading. Its node reports
 loading, resolution, or failure, tracks mounted loading and error UI, and
 shows a serialized cause chain and stack traces when selected. The header
 counts lazy declarations even when no loaded layout has registered yet.
+
+## Composable parts on bound pages
+
+When the layout defines composables, a page returned by `asHOF()` also exposes
+`makeComposable`. Its resource is already bound; pass only the optional name:
+
+```tsx
+const AvailabilityPage = CalendarPage.asHOF()('availability');
+const AvailabilityDetailPage = AvailabilityPage.makeComposable({
+  name: 'AvailabilityDetailPage',
+});
+
+<AvailabilityDetailPage>
+  <AvailabilityDetailPage.Header>Availability</AvailabilityDetailPage.Header>
+  <AvailabilityDetailPage.Content>Details</AvailabilityDetailPage.Content>
+</AvailabilityDetailPage>;
+```
+
+The returned parts are the same ones exposed by a resource layout's
+`makeComposable`. Omit the name (or call without arguments) to use the name
+configured by `forResources`. Rebinding the same resource returns the same
+component and helper. Without composables, the helper is `undefined` in both
+runtime and public types. `makeComposable` is reserved as a scoped component
+name.
