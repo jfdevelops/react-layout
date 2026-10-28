@@ -370,3 +370,5 @@ choose which agents and skill directories it supports.
 Use `ReactLayoutDevtools` from `@jfdevelops/react-layout-devtools-react` for a floating graph inspector, or embed `ReactLayoutDevtoolsContent` in TanStack Devtools. Pass the result of `createDefinedResourceLayout` or `defineResourceLayout` as `source`; no provider is required. The separate `@jfdevelops/react-layout-devtools-core` package exposes the inspection protocol for other adapters.
 
 See [devtools and shared defaults](docs/devtools-and-shared-defaults.md) for setup, global prop contracts, reusable naming conventions, and local overrides.
+
+See [lazy loading](docs/lazy-loading.md) for shared preload and retry behavior, typed lazy errors, and scoped content shells that avoid circular imports.

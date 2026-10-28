@@ -1,3 +1,4 @@
+import { LayoutConfigurationError } from './errors';
 import type {
   ComposableComponents,
   MergePresetProps,
@@ -22,7 +23,7 @@ export type { InPropsObject };
  */
 export type PropsContextRender<RenderProps, Context, Result = unknown> = (
   props: RenderProps,
-  context: Context
+  context: Context,
 ) => Result;
 
 /**
@@ -40,7 +41,7 @@ export interface PropsRenderDefinition<
   Props = InPropsObject,
   RenderProps = Props extends InPropsObject ? ResolveProps<Props> : unknown,
   Result = unknown,
-  Context = unknown
+  Context = unknown,
 > {
   props?: Props;
   render: PropsContextRender<RenderProps, Context, Result>;
@@ -48,30 +49,31 @@ export interface PropsRenderDefinition<
 
 export type InPropsOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  Name extends string
+  Name extends string,
 > = {
   name: LiteralWrappedProp<Name, 'string', 'required'>;
   resource: EnumWrappedProp<ResourceEnum<Resources>, 'string', 'required'>;
 };
 export type InPropsFunction<
-  Resources extends ReadonlyArray<ResourceDefinition>
+  Resources extends ReadonlyArray<ResourceDefinition>,
 > = <Name extends string>(
-  props: Show<InPropsOptions<Resources, Name>>
+  props: Show<InPropsOptions<Resources, Name>>,
 ) => InPropsObject;
 export type InPropsDefinition<
-  Resources extends ReadonlyArray<ResourceDefinition>
+  Resources extends ReadonlyArray<ResourceDefinition>,
 > = InPropsObject | InPropsFunction<Resources>;
 export type InferredInProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  Options extends InPropsDefinition<Resources>
+  Options extends InPropsDefinition<Resources>,
 > = Options extends InPropsFunction<Resources> ? ReturnType<Options> : Options;
 export type MergedLayoutInProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents
-> = InferredInProps<Resources, Options> extends InPropsObject
-  ? InferredInProps<Resources, Options> & MergePresetProps<Composables>
-  : never;
+  Composables extends ComposableComponents,
+> =
+  InferredInProps<Resources, Options> extends InPropsObject
+    ? InferredInProps<Resources, Options> & MergePresetProps<Composables>
+    : never;
 export type RequiredVariant = true | 'required';
 /**
  * @typeParam RequiredVariant How the required props are selected. In application code,
@@ -80,53 +82,11 @@ export type RequiredVariant = true | 'required';
 type PropsType<Variant extends RequiredVariant = true> = Variant | 'optional';
 type InternalPropsType = PropsType<'required'>;
 type IncludedPropSource = 'component' | 'config';
-type IncludedPropRequirement =
-  | {
-      /**
-       * Whether the prop must be supplied. When both names are present,
-       * `required` takes precedence over the deprecated `visibility` setting.
-       */
-      required: boolean;
-    }
-  | {
-      /**
-       * Whether the prop must be supplied (`'required'`) or may be omitted
-       * (`'optional'`). The `required` setting takes precedence when both are present.
-       *
-       * @deprecated Use `required: true` instead of `visibility: 'required'`, or
-       * `required: false` instead of `visibility: 'optional'`.
-       * This property will be removed in the next major version.
-       */
-      visibility: 'optional' | 'required';
-    };
-type IncludedPropSupply =
-  | {
-      /**
-       * Where the prop is supplied: at component render time (`'component'`)
-       * or through layout creation options (`'config'`). Optional component props
-       * also accept configuration-time defaults. This setting takes precedence
-       * over the deprecated `passthrough` setting.
-       */
-      suppliedVia: IncludedPropSource;
-    }
-  | {
-      /**
-       * Where the prop is supplied: at component render time (`'component'`)
-       * or through layout creation options (`'config'`). Optional component props
-       * also accept configuration-time defaults. The `suppliedVia` setting takes
-       * precedence when both names are present.
-       *
-       * @deprecated Use `suppliedVia: 'component'` instead of
-       * `passthrough: 'component'`, or `suppliedVia: 'config'` instead of
-       * `passthrough: 'config'`. This property will be removed in the next major version.
-       */
-      passthrough: IncludedPropSource;
-    };
-
-/**
- * Controls where an included layout prop is supplied and whether it is required there.
- */
-export type IncludedPropBehavior = IncludedPropRequirement & IncludedPropSupply;
+/** Controls whether an included prop is required and where it is supplied. */
+export type IncludedPropBehavior = {
+  required: boolean;
+  suppliedVia: IncludedPropSource;
+};
 
 type IncludedPropType = PropsType | IncludedPropBehavior;
 /**
@@ -141,22 +101,18 @@ export type IncludedPropVisibility<Value> = Value extends { required: boolean }
   ? Value['required'] extends true
     ? 'required'
     : 'optional'
-  : Value extends { visibility: 'required' | 'optional' }
-  ? Value['visibility']
   : Value extends true | 'required'
-  ? 'required'
-  : Value extends 'optional'
-  ? 'optional'
-  : never;
+    ? 'required'
+    : Value extends 'optional'
+      ? 'optional'
+      : never;
 export type IncludedPropSupplySource<Value> = Value extends {
   suppliedVia: IncludedPropSource;
 }
   ? Value['suppliedVia']
-  : Value extends { passthrough: IncludedPropSource }
-  ? Value['passthrough']
   : never;
 /**
- * Canonical shape used internally for either spelling of an include behavior.
+ * Internal representation of the supported include behavior.
  */
 export type NormalizedIncludedPropBehavior<Value> = Value extends
   | { required: boolean }
@@ -175,25 +131,16 @@ export type IncludedPropPassthrough<Value> = Value extends
       ? 'component' | 'config'
       : 'component'
     : IncludedPropSupplySource<Value>
-  : Value extends {
-      visibility: 'required' | 'optional';
-      passthrough: IncludedPropSource;
-    }
-  ? Value['passthrough'] extends 'component'
-    ? Value['visibility'] extends 'optional'
-      ? 'component' | 'config'
-      : 'component'
-    : Value['passthrough']
   : Value extends true | 'required'
-  ? 'config'
-  : Value extends 'optional'
-  ? 'component' | 'config'
-  : never;
+    ? 'config'
+    : Value extends 'optional'
+      ? 'component' | 'config'
+      : never;
 
 type GetPropsKey<
   IncludeProps extends object,
   Visibility extends InternalPropsType,
-  Passthrough extends IncludedPropSource | 'render' = 'render'
+  Passthrough extends IncludedPropSource | 'render' = 'render',
 > = {
   [Key in keyof IncludeProps]: IncludedPropVisibility<
     IncludeProps[Key]
@@ -201,15 +148,15 @@ type GetPropsKey<
     ? Passthrough extends 'render'
       ? Key
       : Passthrough extends IncludedPropPassthrough<IncludeProps[Key]>
-      ? Key
-      : never
+        ? Key
+        : never
     : never;
 }[keyof IncludeProps];
 type SelectedIncludedProps<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,
   Visibility extends InternalPropsType,
-  Passthrough extends IncludedPropSource | 'render' = 'render'
+  Passthrough extends IncludedPropSource | 'render' = 'render',
 > = Pick<
   Props,
   PropsKeys<Props, GetPropsKey<IncludeProps, Visibility, Passthrough>>
@@ -224,7 +171,7 @@ type OptionalPropDefinition<Definition> = Definition extends {
 /** Raw validator definitions accepted by a generated component call. */
 export type IncludedComponentPropDefinitions<
   Props extends InPropsObject,
-  IncludeProps extends IncludedProps<Props>
+  IncludeProps extends IncludedProps<Props>,
 > = SelectedIncludedProps<Props, IncludeProps, 'required', 'component'> & {
   [Key in keyof SelectedIncludedProps<
     Props,
@@ -238,7 +185,7 @@ export type IncludedComponentPropDefinitions<
 
 export type ResolvedIncludedProps<
   Props extends InPropsObject,
-  IncludeProps extends IncludedProps<Props>
+  IncludeProps extends IncludedProps<Props>,
 > = ResolveLayoutProps<SelectedIncludedProps<Props, IncludeProps, 'required'>> &
   Partial<
     ResolveLayoutProps<SelectedIncludedProps<Props, IncludeProps, 'optional'>>
@@ -246,7 +193,7 @@ export type ResolvedIncludedProps<
 
 export type ResolvedIncludedConfigProps<
   Props extends InPropsObject,
-  IncludeProps extends IncludedProps<Props>
+  IncludeProps extends IncludedProps<Props>,
 > = ResolveLayoutProps<
   SelectedIncludedProps<Props, IncludeProps, 'required', 'config'>
 > &
@@ -258,7 +205,7 @@ export type ResolvedIncludedConfigProps<
 
 export type ResolvedIncludedComponentProps<
   Props extends InPropsObject,
-  IncludeProps extends IncludedProps<Props>
+  IncludeProps extends IncludedProps<Props>,
 > = ResolveLayoutProps<
   SelectedIncludedProps<Props, IncludeProps, 'required', 'component'>
 > &
@@ -274,7 +221,7 @@ export type ResolvedIncludedComponentProps<
  */
 export type ResolvedIncludedPropsAsDefined<
   Props extends InPropsObject,
-  IncludeProps extends IncludedProps<Props>
+  IncludeProps extends IncludedProps<Props>,
 > = ResolveLayoutPropsAsDefined<
   SelectedIncludedProps<Props, IncludeProps, 'required'>
 > &
@@ -290,7 +237,7 @@ export type LayoutRenderProps<
   IncludeProps extends IncludedProps<
     MergedLayoutInProps<Resources, Options, Composables>
   > = {},
-  CustomProps extends InPropsObject = {}
+  CustomProps extends InPropsObject = {},
 > = Show<
   ResolveProps<CustomProps> &
     ResolvedIncludedProps<
@@ -307,18 +254,17 @@ export function getIncludedPropBehavior(value: unknown): {
     return null;
   }
 
+  if ('visibility' in value || 'passthrough' in value) {
+    throw new LayoutConfigurationError(
+      'Include properties visibility and passthrough were removed; use required and suppliedVia.',
+    );
+  }
+
   const required =
     'required' in value && typeof value.required === 'boolean'
       ? value.required
-      : 'visibility' in value
-      ? value.visibility === 'required'
       : undefined;
-  const suppliedVia =
-    'suppliedVia' in value
-      ? value.suppliedVia
-      : 'passthrough' in value
-      ? value.passthrough
-      : undefined;
+  const suppliedVia = 'suppliedVia' in value ? value.suppliedVia : undefined;
 
   if (
     required === undefined ||

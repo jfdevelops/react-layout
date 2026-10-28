@@ -24,9 +24,9 @@ const explanations = {
   required: 'Required: a value must be supplied at the configured location.',
   optional: 'Optional: the value may be omitted.',
   config:
-    "Config: supply this value when calling createResourceLayout. Set passthrough: 'config'; true is shorthand for required config input.",
+    "Config: supply this value when calling createResourceLayout. Set suppliedVia: 'config'; true is shorthand for required config input.",
   component:
-    "Component: supply this value on the rendered layout component using passthrough: 'component'. Optional inputs accept values in either location; 'optional' is shorthand for this flexible behavior.",
+    "Component: supply this value on the rendered layout component using suppliedVia: 'component'. Optional inputs accept values in either location; 'optional' is shorthand for this flexible behavior.",
 };
 
 interface PropRow {
@@ -45,11 +45,11 @@ function propsFor(details: Bag): PropRow[] {
     ...Object.entries(bag(props.include)).map(([name, behavior]): PropRow => {
       const settings = bag(behavior);
       const visibility =
-        behavior === 'optional' || settings.visibility === 'optional'
+        behavior === 'optional' || settings.required === false
           ? 'optional'
           : 'required';
       const location =
-        settings.passthrough === 'component' ? 'component' : 'config';
+        settings.suppliedVia === 'component' ? 'component' : 'config';
 
       return {
         name,

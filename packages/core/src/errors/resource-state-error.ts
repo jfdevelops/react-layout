@@ -4,9 +4,12 @@ export class ResourceModuleLoadError extends Error {
 
   constructor(
     readonly resource: string,
-    cause: unknown,
+    override readonly cause: unknown,
   ) {
-    super(`Unable to load resource module "${resource}"`, { cause });
+    const detail = cause instanceof Error
+      ? `${cause.name}: ${cause.message}`
+      : typeof cause === 'string' ? cause : undefined;
+    super(`Unable to load resource module "${resource}"${detail ? `: ${detail}` : ''}`, { cause });
     this.name = 'ResourceModuleLoadError';
   }
 }

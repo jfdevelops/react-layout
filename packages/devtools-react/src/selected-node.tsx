@@ -13,6 +13,8 @@ import { HelpTooltip } from './components/ui/tooltip';
 import { InspectionDetails } from './inspection-details';
 import { RelationshipTree } from './relationship-tree';
 import type { ChipPalette } from './config';
+import { loadChip } from './load-status';
+import { LoadErrorDetails } from './load-error-details';
 
 function ancestry(graph: GraphSnapshot, id: string): GraphNode[] {
   function find(
@@ -59,6 +61,7 @@ export function SelectedNode({
     (edge) => edge.source === node.id || edge.target === node.id
   );
   const status = node.active > 0 ? palette.active : palette.inactive;
+  const loadStatus = loadChip(node);
 
   return (
     <article style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -157,15 +160,22 @@ export function SelectedNode({
               {node.active} mounted
             </Badge>
           </HelpTooltip>
-          {node.unresolved && (
-            <HelpTooltip content="This node is declared, but its implementation has not loaded yet.">
-              <Badge tabIndex={0} style={palette.unresolved}>
-                Not loaded
+          {loadStatus && (
+            <HelpTooltip content={loadStatus.help}>
+              <Badge tabIndex={0} style={palette[loadStatus.kind]}>
+                {loadStatus.kind === 'unresolved'
+                  ? 'Not loaded'
+                  : loadStatus.kind === 'loading'
+                  ? 'Loading'
+                  : 'Failed to load'}
               </Badge>
             </HelpTooltip>
           )}
         </div>
       </header>
+      {node.status === 'error' && node.error && (
+        <LoadErrorDetails error={node.error} palette={palette} />
+      )}
       <NodeSource node={node} />
       <StatePreview
         layout={path.find((part) => part.kind === 'layout')?.id}

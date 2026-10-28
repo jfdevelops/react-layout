@@ -71,7 +71,7 @@ it('merges factory props and local overrides by key', () => {
   });
   const definition = factory.defineResourceLayout({
     props: {
-      include: { title: { visibility: 'required', passthrough: 'component' } },
+      include: { title: { required: true, suppliedVia: 'component' } },
     },
     render: () => <p>Content</p>,
   });
@@ -153,7 +153,7 @@ it('exposes globally included props in inline states and separately created stat
       Preview: {
         props: {
           include: {
-            title: { visibility: 'required', passthrough: 'component' },
+            title: { required: true, suppliedVia: 'component' },
           },
         },
         render: ({ title, count }) => {
@@ -264,11 +264,42 @@ it('registers lazy declarations and resolves their metadata after loading', asyn
   const view = render(<LazyUsers />);
   await screen.findByText('Lazy users');
   expect(
-    source.getSnapshot().nodes.find((n) => n.kind === 'lazy')?.unresolved
-  ).toBe(false);
+    source.getSnapshot().nodes.find((n) => n.kind === 'lazy')
+  ).toMatchObject({ unresolved: false, status: 'resolved' });
   expect(
     source.getSnapshot().nodes.filter((n) => n.kind === 'layout')
   ).toHaveLength(1);
+  view.unmount();
+});
+
+it('reports lazy load failures and their cause to the inspection graph', async () => {
+  const factory = createDefinedResourceLayout({ resources: ['users'] });
+  factory.defineLazyDefaults({ Error: () => <p>Lazy failed</p> });
+  const Users = factory
+    .defineResourceLayout({ render: () => <p>Lazy users</p> })
+    .createResourceLayout({ resource: 'users', name: 'LazyUsers' });
+  const LazyUsers = factory.defineResourceLayout.lazy({
+    resource: 'users',
+    load: async (): Promise<{ Users: typeof Users }> => {
+      throw new TypeError('createUsersPage is not a function');
+    },
+  });
+  const source = getInspectionSource(factory);
+  const lazyNode = () =>
+    source.getSnapshot().nodes.find((n) => n.kind === 'lazy');
+  expect(lazyNode()?.status).toBe('unresolved');
+  const view = render(<LazyUsers />);
+  expect(lazyNode()?.status).toBe('loading');
+  await screen.findByText('Lazy failed');
+  expect(lazyNode()).toMatchObject({
+    status: 'error',
+    unresolved: true,
+    error: {
+      name: 'ResourceModuleLoadError',
+      code: 'resourceModuleLoad',
+      cause: { name: 'TypeError', message: 'createUsersPage is not a function' },
+    },
+  });
   view.unmount();
 });
 

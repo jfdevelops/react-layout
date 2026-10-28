@@ -16,7 +16,20 @@ export type NodeKind =
   | 'layout'
   | 'state'
   | 'composable'
+  | 'component'
   | 'lazy';
+
+/** Load lifecycle of a node whose implementation is imported on demand. */
+export type LoadStatus = 'unresolved' | 'loading' | 'resolved' | 'error';
+
+/** JSON-safe copy of an error, including its `cause` chain. */
+export interface InspectionError {
+  readonly name: string;
+  readonly message: string;
+  readonly code?: string;
+  readonly stack?: string;
+  readonly cause?: InspectionError;
+}
 
 export interface GraphNode {
   readonly id: string;
@@ -24,6 +37,10 @@ export interface GraphNode {
   readonly label: string;
   readonly active: number;
   readonly unresolved?: boolean;
+  /** Set on lazy nodes. `unresolved` stays true for both `loading` and `error`. */
+  readonly status?: LoadStatus;
+  /** The failure reported when `status` is `error`. */
+  readonly error?: InspectionError;
   readonly source?: SourceLocation;
   readonly registrationSource?: SourceLocation;
   readonly details?: Readonly<Record<string, unknown>>;
@@ -52,6 +69,32 @@ export interface InspectionSource {
   subscribe(listener: () => void): () => void;
   preview?(instance: string, state?: string): void;
   connectPreview?(): () => void;
+}
+
+const maxCauseDepth = 5;
+
+/** Converts any thrown value into a JSON-safe {@link InspectionError}. */
+export function serializeInspectionError(
+  error: unknown,
+  depth = 0
+): InspectionError {
+  if (error instanceof Error) {
+    const code = (error as { code?: unknown }).code;
+    const cause = (error as { cause?: unknown }).cause;
+
+    return {
+      name: error.name,
+      message: error.message,
+      code: typeof code === 'string' ? code : undefined,
+      stack: error.stack,
+      cause:
+        cause !== undefined && depth < maxCauseDepth
+          ? serializeInspectionError(cause, depth + 1)
+          : undefined,
+    };
+  }
+
+  return { name: typeof error, message: String(error) };
 }
 
 let sequence = 0;

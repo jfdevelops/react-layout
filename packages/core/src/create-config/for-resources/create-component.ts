@@ -1,5 +1,12 @@
+import type { LazyHandle } from '../../lazy/types';
+import type { ScopedLazyContent } from '../../lazy/scoped-content';
+export type { ScopedComponentRenderFn } from '../../lazy/scoped-content';
+
 import type { ComponentType, JSX, ReactNode } from 'react';
-import type { ComposableComponents } from '@jfdevelops/react-layout-composables';
+import type {
+  ComposableComponents,
+  MakeComposable,
+} from '@jfdevelops/react-layout-composables';
 import type {
   ResolveProps,
   ResolvedBuiltPropShape,
@@ -11,7 +18,6 @@ import type {
   InPropsObject,
   MergedLayoutInProps,
   PropsContextRender,
-  PropsRenderDefinition,
   ResolvedIncludedPropsAsDefined,
 } from '../../props';
 import type { ResourceDefinition } from '../../resource';
@@ -19,6 +25,10 @@ import type { BaseComponent, Show, UnionToIntersection } from '../../utils';
 import type { LayoutIncludeProps, LayoutProps } from '../define-layout';
 import type { SelectedLayoutResources } from './resource-selection';
 import type { ScopedRenderResult } from './scoped-render';
+
+type ScopedPropsRenderDefinition<Props, RenderProps, Result, Context> = {
+  props?: Props;
+} & ScopedLazyContent<PropsContextRender<RenderProps, Context, Result>>;
 
 export type ScopedComponentAvailableProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -94,9 +104,8 @@ export type ResourceComponentPropsBag<
 };
 
 type ResourceEntryProps<EntryOrProps> = EntryOrProps extends {
-  render: unknown;
   props?: infer Props;
-}
+} & ({ render: unknown } | { lazy: unknown })
   ? Props
   : EntryOrProps;
 
@@ -408,9 +417,12 @@ export type ScopedComponentCompoundStatics<Result> = [Result] extends [never]
  * A resolved scoped component: call signature from declared + returned-component
  * props, plus any compound statics on the returned component type.
  */
-export type ResolvedScopedComponent<Definition> = ScopedComponentSignature<
-  ScopedComponentCallProps<Definition>
-> &
+export type ResolvedScopedComponent<Definition> = (Definition extends {
+  lazy: unknown;
+}
+  ? LazyHandle
+  : {}) &
+  ScopedComponentSignature<ScopedComponentCallProps<Definition>> &
   ScopedComponentCompoundStatics<
     Definition extends {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- open args
@@ -508,6 +520,7 @@ export type ScopedResourceComponentRenderContext<
       >
     >
   > &
+    LazyHandle &
     ResolvedScopedComponentsMap<ComponentsByResource[Resource]>;
 };
 
@@ -573,7 +586,7 @@ export type ScopedComponentResourceEntry<
        * call-site props). Props and compound statics of a returned component
        * type are inferred at call sites from the render return type.
        */
-      PropsRenderDefinition<
+      ScopedPropsRenderDefinition<
         InPropsObject,
         ScopedResourceComponentProps<
           ResourceDefinitions,
@@ -596,7 +609,8 @@ export type ScopedComponentResourceEntry<
       Components[Name];
   };
   /** Renders this resource's content inside the shared render function. */
-  render: PropsContextRender<
+} & ScopedLazyContent<
+  PropsContextRender<
     ScopedResourceComponentProps<
       ResourceDefinitions,
       InProps,
@@ -611,8 +625,8 @@ export type ScopedComponentResourceEntry<
     >,
     ResolvedScopedComponentsMap<Components>,
     ScopedRenderResult
-  >;
-};
+  >
+>;
 
 export type ScopedComponentResourceEntries<
   ResourceDefinitions extends ReadonlyArray<ResourceDefinition>,
@@ -709,7 +723,9 @@ export type ScopedBoundResourceComponent<
   Props extends object,
   Resource extends string,
   Components = {},
+  Composables extends ComposableComponents = {},
 > = BaseComponent<string, Props> &
+  LazyHandle &
   ResolvedScopedComponentsMap<Components> & {
     (props: Props): JSX.Element;
     /**
@@ -717,7 +733,12 @@ export type ScopedBoundResourceComponent<
      * `undefined` at runtime.
      */
     readonly resource: Resource;
-  };
+  } & ([keyof Composables] extends [never]
+    ? { readonly makeComposable?: undefined }
+    : {
+        /** Creates the bound resource's composable layout, using the scope's default name when omitted. */
+        makeComposable: MakeComposable<Composables, string>;
+      });
 
 export type ScopedResourceComponent<
   ResourceDefinitions extends ReadonlyArray<ResourceDefinition>,
@@ -737,69 +758,32 @@ export type ScopedResourceComponent<
   ComponentsByResource,
   PropsByResource,
   RenderResult = never,
-> = BaseComponent<
-  string,
-  ScopedResourceComponentCallProps<
-    ResourceDefinitions,
-    InProps,
-    Composables,
-    LayoutCustomProps,
-    ComponentIncludeProps,
-    ComponentCustomProps,
-    SelectedLayoutResources<ResourceDefinitions, Arguments>,
-    RenderResult,
-    ResourceEntryDefined<PropsByResource[keyof PropsByResource]>
-  >
-> & {
-  /**
-   * The `resource` prop drives the generic, so it is inferred from the call
-   * site. Explicit type arguments are never needed.
-   */
-  <
-    const Resource extends SelectedLayoutResources<
-      ResourceDefinitions,
-      Arguments
-    >,
-  >(
-    props: ScopedResourceComponentCallProps<
+> = LazyHandle &
+  BaseComponent<
+    string,
+    ScopedResourceComponentCallProps<
       ResourceDefinitions,
       InProps,
       Composables,
       LayoutCustomProps,
       ComponentIncludeProps,
       ComponentCustomProps,
-      Resource,
+      SelectedLayoutResources<ResourceDefinitions, Arguments>,
       RenderResult,
-      ResourceEntryDefined<
-        Resource extends keyof PropsByResource ? PropsByResource[Resource] : {}
-      >
-    >,
-  ): JSX.Element;
-  /**
-   * Returns a factory that binds the component to one resource. The bound
-   * component accepts every prop except `resource`, which the binding supplies.
-   *
-   * Each resource is bound once and cached, so the returned component type is
-   * stable across renders.
-   *
-   * @example
-   * const createDirectory = Directory.asHOF()
-   * const UsersDirectory = createDirectory('users')
-   *
-   * <UsersDirectory title='Users' />
-   *
-   * @returns A factory producing a component bound to the given resource.
-   */
-  asHOF(): <
-    const Resource extends SelectedLayoutResources<
-      ResourceDefinitions,
-      Arguments
-    >,
-  >(
-    resource: Resource,
-  ) => Show<
-    ScopedBoundResourceComponent<
-      ScopedBoundResourceComponentProps<
+      ResourceEntryDefined<PropsByResource[keyof PropsByResource]>
+    >
+  > & {
+    /**
+     * The `resource` prop drives the generic, so it is inferred from the call
+     * site. Explicit type arguments are never needed.
+     */
+    <
+      const Resource extends SelectedLayoutResources<
+        ResourceDefinitions,
+        Arguments
+      >,
+    >(
+      props: ScopedResourceComponentCallProps<
         ResourceDefinitions,
         InProps,
         Composables,
@@ -814,13 +798,54 @@ export type ScopedResourceComponent<
             : {}
         >
       >,
-      Resource,
-      Resource extends keyof ComponentsByResource
-        ? ComponentsByResource[Resource]
-        : {}
-    >
-  >;
-};
+    ): JSX.Element;
+    /**
+     * Returns a factory that binds the component to one resource. The bound
+     * component accepts every prop except `resource`, which the binding supplies.
+     *
+     * Each resource is bound once and cached, so the returned component type is
+     * stable across renders.
+     *
+     * @example
+     * const createDirectory = Directory.asHOF()
+     * const UsersDirectory = createDirectory('users')
+     *
+     * <UsersDirectory title='Users' />
+     *
+     * @returns A factory producing a component bound to the given resource.
+     */
+    asHOF(): <
+      const Resource extends SelectedLayoutResources<
+        ResourceDefinitions,
+        Arguments
+      >,
+    >(
+      resource: Resource,
+    ) => Show<
+      ScopedBoundResourceComponent<
+        ScopedBoundResourceComponentProps<
+          ResourceDefinitions,
+          InProps,
+          Composables,
+          LayoutCustomProps,
+          ComponentIncludeProps,
+          ComponentCustomProps,
+          Resource,
+          RenderResult,
+          ResourceEntryDefined<
+            Resource extends keyof PropsByResource
+              ? PropsByResource[Resource]
+              : {}
+          >
+        >,
+        Resource,
+        Resource extends keyof ComponentsByResource
+          ? ComponentsByResource[Resource]
+          : {},
+        Composables
+      >
+    >;
+  };
 
 /**
  * Props bag for `setProps` / optional extras: forbids keys already present on
@@ -884,66 +909,69 @@ export type ScopedCreateResourceComponents<
   // that collapses reverse inference to `{}`.
   const Components,
   const Props extends object = {},
->(options: {
-  resource: Resource;
-  props?: Props &
-    ResourceComponentPropsBag<
-      ResourceDefinitions,
-      InProps,
-      Composables,
-      LayoutCustomProps,
-      BaseCustom,
-      NoInfer<Props>
-    > & {
-      include?: ResourceEntryInclude<Props> & {
-        [Key in keyof BaseInclude & string]?: never;
+>(
+  options: {
+    resource: Resource;
+    props?: Props &
+      ResourceComponentPropsBag<
+        ResourceDefinitions,
+        InProps,
+        Composables,
+        LayoutCustomProps,
+        BaseCustom,
+        NoInfer<Props>
+      > & {
+        include?: ResourceEntryInclude<Props> & {
+          [Key in keyof BaseInclude & string]?: never;
+        };
+        custom?: ResourceEntryCustom<Props> & {
+          [Key in keyof BaseCustom & string]?: never;
+        };
       };
-      custom?: ResourceEntryCustom<Props> & {
-        [Key in keyof BaseCustom & string]?: never;
-      };
-    };
-  name?: string;
-  components?: {
-    [Name in keyof Components]: JustScopedComponent<Components[Name]> &
-      PropsRenderDefinition<
-        InPropsObject,
-        ScopedResourceComponentProps<
-          ResourceDefinitions,
-          InProps,
-          Composables,
-          LayoutCustomProps,
-          WithDefinedIncluded<
-            BaseInclude & ResourceEntryInclude<Props>,
-            ResourceEntryDefined<Props>
-          >,
-          BaseCustom & ResourceEntryCustom<Props>,
-          Resource
+    name?: string;
+    components?: {
+      [Name in keyof Components]: JustScopedComponent<Components[Name]> &
+        ScopedPropsRenderDefinition<
+          InPropsObject,
+          ScopedResourceComponentProps<
+            ResourceDefinitions,
+            InProps,
+            Composables,
+            LayoutCustomProps,
+            WithDefinedIncluded<
+              BaseInclude & ResourceEntryInclude<Props>,
+              ResourceEntryDefined<Props>
+            >,
+            BaseCustom & ResourceEntryCustom<Props>,
+            Resource
+          > &
+            Show<
+              ResolvedBuiltPropShape<ScopedComponentOwnProps<Components[Name]>>
+            >,
+          ScopedRenderResult,
+          Omit<ResolvedScopedComponentsMap<Components>, Name>
         > &
-          Show<
-            ResolvedBuiltPropShape<ScopedComponentOwnProps<Components[Name]>>
-          >,
-        ScopedRenderResult,
-        Omit<ResolvedScopedComponentsMap<Components>, Name>
-      > &
-      Components[Name];
-  };
-  render: PropsContextRender<
-    ScopedResourceComponentProps<
-      ResourceDefinitions,
-      InProps,
-      Composables,
-      LayoutCustomProps,
-      WithDefinedIncluded<
-        BaseInclude & ResourceEntryInclude<Props>,
-        ResourceEntryDefined<Props>
+        Components[Name];
+    };
+  } & ScopedLazyContent<
+    PropsContextRender<
+      ScopedResourceComponentProps<
+        ResourceDefinitions,
+        InProps,
+        Composables,
+        LayoutCustomProps,
+        WithDefinedIncluded<
+          BaseInclude & ResourceEntryInclude<Props>,
+          ResourceEntryDefined<Props>
+        >,
+        BaseCustom & ResourceEntryCustom<Props>,
+        Resource
       >,
-      BaseCustom & ResourceEntryCustom<Props>,
-      Resource
-    >,
-    ResolvedScopedComponentsMap<NormalizeScopedComponentsMap<Components>>,
-    ScopedRenderResult
-  >;
-}) => ScopedComponentResourceEntry<
+      ResolvedScopedComponentsMap<NormalizeScopedComponentsMap<Components>>,
+      ScopedRenderResult
+    >
+  >,
+) => ScopedComponentResourceEntry<
   ResourceDefinitions,
   InProps,
   Composables,
@@ -959,7 +987,8 @@ export type ScopedCreateResourceComponents<
   readonly resourceComponentProps: Props;
   /** Type-only metadata preserving the exact captured components map. */
   readonly resourceComponents: NormalizeScopedComponentsMap<Components>;
-} & ScopedReusableResourceEntry<Props, Components>;
+} & LazyHandle &
+  ScopedReusableResourceEntry<Props, Components>;
 
 /**
  * Options for {@link ScopedCreateComponent}. Extends the shared
@@ -974,7 +1003,7 @@ export type ScopedCreateResourceComponents<
  * to the `render` `props` parameter (that would circularly depend on the
  * return).
  */
-export interface ScopedCreateComponentOptions<
+export type ScopedCreateComponentOptions<
   ResourceDefinitions extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<ResourceDefinitions>,
   Composables extends ComposableComponents,
@@ -989,7 +1018,7 @@ export interface ScopedCreateComponentOptions<
   PropsByResource,
   ComponentsByResource,
   RenderResult extends ScopedRenderResult,
-> extends PropsRenderDefinition<
+> = ScopedPropsRenderDefinition<
   LayoutProps<
     ResourceDefinitions,
     InProps,
@@ -1017,7 +1046,7 @@ export interface ScopedCreateComponentOptions<
     ComponentsByResource,
     PropsByResource
   >
-> {
+> & {
   /**
    * Per-resource content, keyed by resource. Each entry holds that resource's
    * scoped `components` and its `render` — not layout option values like
@@ -1035,7 +1064,7 @@ export interface ScopedCreateComponentOptions<
     PropsByResource,
     ComponentsByResource
   >;
-}
+};
 
 /**
  * Options for a `setProps` thunk: same as createComponent options, but
@@ -1125,7 +1154,13 @@ export type ScopedCreateComponentFn<
     {},
     ComponentsByResource,
     RenderResult
-  >,
+  > & {
+    resources?: {
+      [Resource in keyof NoInfer<ComponentsByResource>]:
+        | { lazy?: never }
+        | { props?: never };
+    };
+  },
 ) => ScopedResourceComponent<
   ResourceDefinitions,
   InProps,

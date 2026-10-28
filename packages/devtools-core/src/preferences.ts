@@ -41,6 +41,8 @@ const chipKinds = new Set<string>([
   'active',
   'inactive',
   'unresolved',
+  'loading',
+  'error',
   'reference',
   'required',
   'optional',

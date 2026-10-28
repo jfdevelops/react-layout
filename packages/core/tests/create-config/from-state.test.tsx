@@ -43,7 +43,7 @@ it('inherits all reference props and exposes a Ref composable', () => {
 
 it.each([
   { required: true, suppliedVia: 'component' },
-  { visibility: 'required', passthrough: 'component' },
+  { required: true, suppliedVia: 'component' },
 ] as const)('selects inherited props and requires excluded Ref props explicitly (%j)', (behavior) => {
   const { createRenderState, defineResourceLayout } = createDefinedResourceLayout({ resources: ['users'] });
   const Source = createRenderState({
@@ -116,8 +116,8 @@ it('inherits source-local preset schemas and component-valued props', () => {
   const Source = createRenderState({
     composables: () => Message,
     props: { include: {
-      content: { visibility: 'required', passthrough: 'component' },
-      message: { visibility: 'required', passthrough: 'component' },
+      content: { required: true, suppliedVia: 'component' },
+      message: { required: true, suppliedVia: 'component' },
     } },
     render: ({ Content, message }) => <><Content label='Source' /><p>{message}</p></>,
   });
@@ -173,14 +173,14 @@ it('does not require excluded preset props at layout creation', () => {
   const Source = createRenderState({
     composables: () => Pair,
     props: { include: {
-      message: { visibility: 'required', passthrough: 'component' },
-      count: { visibility: 'required', passthrough: 'component' },
+      message: { required: true, suppliedVia: 'component' },
+      count: { required: true, suppliedVia: 'component' },
     } },
     render: ({ message, count }) => <p>{message} {count}</p>,
   });
   const Derived = createRenderState.fromState({
     ref: Source,
-    props: { include: { message: { visibility: 'required', passthrough: 'component' } } },
+    props: { include: { message: { required: true, suppliedVia: 'component' } } },
     render: (_props, { composables }) => <composables.Ref count={3} />,
   });
   const Users = defineResourceLayout({ render: { ...Derived } }).createResourceLayout({ resource: 'users', name: 'Users' });
@@ -237,7 +237,7 @@ it('accepts excluded source configuration props directly on Ref', () => {
   });
   const Derived = createRenderState.fromState({
     ref: Source,
-    props: { include: { message: { visibility: 'required', passthrough: 'component' } } },
+    props: { include: { message: { required: true, suppliedVia: 'component' } } },
     render: (props, { composables }) => {
       () => {
         // @ts-expect-error excluded configuration props must be supplied to Ref

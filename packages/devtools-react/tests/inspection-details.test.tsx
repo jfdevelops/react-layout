@@ -16,8 +16,8 @@ function fixture() {
     props: {
       include: {
         title: true,
-        segments: { visibility: 'optional', passthrough: 'component' },
-        action: { visibility: 'required', passthrough: 'component' },
+        segments: { required: false, suppliedVia: 'component' },
+        action: { required: true, suppliedVia: 'component' },
         description: 'optional',
       },
       custom: { children: required, className: optional },

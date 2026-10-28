@@ -217,3 +217,9 @@ export type {
 } from './create-config/layout-name';
 export { defineLayoutPreview } from './create-config/preview';
 export type { LayoutPreviewProps } from './create-config/preview';
+
+export { LazyResourceModuleShapeError, LazyResourceStateNotFoundError, isLazyResourceError } from './errors/lazy-resource-error';
+export type { LazyResourceError, LazyResourceErrorMap } from './errors/lazy-resource-error';
+export type { LazyOptions, LazyHandle, LoadStatus, LazyResourceErrorProps, CreateLazyErrorComponent, LazyErrorHandlers } from './lazy/types';
+
+export type { ScopedComponentRenderFn } from './lazy/scoped-content';

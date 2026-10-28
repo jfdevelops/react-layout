@@ -9,7 +9,7 @@ it('preserves required props and narrows the carry-over configuration', () => {
     state: 'Target',
     props: {
       custom: { label: createProp.string(), count: createProp.number() },
-      include: { title: { visibility: 'required', passthrough: 'component' } },
+      include: { title: { required: true, suppliedVia: 'component' } },
     },
     render: ({ label, count, title }) => <p>{title}: {label}: {count}</p>,
   });
@@ -134,9 +134,9 @@ it('preserves preset prop requirements while inferring layout composables', () =
     default: () => <></>,
     Target: {
       props: { include: {
-        title: { visibility: 'required', passthrough: 'component' },
-        message: { visibility: 'required', passthrough: 'component' },
-        suffix: { visibility: 'optional', passthrough: 'component' },
+        title: { required: true, suppliedVia: 'component' },
+        message: { required: true, suppliedVia: 'component' },
+        suffix: { required: false, suppliedVia: 'component' },
       } },
       render: ({ message }: { message: string }) => <p>{message}</p>,
     },
@@ -200,7 +200,7 @@ it('uses inferred layout presets in state-local reference callbacks', () => {
           render: () => <></>,
         },
         Target: {
-          props: { include: { message: { visibility: 'required', passthrough: 'component' } } },
+          props: { include: { message: { required: true, suppliedVia: 'component' } } },
           render: ({ message }) => <p>{message}</p>,
         },
       },

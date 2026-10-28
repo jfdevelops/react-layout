@@ -36,3 +36,6 @@ export {
   ResourceRenderError,
   type ResourceStateError,
 } from './resource-state-error';
+
+export { LazyResourceModuleShapeError, LazyResourceStateNotFoundError, isLazyResourceError } from './lazy-resource-error';
+export type { LazyResourceError, LazyResourceErrorMap } from './lazy-resource-error';

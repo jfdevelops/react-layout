@@ -92,3 +92,37 @@ it('keeps ancestor paths available when filters hide the ancestors', () => {
   );
   expect(screen.getByRole('heading', { name: 'Root' })).toBeTruthy();
 });
+
+it('shows the load status and cause chain for a failed lazy node', () => {
+  const store = createInspectionStore();
+  store.node({
+    id: 'lazy',
+    kind: 'lazy',
+    label: 'appointments',
+    unresolved: true,
+    status: 'error',
+    error: {
+      name: 'ResourceModuleLoadError',
+      code: 'resourceModuleLoad',
+      message: 'Unable to load resource module "appointments"',
+      cause: {
+        name: 'TypeError',
+        message: 'createCalendarPage is not a function',
+        stack: 'TypeError: createCalendarPage is not a function\n    at pages-config.tsx:20',
+      },
+    },
+  });
+  render(<ReactLayoutDevtoolsContent source={store} />);
+  const row = screen.getByRole('button', { name: /^lazy.*error.*appointments$/i });
+  expect(row).toHaveTextContent('error');
+  expect(row).not.toHaveTextContent('unresolved');
+  fireEvent.click(row);
+  const details = within(screen.getByLabelText('Node details'));
+  expect(details.getByText('Failed to load')).toBeTruthy();
+  const panel = within(details.getByLabelText('Load error'));
+  expect(panel.getByText('ResourceModuleLoadError')).toBeTruthy();
+  expect(panel.getByText('resourceModuleLoad')).toBeTruthy();
+  expect(panel.getByText('Caused by')).toBeTruthy();
+  expect(panel.getByText('createCalendarPage is not a function')).toBeTruthy();
+  expect(panel.getByText('Stack trace')).toBeTruthy();
+});

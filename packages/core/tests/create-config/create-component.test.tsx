@@ -135,7 +135,7 @@ describe('createComponent', () => {
           context.Root as ComponentType<Record<string, unknown>>,
           {},
           createElement(
-            context.Users as ComponentType<Record<string, unknown>>,
+            context.Users as unknown as ComponentType<Record<string, unknown>>,
           ),
         ),
     });
@@ -888,7 +888,7 @@ describe('createComponent', () => {
         },
         render: ({ children, title }, context) => (
           <section>
-            <h1>{`${context.resource}/${context.name}: ${title}`}</h1>
+            <h1>{`${context.resources.current}/${context.name}: ${title}`}</h1>
             {children}
           </section>
         ),
