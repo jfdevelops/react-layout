@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import type {
   GraphNode,
   GraphSnapshot,
@@ -100,6 +100,15 @@ export function NodeSource({ node }: { node: GraphNode }) {
   );
 }
 
+// Colours and weight come from styles.css keyed on aria-pressed, so the look
+// cannot drift from the accessible state.
+const overrideButton: CSSProperties = {
+  color: undefined,
+  background: undefined,
+  border: undefined,
+  font: undefined,
+};
+
 export function StatePreview({
   layout,
   state,
@@ -127,7 +136,18 @@ export function StatePreview({
   const byId = new Map(graph.nodes.map((node) => [node.id, node]));
 
   return (
-    <section aria-label="State preview" style={{ display: 'grid', gap: 10 }}>
+    <section
+      aria-label="State preview"
+      style={
+        {
+          display: 'grid',
+          gap: 10,
+          '--react-layout-devtools-active-color': palette.active.color,
+          '--react-layout-devtools-active-background':
+            palette.active.background,
+        } as CSSProperties
+      }
+    >
       <h4 style={{ margin: 0, fontSize: 13 }}>State preview</h4>
       <p style={{ margin: 0, color: '#94a3b8', fontSize: 12 }}>
         Preview declared render states using current props and typed preview
@@ -159,8 +179,9 @@ export function StatePreview({
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
         <Button
           type="button"
+          data-state-override
           aria-pressed={!instance.forcedState}
-          style={control}
+          style={overrideButton}
           onClick={() => inspector.preview?.(instance.id)}
         >
           Auto
@@ -172,13 +193,9 @@ export function StatePreview({
             <Button
               key={id}
               type="button"
+              data-state-override
               aria-pressed={instance.forcedState === id}
-              style={{
-                ...control,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-              }}
+              style={overrideButton}
               onClick={() => inspector.preview?.(instance.id, id)}
             >
               <StateIcon
@@ -194,7 +211,9 @@ export function StatePreview({
         {state && instance.states.includes(state) && (
           <Button
             type="button"
-            style={control}
+            data-state-override
+            aria-pressed={instance.forcedState === state}
+            style={overrideButton}
             onClick={() => inspector.preview?.(instance.id, state)}
           >
             Preview this state
