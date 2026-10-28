@@ -15,6 +15,7 @@ export function InspectionTree({
   palette,
   config,
   selected,
+  hovered,
   onSelect,
   onExpandedChange,
 }: {
@@ -24,6 +25,7 @@ export function InspectionTree({
   palette: ChipPalette;
   config?: ReactLayoutDevtoolsConfig['tree'];
   selected?: string;
+  hovered?: string;
   onSelect: (id: string) => void;
   onExpandedChange?: (expanded: boolean) => void;
 }) {
@@ -167,6 +169,7 @@ export function InspectionTree({
             type="button"
             role="treeitem"
             data-tree-node
+            data-hovered-node={hovered === node.id}
             aria-label={`${node.kind} ${node.label}${
               node.active ? ` active (${node.active})` : ''
             }${status ? ` ${status.label}` : ''}`}
@@ -209,7 +212,7 @@ export function InspectionTree({
               borderRadius: 4,
               padding: '2px 4px',
               color: '#cbd5e1',
-              background: selected === node.id ? '#253247' : 'transparent',
+              background: selected === node.id || hovered === node.id ? '#253247' : 'transparent',
               font: 'inherit',
               cursor: 'pointer',
               textAlign: 'left',

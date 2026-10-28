@@ -71,9 +71,14 @@ export function trackComposable<T extends object>(
     function InspectedComposable(props, ref) {
       useLayoutEffect(() => store.mount(id), [store, id]);
 
+      const inspectedProps = process.env.NODE_ENV === 'production' ? props : {
+        ...props,
+        'data-rl-node': id,
+        'data-rl-composable': (component as { displayName?: string }).displayName ?? 'Composable',
+      };
       return createElement(
         component as ComponentType<Record<string, unknown>>,
-        ref == null ? props : { ...props, ref }
+        ref == null ? inspectedProps : { ...inspectedProps, ref }
       );
     }
   );

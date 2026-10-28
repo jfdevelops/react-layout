@@ -1,3 +1,4 @@
+import { ComposableOutlines, OutlineToggle } from './outlines';
 import {
   useEffect,
   useLayoutEffect,
@@ -53,6 +54,7 @@ export function ReactLayoutDevtoolsToolbar() {
 
   return (
     <>
+      <ComposableOutlines />
       <header
         style={{
           position: 'relative',
@@ -126,6 +128,7 @@ export function ReactLayoutDevtoolsToolbar() {
                 ⌖
               </Button>
             </HelpTooltip>
+            <OutlineToggle />
             <HelpTooltip content="Reset preferences">
               <Button
                 type="button"
@@ -241,6 +244,7 @@ export function ReactLayoutDevtoolsExplorer() {
     updatePreferences,
     graph,
     selected,
+    hovered,
     setSelected,
     view,
     zoom,
@@ -307,7 +311,8 @@ export function ReactLayoutDevtoolsExplorer() {
               updatePreferences({ tree: { ...config.tree, initialExpanded } })
             }
             graph={displayGraph}
-            selected={selected}
+            hovered={hovered}
+        selected={selected}
             onSelect={setSelected}
           />
         ) : (
@@ -366,6 +371,7 @@ export function ReactLayoutDevtoolsExplorer() {
                     <Button
                       type="button"
                       data-selected-node={selected === node.id}
+                      data-hovered-node={hovered === node.id}
                       aria-pressed={selected === node.id}
                       onClick={() => setSelected(node.id)}
                       style={{
@@ -375,7 +381,7 @@ export function ReactLayoutDevtoolsExplorer() {
                         cursor: 'pointer',
                         padding: '8px 12px',
                         color: '#e2e8f0',
-                        background: node.active
+                        background: hovered === node.id ? palette.composable.background : node.active
                           ? palette.active.background
                           : '#162033',
                         border: `2px solid ${

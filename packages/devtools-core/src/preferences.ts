@@ -15,6 +15,7 @@ export interface DevtoolsPreferences {
   initialFilters: { activeOnly: boolean; showComposables: boolean };
   tree: { stickyScopes: boolean; initialExpanded: boolean };
   showDetails: boolean;
+  showOutlines: boolean;
 }
 
 /** Transient view state. Never serialized as preferences. */
@@ -34,6 +35,7 @@ export const defaultDevtoolsPreferences: Readonly<DevtoolsPreferences> =
     }),
     tree: Object.freeze({ stickyScopes: true, initialExpanded: true }),
     showDetails: true,
+    showOutlines: false,
   });
 
 const chipKinds = new Set<string>([
@@ -126,6 +128,7 @@ function resolve(
       ),
     },
     showDetails: boolean(saved.showDetails, fallback.showDetails),
+    showOutlines: boolean(saved.showOutlines, fallback.showOutlines),
   };
 }
 
