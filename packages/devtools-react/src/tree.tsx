@@ -7,6 +7,7 @@ import {
 } from '@jfdevelops/react-layout-devtools-core';
 import type { ChipPalette, ReactLayoutDevtoolsConfig } from './config';
 import { loadChip } from './load-status';
+import { StateIcon } from './state-icon';
 
 const ROW_HEIGHT = 26;
 const VIRTUALIZE_AFTER = 200;
@@ -331,6 +332,13 @@ export function InspectionTree({
               textAlign: 'left',
             }}
           >
+            {node.kind === 'state' && (
+              <StateIcon
+                state={node.label}
+                palette={palette}
+                spinning={node.active > 0}
+              />
+            )}
             <span>
               {JSON.stringify(label)}
               <span style={{ color: '#64748b' }}>:</span>

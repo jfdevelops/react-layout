@@ -8,6 +8,7 @@ import type {
 import { Button } from './components/ui/button';
 import { Badge } from './components/ui/badge';
 import { control } from './theme';
+import { StateIcon } from './state-icon';
 import type { ChipPalette } from './config';
 
 function SourceLink({
@@ -164,17 +165,32 @@ export function StatePreview({
         >
           Auto
         </Button>
-        {instance.states.map((id) => (
-          <Button
-            key={id}
-            type="button"
-            aria-pressed={instance.forcedState === id}
-            style={control}
-            onClick={() => inspector.preview?.(instance.id, id)}
-          >
-            {byId.get(id)?.label ?? id}
-          </Button>
-        ))}
+        {instance.states.map((id) => {
+          const label = byId.get(id)?.label ?? id;
+
+          return (
+            <Button
+              key={id}
+              type="button"
+              aria-pressed={instance.forcedState === id}
+              style={{
+                ...control,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+              onClick={() => inspector.preview?.(instance.id, id)}
+            >
+              <StateIcon
+                state={label}
+                palette={palette}
+                size={14}
+                spinning={instance.forcedState === id}
+              />
+              {label}
+            </Button>
+          );
+        })}
         {state && instance.states.includes(state) && (
           <Button
             type="button"

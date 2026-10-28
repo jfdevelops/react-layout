@@ -11,6 +11,7 @@ import { Badge } from './components/ui/badge';
 import { Button } from './components/ui/button';
 import { HelpTooltip } from './components/ui/tooltip';
 import { InspectionDetails } from './inspection-details';
+import { StateIcon } from './state-icon';
 import { RelationshipTree } from './relationship-tree';
 import type { ChipPalette } from './config';
 import { loadChip } from './load-status';
@@ -122,8 +123,19 @@ export function SelectedNode({
             lineHeight: 1.4,
             overflowWrap: 'anywhere',
             fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
           }}
         >
+          {node.kind === 'state' && (
+            <StateIcon
+              state={node.label}
+              palette={palette}
+              size={14}
+              spinning={node.active > 0}
+            />
+          )}
           {node.label}
         </h3>
         <div
