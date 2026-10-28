@@ -25,6 +25,27 @@
   }
 }
 
+[data-state-override] {
+  color: #e2e8f0;
+  background: #182335;
+  border: 1px solid #334155;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+[data-state-override][aria-pressed='true'] {
+  background: var(--react-layout-devtools-active-background, #6ee7b71a);
+  border-color: var(--react-layout-devtools-active-color, #6ee7b7);
+  font-weight: 700;
+}
+
+/* A white ring stays distinct from the green active border. */
+[data-state-override]:focus-visible {
+  outline: 2px solid #f8fafc;
+  outline-offset: 2px;
+}
+
 @keyframes react-layout-devtools-spin {
   to {
     transform: rotate(360deg);
