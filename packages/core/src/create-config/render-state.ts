@@ -143,6 +143,10 @@ export type RenderStateContext<
   retry?: () => void;
 };
 
+/** State callers may omit children even when a shared layout requires them. */
+export type OptionalStateChildren<Props> = Omit<Props, 'children'> &
+  Partial<Pick<Props, Extract<'children', keyof Props>>>;
+
 /**
  * Resolves one state's custom props and explicitly included option/composable
  * props to the values received by its render callback.
@@ -155,13 +159,13 @@ export type RenderStateProps<
     MergedLayoutInProps<Resources, Options, Composables>
   >,
   CustomProps extends InPropsObject
-> = LayoutRenderProps<
+> = OptionalStateChildren<LayoutRenderProps<
   Resources,
   Options,
   Composables,
   IncludeProps,
   CustomProps
->;
+>>;
 
 type TypedRenderStateDefinition<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -324,7 +328,7 @@ export type RenderStateCallProps<
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
   Input
-> = ResolveProps<StateCustomProps<Input>> &
+> = OptionalStateChildren<ResolveProps<StateCustomProps<Input>> &
   StateComponentProps<
     MergedLayoutInProps<
       Resources,
@@ -332,7 +336,7 @@ export type RenderStateCallProps<
       Composables & StateLocalComposables<Input>
     >,
     StateIncludes<Input>
-  >;
+  >>;
 
 /** Typed references to all the states declared in an inline render map. */
 export type RenderStateReferences<
@@ -662,7 +666,7 @@ type FromStateDefinition<
     >
   >;
   render: (
-    props: ResolveProps<CustomProps> &
+    props: OptionalStateChildren<ResolveProps<CustomProps> &
       ResolvedIncludedProps<
         FromStateInProps<Resources, Options, Shared, Ref, Local>,
         ReferenceIncludes<
@@ -674,7 +678,7 @@ type FromStateDefinition<
         >
           ? Selected
           : {}
-      >,
+      >>,
     context: RenderStateContext<
       Shared &
         FromStateComposables<
