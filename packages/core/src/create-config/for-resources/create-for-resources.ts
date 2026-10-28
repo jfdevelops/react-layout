@@ -704,12 +704,6 @@ export function createForResources<
             },
             resourceScopedComponents.get(resource) ?? {},
           );
-          if (createMakeComposableLayout) {
-            Object.assign(boundComponent, {
-              makeComposable: (options: Record<string, unknown> = {}) =>
-                scopedExtras.makeComposable?.({ ...options, resource }),
-            });
-          }
           const renderResource = renderContext[
             capitalize(resource)
           ] as unknown as LazyHandle;

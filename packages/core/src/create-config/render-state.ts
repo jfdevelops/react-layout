@@ -1157,9 +1157,11 @@ export async function findDefinedRenderState(
 
   const definition = definitions[0][definedRenderStateSymbol];
 
-  return isLazyRenderState(definition)
-    ? definition[lazyLoaderSymbol].get()
-    : definition;
+  if (isLazyRenderState(definition)) {
+    if (definition.status === 'error') definition[lazyLoaderSymbol].reset();
+    return definition[lazyLoaderSymbol].get();
+  }
+  return definition;
 }
 
 /** Identity helper that contextually types a reusable composables callback. */

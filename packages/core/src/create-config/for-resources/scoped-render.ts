@@ -21,7 +21,6 @@ export const reservedScopedComponentNames = new Set([
   'caller',
   'displayName',
   'length',
-  'makeComposable',
   'name',
   'props',
   'prototype',

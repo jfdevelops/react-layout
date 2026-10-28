@@ -2723,10 +2723,6 @@ function defineResourceLayoutImpl<
     createResourceLayout: definedResourceLayout as never,
     resolveLayoutOptionDefaults,
   });
-  const scopedLazyRoots = new Map<
-    string,
-    { [lazyStatesSymbol]: LazyResourceStates }
-  >();
   const forResources = createForResources<
     Resources,
     InProps,
@@ -2751,16 +2747,12 @@ function defineResourceLayoutImpl<
           !('Loading' in layout.render || 'Error' in layout.render)
         )
           return {};
-        let root = scopedLazyRoots.get(resource);
-        if (!root) {
-          root = definedResourceLayout({
-            ...props,
-            resource,
-            namespace: false,
-            name: capitalize(resource),
-          } as never) as unknown as { [lazyStatesSymbol]: LazyResourceStates };
-          scopedLazyRoots.set(resource, root);
-        }
+        const root = definedResourceLayout({
+          ...props,
+          resource,
+          namespace: false,
+          name: capitalize(resource),
+        } as never) as unknown as { [lazyStatesSymbol]: LazyResourceStates };
         return root[lazyStatesSymbol];
       },
     },

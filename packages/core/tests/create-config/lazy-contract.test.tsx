@@ -658,3 +658,72 @@ it('retries the underlying import when a derived lazy state fails', async () => 
   expect(await screen.findByText('Derived recovered')).toBeInTheDocument();
   expect(attempts).toBe(2);
 });
+
+it('retries failed derived states exported by an outer lazy module', async () => {
+  const factory = createDefinedResourceLayout({ resources: ['users'] });
+  factory.defineLazyDefaults({
+    Error: ({ retry }) => <button onClick={retry}>Retry nested</button>,
+  });
+  const source = factory.createRenderState(() => <p>Nested recovered</p>);
+  let attempts = 0;
+  const lazy = factory.createRenderState.lazy(async () => {
+    if (++attempts === 1) throw new Error('offline');
+    return { source };
+  });
+  const derived = factory.createRenderState.fromState({
+    ref: lazy,
+    render: (_, { composables }) => <composables.Ref />,
+  });
+  const outer = factory.createRenderState.lazy(async () => ({ derived }));
+  const { createResourceLayout } = factory.defineResourceLayout({
+    render: { default: outer },
+  });
+  const Users = createResourceLayout({ resource: 'users', name: 'Users' });
+  render(<Users />);
+  fireEvent.click(await screen.findByText('Retry nested'));
+  expect(await screen.findByText('Nested recovered')).toBeInTheDocument();
+  expect(attempts).toBe(2);
+});
+
+it('isolates scoped loading options between callers and follows changed options', () => {
+  const factory = createDefinedResourceLayout({
+    resources: ['users'],
+    options: { title: createProp.string() },
+  });
+  const { createResourceLayout } = factory.defineResourceLayout({
+    render: {
+      default: () => <section />,
+      Loading: {
+        props: { include: { title: true } },
+        render: ({ title }) => <p>Loading {title}</p>,
+      },
+    },
+  });
+  const scope = createResourceLayout.forResources('users');
+  const Shell = scope.createComponent({
+    props: { include: { title: true } },
+    resources: {
+      users: {
+        lazy: () => new Promise<Record<string, unknown>>(() => undefined),
+      },
+    },
+    render: ({ title }, ctx) => <ctx.Users title={title} />,
+  });
+  const Users = Shell.asHOF()('users');
+  const view = render(
+    <>
+      <Users title="First" />
+      <Users title="Second" />
+    </>,
+  );
+  expect(screen.getByText('Loading First')).toBeInTheDocument();
+  expect(screen.getByText('Loading Second')).toBeInTheDocument();
+  view.rerender(
+    <>
+      <Users title="Changed" />
+      <Users title="Second" />
+    </>,
+  );
+  expect(screen.getByText('Loading Changed')).toBeInTheDocument();
+  expect(screen.getByText('Loading Second')).toBeInTheDocument();
+});

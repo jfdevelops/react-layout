@@ -1,4 +1,4 @@
-import { createElement, type ComponentType } from 'react';
+import { createElement, useRef, type ComponentType } from 'react';
 import type { LazyOptions, LazyResourceStates } from './types';
 import { createLazyLoader } from './create-lazy-loader';
 import { LazyBoundary } from './lazy-boundary';
@@ -117,7 +117,24 @@ export function createScopedLazyContent(
     context: Record<string, ComponentType<any>>;
   }) {
     const defaults = environment?.defaults() ?? {};
-    const nearest = environment?.states?.(resource, callProps) ?? {};
+    const fallbackStates = useRef<{
+      props: Record<string, unknown>;
+      states: LazyResourceStates;
+    }>();
+    const previous = fallbackStates.current;
+    if (
+      !previous ||
+      Object.keys(previous.props).length !== Object.keys(callProps).length ||
+      Object.keys(callProps).some(
+        (key) => !Object.is(previous.props[key], callProps[key]),
+      )
+    ) {
+      fallbackStates.current = {
+        props: callProps,
+        states: environment?.states?.(resource, callProps) ?? {},
+      };
+    }
+    const nearest = fallbackStates.current!.states;
     const Loading = nearest.Loading ?? defaults.Loading;
     const fallback =
       input.fallback !== undefined ? input.fallback : options.fallback;

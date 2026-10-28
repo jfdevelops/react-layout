@@ -3,10 +3,7 @@ import type { ScopedLazyContent } from '../../lazy/scoped-content';
 export type { ScopedComponentRenderFn } from '../../lazy/scoped-content';
 
 import type { ComponentType, JSX, ReactNode } from 'react';
-import type {
-  ComposableComponents,
-  MakeComposable,
-} from '@jfdevelops/react-layout-composables';
+import type { ComposableComponents } from '@jfdevelops/react-layout-composables';
 import type {
   ResolveProps,
   ResolvedBuiltPropShape,
@@ -723,7 +720,6 @@ export type ScopedBoundResourceComponent<
   Props extends object,
   Resource extends string,
   Components = {},
-  Composables extends ComposableComponents = {},
 > = BaseComponent<string, Props> &
   LazyHandle &
   ResolvedScopedComponentsMap<Components> & {
@@ -733,12 +729,7 @@ export type ScopedBoundResourceComponent<
      * `undefined` at runtime.
      */
     readonly resource: Resource;
-  } & ([keyof Composables] extends [never]
-    ? { readonly makeComposable?: undefined }
-    : {
-        /** Creates the bound resource's composable layout, using the scope's default name when omitted. */
-        makeComposable: MakeComposable<Composables, string>;
-      });
+  };
 
 export type ScopedResourceComponent<
   ResourceDefinitions extends ReadonlyArray<ResourceDefinition>,
@@ -841,8 +832,7 @@ export type ScopedResourceComponent<
         Resource,
         Resource extends keyof ComponentsByResource
           ? ComponentsByResource[Resource]
-          : {},
-        Composables
+          : {}
       >
     >;
   };
