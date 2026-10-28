@@ -15,6 +15,7 @@ import { control } from './theme';
 import { InspectionTree } from './tree';
 import { ViewSwitcher } from './view-switcher';
 import { SelectedNode } from './selected-node';
+import { StateIcon } from './state-icon';
 import { useExplorerViewport } from './use-explorer-viewport';
 import type { ChipPalette } from './config';
 import type { GraphNode } from '@jfdevelops/react-layout-devtools-core';
@@ -318,14 +319,29 @@ const GraphCard = memo(function GraphCard({
           </span>
           <strong
             style={{
-              display: 'block',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
             }}
             title={node.label}
           >
-            {node.label}
+            {node.kind === 'state' && (
+              <StateIcon
+                state={node.label}
+                palette={palette}
+                spinning={node.active > 0}
+              />
+            )}
+            <span
+              style={{
+                minWidth: 0,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {node.label}
+            </span>
           </strong>
         </Button>
       </foreignObject>
