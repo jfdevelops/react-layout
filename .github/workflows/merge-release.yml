@@ -1,0 +1,46 @@
+name: Merge release PR
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [changeset-release/main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: merge-release-pr
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.head_branch == 'changeset-release/main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      # No checkout or execution of PR code in this privileged workflow.
+      - name: Merge the release PR whose head passed CI
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          CI_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          pr="$(
+            gh api "repos/$GH_REPO/pulls?state=open&base=main&head=${GH_REPO%/*}:changeset-release/main" \
+              --jq '.[0] | [.number, .head.sha, .head.repo.full_name] | @tsv'
+          )"
+          read -r pr_number pr_head pr_repo <<< "$pr"
+
+          if [[ -z "$pr_number" || "$pr_head" != "$CI_HEAD_SHA" || "$pr_repo" != "$GH_REPO" ]]; then
+            echo "No current same-repository release PR matches the successful CI head."
+            exit 0
+          fi
+
+          gh pr merge "$pr_number" --squash --match-head-commit "$CI_HEAD_SHA"
