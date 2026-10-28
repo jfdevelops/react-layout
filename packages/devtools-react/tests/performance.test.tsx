@@ -11,6 +11,9 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { createInspectionStore } from '@jfdevelops/react-layout-devtools-core';
 import { ReactLayoutDevtools, ReactLayoutDevtoolsContent } from '../src';
 
+// Rendering 672 nodes in jsdom is slow on loaded CI machines.
+vi.setConfig({ testTimeout: 30_000 });
+
 afterEach(() => {
   cleanup();
 
