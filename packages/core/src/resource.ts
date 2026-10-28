@@ -185,7 +185,7 @@ type NestedResourcePath<
 /** Dot-delimited paths for every resource and nested sub-resource. */
 export type ResourcePath<
   Resources extends ReadonlyArray<ResourceDefinition>,
-> = NestedResourcePath<Resources[number]>;
+> = ResourceDefinition extends Resources[number] ? string : NestedResourcePath<Resources[number]>;
 
 /**
  * Top-level resource names declared in a `resources` array. Preserves string

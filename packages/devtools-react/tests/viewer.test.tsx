@@ -346,3 +346,14 @@ it('locates a filtered selection and reveals collapsed tree ancestors', () => {
     HTMLElement.prototype.scrollTo = original;
   }
 });
+
+it('counts lazy declarations and failures before any loaded layout registers', () => {
+  const source = createInspectionStore();
+  source.node({ id: 'lazy', kind: 'lazy', label: 'appointments', status: 'unresolved', unresolved: true });
+  render(<ReactLayoutDevtoolsContent source={source} />);
+  expect(screen.getByText(/1 lazy declarations/)).toBeTruthy();
+  act(() => {
+    source.node({ id: 'lazy', kind: 'lazy', label: 'appointments', status: 'error', unresolved: true });
+  });
+  expect(screen.getByText(/1 failed/)).toBeTruthy();
+});

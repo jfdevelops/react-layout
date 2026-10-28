@@ -1,3 +1,5 @@
+import { LazyBoundary } from '../lazy/lazy-boundary';
+import { lazyDefaultsSymbol, lazyStatesSymbol, type LazyResourceStates } from '../lazy/types';
 import {
   stateReferenceSource,
   type StateComposableSource,
@@ -32,7 +34,6 @@ import {
   useCallback,
   useLayoutEffect,
   useMemo,
-  useReducer,
   useRef,
   useState,
 } from 'react';
@@ -54,6 +55,7 @@ import {
   MissingResourceProviderError,
   ResourceModuleLoadError,
   ResourceRenderError,
+  LazyResourceStateNotFoundError,
 } from '../errors';
 import {
   type AnyBuiltPropDefinition,
@@ -125,10 +127,11 @@ import {
   type RenderStateReferences,
   deferredRenderStateSymbol,
   definedResourceLayoutComponentSymbol,
-  findDefinedRenderState,
   isDeferredRenderState,
   isLazyRenderState,
-  lazyRenderStateSymbol,
+  lazyLoaderSymbol,
+  lazyOptionsSymbol,
+  lazyInspectionSymbol,
 } from './render-state';
 import {
   createStateReferences,
@@ -1678,6 +1681,7 @@ function defineResourceLayoutImpl<
   // Internal, set only by `defineResourceLayout.withLayout`: the identity of the
   // owning definition, forwarded when a page reports its resource so the shell
   // can tell its own pages apart from ones belonging to another definition.
+  const getLazyDefaults = (options as unknown as { [lazyDefaultsSymbol]?: () => LazyResourceStates })[lazyDefaultsSymbol] ?? (() => ({}));
   const shellId = (options as { shellId?: symbol }).shellId;
 
   const inspection = inheritedInspection
@@ -2282,84 +2286,67 @@ function defineResourceLayoutImpl<
         : getReferenceStateId(input, stateName);
 
       if (isLazyRenderState(input)) {
-        const loadState = input[lazyRenderStateSymbol];
-
-        function createLazyState() {
-          return lazy(async () => {
-            const stateDefinition = await findDefinedRenderState(
-              await loadState().catch((error: unknown) => {
-                throw new ResourceModuleLoadError(
-                  String(layoutContext.resource),
-                  error
-                );
-              })
-            );
-
-            if (
-              validateStateName &&
-              stateDefinition.state !== undefined &&
-              stateDefinition.state !== stateName
-            ) {
-              throw new LayoutConfigurationError(
-                `Lazy render state "${stateDefinition.state}" cannot be used as "${stateName}"`
-              );
-            }
-
-            return {
-              default: createLoadedStateComponent(
-                validateStateName
-                  ? stateName
-                  : stateDefinition.state ?? stateName,
-                stateDefinition,
-                inspectedId
-              ),
-            };
-          });
-        }
-
+        const loader = input[lazyLoaderSymbol];
+        const lazyOptions = input[lazyOptionsSymbol];
+        const lazyInspection = input[lazyInspectionSymbol];
+        inspectionStore.connect(input);
+        inspectionStore.edge(
+          inspectedId ?? layoutId,
+          lazyInspection.id,
+          'declares'
+        );
+        const label = `${layoutContext.resource}:${stateName}`;
+        lazyInspection.setLabel(label);
+        const map = (stateDefinition: AnyRenderStateDefinition) => {
+          if (
+            validateStateName &&
+            stateDefinition.state !== undefined &&
+            stateDefinition.state !== stateName
+          ) {
+            throw new LazyResourceStateNotFoundError(label, stateName);
+          }
+          return createLoadedStateComponent(
+            validateStateName
+              ? stateName
+              : (stateDefinition.state ?? stateName),
+            stateDefinition,
+            inspectedId
+          );
+        };
         function LazyStateComponent(props: Record<string, unknown>) {
-          const [, rerender] = useReducer((version) => version + 1, 0);
-          const LazyState = useRef(createLazyState());
-          const CurrentLazyState = LazyState.current;
+          const defaults = lazyOptions.defaults();
           const LoadingComponent =
             fallbackStateName === 'Loading'
               ? undefined
               : stateComponents.Loading;
-          const ErrorComponent =
+          const ErrorState =
             fallbackStateName === 'Error' ? undefined : stateComponents.Error;
-
-          function retry() {
-            LazyState.current = createLazyState();
-
-            rerender();
-          }
-
-          const rendered = (
-            <Suspense fallback={LoadingComponent ? <LoadingComponent /> : null}>
-              <CurrentLazyState {...props} />
-            </Suspense>
-          );
-
-          return ErrorComponent ? (
-            <RenderStateBoundary
-              fallback={(error, reset) => (
-                <RenderStateRetryContext.Provider value={reset}>
-                  <ErrorComponent
-                    error={toResourceStateError(
-                      String(layoutContext.resource),
-                      stateName,
-                      error
-                    )}
-                    retry={reset}
-                  />
+          const LoadingDefault = defaults.Loading;
+          const ErrorComponent: LazyResourceStates['Error'] = ErrorState
+            ? ({ error, retry }) => (
+                <RenderStateRetryContext.Provider value={retry}>
+                  <ErrorState error={error} retry={retry} />
                 </RenderStateRetryContext.Provider>
-              )}
-              onRetry={retry}
-            >
-              {rendered}
-            </RenderStateBoundary>
-          ) : (
-            rendered
+              )
+            : defaults.Error;
+          return (
+            <LazyBoundary
+              loader={loader}
+              map={map}
+              resource={String(layoutContext.resource)}
+              componentProps={props}
+              ErrorComponent={ErrorComponent}
+              onMount={lazyInspection.hooks.onMount}
+              fallback={
+                lazyOptions.fallback !== undefined ? (
+                  lazyOptions.fallback
+                ) : LoadingComponent ? (
+                  <LoadingComponent />
+                ) : LoadingDefault ? (
+                  <LoadingDefault resource={String(layoutContext.resource)} />
+                ) : null
+              }
+            />
           );
         }
 
@@ -2620,6 +2607,10 @@ function defineResourceLayoutImpl<
           name,
         }),
         ...exposedStates,
+        [lazyStatesSymbol]: {
+          Loading: stateComponents.Loading,
+          Error: stateComponents.Error ? ({ error, retry }: import('../lazy/types').LazyResourceErrorProps) => <RenderStateRetryContext.Provider value={retry}><stateComponents.Error error={error} retry={retry} /></RenderStateRetryContext.Provider> : undefined,
+        },
         [definedResourceLayoutComponentSymbol]: true as const,
       }
     );
@@ -2732,6 +2723,10 @@ function defineResourceLayoutImpl<
     createResourceLayout: definedResourceLayout as never,
     resolveLayoutOptionDefaults,
   });
+  const scopedLazyRoots = new Map<
+    string,
+    { [lazyStatesSymbol]: LazyResourceStates }
+  >();
   const forResources = createForResources<
     Resources,
     InProps,
@@ -2745,6 +2740,30 @@ function defineResourceLayoutImpl<
       : {}),
     createResourceLayout: definedResourceLayout as never,
     getComponentPropDefinitions,
+    lazyEnvironment: {
+      store: inheritedInspection?.store ?? inspection!.store,
+      parent: inheritedInspection?.layout ?? inspection!.definition,
+      defaults: getLazyDefaults,
+      states(resource, props) {
+        if (
+          typeof layout.render !== 'object' ||
+          !layout.render ||
+          !('Loading' in layout.render || 'Error' in layout.render)
+        )
+          return {};
+        let root = scopedLazyRoots.get(resource);
+        if (!root) {
+          root = definedResourceLayout({
+            ...props,
+            resource,
+            namespace: false,
+            name: capitalize(resource),
+          } as never) as unknown as { [lazyStatesSymbol]: LazyResourceStates };
+          scopedLazyRoots.set(resource, root);
+        }
+        return root[lazyStatesSymbol];
+      },
+    },
   });
 
   const createResourceLayoutExtras: {

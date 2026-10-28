@@ -1,3 +1,12 @@
+import { createLazyLoader, type LazyLoader } from '../lazy/create-lazy-loader';
+import { inspectLazy, withLazyHandle } from '../lazy/inspection';
+import { type LazyHandle, type LazyOptions, type LazyResourceStates } from '../lazy/types';
+import { LazyResourceModuleShapeError } from '../errors/lazy-resource-error';
+import type { InspectionStore } from '@jfdevelops/react-layout-devtools-core';
+export const lazyLoaderSymbol = Symbol('lazyLoader');
+export const lazyOptionsSymbol = Symbol('lazyOptions');
+export const lazyInspectionSymbol = Symbol('lazyInspection');
+
 import {
   getLayoutDebug,
   layoutDebug,
@@ -74,7 +83,10 @@ export type DeferredRenderState<Definition extends AnyRenderStateDefinition> = {
 };
 
 /** A state definition supplied by a separately imported module. */
-export type LazyRenderState<Definition extends AnyRenderStateDefinition> = {
+export type LazyRenderState<Definition extends AnyRenderStateDefinition> = LazyHandle & {
+  readonly [lazyLoaderSymbol]: LazyLoader<AnyRenderStateDefinition>;
+  readonly [lazyOptionsSymbol]: LazyOptions & { defaults: () => LazyResourceStates };
+  readonly [lazyInspectionSymbol]: ReturnType<typeof inspectLazy>;
   readonly [lazyRenderStateSymbol]: () => Promise<Record<string, unknown>>;
   readonly definition?: Definition;
 };
@@ -780,7 +792,7 @@ export interface CreateRenderState<
     SharedCustom
   >;
   lazy<Module extends Record<string, unknown>>(
-    load: () => Promise<Module>
+    load: (() => Promise<Module>) | LazyOptions<Module>
   ): LazyRenderState<DefinedRenderStateFromModule<Module>> &
     StateComposableHandle<
       RenderStateCallProps<
@@ -873,7 +885,8 @@ export function createRenderStateBuilder<
     SharedComposables,
     SharedInclude,
     SharedCustom
-  >
+  >,
+  environment?: { store: InspectionStore; defaults: () => LazyResourceStates; onLazy?: () => void }
 ): CreateRenderStateBuilderResult<
   Resources,
   Options,
@@ -905,20 +918,17 @@ export function createRenderStateBuilder<
       : Object.values(input.ref)[0];
 
     if (isLazyRenderState(entry)) {
-      const lazyState = {
-        [lazyRenderStateSymbol]: async () => {
-          const source = await findDefinedRenderState(
-            await entry[lazyRenderStateSymbol]()
-          );
+      const lazyState = createRenderState.lazy(async () => {
+        if (entry.status === 'error') entry[lazyLoaderSymbol].reset();
+        const source = await entry[lazyLoaderSymbol].get();
 
-          return {
-            Derived: createRenderState.fromState({
-              ...input,
-              ref: toFragment(source),
-            }),
-          };
-        },
-      };
+        return {
+          Derived: createRenderState.fromState({
+            ...input,
+            ref: toFragment(source),
+          }),
+        };
+      });
       const name = input.state ?? 'default';
       const fragment = { [name]: lazyState };
 
@@ -1054,13 +1064,45 @@ export function createRenderStateBuilder<
     });
   };
 
-  createRenderState.lazy = (load: () => Promise<Record<string, unknown>>) => {
-    const lazyState = {
-      [lazyRenderStateSymbol]: load,
-      [layoutDebug]: getLayoutDebug(load),
+  createRenderState.lazy = (
+    input: (() => Promise<Record<string, unknown>>) | LazyOptions
+  ) => {
+    environment?.onLazy?.();
+    const options = typeof input === 'function' ? { load: input } : input;
+    const inspection = inspectLazy('Render state');
+    const loaderOptions = {
+      load: options.load,
+      select: (module: Record<string, unknown>) =>
+        findDefinedRenderState(module, loaderOptions.label),
+      label: 'Render state',
+      hooks: inspection.hooks,
     };
-
-    return withStateComposable(lazyState, { input: lazyState, name: 'lazy' });
+    const loader = createLazyLoader(loaderOptions);
+    const lazyState = withLazyHandle(
+      {
+        [lazyRenderStateSymbol]: options.load,
+        [lazyLoaderSymbol]: loader,
+        [lazyOptionsSymbol]: {
+          ...options,
+          defaults: environment?.defaults ?? (() => ({})),
+        },
+        [lazyInspectionSymbol]: {
+          ...inspection,
+          setLabel(value: string) {
+            if (loader.status !== 'unresolved') return;
+            loaderOptions.label = value;
+            inspection.setLabel(value);
+          },
+        },
+        [layoutDebug]: getLayoutDebug(input),
+      },
+      loader
+    );
+    const result = inspection.store.attach(
+      withStateComposable(lazyState, { input: lazyState, name: 'lazy' })
+    );
+    environment?.store.connect(result);
+    return result;
   };
 
   return createRenderState as unknown as CreateRenderStateBuilderResult<
@@ -1099,7 +1141,8 @@ export function isLazyRenderState(
  * states. Throws when a module exports none or more than one.
  */
 export async function findDefinedRenderState(
-  module: Record<string, unknown>
+  module: Record<string, unknown>,
+  label = 'Render state'
 ): Promise<AnyRenderStateDefinition> {
   const definitions = Object.values(module).filter(
     (value) =>
@@ -1109,15 +1152,13 @@ export async function findDefinedRenderState(
   ) as Array<Record<typeof definedRenderStateSymbol, AnyRenderStateDefinition>>;
 
   if (definitions.length !== 1) {
-    throw new Error(
-      `A lazy render-state module must export exactly one defined render state; received ${definitions.length}.`
-    );
+    throw new LazyResourceModuleShapeError(label, definitions.length);
   }
 
   const definition = definitions[0][definedRenderStateSymbol];
 
   return isLazyRenderState(definition)
-    ? findDefinedRenderState(await definition[lazyRenderStateSymbol]())
+    ? definition[lazyLoaderSymbol].get()
     : definition;
 }
 

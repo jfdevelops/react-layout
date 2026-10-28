@@ -1,20 +1,24 @@
-import {
-  Component,
-  type ComponentProps,
-  type ComponentType,
-  type JSX,
-  lazy,
-  Suspense,
-  useReducer,
-  useRef,
-} from 'react';
-import {
-  LayoutConfigurationError,
-  ResourceModuleLoadError,
-} from '../errors';
+import { type ComponentProps, type ComponentType } from 'react';
+import { LazyResourceModuleShapeError } from '../errors/lazy-resource-error';
 import { componentPropDefinitionsSymbol } from '@jfdevelops/react-layout-validator';
 import type { ResourcePath, ResourceDefinition } from '../resource';
 import { definedResourceLayoutComponentSymbol } from './render-state';
+import {
+  createLazyLoader,
+  type LazyResourceLoadHooks,
+} from '../lazy/create-lazy-loader';
+import { LazyBoundary } from '../lazy/lazy-boundary';
+import type {
+  LazyHandle,
+  LazyOptions,
+  LazyResourceStates,
+} from '../lazy/types';
+export type {
+  LazyResourceErrorComponent,
+  LazyResourceLoadingComponent,
+  LazyResourceStates,
+} from '../lazy/types';
+export type { LazyResourceLoadHooks } from '../lazy/create-lazy-loader';
 
 type DefinedLayoutComponent = ComponentType<any> & {
   readonly [definedResourceLayoutComponentSymbol]: true;
@@ -26,7 +30,9 @@ type UnwrapDefinedLayout<Export> = Export extends DefinedLayoutComponent
     ? Root
     : never;
 
-type DefinedLayoutFromModule<Module> = UnwrapDefinedLayout<Module[keyof Module]>;
+type DefinedLayoutFromModule<Module> = UnwrapDefinedLayout<
+  Module[keyof Module]
+>;
 
 type LazyUnsupportedStatic =
   | 'makeComposable'
@@ -43,83 +49,25 @@ type LazyUnsupportedStatic =
 export type LazyResourceLayoutComponent<Module> = ComponentType<
   ComponentProps<DefinedLayoutFromModule<Module>>
 > &
+  LazyHandle &
   Pick<
     DefinedLayoutFromModule<Module>,
     Exclude<keyof DefinedLayoutFromModule<Module>, LazyUnsupportedStatic>
   >;
 
-/** Component rendered while a resource module or one of its states is loading. */
-export type LazyResourceLoadingComponent = ComponentType;
-/**
- * Component rendered when a resource module cannot be loaded. Calling
- * `retry` discards React's rejected lazy cache entry and imports it again.
- */
-export type LazyResourceErrorComponent = ComponentType<{
-  error: unknown;
-  retry: () => void;
-}>;
-
-/** Loading and module-error UI used around a lazy resource component. */
-export type LazyResourceStates = {
-  Error?: LazyResourceErrorComponent;
-  Loading?: LazyResourceLoadingComponent;
-};
-
-/**
- * Configuration for a lazy resource component. `resource` is checked against
- * the bound resource paths, including dot-delimited subresources, and `load`
- * must resolve to a module with exactly one created resource component.
- */
+/** Lazy resource options, sharing import and fallback semantics with lazy states. */
 export type LazyResourceLayoutOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Module extends Record<string, unknown>,
-> = {
-  load: () => Promise<Module>;
+> = LazyOptions<Module> & {
   resource: ResourcePath<Resources>;
-  states?: LazyResourceStates;
+  states?: LazyResourceStates<ResourcePath<Resources>>;
 };
 
-type BoundaryProps = {
-  children: JSX.Element;
-  ErrorComponent?: LazyResourceErrorComponent;
-  onRetry: () => void;
-};
-
-type BoundaryState = {
-  error?: unknown;
-};
-
-class LazyResourceErrorBoundary extends Component<
-  BoundaryProps,
-  BoundaryState
-> {
-  state: BoundaryState = {};
-
-  static getDerivedStateFromError(error: unknown): BoundaryState {
-    return { error };
-  }
-
-  retry = () => {
-    this.props.onRetry();
-    this.setState({ error: undefined });
-  };
-
-  render() {
-    if (this.state.error !== undefined) {
-      const { ErrorComponent } = this.props;
-
-      if (!ErrorComponent) {
-        throw this.state.error;
-      }
-
-      return <ErrorComponent error={this.state.error} retry={this.retry} />;
-    }
-
-    return this.props.children;
-  }
-}
-
-function findDefinedLayoutComponent(module: Record<string, unknown>) {
+function findDefinedLayoutComponent(
+  module: Record<string, unknown>,
+  resource: string,
+) {
   const components = Object.values(module)
     .map((value) =>
       typeof value === 'object' && value !== null && 'Root' in value
@@ -131,136 +79,107 @@ function findDefinedLayoutComponent(module: Record<string, unknown>) {
         typeof value === 'function' &&
         definedResourceLayoutComponentSymbol in value,
     );
-
-  if (components.length !== 1) {
-    throw new LayoutConfigurationError(
-      `A lazy resource module must export exactly one created resource layout component; received ${components.length}`,
-    );
-  }
-
+  if (components.length !== 1)
+    throw new LazyResourceModuleShapeError(resource, components.length);
   return components[0];
 }
 
-/**
- * Creates a cached lazy proxy for a resource component and all of its compound
- * state components. This is normally called through
- * `defineResourceLayout.lazy(...)`, which supplies shared defaults.
- */
+/** Cached resource component and its compound states, backed by the shared loader. */
 export function createLazyResourceLayout<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Module extends Record<string, unknown>,
 >(
   options: LazyResourceLayoutOptions<Resources, Module>,
-  defaults: LazyResourceStates,
+  defaults: LazyResourceStates<any>,
+  hooks: LazyResourceLoadHooks = {},
 ): LazyResourceLayoutComponent<Module> {
-  const runtimeOptions = options as {
-    load: () => Promise<Record<string, unknown>>;
+  const runtime = options as unknown as LazyOptions<Module> & {
     resource: string;
     states?: LazyResourceStates;
   };
-  let loadedComponentPromise: Promise<DefinedLayoutComponent> | undefined;
-  const stateComponents = new Map<PropertyKey, ComponentType<any>>();
-  const resolvedStates = { ...defaults, ...runtimeOptions.states };
-
-  function loadComponent() {
-    loadedComponentPromise ??= runtimeOptions
-      .load()
-      .then(findDefinedLayoutComponent)
-      .catch((error: unknown) => {
-        throw new ResourceModuleLoadError(runtimeOptions.resource, error);
-      });
-
-    return loadedComponentPromise;
-  }
-
-  function resetLoad() {
-    loadedComponentPromise = undefined;
-    stateComponents.clear();
-  }
-
-  function createMemberComponent(member?: PropertyKey) {
-    function createLazyComponent() {
-      return lazy(async () => {
-        const component = await loadComponent();
-        const selected =
-          member === undefined
-            ? component
-            : (component as unknown as Record<PropertyKey, unknown>)[member];
-
-        if (typeof selected !== 'function') {
-          throw new LayoutConfigurationError(
-            `Lazy resource "${runtimeOptions.resource}" does not define state "${String(member)}"`,
-          );
-        }
-
-        return { default: selected as ComponentType<any> };
-      });
-    }
-
+  const resource = runtime.resource;
+  const states = { ...defaults, ...runtime.states } as LazyResourceStates;
+  const loader = createLazyLoader({
+    load: runtime.load,
+    select: (module) => findDefinedLayoutComponent(module, resource),
+    label: resource,
+    hooks,
+  });
+  const members = new Map<string, ComponentType<any>>();
+  function createMember(member?: string) {
     function LazyMember(props: Record<string, unknown>) {
-      const [, rerender] = useReducer((version) => version + 1, 0);
-      const LazyComponent = useRef(createLazyComponent());
-      const LoadingComponent = resolvedStates.Loading;
-      const CurrentLazyComponent = LazyComponent.current;
-
-      function retry() {
-        resetLoad();
-        LazyComponent.current = createLazyComponent();
-        rerender();
-      }
-
+      const Loading = states.Loading;
       return (
-        <LazyResourceErrorBoundary
-          ErrorComponent={resolvedStates.Error}
-          onRetry={retry}
-        >
-          <Suspense
-            fallback={LoadingComponent ? <LoadingComponent /> : null}
-          >
-            <CurrentLazyComponent {...props} />
-          </Suspense>
-        </LazyResourceErrorBoundary>
+        <LazyBoundary
+          loader={loader}
+          member={member}
+          resource={resource}
+          componentProps={props}
+          ErrorComponent={states.Error}
+          onMount={hooks.onMount}
+          fallback={
+            runtime.fallback !== undefined ? (
+              runtime.fallback
+            ) : Loading ? (
+              <Loading resource={resource} />
+            ) : null
+          }
+        />
       );
     }
-
-    const resourceName = runtimeOptions.resource;
-    LazyMember.displayName =
-      member === undefined
-        ? `LazyResource(${resourceName})`
-        : `LazyResource(${resourceName}).${String(member)}`;
-
+    LazyMember.displayName = `LazyResource(${resource})${member ? `.${member}` : ''}`;
+    Object.defineProperties(LazyMember, {
+      preload: { value: loader.preload },
+      status: { get: () => loader.status },
+    });
     return LazyMember;
   }
-
-  const Component = createMemberComponent();
-  const unsupportedStatics = new Set<PropertyKey>([
+  const Component = createMember();
+  const reservedStatics = new Set<PropertyKey>([
     'makeComposable',
     'props',
     'resource',
     componentPropDefinitionsSymbol,
     definedResourceLayoutComponentSymbol,
+    'contextTypes',
+    'childContextTypes',
+    'contextType',
+    'propTypes',
+    'defaultProps',
+    'getDerivedStateFromProps',
+    'getDerivedStateFromError',
+    'getDefaultProps',
+    '$$typeof',
+    '_payload',
+    '_init',
+    'render',
+    'compare',
+    'type',
+    'then',
+    'catch',
+    'finally',
+    'toJSON',
+    'asymmetricMatch',
+    '__esModule',
+    'default',
   ]);
-
   return new Proxy(Component, {
     get(target, property, receiver) {
-      if (Reflect.has(target, property)) {
+      if (Reflect.has(target, property))
         return Reflect.get(target, property, receiver);
-      }
-
-      if (typeof property !== 'string' || unsupportedStatics.has(property)) {
+      if (
+        typeof property !== 'string' ||
+        reservedStatics.has(property) ||
+        !/^[A-Z]/.test(property)
+      )
         return undefined;
+      let component = members.get(property);
+      if (!component) {
+        component = createMember(property);
+        members.set(property, component);
       }
-
-      const existing = stateComponents.get(property);
-
-      if (existing) {
-        return existing;
-      }
-
-      const stateComponent = createMemberComponent(property);
-      stateComponents.set(property, stateComponent);
-
-      return stateComponent;
+      return component;
     },
+    has: (target, property) => Reflect.has(target, property),
   }) as unknown as LazyResourceLayoutComponent<Module>;
 }

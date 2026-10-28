@@ -6,6 +6,7 @@ import {
   type InspectionTreeNode,
 } from '@jfdevelops/react-layout-devtools-core';
 import type { ChipPalette, ReactLayoutDevtoolsConfig } from './config';
+import { loadChip } from './load-status';
 
 export function InspectionTree({
   graph,
@@ -120,6 +121,7 @@ export function InspectionTree({
       node.kind === 'resource'
         ? node.label.split('.').at(-1) ?? node.label
         : node.label;
+    const status = loadChip(node);
 
     return (
       <li role="none" key={key}>
@@ -167,7 +169,7 @@ export function InspectionTree({
             data-tree-node
             aria-label={`${node.kind} ${node.label}${
               node.active ? ` active (${node.active})` : ''
-            }${node.unresolved ? ' unresolved' : ''}`}
+            }${status ? ` ${status.label}` : ''}`}
             aria-selected={selected === node.id}
             aria-expanded={hasChildren ? expanded : undefined}
             onClick={() => onSelect(node.id)}
@@ -247,17 +249,22 @@ export function InspectionTree({
                 active{node.active > 1 ? ` ×${node.active}` : ''}
               </span>
             )}
-            {node.unresolved && (
+            {status && (
               <span
+                title={
+                  status.kind === 'error' && node.error
+                    ? `${node.error.name}: ${node.error.message}`
+                    : status.help
+                }
                 style={{
                   font: '10px/18px ui-sans-serif, system-ui, sans-serif',
                   padding: '0 6px',
                   borderRadius: 4,
-                  color: palette.unresolved.color,
-                  background: palette.unresolved.background,
+                  color: palette[status.kind].color,
+                  background: palette[status.kind].background,
                 }}
               >
-                unresolved
+                {status.label}
               </span>
             )}
           </Button>

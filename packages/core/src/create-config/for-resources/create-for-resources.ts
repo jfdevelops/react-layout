@@ -1,4 +1,12 @@
 import {
+  createScopedLazyContent,
+  scopedLazySymbol,
+  type LazyEnvironment,
+  type ScopedLazyContent,
+} from '../../lazy/scoped-content';
+import { withLazyHandle } from '../../lazy/inspection';
+import type { LazyHandle } from '../../lazy/types';
+import {
   createContext,
   createElement,
   type ComponentType,
@@ -31,6 +39,7 @@ import {
 type CreateForResourcesOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
 > = {
+  lazyEnvironment?: LazyEnvironment;
   createLayoutForResource: (
     defaultName: string | undefined,
     resource: LayoutResourceKey<Resources>,
@@ -55,6 +64,7 @@ export function createForResources<
   createMakeComposableLayout,
   createResourceLayout,
   getComponentPropDefinitions,
+  lazyEnvironment,
 }: CreateForResourcesOptions<Resources>) {
   return ((...resourcesOrOptions: Array<unknown>) => {
     const firstArgument = resourcesOrOptions[0];
@@ -139,8 +149,8 @@ export function createForResources<
 
     type ScopedResourceScopedComponentDefinition = {
       props?: Record<string, AnyBuiltPropDefinition>;
-      render: ScopedComponentRenderFn;
-    };
+      [scopedLazySymbol]?: LazyHandle;
+    } & ScopedLazyContent<ScopedComponentRenderFn>;
 
     type ScopedComponentEntry = {
       [option: string]: unknown;
@@ -148,6 +158,7 @@ export function createForResources<
       props?: CreateComponentPropsBag;
       components?: Record<string, ScopedResourceScopedComponentDefinition>;
       render: ScopedComponentRenderFn;
+      [scopedLazySymbol]?: LazyHandle;
     };
 
     type CreateComponentPropsBag = {
@@ -155,6 +166,88 @@ export function createForResources<
       custom?: Record<string, AnyBuiltPropDefinition>;
       defined?: Record<string, unknown>;
     };
+
+    function normalizeContent<
+      T extends {
+        render?: ScopedComponentRenderFn;
+        lazy?: unknown;
+        fallback?: React.ReactNode;
+        [scopedLazySymbol]?: LazyHandle;
+      },
+    >(
+      definition: T,
+      resource: string,
+      label: string,
+    ): T & {
+      render: ScopedComponentRenderFn;
+      [scopedLazySymbol]?: LazyHandle;
+    } {
+      if (definition.lazy !== undefined && definition.render !== undefined)
+        throw new LayoutConfigurationError(
+          `Scoped content "${label}" must define render or lazy, never both`,
+        );
+      if (definition[scopedLazySymbol])
+        return definition as T & {
+          render: ScopedComponentRenderFn;
+          [scopedLazySymbol]?: LazyHandle;
+        };
+      if (definition.lazy === undefined) {
+        if (typeof definition.render !== 'function')
+          throw new LayoutConfigurationError(
+            `Scoped content "${label}" requires render or lazy`,
+          );
+        return definition as T & {
+          render: ScopedComponentRenderFn;
+          [scopedLazySymbol]?: LazyHandle;
+        };
+      }
+      const Content = createScopedLazyContent(
+        definition as Parameters<typeof createScopedLazyContent>[0],
+        resource,
+        label,
+        lazyEnvironment,
+      );
+      const result = {
+        ...definition,
+        lazy: undefined,
+        render: (
+          callProps: Record<string, unknown>,
+          context: Record<string, (props?: never) => JSX.Element>,
+        ) => createElement(Content, { callProps, context }),
+        [scopedLazySymbol]: Content,
+      };
+      return withLazyHandle(result, Content) as T & {
+        render: ScopedComponentRenderFn;
+        [scopedLazySymbol]?: LazyHandle;
+      };
+    }
+
+    function aggregateHandle(handles: LazyHandle[]): LazyHandle {
+      let imports: Promise<void>[] = [];
+      let pending: Promise<void> | undefined;
+      return {
+        preload() {
+          const next = handles.map((handle) => handle.preload());
+          if (
+            !pending ||
+            next.some((promise, index) => promise !== imports[index])
+          ) {
+            imports = next;
+            pending = Promise.all(next).then(() => undefined);
+          }
+          return pending;
+        },
+        get status() {
+          if (handles.some((handle) => handle.status === 'error'))
+            return 'error';
+          if (handles.some((handle) => handle.status === 'loading'))
+            return 'loading';
+          if (handles.some((handle) => handle.status === 'unresolved'))
+            return 'unresolved';
+          return 'resolved';
+        },
+      };
+    }
 
     function mergeCreateComponentProps(
       ...bags: Array<CreateComponentPropsBag | undefined>
@@ -180,10 +273,9 @@ export function createForResources<
         custom?: Record<string, AnyBuiltPropDefinition>;
       };
       resources?: Record<string, ScopedComponentEntry>;
-      render: (
-        props: Record<string, unknown>,
-        context: Record<string, (props: never) => JSX.Element>,
-      ) => ScopedRenderResult;
+      render?: ScopedComponentRenderFn;
+      lazy?: Parameters<typeof createScopedLazyContent>[0]['lazy'];
+      fallback?: React.ReactNode;
     }) {
       const mergedProps = mergeCreateComponentProps(
         componentOptions.props,
@@ -195,6 +287,12 @@ export function createForResources<
       const custom = mergedProps.custom ?? {};
       const selectedResources = new Set(
         resourceOptions.map(({ resource }) => resource),
+      );
+      const topLevelContent = new Map(
+        [...selectedResources].map((resource) => [
+          resource,
+          normalizeContent(componentOptions, resource, `${resource}:content`),
+        ]),
       );
       const componentPropsContext = createContext<
         Record<string, unknown> | undefined
@@ -215,7 +313,14 @@ export function createForResources<
           );
         }
 
-        definedEntries.set(resource, entry);
+        const normalized = normalizeContent(entry, resource, resource);
+        normalized.components = Object.fromEntries(
+          Object.entries(entry.components ?? {}).map(([name, definition]) => [
+            name,
+            normalizeContent(definition, resource, `${resource}.${name}`),
+          ]),
+        );
+        definedEntries.set(resource, normalized);
       }
 
       /** Resolved scoped components, per resource. */
@@ -295,7 +400,7 @@ export function createForResources<
 
                 // Mount a returned component type with call-site props; pass
                 // nodes (elements, portals, null) through unchanged.
-                const result = definition.render(
+                const result = definition.render!(
                   { ...componentProps, ...resolvedOwnProps, resource },
                   scopedComponents,
                 );
@@ -311,6 +416,8 @@ export function createForResources<
 
               // Types expose compound statics from the returned component
               // (`DataTable.Loading`); attach matching runtime wrappers.
+              if (definition[scopedLazySymbol])
+                withLazyHandle(ScopedComponent, definition[scopedLazySymbol]);
               scopedComponents[name] = withScopedCompoundStatics(
                 ScopedComponent,
                 (staticName) => {
@@ -329,7 +436,7 @@ export function createForResources<
                     let result: unknown = cachedReturnedComponent;
 
                     if (!isRenderableComponentType(result)) {
-                      result = definition.render(
+                      result = definition.render!(
                         {
                           ...componentProps,
                           ...cachedOwnProps,
@@ -388,7 +495,18 @@ export function createForResources<
 
             return [
               contextKey,
-              Object.assign(ResourceRender, scopedComponents),
+              withLazyHandle(
+                Object.assign(ResourceRender, scopedComponents),
+                aggregateHandle([
+                  ...(entry[scopedLazySymbol] ? [entry[scopedLazySymbol]] : []),
+                  ...Object.values(entry.components ?? {}).flatMap(
+                    (definition) =>
+                      definition[scopedLazySymbol]
+                        ? [definition[scopedLazySymbol]]
+                        : [],
+                  ),
+                ]),
+              ),
             ];
           }),
         );
@@ -427,8 +545,7 @@ export function createForResources<
 
           // Layout option values come from the outer component call site
           // (`<Directory title="…" />`), not from the resource entry.
-          const availableDefinitions =
-            getComponentPropDefinitions(resource);
+          const availableDefinitions = getComponentPropDefinitions(resource);
           const layoutOptions: Record<string, unknown> = {};
           const defined = entry.props?.defined ?? {};
 
@@ -455,9 +572,7 @@ export function createForResources<
             ...layoutOptions,
             namespace: false,
             name:
-              entry.name ??
-              defaultNames.get(resource) ??
-              capitalize(resource),
+              entry.name ?? defaultNames.get(resource) ?? capitalize(resource),
             resource,
           }) as (props: Record<string, unknown>) => JSX.Element;
           roots.set(resource, root);
@@ -548,7 +663,12 @@ export function createForResources<
           componentPropsContext.Provider,
           { value: resolvedComponentProps },
           resolveScopedRenderResult(
-            componentOptions.render(resolvedComponentProps, renderContext),
+            topLevelContent
+              .get(componentResource)!
+              .render(
+                resolvedComponentProps,
+                renderContext as Record<string, (props?: never) => JSX.Element>,
+              ),
             resolvedComponentProps,
           ),
         );
@@ -584,6 +704,17 @@ export function createForResources<
             },
             resourceScopedComponents.get(resource) ?? {},
           );
+          const renderResource = renderContext[
+            capitalize(resource)
+          ] as unknown as LazyHandle;
+          const ownContent = topLevelContent.get(resource)?.[scopedLazySymbol];
+          withLazyHandle(
+            boundComponent,
+            aggregateHandle([
+              ...(renderResource ? [renderResource] : []),
+              ...(ownContent ? [ownContent] : []),
+            ]),
+          );
           boundComponents.set(resource, boundComponent);
         }
 
@@ -594,6 +725,17 @@ export function createForResources<
         return bindResource;
       }
 
+      withLazyHandle(
+        Component,
+        aggregateHandle([
+          ...(Object.values(renderContext).filter(
+            (value) => 'preload' in value,
+          ) as unknown as LazyHandle[]),
+          ...[...topLevelContent.values()].flatMap((entry) =>
+            entry[scopedLazySymbol] ? [entry[scopedLazySymbol]] : [],
+          ),
+        ]),
+      );
       return Object.assign(Component, {
         asHOF,
         displayName: 'ScopedResourceComponent',
@@ -626,7 +768,9 @@ export function createForResources<
       props?: CreateComponentPropsBag;
       name?: string;
       components?: Record<string, ScopedResourceScopedComponentDefinition>;
-      render: ScopedComponentRenderFn;
+      render?: ScopedComponentRenderFn;
+      lazy?: Parameters<typeof createScopedLazyContent>[0]['lazy'];
+      fallback?: React.ReactNode;
     }) {
       const { resource, props, ...entry } = options;
 
@@ -640,7 +784,27 @@ export function createForResources<
         );
       }
 
-      return { ...entry, props: props ?? {} };
+      const normalized = normalizeContent(entry, resource, String(resource));
+      const components = Object.fromEntries(
+        Object.entries(normalized.components ?? {}).map(
+          ([name, definition]) => [
+            name,
+            normalizeContent(definition, resource, `${resource}.${name}`),
+          ],
+        ),
+      );
+      const result = { ...normalized, components, props: props ?? {} };
+      return withLazyHandle(
+        result,
+        aggregateHandle([
+          ...(normalized[scopedLazySymbol]
+            ? [normalized[scopedLazySymbol]]
+            : []),
+          ...Object.values(components).flatMap((definition) =>
+            definition[scopedLazySymbol] ? [definition[scopedLazySymbol]] : [],
+          ),
+        ]),
+      );
     }
 
     Object.assign(createComponent, {

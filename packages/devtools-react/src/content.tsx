@@ -104,6 +104,12 @@ export function ReactLayoutDevtoolsToolbar() {
                     .length
                 }{' '}
                 active states
+                {graph.nodes.some((node) => node.kind === 'lazy') && (
+                  <> · {graph.nodes.filter((node) => node.kind === 'lazy').length} lazy declarations
+                    {graph.nodes.some((node) => node.kind === 'lazy' && node.status === 'error') &&
+                      <> · {graph.nodes.filter((node) => node.kind === 'lazy' && node.status === 'error').length} failed</>}
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -375,6 +381,8 @@ export function ReactLayoutDevtoolsExplorer() {
                         border: `2px solid ${
                           selected === node.id
                             ? '#fff'
+                            : node.status === 'error'
+                            ? palette.error.color
                             : node.active
                             ? palette.active.color
                             : palette[node.kind].color
@@ -393,7 +401,13 @@ export function ReactLayoutDevtoolsExplorer() {
                       >
                         {node.kind}
                         {node.active > 0 ? ` · active (${node.active})` : ''}
-                        {node.unresolved ? ' · unresolved' : ''}
+                        {node.status === 'error'
+                          ? ' · error'
+                          : node.status === 'loading'
+                            ? ' · loading'
+                            : node.unresolved
+                              ? ' · unresolved'
+                              : ''}
                       </span>
                       <strong
                         style={{

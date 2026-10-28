@@ -135,7 +135,7 @@ describe('createComponent', () => {
           context.Root as ComponentType<Record<string, unknown>>,
           {},
           createElement(
-            context.Users as ComponentType<Record<string, unknown>>,
+            context.Users as unknown as ComponentType<Record<string, unknown>>,
           ),
         ),
     });

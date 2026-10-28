@@ -1,8 +1,12 @@
+import { inspectLazy } from '../lazy/inspection';
+import type { ResourcePath } from '../resource';
+import { createLazyErrorComponent } from '../lazy/create-error-component';
+import { lazyDefaultsSymbol, type CreateLazyErrorComponent } from '../lazy/types';
+import type { LazyResourceError } from '../errors/lazy-resource-error';
 import {
   getLayoutDebug,
   layoutDebug,
   createInspectionStore,
-  inspectionId,
   layoutInspection,
   getInspectionSource,
 } from '@jfdevelops/react-layout-devtools-core';
@@ -249,13 +253,15 @@ export type BoundDefineResourceLayout<
 };
 
 /** Registers loading and module-error components used by lazy layouts. */
-export type DefineLazyDefaults = {
+export type DefineLazyDefaults<Resource = string> = {
   /**
    * Sets defaults once, before the factory creates its first lazy layout.
    *
    * @param defaults - Shared components for pending module loads and failures.
    */
-  (defaults: LazyResourceStates): void;
+  (defaults: LazyResourceStates<Resource>): void;
+  readonly errors: LazyResourceError;
+  createErrorComponent: CreateLazyErrorComponent<Resource>;
 };
 
 /** Reusable helpers produced by {@link createDefinedResourceLayout}. */
@@ -283,7 +289,7 @@ export type CreateDefinedResourceLayoutResult<
     SharedCustom
   >;
   /** Sets the shared loading and module-error UI used by lazy layouts. */
-  defineLazyDefaults: DefineLazyDefaults;
+  defineLazyDefaults: DefineLazyDefaults<ResourcePath<Resources>>;
   /** Defines a layout using the resources, options, and composables already bound. */
   defineResourceLayout: BoundDefineResourceLayout<
     Resources,
@@ -363,11 +369,13 @@ export function createDefinedResourceLayout<
   const { resources, options = {} as Options, composables } = configuration;
   const defineBoundLayout = defineResourceLayout.forResources(...resources);
   const inspection = createInspectionStore();
-  let lazyDefaults: LazyResourceStates = {};
+  let lazyDefaults: LazyResourceStates<ResourcePath<Resources>> = {};
   let lazyDefaultsDefined = false;
   let lazyLayoutCreated = false;
 
-  function defineLazyDefaults(defaults: LazyResourceStates): void {
+  function defineLazyDefaults(
+    defaults: LazyResourceStates<ResourcePath<Resources>>
+  ): void {
     if (lazyDefaultsDefined) {
       throw new LayoutConfigurationError(
         'Lazy resource defaults can only be defined once.'
@@ -385,11 +393,18 @@ export function createDefinedResourceLayout<
     lazyDefaultsDefined = true;
   }
 
+  Object.defineProperty(defineLazyDefaults, 'errors', {
+    value: undefined,
+    enumerable: false,
+  });
+  defineLazyDefaults.createErrorComponent = createLazyErrorComponent as CreateLazyErrorComponent<ResourcePath<Resources>>;
+
   const boundDefineResourceLayout = ((layout: Record<string, unknown>) => {
     const localComposables = layout.composables as
       | LayoutComposablesDefinition<Resources, ComposableComponents>
       | undefined;
     const definition = defineBoundLayout({
+      [lazyDefaultsSymbol]: () => lazyDefaults,
       [layoutDebug]: getLayoutDebug(layout) ?? getLayoutDebug(configuration),
       options,
       name: layout.name ?? configuration.name,
@@ -431,10 +446,9 @@ export function createDefinedResourceLayout<
   ): ReturnType<typeof createLazyResourceLayout<Resources, Module>> => {
     lazyLayoutCreated = true;
 
-    const id = inspectionId('lazy');
     const label = (lazyOptions as unknown as { resource: string }).resource;
-
-    inspection.node({ id, kind: 'lazy', label, unresolved: true });
+    const lazyInspection = inspectLazy(label, inspection);
+    const id = lazyInspection.id;
 
     return createLazyResourceLayout(
       {
@@ -468,23 +482,33 @@ export function createDefinedResourceLayout<
             }
           }
 
-          inspection.node({ id, kind: 'lazy', label, unresolved: false });
-
           return module as Module;
         },
       },
-      lazyDefaults
+      lazyDefaults,
+      lazyInspection.hooks
     );
   };
 
   return inspection.attach({
-    createRenderState: createRenderStateBuilder({
-      props: configuration.props,
-      composables,
-      options,
-      resources,
-    }),
-    defineLazyDefaults,
+    createRenderState: createRenderStateBuilder(
+      {
+        props: configuration.props,
+        composables,
+        options,
+        resources,
+      },
+      {
+        store: inspection,
+        defaults: () => lazyDefaults as LazyResourceStates,
+        onLazy: () => {
+          lazyLayoutCreated = true;
+        },
+      }
+    ),
+    defineLazyDefaults: defineLazyDefaults as DefineLazyDefaults<
+      ResourcePath<Resources>
+    >,
     defineResourceLayout: boundDefineResourceLayout,
     resources: createLayoutResourcesAccessor(resources),
   });

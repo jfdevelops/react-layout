@@ -6,6 +6,7 @@ export const defaultNodeColors: Record<NodeKind, string> = {
   layout: '#a78bfa',
   state: '#fbbf24',
   composable: '#f472b6',
+  component: '#6ee7b7',
   lazy: '#94a3b8',
 };
 
@@ -14,6 +15,8 @@ export type DevtoolsChipKind =
   | 'active'
   | 'inactive'
   | 'unresolved'
+  | 'loading'
+  | 'error'
   | 'reference'
   | 'required'
   | 'optional'
@@ -54,6 +57,8 @@ export function resolveChipColors(
     active: '#6ee7b7',
     inactive: '#94a3b8',
     unresolved: '#94a3b8',
+    loading: '#38bdf8',
+    error: '#f87171',
     reference: '#a78bfa',
     required: '#fbbf24',
     optional: '#94a3b8',
