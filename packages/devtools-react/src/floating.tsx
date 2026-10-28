@@ -9,20 +9,69 @@ import { control } from './theme';
 import { useDraggableFab } from './use-draggable-fab';
 import { HelpTooltip } from './components/ui/tooltip';
 import { useFloatingPanel } from './use-floating-panel';
-import { usePanelPreferences } from './preferences';
+import { usePanelPreferences, type DevtoolsVariant } from './preferences';
+import { ToolbarDevtools } from './toolbar';
 
 export interface ReactLayoutDevtoolsProps
   extends ReactLayoutDevtoolsContentProps {
   initialIsOpen?: boolean;
+  /** Floating launcher position. Ignored by the toolbar variant. */
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+  /**
+   * `floating` (default) shows a launcher and panel; `toolbar` docks a bar to
+   * the bottom of the viewport. A variant the user picks in the panel is saved
+   * and takes precedence.
+   */
+  variant?: DevtoolsVariant;
 }
 
-/** Floating launcher and panel. Use Content directly inside another devtools host. */
+/** Floating launcher and panel, or a bottom toolbar. Use Content directly inside another devtools host. */
 export function ReactLayoutDevtools({
+  variant = 'floating',
+  initialIsOpen,
+  ...props
+}: ReactLayoutDevtoolsProps) {
+  const [preferences, updatePreferences] = usePanelPreferences(
+    props.config,
+    props.storageKey
+  );
+  const active = preferences.variant ?? variant;
+  // Switching from an open panel keeps the devtools open in the new variant.
+  const [openAfterSwitch, setOpenAfterSwitch] = useState(false);
+
+  function switchTo(next: DevtoolsVariant) {
+    setOpenAfterSwitch(true);
+
+    updatePreferences({ variant: next });
+  }
+
+  const open = openAfterSwitch || initialIsOpen;
+
+  return active === 'toolbar' ? (
+    <ToolbarDevtools
+      key="toolbar"
+      {...props}
+      initialIsOpen={open}
+      onSwitchVariant={() => switchTo('floating')}
+    />
+  ) : (
+    <FloatingDevtools
+      key="floating"
+      {...props}
+      initialIsOpen={open}
+      onSwitchVariant={() => switchTo('toolbar')}
+    />
+  );
+}
+
+function FloatingDevtools({
   initialIsOpen = false,
   position = 'bottom-right',
+  onSwitchVariant,
   ...content
-}: ReactLayoutDevtoolsProps) {
+}: Omit<ReactLayoutDevtoolsProps, 'variant'> & {
+  onSwitchVariant: () => void;
+}) {
   const [mounted, setMounted] = useState(false);
   const [phase, setPhase] = useState<'closed' | 'opening' | 'open' | 'closing'>(
     initialIsOpen ? 'opening' : 'closed'
@@ -209,6 +258,15 @@ export function ReactLayoutDevtools({
                   }
                 >
                   ▤
+                </Button>
+              </HelpTooltip>
+              <HelpTooltip content="Switch to bottom toolbar">
+                <Button
+                  style={panelControl}
+                  aria-label="Switch to bottom toolbar"
+                  onClick={onSwitchVariant}
+                >
+                  ▁
                 </Button>
               </HelpTooltip>
               <Button

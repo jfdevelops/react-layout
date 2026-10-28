@@ -14,13 +14,25 @@ export const defaultStorageKey = defaultDevtoolsStorageKey;
 const changeEvent = 'react-layout-devtools:preferences-change';
 const memory = new Map<string, string>();
 
+export type DevtoolsVariant = 'floating' | 'toolbar';
+
+export interface ToolbarPreferences {
+  /** Drawer height in CSS pixels, excluding the bar. */
+  height: number;
+}
+
 type Preferences = DevtoolsPreferences & {
   fabPosition?: { x: number; y: number };
   panel?: PanelPreferences;
+  /** Overrides the `variant` prop once the user switches. */
+  variant?: DevtoolsVariant;
+  toolbar?: ToolbarPreferences;
 };
 
+const adapterKeys = ['fabPosition', 'panel', 'variant', 'toolbar'] as const;
+
 type PreferencesPatch = DevtoolsConfig &
-  Pick<Preferences, 'fabPosition' | 'panel'>;
+  Pick<Preferences, (typeof adapterKeys)[number]>;
 
 function read(key: string): string | null {
   try {
@@ -36,6 +48,8 @@ function write(key: string, value: Preferences) {
     ...shared,
     fabPosition: value.fabPosition,
     panel: value.panel,
+    variant: value.variant,
+    toolbar: value.toolbar,
   });
 
   try {
@@ -59,6 +73,17 @@ function resolve(
     const saved = JSON.parse(raw ?? '{}');
     const point = saved?.fabPosition;
     const panel = saved?.panel;
+    const toolbarHeight = saved?.toolbar?.height;
+
+    if (saved?.variant === 'floating' || saved?.variant === 'toolbar')
+      shared.variant = saved.variant;
+
+    if (
+      typeof toolbarHeight === 'number' &&
+      Number.isFinite(toolbarHeight) &&
+      toolbarHeight > 0
+    )
+      shared.toolbar = { height: toolbarHeight };
 
     if (
       panel &&
@@ -133,16 +158,14 @@ export function usePanelPreferences(
 
   function update(patch: PreferencesPatch) {
     const current = resolve(read(key), defaults);
-    const fabPosition =
-      'fabPosition' in patch ? patch.fabPosition : current.fabPosition;
+    const adapter = Object.fromEntries(
+      adapterKeys.map((name) => [
+        name,
+        name in patch ? patch[name] : current[name],
+      ])
+    );
 
-    const panel = 'panel' in patch ? patch.panel : current.panel;
-
-    write(key, {
-      ...mergeDevtoolsPreferences(current, patch),
-      fabPosition,
-      panel,
-    });
+    write(key, { ...mergeDevtoolsPreferences(current, patch), ...adapter });
   }
 
   function reset() {
