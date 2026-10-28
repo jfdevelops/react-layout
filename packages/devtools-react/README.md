@@ -233,3 +233,11 @@ attributes. The host still needs to allow the application scripts themselves.
 
 The development fixture at `/csp.html` in the Portless example runs with a nonce
 style policy and `style-src-attr 'none'`, and displays a style-violation counter.
+
+The eye control shows composable outlines in development. Its preference persists
+and Reset preferences clears it. Labels show the composable and owning layout;
+hover highlights its inspector node and clicking the label selects it. The
+fixed overlay follows scrolling, resizing, and DOM changes without changing app
+styles or intercepting app clicks. Intrinsic wrapper roots and single intrinsic
+children receive development markers; fragments and custom wrappers that do not
+forward DOM props are skipped. Production adds neither markers nor an overlay.

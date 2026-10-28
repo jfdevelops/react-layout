@@ -54,6 +54,7 @@ function useController({
 
   useEffect(() => inspector.connectPreview?.(), [inspector]);
 
+  const [hovered, setHovered] = useState<string>();
   const [session, setSession] = useState<DevtoolsSessionState>({ query: '' });
   const { query, selectedNode: selected } = session;
 
@@ -236,6 +237,8 @@ function useController({
 
   return {
     config,
+    hovered,
+    setHovered,
     updatePreferences,
     resetPreferences,
     graph,

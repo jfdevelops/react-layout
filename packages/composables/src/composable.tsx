@@ -1,4 +1,4 @@
-import { ComponentType, createContext, ReactNode, useContext } from 'react';
+import { ComponentType, createContext, ReactNode, useContext, cloneElement, isValidElement } from 'react';
 import { EmptyComponentsError, InvalidComponentsError } from './errors';
 import {
   AnyBuiltPropDefinition,
@@ -434,6 +434,13 @@ export function createComposableComponent<
       return <Comp {...wrapperProps}>{resolvedChildren}</Comp>;
     }
 
+    // A single intrinsic child is the composable's root without adding a wrapper.
+    if (propsRecord['data-rl-node'] && isValidElement(resolvedChildren) && typeof resolvedChildren.type === 'string') {
+      return cloneElement(resolvedChildren, {
+        'data-rl-node': propsRecord['data-rl-node'],
+        'data-rl-composable': propsRecord['data-rl-composable'],
+      } as Record<string, unknown>);
+    }
     return resolvedChildren;
   }
 
