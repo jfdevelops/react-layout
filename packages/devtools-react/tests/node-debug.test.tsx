@@ -44,7 +44,7 @@ it('shows source locations and opens the adapter editor endpoint', async () => {
   }
 });
 
-it('targets selected instances and clears a forced render state on inspector disconnect', () => {
+it('targets selected instances and clears a forced render state on inspector disconnect', async () => {
   const store = createInspectionStore();
 
   store.node({ id: 'layout', kind: 'layout', label: 'Users' });
@@ -94,7 +94,7 @@ it('targets selected instances and clears a forced render state on inspector dis
 
   expect(second).toHaveBeenLastCalledWith('loading');
 
-  expect(screen.getByText('Forced: Loading')).toBeTruthy();
+  expect(await screen.findByText('Forced: Loading')).toBeTruthy();
 
   view.unmount();
 

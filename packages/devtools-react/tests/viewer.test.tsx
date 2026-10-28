@@ -3,7 +3,7 @@ import { expect, it, vi } from 'vitest';
 import { createInspectionStore } from '@jfdevelops/react-layout-devtools-core';
 import { ReactLayoutDevtoolsContent, ReactLayoutDevtools } from '../src';
 
-it('renders live activity and lets users inspect related nodes', () => {
+it('renders live activity and lets users inspect related nodes', async () => {
   const store = createInspectionStore();
 
   store.node({
@@ -23,7 +23,8 @@ it('renders live activity and lets users inspect related nodes', () => {
 
   let unmount: () => void;
 
-  act(() => {
+  // Store notifications reach the devtools on the next microtask.
+  await act(async () => {
     unmount = store.mount('layout', 'loading');
   });
 
@@ -37,7 +38,7 @@ it('renders live activity and lets users inspect related nodes', () => {
 
   expect(screen.getByRole('heading', { name: 'Loading' })).toBeTruthy();
 
-  act(() => unmount!());
+  await act(async () => unmount!());
 
   expect(screen.getByLabelText('0 mounted instances')).toBeTruthy();
 });
@@ -80,7 +81,7 @@ it('opens from its floating button and closes with Escape', () => {
   vi.useRealTimers();
 });
 
-it('switches to a live tree and supports expanding and collapsing branches', () => {
+it('switches to a live tree and supports expanding and collapsing branches', async () => {
   const source = createInspectionStore();
 
   source.node({ id: 'layout', kind: 'layout', label: 'UsersLayout' });
@@ -105,7 +106,8 @@ it('switches to a live tree and supports expanding and collapsing branches', () 
 
   fireEvent.click(screen.getByRole('button', { name: 'Expand all' }));
 
-  act(() => {
+  // Store notifications reach the devtools on the next microtask.
+  await act(async () => {
     source.mount('state');
   });
 
@@ -195,7 +197,7 @@ it('applies partial chip colors and initial display preferences', () => {
   ).toBe('true');
 });
 
-it('starts collapsed trees predictably, including newly registered children', () => {
+it('starts collapsed trees predictably, including newly registered children', async () => {
   const source = createInspectionStore();
 
   source.node({ id: 'layout', kind: 'layout', label: 'UsersLayout' });
@@ -219,7 +221,8 @@ it('starts collapsed trees predictably, including newly registered children', ()
 
   fireEvent.click(screen.getByRole('button', { name: 'Collapse all' }));
 
-  act(() => {
+  // Store notifications reach the devtools on the next microtask.
+  await act(async () => {
     source.node({ id: 'new', kind: 'state', label: 'Preview' });
 
     source.edge('layout', 'new', 'defines');
@@ -347,12 +350,13 @@ it('locates a filtered selection and reveals collapsed tree ancestors', () => {
   }
 });
 
-it('counts lazy declarations and failures before any loaded layout registers', () => {
+it('counts lazy declarations and failures before any loaded layout registers', async () => {
   const source = createInspectionStore();
   source.node({ id: 'lazy', kind: 'lazy', label: 'appointments', status: 'unresolved', unresolved: true });
   render(<ReactLayoutDevtoolsContent source={source} />);
   expect(screen.getByText(/1 lazy declarations/)).toBeTruthy();
-  act(() => {
+  // Store notifications reach the devtools on the next microtask.
+  await act(async () => {
     source.node({ id: 'lazy', kind: 'lazy', label: 'appointments', status: 'error', unresolved: true });
   });
   expect(screen.getByText(/1 failed/)).toBeTruthy();
