@@ -1,3 +1,4 @@
+import type { OptionalStateChildren } from './render-state';
 import { LazyBoundary } from '../lazy/lazy-boundary';
 import { LazyFallbackPropsContext } from '../lazy/fallback-props';
 import { lazyDefaultsSymbol, lazyStatesSymbol, type LazyResourceStates } from '../lazy/types';
@@ -1111,6 +1112,29 @@ type RenderStateIncludeProps<Input> = UnwrapRenderState<Input> extends {
   ? IncludeProps
   : {};
 
+function optionalStateChildren(props: AnyRenderStateDefinition['props']) {
+  if (!props) return props;
+  const children = props.custom?.children as (AnyBuiltPropDefinition & { optional?: () => AnyBuiltPropDefinition }) | undefined;
+  const childrenInclude = props.include?.children;
+  return {
+    ...props,
+    include: props.include && {
+      ...props.include,
+      ...('children' in props.include ? {
+        children: typeof childrenInclude === 'object' && childrenInclude !== null
+          ? { ...childrenInclude, required: false }
+          : childrenInclude === true || childrenInclude === 'required'
+          ? { required: false, suppliedVia: 'config' }
+          : 'optional',
+      } : {}),
+    },
+    custom: props.custom && {
+      ...props.custom,
+      ...(children ? { children: children.visibility === 'required' ? children.optional?.() ?? children : children } : {}),
+    },
+  };
+}
+
 function getSynchronousRenderStateDefinition(
   input: unknown,
   fallbackProps?: LayoutProps<any, any, any, any, any>
@@ -1146,7 +1170,7 @@ type ResourceLayoutStateComponents<
   ? {
       [State in Exclude<keyof States & string, 'default'>]: BaseComponent<
         `${Name}.${State}`,
-        Show<
+        Show<OptionalStateChildren<
           ResolveProps<RenderStateCustomProps<States[State]>> &
             ResolvedIncludedComponentProps<
               MergedLayoutInProps<Resources, Options, Composables>,
@@ -1155,10 +1179,10 @@ type ResourceLayoutStateComponents<
                 LayoutIncludeProps<Resources, Options, Composables>
               >
             >
-        >
+        >>
       > &
         ((
-          props: Show<
+          props: Show<OptionalStateChildren<
             ResolveProps<RenderStateCustomProps<States[State]>> &
               ResolvedIncludedComponentProps<
                 MergedLayoutInProps<Resources, Options, Composables>,
@@ -1167,7 +1191,7 @@ type ResourceLayoutStateComponents<
                   LayoutIncludeProps<Resources, Options, Composables>
                 >
               >
-          >
+          >>
         ) => JSX.Element) & {
           readonly resource: Resource;
         };
@@ -2463,7 +2487,7 @@ function defineResourceLayoutImpl<
           options: inProps,
           layout: {
             composables: stateComposables,
-            props: mergeLayoutProps(legacyLayoutProps, definition.props),
+            props: optionalStateChildren(mergeLayoutProps(legacyLayoutProps, definition.props)),
             render: stateRender,
           },
         } as never,

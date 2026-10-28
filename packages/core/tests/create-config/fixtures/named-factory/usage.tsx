@@ -346,7 +346,7 @@ export function checkInvalidCalls() {
   <Appointments showHeader="yes">Bookings</Appointments>;
   // @ts-expect-error segment records must not accept arbitrary values
   <Appointments segments={{ section: 123 }}>Bookings</Appointments>;
-  // @ts-expect-error named states preserve required children
+  // Named states allow children to be omitted.
   <Appointments.Layout />;
   // @ts-expect-error named states preserve the packaged breadcrumb value type
   <Appointments.Layout segments={{ section: false }}>

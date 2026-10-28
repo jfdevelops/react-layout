@@ -1,3 +1,4 @@
+import { lazyStatesSymbol } from '../../src/lazy/types';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import {
@@ -5,10 +6,156 @@ import {
   createComposableComponent,
   createProp,
   defineResourceLayout,
+  ResourceModuleLoadError,
 } from '../../src';
 
 describe('resource layout render states', () => {
   afterEach(cleanup);
+
+  it('allows states reusing required children props to render without children', () => {
+    const { createRenderState, defineResourceLayout: defineBoundLayout } =
+      createDefinedResourceLayout({ resources: ['users'] });
+    const Layout = createRenderState({
+      state: 'Layout',
+      props: { custom: { children: createProp.component({ type: 'ReactNode' }) } },
+      render: ({ children }) => <main>{children}</main>,
+    });
+    const state = (name: 'Loading' | 'Error' | 'NotFound') => createRenderState({
+      state: name,
+      props: Layout.Layout.props,
+      render: ({ children }) => <p>{children ?? name}</p>,
+    });
+    const { createResourceLayout } = defineBoundLayout({
+      render: {
+        default: () => <></>,
+        ...state('Loading'),
+        ...state('Error'),
+        ...state('NotFound'),
+      },
+    });
+    const Users = createResourceLayout({ resource: 'users', name: 'Users' });
+    for (const State of [Users.Loading, Users.Error, Users.NotFound]) {
+      expectTypeOf<React.ComponentProps<typeof State>>().toMatchTypeOf<{ children?: React.ReactNode }>();
+      const view = render(<State />);
+      expect(view.container.textContent).toMatch(/Loading|Error|NotFound/);
+      view.unmount();
+    }
+    render(<Users.Loading>Provided children</Users.Loading>);
+    expect(screen.getByText('Provided children')).toBeInTheDocument();
+  });
+
+  it('allows lazy route states and library fallbacks to omit inherited children', async () => {
+    const factory = createDefinedResourceLayout({ resources: ['users'] });
+    const props = { custom: { children: createProp.component({ type: 'ReactNode' }) } };
+    const { createResourceLayout } = factory.defineResourceLayout({
+      render: {
+        default: () => <p>Ready</p>,
+        ...factory.createRenderState({ state: 'Loading', props, render: () => <p>Pending</p> }),
+        ...factory.createRenderState({ state: 'Error', props, render: () => <p>Failed</p> }),
+        ...factory.createRenderState({ state: 'NotFound', props, render: () => <p>Missing</p> }),
+      },
+    });
+    const Users = createResourceLayout({ resource: 'users', name: 'Users' });
+    const Page = factory.defineResourceLayout.lazy({ resource: 'users', load: async () => ({ Users }) });
+    await Page.preload();
+    for (const State of [Page.Loading, Page.Error, Page.NotFound]) {
+      const view = render(<State />);
+      expect(await screen.findByText(/Pending|Failed|Missing/)).toBeInTheDocument();
+      view.unmount();
+    }
+    const fallbacks = (Users as unknown as { [lazyStatesSymbol]: import('../../src/lazy/types').LazyResourceStates })[lazyStatesSymbol];
+    const Loading = fallbacks.Loading!;
+    const view = render(<Loading resource="users" />);
+    expect(screen.getByText('Pending')).toBeInTheDocument();
+    view.unmount();
+    const ErrorFallback = fallbacks.Error!;
+    render(<ErrorFallback resource="users" error={new ResourceModuleLoadError('users', 'offline')} retry={() => {}} />);
+    expect(screen.getByText('Failed')).toBeInTheDocument();
+  });
+
+  it('types omitted children as optional in derived state render callbacks', () => {
+    const factory = createDefinedResourceLayout({ resources: ['users'] });
+    const Source = factory.createRenderState({
+      state: 'Layout',
+      render: () => <></>,
+    });
+    const ErrorState = factory.createRenderState.fromState({
+      ref: Source,
+      state: 'Error',
+      props: { custom: { children: createProp.string() } },
+      render: ({ children }) => {
+        expectTypeOf(children).toEqualTypeOf<string | undefined>();
+        return <p>{children ?? 'No derived children'}</p>;
+      },
+    });
+    const Users = factory.defineResourceLayout({
+      render: { default: () => <></>, ...ErrorState },
+    }).createResourceLayout({ resource: 'users', name: 'Users' });
+    render(<Users.Error />);
+    expect(screen.getByText('No derived children')).toBeInTheDocument();
+  });
+
+  it.each([true, false])('preserves config-only children when required is %s', (required) => {
+    const factory = createDefinedResourceLayout({
+      resources: ['users'],
+      options: { children: createProp.component({ type: 'ReactNode' }).optional() },
+    });
+    const Loading = factory.createRenderState({
+      state: 'Loading',
+      props: { include: { children: { required, suppliedVia: 'config' } } },
+      render: ({ children }) => <p>{children ?? 'No configured children'}</p>,
+    });
+    const layout = factory.defineResourceLayout({ render: { default: () => <></>, ...Loading } });
+    const Users = layout.createResourceLayout({ resource: 'users', name: 'Users', children: 'Configured children' });
+    const callProps = { children: 'Component override' };
+    const view = render(<Users.Loading {...callProps} />);
+    expect(screen.getByText('Configured children')).toBeInTheDocument();
+    expect(screen.queryByText('Component override')).not.toBeInTheDocument();
+    view.unmount();
+    const Empty = layout.createResourceLayout({ resource: 'users', name: 'Empty' });
+    render(<Empty.Loading />);
+    expect(screen.getByText('No configured children')).toBeInTheDocument();
+    () => {
+      // @ts-expect-error config-only children are not component props
+      <Users.Loading children="Unexpected" />;
+    };
+  });
+
+  it('keeps component-supplied children available after optionalizing includes', () => {
+    const factory = createDefinedResourceLayout({
+      resources: ['users'],
+      options: { children: createProp.component({ type: 'ReactNode' }).optional() },
+    });
+    const Loading = factory.createRenderState({
+      state: 'Loading',
+      props: { include: { children: { required: true, suppliedVia: 'component' } } },
+      render: ({ children }) => <p>{children ?? 'No component children'}</p>,
+    });
+    const Users = factory.defineResourceLayout({
+      render: { default: () => <></>, ...Loading },
+    }).createResourceLayout({ resource: 'users', name: 'Users' });
+    const view = render(<Users.Loading />);
+    expect(screen.getByText('No component children')).toBeInTheDocument();
+    view.rerender(<Users.Loading>Component children</Users.Loading>);
+    expect(screen.getByText('Component children')).toBeInTheDocument();
+  });
+
+  it('preserves config-only children declared with shorthand includes', () => {
+    const factory = createDefinedResourceLayout({
+      resources: ['users'],
+      options: { children: createProp.component({ type: 'ReactNode' }).optional() },
+    });
+    const Loading = factory.createRenderState({
+      state: 'Loading',
+      props: { include: { children: true } },
+      render: ({ children }) => <p>{children}</p>,
+    });
+    const Users = factory.defineResourceLayout({ render: { default: () => <></>, ...Loading } })
+      .createResourceLayout({ resource: 'users', name: 'Users', children: 'Configured shorthand' });
+    const callProps = { children: 'Unexpected override' };
+    render(<Users.Loading {...callProps} />);
+    expect(screen.getByText('Configured shorthand')).toBeInTheDocument();
+  });
 
   it('uses the same normalized resources accessor as global definitions', () => {
     const { resources } = createDefinedResourceLayout({
