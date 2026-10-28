@@ -11,7 +11,9 @@ const factory = createDefinedResourceLayout({
 });
 const { defineLazyDefaults, defineResourceLayout, createRenderState } = factory;
 
-const LazyError = defineLazyDefaults.createErrorComponent({
+const LazyError = defineLazyDefaults.createRenderState({
+  state: 'Error',
+  render: {
   resourceModuleLoad: ({ resource, error, retry }) => (
     <div role="alert">
       <p>
@@ -22,9 +24,13 @@ const LazyError = defineLazyDefaults.createErrorComponent({
   ),
   lazyResourceStateNotFound: ({ error }) => <p>Missing state: {error.state}</p>,
   fallback: ({ error }) => <p>{error.message}</p>,
+  },
 });
 defineLazyDefaults({
-  Loading: ({ resource }) => <p>Loading {resource}…</p>,
+  Loading: defineLazyDefaults.createRenderState({
+    state: 'Loading',
+    render: ({ resource }) => <p>Loading {resource}…</p>,
+  }),
   Error: LazyError,
 });
 
@@ -74,29 +80,48 @@ Use `typeof defineLazyDefaults.errors` for the union without importing a type.
 The property is non-enumerable and `undefined` at runtime. Use
 `LazyResourceErrorMap` when a lookup by code is useful.
 
-`createErrorComponent` accepts a render function or an object containing
-optional per-code handlers. Handlers receive the narrowed error type. A
-`fallback` handles omitted codes; without either a handler or fallback, the
-error is rethrown. The function form returns the original component reference.
-The helper can be called before registering defaults and accepts custom props:
+`defineLazyDefaults.createRenderState` accepts `state: 'Loading' | 'Error'`.
+Loading callbacks receive the factory's resource path union. Error callbacks
+also receive `error` and `retry`, or can use per-code handlers plus a `fallback`.
+A missing handler without a fallback rethrows the error. Every callback receives
+`{ composables }` as its second argument, including code handlers.
+
+Declare included option/preset props and custom schemas the same way as layout
+render states. Lazy defaults have no separate create-time configuration call,
+so shorthand includes (`true` and `'optional'`) accept values on the returned
+component; option-definition defaults still apply. Explicit include objects
+preserve `suppliedVia`: `'config'` reads factory option defaults and excludes
+that prop from the component signature, while `'component'` accepts caller
+values. Config-only includes ignore component overrides. Props are validated
+on every render.
 
 ```tsx
-const ErrorCard = defineLazyDefaults.createErrorComponent<{ title: string }>(
-  ({ title, resource, error, retry }) => (
-    <section>
+const ErrorCard = defineLazyDefaults.createRenderState({
+  state: 'Error',
+  props: {
+    include: { title: true }, // title is declared in the factory's options
+    custom: { showReload: createProp.boolean().optional() },
+  },
+  render: ({ title, resource, error, retry, showReload }, { composables }) => (
+    <composables.Layout>
       <h2>{title}</h2>
-      <p>
-        {resource}: {error.message}
-      </p>
-      <button onClick={retry}>Retry</button>
-    </section>
+      <p>{resource}: {error.message}</p>
+      {showReload && <button onClick={retry}>Retry</button>}
+    </composables.Layout>
   ),
-);
+});
 
 defineLazyDefaults({
-  Error: (props) => <ErrorCard {...props} title="Could not load this page" />,
+  Error: (props) => <ErrorCard {...props} title="Could not load this page" showReload />,
 });
 ```
+
+`createErrorComponent` remains supported as a deprecated alias for
+`createRenderState({ state: 'Error', render })`, including its generic custom
+props and handler-map forms. It now wraps the callback to provide composables;
+it no longer returns the original callback by identity. Migrate custom props to
+`props.custom` to get runtime validation. The alias is retained for a minor
+release and scheduled for removal in the next major.
 
 **Migration:** lazy `Error` components handle lazy failures only. Put an error
 boundary around the route to handle ordinary page render exceptions. Compound
