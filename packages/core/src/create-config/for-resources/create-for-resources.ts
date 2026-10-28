@@ -1,3 +1,4 @@
+import { RenderStateNameContext } from '../render-state-context';
 import {
   createScopedLazyContent,
   scopedLazySymbol,
@@ -374,11 +375,13 @@ export function createForResources<
               // entry. Compound statics re-run `render` with these so
               // `<DataTable variant="b" />` then `<DataTable.Loading />` sees "b".
               let cachedOwnProps: Record<string, unknown> = {};
+              let cachedState: string | undefined;
               let cachedReturnedComponent:
                 | ComponentType<Record<string, unknown>>
                 | undefined;
 
               function ScopedComponent(ownProps?: Record<string, unknown>) {
+                const state = useContext(RenderStateNameContext);
                 const componentProps = useContext(componentPropsContext);
 
                 if (componentProps === undefined) {
@@ -402,10 +405,11 @@ export function createForResources<
                 // nodes (elements, portals, null) through unchanged.
                 const result = definition.render!(
                   { ...componentProps, ...resolvedOwnProps, resource },
-                  scopedComponents,
+                  { ...scopedComponents, state } as unknown as typeof scopedComponents,
                 );
 
                 if (isRenderableComponentType(result)) {
+                  cachedState = state;
                   cachedReturnedComponent = result as ComponentType<
                     Record<string, unknown>
                   >;
@@ -422,6 +426,7 @@ export function createForResources<
                 ScopedComponent,
                 (staticName) => {
                   function CompoundStatic(ownProps?: Record<string, unknown>) {
+                    const state = useContext(RenderStateNameContext);
                     const componentProps = useContext(componentPropsContext);
 
                     if (componentProps === undefined) {
@@ -433,7 +438,7 @@ export function createForResources<
                     // Prefer the component from the last parent call (same
                     // closure as that call's own-props). Fall back to re-running
                     // render with cached parent props when needed.
-                    let result: unknown = cachedReturnedComponent;
+                    let result: unknown = cachedState === state ? cachedReturnedComponent : undefined;
 
                     if (!isRenderableComponentType(result)) {
                       result = definition.render!(
@@ -442,7 +447,7 @@ export function createForResources<
                           ...cachedOwnProps,
                           resource,
                         },
-                        scopedComponents,
+                        { ...scopedComponents, state } as unknown as typeof scopedComponents,
                       );
                     }
 
@@ -476,6 +481,7 @@ export function createForResources<
             resourceScopedComponents.set(resource, scopedComponents);
 
             function ResourceRender(ownProps?: Record<string, unknown>) {
+              const state = useContext(RenderStateNameContext);
               const componentProps = useContext(componentPropsContext);
 
               if (componentProps === undefined) {
@@ -488,7 +494,7 @@ export function createForResources<
               // the resource render props and mount a returned component type.
               const callProps = { ...componentProps, ...ownProps, resource };
               return resolveScopedRenderResult(
-                entry.render(callProps, scopedComponents),
+                entry.render(callProps, { ...scopedComponents, state } as unknown as typeof scopedComponents),
                 ownProps,
               );
             }
@@ -611,6 +617,7 @@ export function createForResources<
       renderContext.Root = Root;
 
       function Component(componentProps: Record<string, unknown>) {
+        const state = useContext(RenderStateNameContext);
         const componentResource =
           componentProps.resource as LayoutResourceKey<Resources>;
 
@@ -667,7 +674,7 @@ export function createForResources<
               .get(componentResource)!
               .render(
                 resolvedComponentProps,
-                renderContext as Record<string, (props?: never) => JSX.Element>,
+                { ...renderContext, state } as unknown as Record<string, (props?: never) => JSX.Element>,
               ),
             resolvedComponentProps,
           ),

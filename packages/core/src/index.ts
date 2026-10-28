@@ -225,3 +225,5 @@ export type { LazyOptions, LazyHandle, LoadStatus, LazyResourceErrorProps, Creat
 export type { ScopedComponentRenderFn } from './lazy/scoped-content';
 
 export type { CreateLazyRenderState, LazyDefaultState } from './lazy/create-render-state';
+
+export type { BuiltinRenderStateName } from './create-config/render-state';

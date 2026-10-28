@@ -203,3 +203,67 @@ configured by `forResources`. Rebinding the same resource returns the same
 component and helper. Without composables, the helper is `undefined` in both
 runtime and public types. `makeComposable` is reserved as a scoped component
 name.
+
+## Sharing a shell across render states
+
+The second argument to a state's render callback includes `state`. A shared
+state rendered through `asComposable()` sees the outer calling state, even
+through nested or lazy state references. Directly mounting another layout or
+named state starts that component's own state context.
+
+Inline render maps infer the union of their declared state names. Independent
+`createRenderState` definitions use `string`, since they can be reused by any
+calling state. When a shared shell is created before its consuming layout,
+bind its complete literal calling-state union with
+`createRenderState.forStates(...)`; TypeScript cannot infer custom states from
+a later layout declaration. This avoids incorrectly excluding custom callers
+from an unbound shell's context.
+
+```tsx
+const factory = createDefinedResourceLayout({ resources: ['appointments'] });
+const { createRenderState, defineResourceLayout } = factory;
+const createState = createRenderState.forStates('default', 'Loading', 'Error', 'NotFound');
+const Shell = createState({
+  state: 'Layout',
+  props: { custom: { children: createProp.component({ type: 'ReactNode' }).optional() } },
+  composables: (create) => ({
+    Layout: create({ name: 'Layout' }),
+    Content: create({ name: 'Content' }),
+  }),
+  render: ({ children }, { composables, state }) => (
+    <composables.Layout>
+      <header>Appointments</header>
+      <composables.Content>
+        {state === 'Loading' ? <Skeleton /> : children}
+      </composables.Content>
+    </composables.Layout>
+  ),
+});
+const shared = () => ({ Shell: Shell.asComposable() });
+const layout = defineResourceLayout({
+  render: {
+    ...createState({
+      state: 'default', composables: shared,
+      render: (_, { composables }) => <composables.Shell><AppointmentsPage /></composables.Shell>,
+    }),
+    ...createState({
+      state: 'Loading', composables: shared,
+      render: (_, { composables }) => <composables.Shell />,
+    }),
+    ...createState({
+      state: 'Error', composables: shared,
+      render: (_, { composables }) => <composables.Shell><ErrorMessage /></composables.Shell>,
+    }),
+    ...createState({
+      state: 'NotFound', composables: shared,
+      render: (_, { composables }) => <composables.Shell><NotFoundMessage /></composables.Shell>,
+    }),
+  },
+});
+```
+
+Lazy defaults created with `defineLazyDefaults.createRenderState` receive their
+literal `'Loading'` or `'Error'` state in context. They can reuse a factory
+composable backed by the same shell. Scoped component render contexts expose
+`state` alongside their sibling components; `state` is reserved as a scoped
+component name.
