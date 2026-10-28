@@ -1,3 +1,4 @@
+import { LazyFallbackPropsContext } from './fallback-props';
 import { createElement, useRef, type ComponentType } from 'react';
 import type { LazyOptions, LazyResourceStates } from './types';
 import { createLazyLoader } from './create-lazy-loader';
@@ -38,7 +39,7 @@ export type LazyEnvironment = {
   states?: (
     resource: string,
     props: Record<string, unknown>,
-  ) => LazyResourceStates;
+  ) => LazyResourceStates & { owner?: string };
 };
 
 export const scopedLazySymbol = Symbol('scopedLazy');
@@ -117,24 +118,24 @@ export function createScopedLazyContent(
     context: Record<string, ComponentType<any>>;
   }) {
     const defaults = environment?.defaults() ?? {};
-    const fallbackStates = useRef<{
-      props: Record<string, unknown>;
-      states: LazyResourceStates;
-    }>();
-    const previous = fallbackStates.current;
-    if (
-      !previous ||
-      Object.keys(previous.props).length !== Object.keys(callProps).length ||
-      Object.keys(callProps).some(
-        (key) => !Object.is(previous.props[key], callProps[key]),
-      )
-    ) {
-      fallbackStates.current = {
-        props: callProps,
-        states: environment?.states?.(resource, callProps) ?? {},
+    const currentProps = useRef(callProps);
+    currentProps.current = callProps;
+    const fallbackStates = useRef<LazyResourceStates & { owner?: string }>();
+    fallbackStates.current ??= environment?.states?.(resource, callProps) ?? {};
+    const nearest = fallbackStates.current;
+    const errorComponent = useRef<LazyResourceStates['Error']>();
+    const NearestError = nearest.Error;
+    if (NearestError && !errorComponent.current) {
+      errorComponent.current = function ScopedFallbackError(props) {
+        return (
+          <LazyFallbackPropsContext.Provider
+            value={{ owner: nearest.owner, props: currentProps.current }}
+          >
+            <NearestError {...props} />
+          </LazyFallbackPropsContext.Provider>
+        );
       };
     }
-    const nearest = fallbackStates.current!.states;
     const Loading = nearest.Loading ?? defaults.Loading;
     const fallback =
       input.fallback !== undefined ? input.fallback : options.fallback;
@@ -143,13 +144,17 @@ export function createScopedLazyContent(
         loader={loader}
         resource={resource}
         componentProps={{ callProps, context }}
-        ErrorComponent={nearest.Error ?? defaults.Error}
+        ErrorComponent={errorComponent.current ?? defaults.Error}
         onMount={inspection.hooks.onMount}
         fallback={
           fallback !== undefined ? (
             fallback
           ) : Loading ? (
-            <Loading resource={resource} />
+            <LazyFallbackPropsContext.Provider
+              value={{ owner: nearest.owner, props: callProps }}
+            >
+              <Loading resource={resource} />
+            </LazyFallbackPropsContext.Provider>
           ) : null
         }
       />

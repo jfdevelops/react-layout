@@ -1,4 +1,5 @@
 import { LazyBoundary } from '../lazy/lazy-boundary';
+import { LazyFallbackPropsContext } from '../lazy/fallback-props';
 import { lazyDefaultsSymbol, lazyStatesSymbol, type LazyResourceStates } from '../lazy/types';
 import {
   stateReferenceSource,
@@ -2120,6 +2121,7 @@ function defineResourceLayoutImpl<
       >
     ) {
       const publishResource = useResourceLayoutShellPublisher();
+      const fallbackOptions = useContext(LazyFallbackPropsContext);
 
       // Report the resource this page renders for so an ancestor `Shell` (from
       // `defineResourceLayout.withLayout`) can resolve `resources.current` for
@@ -2157,7 +2159,7 @@ function defineResourceLayoutImpl<
             )
           : undefined;
         const layoutOptionValue = allowsConfigPassthrough(includeBehavior)
-          ? readLayoutOptionValue(key, definition, layoutOptionValues)
+          ? readLayoutOptionValue(key, definition, fallbackOptions?.owner === activeInspection.layout ? fallbackOptions.props : layoutOptionValues)
           : undefined;
         const splitValue = key in splitInProps ? splitInProps[key] : undefined;
         const value = callSiteValue ?? layoutOptionValue ?? splitValue;
@@ -2602,6 +2604,7 @@ function defineResourceLayoutImpl<
         }),
         ...exposedStates,
         [lazyStatesSymbol]: {
+          owner: layoutId,
           Loading: stateComponents.Loading,
           Error: stateComponents.Error ? ({ error, retry }: import('../lazy/types').LazyResourceErrorProps) => <RenderStateRetryContext.Provider value={retry}><stateComponents.Error error={error} retry={retry} /></RenderStateRetryContext.Provider> : undefined,
         },
@@ -2746,7 +2749,7 @@ function defineResourceLayoutImpl<
           resource,
           namespace: false,
           name: capitalize(resource),
-        } as never) as unknown as { [lazyStatesSymbol]: LazyResourceStates };
+        } as never) as unknown as { [lazyStatesSymbol]: LazyResourceStates & { owner?: string } };
         return root[lazyStatesSymbol];
       },
     },

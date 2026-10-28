@@ -1,6 +1,7 @@
 import {
   Component,
   StrictMode,
+  useState,
   type ComponentType,
   type ReactNode,
 } from 'react';
@@ -695,7 +696,14 @@ it('isolates scoped loading options between callers and follows changed options'
       default: () => <section />,
       Loading: {
         props: { include: { title: true } },
-        render: ({ title }) => <p>Loading {title}</p>,
+        render: ({ title }) => {
+          const [clicks, setClicks] = useState(0);
+          return (
+            <button onClick={() => setClicks((value) => value + 1)}>
+              Loading {title}: {clicks}
+            </button>
+          );
+        },
       },
     },
   });
@@ -716,14 +724,15 @@ it('isolates scoped loading options between callers and follows changed options'
       <Users title="Second" />
     </>,
   );
-  expect(screen.getByText('Loading First')).toBeInTheDocument();
-  expect(screen.getByText('Loading Second')).toBeInTheDocument();
+  expect(screen.getByText('Loading First: 0')).toBeInTheDocument();
+  expect(screen.getByText('Loading Second: 0')).toBeInTheDocument();
+  fireEvent.click(screen.getByText('Loading First: 0'));
   view.rerender(
     <>
       <Users title="Changed" />
       <Users title="Second" />
     </>,
   );
-  expect(screen.getByText('Loading Changed')).toBeInTheDocument();
-  expect(screen.getByText('Loading Second')).toBeInTheDocument();
+  expect(screen.getByText('Loading Changed: 1')).toBeInTheDocument();
+  expect(screen.getByText('Loading Second: 0')).toBeInTheDocument();
 });
