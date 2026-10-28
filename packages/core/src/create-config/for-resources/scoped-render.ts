@@ -108,7 +108,7 @@ export function resolveScopedRenderResult(
  * Runtime counterpart of `ScopedComponentCompoundStaticKey` — keys that must
  * not be treated as compound component statics on a scoped wrapper.
  */
-const reservedScopedCompoundStaticKeys = new Set<PropertyKey>([
+export const reservedScopedCompoundStaticKeys = [
   'apply',
   'arguments',
   'bind',
@@ -121,12 +121,26 @@ const reservedScopedCompoundStaticKeys = new Set<PropertyKey>([
   'length',
   'name',
   'propTypes',
+  'PropTypes',
   'prototype',
   'toLocaleString',
   'toString',
   'valueOf',
   '$$typeof',
-]);
+] as const;
+
+const reservedCompoundKeys = new Set<PropertyKey>(reservedScopedCompoundStaticKeys);
+
+const compoundInitials = [
+  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+  'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+] as const;
+
+export type ScopedCompoundName = `${typeof compoundInitials[number]}${string}`;
+
+function isCompoundName(key: string): key is ScopedCompoundName {
+  return compoundInitials.some((initial) => key.startsWith(initial));
+}
 
 type ScopedComponentWrapper = ((
   props?: Record<string, unknown>,
@@ -152,8 +166,9 @@ export function withScopedCompoundStatics(
   return new Proxy(wrapper as ScopedComponentWrapper, {
     get(target, property, receiver) {
       if (
-        typeof property === 'symbol' ||
-        reservedScopedCompoundStaticKeys.has(property) ||
+        typeof property !== 'string' ||
+        !isCompoundName(property) ||
+        reservedCompoundKeys.has(property) ||
         property in target
       ) {
         return Reflect.get(target, property, receiver);

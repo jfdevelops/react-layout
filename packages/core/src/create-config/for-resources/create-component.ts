@@ -269,9 +269,13 @@ export type ScopedComponentShape = {
  */
 export type JustScopedComponent<T> = {
   [Key in keyof T & keyof ScopedComponentShape]: Key extends 'render'
-    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any -- open args; preserve Return only
+    ? Key extends ScopedComponentCompoundStaticKey
+            ? never
+            : // eslint-disable-next-line @typescript-eslint/no-explicit-any -- open args; preserve Return only
       T[Key] extends (...args: any) => infer Return
-      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any -- open args
+      ? Key extends ScopedComponentCompoundStaticKey
+            ? never
+            : // eslint-disable-next-line @typescript-eslint/no-explicit-any -- open args
         (...args: any) => Return
       : unknown
     : T[Key];
@@ -372,23 +376,7 @@ export type ScopedComponentSignature<Props> = {} extends Props
  * component keys on a scoped component resolved from a returned component type.
  */
 export type ScopedComponentCompoundStaticKey =
-  | 'apply'
-  | 'arguments'
-  | 'bind'
-  | 'call'
-  | 'caller'
-  | 'childContextTypes'
-  | 'contextTypes'
-  | 'defaultProps'
-  | 'displayName'
-  | 'length'
-  | 'name'
-  | 'propTypes'
-  | 'prototype'
-  | 'toLocaleString'
-  | 'toString'
-  | 'valueOf'
-  | '$$typeof';
+  typeof import('./scoped-render').reservedScopedCompoundStaticKeys[number];
 
 /**
  * Compound statics (e.g. `DataTable.Loading`) taken from a component type
@@ -402,12 +390,14 @@ export type ScopedComponentCompoundStatics<Result> = [Result] extends [never]
   ? {}
   : IsScopedRenderableComponentType<Result> extends true
     ? {
-        [Key in keyof Result as Key extends ScopedComponentCompoundStaticKey
-          ? never
-          : // eslint-disable-next-line @typescript-eslint/no-explicit-any -- open args
+        [Key in keyof Result as Key extends import('./scoped-render').ScopedCompoundName
+          ? Key extends ScopedComponentCompoundStaticKey
+            ? never
+            : // eslint-disable-next-line @typescript-eslint/no-explicit-any -- open args
             Result[Key] extends (...args: any) => any
             ? Key & string
-            : never]: Result[Key] extends (props: infer Props) => any
+            : never
+          : never]: Result[Key] extends (props: infer Props) => any
           ? ScopedComponentSignature<Props extends object ? Props : {}>
           : never;
       }
