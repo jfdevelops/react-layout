@@ -1,5 +1,28 @@
 # @jfdevelops/react-layout
 
+## 2.0.0
+
+### Major Changes
+
+- 6dcbc54: Report lazy resource load status (`unresolved`, `loading`, `resolved`, `error`) to devtools, and show the failed load's error and `cause` chain in the node details.
+
+  Unify lazy resources, render states, and scoped components around a cached loader with `preload()`, `status`, fallback overrides, retry, and inspection. Add `lazy` content to scoped component shells to avoid circular content imports. Preserve `createRenderState.lazy(load)` and also accept `{ load, fallback }`.
+
+  **Breaking:** lazy error boundaries now handle only the closed `LazyResourceError` union. Ordinary page render errors propagate to an enclosing route boundary instead of a configured lazy `Error` component. Lazy proxy compound states must start with a capital letter; lowercase and React/Promise statics no longer synthesize state components.
+
+  Lazy defaults receive the factory's resource path union in `resource`, plus typed errors discriminated by `code`. Add type-only `defineLazyDefaults.errors` and `createErrorComponent` (render callback or optional code handlers with fallback, including custom props). Import error messages include the original cause; configuration failures use distinct shape and missing-state errors that retain `LayoutConfigurationError` compatibility.
+
+  Remove the deprecated include settings `visibility` and `passthrough`; use `required` and `suppliedVia`. Legacy settings now produce a configuration error. Remove the deprecated layout render-context `resource` property; read `resources.current` instead. Naming callbacks and resource/error props retain their non-deprecated `resource` fields. Migrate examples, tests, autocomplete, and devtools guidance to the supported API.
+
+### Minor Changes
+
+- cde571f: Expose `makeComposable` on components returned by `createComponent(...).asHOF()(resource)` when the layout defines composables. The helper supplies the bound resource, preserves typed composable parts, and uses the scope's default name when no name is supplied. Bound components and their helpers retain their cached identity. Without composables the helper remains undefined. `makeComposable` is reserved as a scoped component name.
+
+### Patch Changes
+
+- Updated dependencies [6dcbc54]
+  - @jfdevelops/react-layout-devtools-core@0.3.0
+
 ## 1.6.1
 
 ### Patch Changes
