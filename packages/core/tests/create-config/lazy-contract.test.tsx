@@ -136,6 +136,15 @@ function fixture(
 describe.each<Kind>(['resource', 'state', 'scoped'])(
   '%s shared lazy contract',
   (kind) => {
+    it('renders a preloaded entry immediately without a loading fallback', async () => {
+      const { View, handle, load } = fixture(kind);
+      await handle.preload();
+      render(<View />);
+      expect(screen.getByText('Loaded content')).toBeInTheDocument();
+      expect(screen.queryByText('Global loading users')).toBeNull();
+      expect(load).toHaveBeenCalledOnce();
+    });
+
     it('caches preload and rendering, and reports declaration, loading, resolution and mounts', async () => {
       let finish!: () => void;
       const gate = new Promise<void>((resolve) => {
