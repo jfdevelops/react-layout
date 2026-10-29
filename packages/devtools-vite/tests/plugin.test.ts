@@ -254,3 +254,23 @@ const definition = createDefinedResourceLayout({ resources: ['users'] }).defineR
   expect(result?.code).toContain('create(__reactLayoutDebug(');
   expect(result?.code).toContain('"line":3');
 });
+
+it.each(['js', 'jsx', 'mjs', 'cjs'])('binds JavaScript %s modules before inspecting their calls', async (extension) => {
+  expect(await transform('const value = {}; Object.keys(value);', `/app/src/dependency.${extension}`)).toBeUndefined();
+  const result = await transform(`import { defineResourceLayout } from '@jfdevelops/react-layout';
+const definition = defineResourceLayout({ render: { default: () => null } });`, `/app/src/page.${extension}`);
+  expect(result?.code).toContain('virtual:react-layout-devtools');
+});
+
+it('handles bundled validator modules served from workspace packages', async () => {
+  const code = `import { BaseProp } from './base.mjs';
+class ObjectProp extends BaseProp {
+  validate(value) {
+    for (const key in this.properties) {
+      const prop = this.properties[key];
+      prop.validate(value[key]);
+    }
+  }
+}`;
+  expect(await transform(code, '/app/packages/validators/dist/object.mjs')).toBeUndefined();
+});
