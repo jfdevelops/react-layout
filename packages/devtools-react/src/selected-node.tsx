@@ -1,3 +1,4 @@
+import { LocateIcon } from './icons';
 import { NodeSource, StatePreview } from './node-debug';
 import { useMemo } from 'react';
 import {
@@ -50,8 +51,12 @@ export function SelectedNode({
   palette,
   onSelect,
   inspector,
+  highlighted = false,
+  onHighlight,
 }: {
   inspector?: InspectionSource;
+  highlighted?: boolean;
+  onHighlight?: () => void;
   node: GraphNode;
   graph: GraphSnapshot;
   palette: ChipPalette;
@@ -116,28 +121,52 @@ export function SelectedNode({
         </ol>
       </nav>
       <header style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <h3
+        <div
           style={{
-            margin: 0,
-            fontSize: 18,
-            lineHeight: 1.4,
-            overflowWrap: 'anywhere',
-            fontWeight: 600,
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'space-between',
             gap: 8,
           }}
         >
-          {node.kind === 'state' && (
-            <StateIcon
-              state={node.label}
-              palette={palette}
-              size={14}
-              spinning={node.active > 0}
-            />
-          )}
-          {node.label}
-        </h3>
+          <h3
+            style={{
+              margin: 0,
+              fontSize: 18,
+              lineHeight: 1.4,
+              overflowWrap: 'anywhere',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            {node.kind === 'state' && (
+              <StateIcon
+                state={node.label}
+                palette={palette}
+                size={14}
+                spinning={node.active > 0}
+              />
+            )}
+            {node.label}
+          </h3>
+          <HelpTooltip
+            content={
+              highlighted ? 'Stop highlighting on page' : 'Highlight on page'
+            }
+          >
+            <Button
+              size="icon"
+              aria-label={`Highlight ${node.label} on page`}
+              aria-pressed={highlighted}
+              disabled={!onHighlight}
+              onClick={onHighlight}
+            >
+              <LocateIcon />
+            </Button>
+          </HelpTooltip>
+        </div>
         <div
           style={{
             display: 'flex',
@@ -178,8 +207,8 @@ export function SelectedNode({
                 {loadStatus.kind === 'unresolved'
                   ? 'Not loaded'
                   : loadStatus.kind === 'loading'
-                  ? 'Loading'
-                  : 'Failed to load'}
+                    ? 'Loading'
+                    : 'Failed to load'}
               </Badge>
             </HelpTooltip>
           )}

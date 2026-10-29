@@ -1,3 +1,4 @@
+import { EyeIcon, EyeOffIcon } from './icons';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { GraphSnapshot } from '@jfdevelops/react-layout-devtools-core';
@@ -5,7 +6,9 @@ import { useDevtoolsContext } from './context';
 import { Button } from './components/ui/button';
 import { HelpTooltip } from './components/ui/tooltip';
 
-export function OutlineToggle() {
+export function OutlineToggle({
+  size = 'icon',
+}: { size?: 'icon' | 'icon-sm' } = {}) {
   const { config, updatePreferences } = useDevtoolsContext();
   const label = config.showOutlines
     ? 'Hide composable outlines'
@@ -13,6 +16,7 @@ export function OutlineToggle() {
   return (
     <HelpTooltip content={label}>
       <Button
+        size={size}
         aria-label={label}
         aria-pressed={config.showOutlines}
         onClick={() =>
@@ -29,19 +33,7 @@ export function OutlineToggle() {
           })
         }
       >
-        <svg
-          aria-hidden="true"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z" />
-          <circle cx="12" cy="12" r="3" />
-          {!config.showOutlines && <path d="m3 3 18 18" />}
-        </svg>
+        {config.showOutlines ? <EyeOffIcon /> : <EyeIcon />}
       </Button>
     </HelpTooltip>
   );
@@ -100,7 +92,7 @@ export function ComposableOutlines() {
       const nodes = new Map(
         graph.nodes
           .filter((node) => node.kind === 'composable')
-          .map((node) => [node.id, node]),
+          .map((node) => [node.id, node])
       );
       const next: Target[] = [];
       const present = new Set<Element>();
@@ -158,7 +150,7 @@ export function ComposableOutlines() {
           );
         })
           ? current
-          : next,
+          : next
       );
     };
     scan();
@@ -169,7 +161,7 @@ export function ComposableOutlines() {
             !(
               record.target instanceof Element &&
               record.target.closest('[data-rl-outline-layer]')
-            ),
+            )
         )
       )
         schedule();
@@ -187,13 +179,13 @@ export function ComposableOutlines() {
       const element =
         event.target instanceof Element
           ? event.target.closest<HTMLElement>(
-              '[data-rl-node][data-rl-composable]',
+              '[data-rl-node][data-rl-composable]'
             )
           : null;
       setHovered(
         element && nodesForHover.has(element.dataset.rlNode!)
           ? element.dataset.rlNode
-          : undefined,
+          : undefined
       );
     };
     const nodesForHover = new Set(graph.nodes.map((node) => node.id));
@@ -228,7 +220,7 @@ export function ComposableOutlines() {
       {targets.map((target, index) => {
         const hash = [...target.name].reduce(
           (value, char) => value + char.charCodeAt(0),
-          0,
+          0
         );
         const color = colors[hash % colors.length]!;
         return (
@@ -272,6 +264,6 @@ export function ComposableOutlines() {
         );
       })}
     </div>,
-    document.body,
+    document.body
   );
 }

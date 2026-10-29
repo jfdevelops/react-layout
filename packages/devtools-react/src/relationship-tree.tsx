@@ -1,3 +1,4 @@
+import { ChevronDownIcon, ChevronRightIcon } from './icons';
 import { useId, useState } from 'react';
 import type {
   GraphEdge,
@@ -60,7 +61,11 @@ function Branch({
         }}
       >
         <span aria-hidden="true" style={{ width: 12 }}>
-          {expanded ? '▾' : '▸'}
+          {expanded ? (
+            <ChevronDownIcon size={12} />
+          ) : (
+            <ChevronRightIcon size={12} />
+          )}
         </span>
         {label}
         <span style={{ color: '#64748b' }}>{edges.length}</span>
@@ -161,14 +166,14 @@ export function RelationshipTree({
           event.key === 'Home'
             ? 0
             : event.key === 'End'
-            ? rows.length - 1
-            : Math.max(
-                0,
-                Math.min(
-                  rows.length - 1,
-                  index + (event.key === 'ArrowDown' ? 1 : -1)
-                )
-              );
+              ? rows.length - 1
+              : Math.max(
+                  0,
+                  Math.min(
+                    rows.length - 1,
+                    index + (event.key === 'ArrowDown' ? 1 : -1)
+                  )
+                );
         rows[next]?.focus();
       }}
       style={{ padding: 0, margin: 0, listStyle: 'none' }}

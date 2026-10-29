@@ -100,9 +100,11 @@ export function annotate(value, metadata) {
         /\.[jt]sx$/.test(file) ? ts.ScriptKind.TSX : ts.ScriptKind.TS
       );
       // Resolve actual bindings so names in different lexical scopes never collide.
+      // JavaScript inputs must be bound too: unbound .mjs nodes can crash
+      // symbol resolution inside methods and silently miss imported APIs.
       const program = ts.createProgram(
         [file],
-        { noLib: true, noResolve: true },
+        { noLib: true, noResolve: true, allowJs: true },
         {
           ...ts.createCompilerHost({}),
           getSourceFile: (name) => (name === file ? source : undefined),
