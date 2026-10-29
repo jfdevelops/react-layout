@@ -58,6 +58,8 @@ The page is never covered: while docked, `<html>` gets `--react-layout-devtools-
 
 Shortcuts (ignored while typing in a field): Ctrl+J (Windows/Linux) or Cmd+J (macOS) opens or closes the panel in either variant; Alt+Shift+H hides or shows the bar. Hiding lasts until reload.
 
+Hover or focus the current layout in the toolbar to highlight its mounted roots on the page. Click it to keep the highlight visible. Every selected-item panel also has a **Highlight on page** button; click again to clear it. Changing the selected item clears its highlight. These controls work with composable outlines switched off. Layouts with multiple roots or instances highlight each root, and owned composables provide a fallback when a custom component does not forward root attributes.
+
 Both variants have a button to switch to the other. The choice is saved and takes precedence over the `variant` prop until preferences are reset. Production gating is unchanged.
 
 ## Configuration

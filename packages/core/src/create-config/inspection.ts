@@ -1,5 +1,9 @@
 import {
   createElement,
+  cloneElement,
+  Fragment,
+  isValidElement,
+  type ReactNode,
   forwardRef,
   useLayoutEffect,
   type ComponentType,
@@ -61,6 +65,46 @@ export interface ActiveInspection {
   state: string;
 }
 
+const inspectedComposables = new WeakSet<object>();
+
+/** Mark existing roots only; never add wrappers or forward props to user components. */
+export function markInspectionRoots(
+  children: ReactNode,
+  owners: readonly string[]
+): ReactNode {
+  if (process.env.NODE_ENV === 'production') return children;
+  if (Array.isArray(children))
+    return children.map((child) => markInspectionRoots(child, owners));
+  if (
+    !isValidElement<{ children?: ReactNode; 'data-rl-owners'?: string }>(
+      children
+    )
+  )
+    return children;
+  if (children.type === Fragment) {
+    return cloneElement(children, {
+      children: markInspectionRoots(children.props.children, owners),
+    });
+  }
+  if (
+    typeof children.type !== 'string' &&
+    (typeof children.type !== 'object' ||
+      !inspectedComposables.has(children.type))
+  )
+    return children;
+  let previous: string[] = [];
+  try {
+    const parsed: unknown = JSON.parse(
+      children.props['data-rl-owners'] ?? '[]'
+    );
+    if (Array.isArray(parsed))
+      previous = parsed.filter((id): id is string => typeof id === 'string');
+  } catch {}
+  return cloneElement(children, {
+    'data-rl-owners': JSON.stringify([...new Set([...previous, ...owners])]),
+  });
+}
+
 /** Preserve composable metadata while measuring committed React instances, not declarations. */
 export function trackComposable<T extends object>(
   component: T,
@@ -71,17 +115,24 @@ export function trackComposable<T extends object>(
     function InspectedComposable(props, ref) {
       useLayoutEffect(() => store.mount(id), [store, id]);
 
-      const inspectedProps = process.env.NODE_ENV === 'production' ? props : {
-        ...props,
-        'data-rl-node': id,
-        'data-rl-composable': (component as { displayName?: string }).displayName ?? 'Composable',
-      };
+      const inspectedProps =
+        process.env.NODE_ENV === 'production'
+          ? props
+          : {
+              ...props,
+              'data-rl-node': id,
+              'data-rl-composable':
+                (component as { displayName?: string }).displayName ??
+                'Composable',
+            };
       return createElement(
         component as ComponentType<Record<string, unknown>>,
         ref == null ? inspectedProps : { ...inspectedProps, ref }
       );
     }
   );
+
+  inspectedComposables.add(Tracked);
 
   for (const key of Reflect.ownKeys(component)) {
     if (

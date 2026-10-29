@@ -439,6 +439,7 @@ export function createComposableComponent<
       return cloneElement(resolvedChildren, {
         'data-rl-node': propsRecord['data-rl-node'],
         'data-rl-composable': propsRecord['data-rl-composable'],
+        'data-rl-owners': propsRecord['data-rl-owners'],
       } as Record<string, unknown>);
     }
     return resolvedChildren;

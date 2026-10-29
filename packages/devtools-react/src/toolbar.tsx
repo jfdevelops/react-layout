@@ -217,8 +217,19 @@ function ToolbarShell({
   className?: string;
   style?: CSSProperties;
 }) {
-  const { graph, inspector, palette } = useDevtoolsContext();
+  const {
+    graph,
+    inspector,
+    palette,
+    setHoverHighlight,
+    highlighted,
+    setHighlighted,
+  } = useDevtoolsContext();
   const summary = useMemo(() => summarizeGraph(graph), [graph]);
+  useEffect(
+    () => () => setHoverHighlight(undefined),
+    [summary.current?.layoutId, setHoverHighlight]
+  );
   const drawerId = useId();
   const drag = useRef<{ pointer: number; y: number; height: number }>();
   const toggle = useRef<HTMLButtonElement>(null);
@@ -407,14 +418,33 @@ function ToolbarShell({
           </span>
         </span>
         {summary.current && (
-          <span
+          <Button
             aria-label="Current layout"
+            aria-pressed={highlighted === summary.current.layoutId}
+            onClick={() =>
+              setHighlighted((current) =>
+                current === summary.current!.layoutId
+                  ? undefined
+                  : summary.current!.layoutId
+              )
+            }
+            onPointerEnter={() => setHoverHighlight(summary.current!.layoutId)}
+            onPointerLeave={() => setHoverHighlight(undefined)}
+            onFocus={() => setHoverHighlight(summary.current!.layoutId)}
+            onBlur={() => setHoverHighlight(undefined)}
             title="Most recently mounted layout"
-            style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}
+            style={{
+              ...barControl,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              border: 0,
+              background: 'transparent',
+              maxWidth: '40vw',
+            }}
           >
             {summary.current.resource}
             {summary.current.state && ` · ${summary.current.state}`}
-          </span>
+          </Button>
         )}
         <span style={{ flex: 1 }} />
         {instance && inspector.preview && instance.states.length > 0 && (

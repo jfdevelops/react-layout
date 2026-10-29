@@ -581,6 +581,8 @@ export function ReactLayoutDevtoolsExplorer() {
 
 export function ReactLayoutDevtoolsInspector() {
   const {
+    highlighted,
+    setHighlighted,
     config,
     graph,
     inspector,
@@ -613,6 +615,12 @@ export function ReactLayoutDevtoolsInspector() {
           }}
         >
           <SelectedNode
+            highlighted={highlighted === selection.id}
+            onHighlight={() =>
+              setHighlighted((current) =>
+                current === selection.id ? undefined : selection.id
+              )
+            }
             inspector={inspector}
             key={selection.id}
             node={selection}

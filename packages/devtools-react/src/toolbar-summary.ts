@@ -12,6 +12,8 @@ export interface ToolbarSummary {
   /** The most recently mounted layout, e.g. `appointments · default`. */
   current?: {
     resource: string;
+    layoutId: string;
+    stateId?: string;
     /** Omitted when no state of the layout is mounted. */
     state?: string;
     /** Present when the layout can be previewed in another state. */
@@ -39,11 +41,12 @@ export function summarizeGraph(graph: GraphSnapshot): ToolbarSummary {
     const resource = graph.edges
       .filter(
         (edge) =>
-          edge.target === layout.id && byId.get(edge.source)?.kind === 'resource'
+          edge.target === layout.id &&
+          byId.get(edge.source)?.kind === 'resource'
       )
       .map((edge) => byId.get(edge.source)!)[0];
     const stateId = instance
-      ? instance.forcedState ?? instance.state
+      ? (instance.forcedState ?? instance.state)
       : graph.edges.find(
           (edge) =>
             edge.source === layout.id &&
@@ -54,6 +57,8 @@ export function summarizeGraph(graph: GraphSnapshot): ToolbarSummary {
 
     current = {
       resource: shortLabel(resource ?? layout),
+      layoutId: layout.id,
+      stateId,
       state: stateId && (byId.get(stateId)?.label ?? stateId),
       instance,
     };
@@ -71,6 +76,6 @@ export function summarizeGraph(graph: GraphSnapshot): ToolbarSummary {
 
 function shortLabel(node: GraphNode) {
   return node.kind === 'resource'
-    ? node.label.split('.').at(-1) ?? node.label
+    ? (node.label.split('.').at(-1) ?? node.label)
     : node.label;
 }
