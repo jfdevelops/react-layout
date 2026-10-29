@@ -8,8 +8,13 @@ import {
 import type { ChipPalette, ReactLayoutDevtoolsConfig } from './config';
 import { loadChip } from './load-status';
 
+const ROW_HEIGHT = 26;
+const VIRTUALIZE_AFTER = 200;
+const OVERSCAN_ROWS = 4;
+
 export function InspectionTree({
   graph,
+  active = true,
   locateRequest = 0,
   onLocate,
   palette,
@@ -20,6 +25,8 @@ export function InspectionTree({
   onExpandedChange,
 }: {
   graph: GraphSnapshot;
+  /** False while the tree is mounted but hidden behind another view. */
+  active?: boolean;
   locateRequest?: number;
   onLocate?: (element: HTMLElement) => void;
   palette: ChipPalette;
@@ -49,7 +56,12 @@ export function InspectionTree({
   const [revealing, setRevealing] = useState(false);
 
   useEffect(() => {
-    if (!locateRequest || !selected || handledRequest.current === locateRequest)
+    if (
+      !active ||
+      !locateRequest ||
+      !selected ||
+      handledRequest.current === locateRequest
+    )
       return;
 
     handledRequest.current = locateRequest;
@@ -78,7 +90,87 @@ export function InspectionTree({
     );
 
     setRevealing(true);
-  }, [locateRequest, selected, roots]);
+  }, [active, locateRequest, selected, roots]);
+
+  const [scrollTop, setScrollTop] = useState(0);
+  const [viewportHeight, setViewportHeight] = useState(600);
+  const isExpanded = (id: string) =>
+    !collapsed.has(id) && (allExpanded || expanded.has(id));
+
+  // Visible rows in document order, used to window large trees.
+  const flattened = useMemo(() => {
+    const rows: { entry: InspectionTreeNode; key: string; depth: number }[] =
+      [];
+
+    function visit(
+      entries: readonly InspectionTreeNode[],
+      prefix: string,
+      depth: number
+    ) {
+      entries.forEach((entry, index) => {
+        const key = prefix ? `${prefix}/${index}` : String(index);
+
+        rows.push({ entry, key, depth });
+
+        if (
+          !collapsed.has(entry.node.id) &&
+          (allExpanded || expanded.has(entry.node.id))
+        )
+          visit(entry.children, key, depth + 1);
+      });
+    }
+
+    visit(roots, '', 0);
+
+    return rows;
+  }, [roots, collapsed, expanded, allExpanded]);
+  const virtual = flattened.length > VIRTUALIZE_AFTER;
+  const start = virtual
+    ? Math.max(
+        0,
+        Math.min(
+          flattened.length - 1,
+          Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN_ROWS
+        )
+      )
+    : 0;
+  const end = virtual
+    ? Math.min(
+        flattened.length,
+        start + Math.ceil(viewportHeight / ROW_HEIGHT) + OVERSCAN_ROWS * 2
+      )
+    : flattened.length;
+
+  useEffect(() => {
+    if (!virtual) return;
+
+    const pane = tree.current?.closest<HTMLElement>('[role="region"]');
+
+    if (!pane) return;
+
+    const update = () => {
+      setScrollTop(pane.scrollTop);
+
+      setViewportHeight(pane.clientHeight || 600);
+    };
+
+    update();
+
+    pane.addEventListener('scroll', update, { passive: true });
+
+    const observer =
+      typeof ResizeObserver === 'undefined'
+        ? undefined
+        : new ResizeObserver(update);
+
+    observer?.observe(pane);
+
+    return () => {
+      pane.removeEventListener('scroll', update);
+
+      observer?.disconnect();
+    };
+  }, [virtual]);
 
   useEffect(() => {
     if (!revealing) return;
@@ -87,13 +179,25 @@ export function InspectionTree({
       '[aria-selected="true"]'
     );
 
-    if (element) onLocate?.(element);
+    if (element) {
+      onLocate?.(element);
+
+      setRevealing(false);
+
+      return;
+    }
+
+    const index = flattened.findIndex((row) => row.entry.node.id === selected);
+
+    // A windowed row may not be mounted yet: move the window, then retry.
+    if (virtual && index >= 0 && (index < start || index >= end)) {
+      setScrollTop(index * ROW_HEIGHT);
+
+      return;
+    }
 
     setRevealing(false);
-  }, [revealing, onLocate]);
-
-  const isExpanded = (id: string) =>
-    !collapsed.has(id) && (allExpanded || expanded.has(id));
+  }, [revealing, onLocate, flattened, selected, virtual, start, end]);
 
   function open(id: string) {
     setExpanded((current) => new Set([...current, id]));
@@ -126,7 +230,15 @@ export function InspectionTree({
     const status = loadChip(node);
 
     return (
-      <li role="none" key={key}>
+      <li
+        role="none"
+        key={key}
+        style={
+          virtual
+            ? { marginLeft: depth * 14, height: ROW_HEIGHT }
+            : undefined
+        }
+      >
         <div
           style={{
             display: 'flex',
@@ -134,7 +246,7 @@ export function InspectionTree({
             gap: 2,
             height: 26,
             boxSizing: 'border-box',
-            ...(hasChildren && expanded && config?.stickyScopes !== false
+            ...(!virtual && hasChildren && expanded && config?.stickyScopes !== false
               ? {
                   position: 'sticky' as const,
                   top: depth * 26,
@@ -168,6 +280,7 @@ export function InspectionTree({
           <Button
             type="button"
             role="treeitem"
+            aria-level={virtual ? depth + 1 : undefined}
             data-tree-node
             data-hovered-node={hovered === node.id}
             aria-label={`${node.kind} ${node.label}${
@@ -272,7 +385,7 @@ export function InspectionTree({
             )}
           </Button>
         </div>
-        {hasChildren && expanded && (
+        {!virtual && hasChildren && expanded && (
           <>
             <ul
               role="group"
@@ -356,9 +469,21 @@ export function InspectionTree({
         ref={tree}
         role="tree"
         aria-label="Layout hierarchy"
-        style={{ padding: '0 0 0 10px', margin: 0, listStyle: 'none' }}
+        style={{
+          padding: virtual
+            ? `${start * ROW_HEIGHT}px 0 ${
+                (flattened.length - end) * ROW_HEIGHT
+              }px 10px`
+            : '0 0 0 10px',
+          margin: 0,
+          listStyle: 'none',
+        }}
       >
-        {roots.map((entry, index) => row(entry, String(index)))}
+        {virtual
+          ? flattened
+              .slice(start, end)
+              .map(({ entry, key, depth }) => row(entry, key, depth))
+          : roots.map((entry, index) => row(entry, String(index)))}
       </ul>
       <div aria-hidden="true" style={{ color: '#64748b' }}>
         {'}'}

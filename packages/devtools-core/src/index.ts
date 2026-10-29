@@ -355,8 +355,13 @@ export interface PositionedNode {
   readonly y: number;
 }
 
+const positionedCache = new WeakMap<GraphSnapshot, readonly PositionedNode[]>();
+const treeCache = new WeakMap<GraphSnapshot, readonly InspectionTreeNode[]>();
+
 /** Deterministic layered layout with cycle protection for reference edges. */
 export function layoutGraph(graph: GraphSnapshot): readonly PositionedNode[] {
+  const cached = positionedCache.get(graph);
+  if (cached) return cached;
   const depth = new Map<string, number>();
   const hierarchy = graph.edges.filter((e) => e.relationship !== 'references');
   const incoming = new Map(graph.nodes.map((n) => [n.id, 0]));
@@ -365,7 +370,9 @@ export function layoutGraph(graph: GraphSnapshot): readonly PositionedNode[] {
   for (const edge of hierarchy) {
     incoming.set(edge.target, (incoming.get(edge.target) ?? 0) + 1);
 
-    outgoing.set(edge.source, [...(outgoing.get(edge.source) ?? []), edge]);
+    const list = outgoing.get(edge.source) ?? [];
+    list.push(edge);
+    outgoing.set(edge.source, list);
   }
 
   const queue = graph.nodes
@@ -387,7 +394,7 @@ export function layoutGraph(graph: GraphSnapshot): readonly PositionedNode[] {
 
   const rows = new Map<number, number>();
 
-  return graph.nodes.map((node) => {
+  const positioned = graph.nodes.map((node) => {
     const level = depth.get(node.id) ?? 0;
     const row = rows.get(level) ?? 0;
 
@@ -395,6 +402,38 @@ export function layoutGraph(graph: GraphSnapshot): readonly PositionedNode[] {
 
     return { node, x: 32 + level * 280, y: 32 + row * 100 };
   });
+  positionedCache.set(graph, positioned);
+  return positioned;
+}
+
+/**
+ * Subscribe to a source, coalescing a burst of changes into one call per
+ * microtask. The source itself still updates synchronously.
+ */
+export function subscribeInspectionBatched(
+  source: InspectionSource,
+  listener: () => void
+): () => void {
+  let active = true;
+  let pending = false;
+
+  const stop = source.subscribe(() => {
+    if (pending) return;
+
+    pending = true;
+
+    queueMicrotask(() => {
+      pending = false;
+
+      if (active) listener();
+    });
+  });
+
+  return () => {
+    active = false;
+
+    stop();
+  };
 }
 
 export interface InspectionTreeNode {
@@ -408,6 +447,14 @@ export interface InspectionTreeNode {
 export function buildInspectionTree(
   graph: GraphSnapshot
 ): readonly InspectionTreeNode[] {
+  const cached = treeCache.get(graph);
+  if (cached) return cached;
+  const outgoing = new Map<string, GraphEdge[]>();
+  for (const edge of graph.edges) {
+    const list = outgoing.get(edge.source) ?? [];
+    list.push(edge);
+    outgoing.set(edge.source, list);
+  }
   const byId = new Map(graph.nodes.map((node) => [node.id, node]));
   const parents = new Map<string, GraphEdge>();
   const priority = {
@@ -448,8 +495,7 @@ export function buildInspectionTree(
     seen.add(node.id);
 
     const next = new Set([...path, node.id]);
-    const children = graph.edges
-      .filter((edge) => edge.source === node.id)
+    const children = (outgoing.get(node.id) ?? [])
       .flatMap((edge) => {
         const target = byId.get(edge.target);
 
@@ -481,6 +527,7 @@ export function buildInspectionTree(
   for (const node of graph.nodes)
     if (!seen.has(node.id)) roots.push(branch(node, new Set()));
 
+  treeCache.set(graph, roots);
   return roots;
 }
 
