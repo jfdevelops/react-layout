@@ -1,3 +1,4 @@
+import { NodeHighlight } from './node-highlight';
 import {
   createContext,
   useContext,
@@ -62,8 +63,11 @@ function useController({
   useEffect(() => inspector.connectPreview?.(), [inspector]);
 
   const [hovered, setHovered] = useState<string>();
+  const [highlighted, setHighlighted] = useState<string>();
+  const [hoverHighlight, setHoverHighlight] = useState<string>();
   const [session, setSession] = useState<DevtoolsSessionState>({ query: '' });
   const { query, selectedNode: selected } = session;
+  useEffect(() => setHighlighted(undefined), [selected]);
 
   const deferredQuery = useDeferredValue(query);
   const setQuery = useCallback((query: string) => {
@@ -72,15 +76,18 @@ function useController({
     );
   }, []);
 
-  const setSelected = useCallback((selectedNode: string) => {
-    if (compact && config.showDetails) setPane('inspector');
+  const setSelected = useCallback(
+    (selectedNode: string) => {
+      if (compact && config.showDetails) setPane('inspector');
 
-    setSession((current) =>
-      current.selectedNode === selectedNode
-        ? current
-        : { ...current, selectedNode }
-    );
-  }, [compact, config.showDetails]);
+      setSession((current) =>
+        current.selectedNode === selectedNode
+          ? current
+          : { ...current, selectedNode }
+      );
+    },
+    [compact, config.showDetails]
+  );
 
   const view = config.initialView;
   const activeOnly = config.initialFilters.activeOnly;
@@ -274,6 +281,10 @@ function useController({
     config,
     hovered,
     setHovered,
+    highlighted,
+    setHighlighted,
+    hoverHighlight,
+    setHoverHighlight,
     updatePreferences,
     resetPreferences,
     graph,
@@ -334,6 +345,11 @@ export function ReactLayoutDevtoolsProvider({
     <DevtoolsContext.Provider value={controller}>
       <DevtoolsStyles nonce={props.nonce} styleMode={props.styleMode} />
       {children}
+      <NodeHighlight
+        graph={controller.graph}
+        id={controller.hoverHighlight ?? controller.highlighted}
+        color={controller.palette.active.color}
+      />
     </DevtoolsContext.Provider>
   );
 }
