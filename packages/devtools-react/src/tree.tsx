@@ -1,3 +1,4 @@
+import { ChevronDownIcon, ChevronRightIcon } from './icons';
 import { Button } from './components/ui/button';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -226,7 +227,7 @@ export function InspectionTree({
     const node = entry.node;
     const label =
       node.kind === 'resource'
-        ? node.label.split('.').at(-1) ?? node.label
+        ? (node.label.split('.').at(-1) ?? node.label)
         : node.label;
     const status = loadChip(node);
 
@@ -235,9 +236,7 @@ export function InspectionTree({
         role="none"
         key={key}
         style={
-          virtual
-            ? { marginLeft: depth * 14, height: ROW_HEIGHT }
-            : undefined
+          virtual ? { marginLeft: depth * 14, height: ROW_HEIGHT } : undefined
         }
       >
         <div
@@ -247,7 +246,10 @@ export function InspectionTree({
             gap: 2,
             height: 26,
             boxSizing: 'border-box',
-            ...(!virtual && hasChildren && expanded && config?.stickyScopes !== false
+            ...(!virtual &&
+            hasChildren &&
+            expanded &&
+            config?.stickyScopes !== false
               ? {
                   position: 'sticky' as const,
                   top: depth * 26,
@@ -273,7 +275,11 @@ export function InspectionTree({
                 cursor: 'pointer',
               }}
             >
-              {expanded ? '▾' : '▸'}
+              {expanded ? (
+                <ChevronDownIcon size={12} />
+              ) : (
+                <ChevronRightIcon size={12} />
+              )}
             </Button>
           ) : (
             <span aria-hidden="true" style={{ width: 18, flexShrink: 0 }} />
@@ -326,7 +332,10 @@ export function InspectionTree({
               borderRadius: 4,
               padding: '2px 4px',
               color: '#cbd5e1',
-              background: selected === node.id || hovered === node.id ? '#253247' : 'transparent',
+              background:
+                selected === node.id || hovered === node.id
+                  ? '#253247'
+                  : 'transparent',
               font: 'inherit',
               cursor: 'pointer',
               textAlign: 'left',

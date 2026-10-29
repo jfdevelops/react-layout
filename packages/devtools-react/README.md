@@ -52,11 +52,11 @@ See [devtools-core](../devtools-core/README.md) for the framework-independent in
 <ReactLayoutDevtools source={layout} variant="toolbar" />
 ```
 
-`variant="toolbar"` docks a 32px bar to the bottom of the viewport instead of the floating button. The bar shows active layouts, loading resources and failed loads (red when any failed), the most recently mounted `resource · state`, a state override for that layout, and the composable-outline toggle. Its chevron expands a drawer with the full explorer and inspector; drag the drawer's top edge (or focus it and use the arrow keys, with Shift for larger steps) to resize it. The height is saved in preferences. Escape collapses the drawer.
+`variant="toolbar"` docks a 32px bar to the bottom of the viewport instead of the floating button. The bar shows active layouts, loading resources and failed loads (red when any failed), the most recently mounted `resource · state`, a state override for that layout, and the composable-outline toggle. The drawer starts collapsed when switching to toolbar mode. Its chevron expands a drawer with the full explorer and inspector; drag the drawer's top edge (or focus it and use the arrow keys, with Shift for larger steps) to resize it. The height is saved in preferences. Escape collapses the drawer. Both variants share the same slide animation, including reduced-motion support.
 
 The page is never covered: while docked, `<html>` gets `--react-layout-devtools-toolbar-height` (bar plus open drawer, `0px` when hidden) and `<body>` gets matching bottom padding, restored on unmount. Use the variable for other fixed-bottom elements.
 
-Shortcuts (ignored while typing in a field): Alt+Shift+L expands or collapses the drawer; Alt+Shift+H hides or shows the bar. Hiding lasts until reload.
+Shortcuts (ignored while typing in a field): Ctrl+J (Windows/Linux) or Cmd+J (macOS) opens or closes the panel in either variant; Alt+Shift+H hides or shows the bar. Hiding lasts until reload.
 
 Both variants have a button to switch to the other. The choice is saved and takes precedence over the `variant` prop until preferences are reset. Production gating is unchanged.
 
@@ -259,3 +259,5 @@ fixed overlay follows scrolling, resizing, and DOM changes without changing app
 styles or intercepting app clicks. Intrinsic wrapper roots and single intrinsic
 children receive development markers; fragments and custom wrappers that do not
 forward DOM props are skipped. Production adds neither markers nor an overlay.
+
+Control and state SVGs are copied from [Icons8 Line Awesome](https://github.com/icons8/line-awesome), with one component per icon. The MIT license is retained in `src/icons/LICENSE.md`. No icon dependency or external image request is needed.
