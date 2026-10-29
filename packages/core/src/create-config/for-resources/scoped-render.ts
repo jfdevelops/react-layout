@@ -26,6 +26,7 @@ export const reservedScopedComponentNames = new Set([
   'props',
   'prototype',
   'resource',
+  'state',
 ]);
 
 /**

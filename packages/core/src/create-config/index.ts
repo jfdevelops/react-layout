@@ -9,6 +9,7 @@ export type {
 } from './lazy-resource-layout';
 export type {
   AnyRenderStateDefinition,
+  BuiltinRenderStateName,
   CreateLayoutBuildingBlocks,
   CreateLayoutBuildingBlocksArguments,
   CreateLayoutBuildingBlocksResult,

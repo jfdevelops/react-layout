@@ -61,7 +61,7 @@ export type CreateLazyRenderState<
 >(definition: {
   state: State;
   props?: { include?: Include; custom?: Custom };
-  render: LazyRender<State, ResourcePath<Resources>, RenderStateProps<Resources, Options, Composables, Include, Custom>, RenderStateContext<Composables, Resources>>;
+  render: LazyRender<State, ResourcePath<Resources>, RenderStateProps<Resources, Options, Composables, Include, Custom>, RenderStateContext<Composables, Resources, State>>;
 }) => ComponentType<
   OptionalStateChildren<
     ResolveProps<Custom> &

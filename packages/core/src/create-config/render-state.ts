@@ -91,6 +91,8 @@ export type LazyRenderState<Definition extends AnyRenderStateDefinition> = LazyH
   readonly definition?: Definition;
 };
 
+export type BuiltinRenderStateName = 'default' | 'Loading' | 'Error' | 'NotFound';
+
 /**
  * State names accepted by `createRenderState`. Built-in states are suggested by
  * autocomplete while any other string still creates a custom compound state.
@@ -136,8 +138,10 @@ type BuilderRenderComposables<Composables extends ComposableComponents> = [
 /** Values available as the second argument of a created state's `render`. */
 export type RenderStateContext<
   Composables extends ComposableComponents,
-  Resources extends ReadonlyArray<ResourceDefinition> = ReadonlyArray<ResourceDefinition>
+  Resources extends ReadonlyArray<ResourceDefinition> = ReadonlyArray<ResourceDefinition>,
+  States extends string = string
 > = {
+  state: States;
   resources: LayoutRenderResourcesAccessor<Resources>;
   composables: BuilderRenderComposables<Composables>;
   retry?: () => void;
@@ -184,7 +188,8 @@ type TypedRenderStateDefinition<
   SharedInclude extends IncludedProps<
     MergedLayoutInProps<Resources, Options, SharedComposables>
   > = {},
-  SharedCustom extends InPropsObject = {}
+  SharedCustom extends InPropsObject = {},
+  KnownStates extends string = string
 > = {
   composables?: RenderStateComposablesDefinition<Resources, StateComposables>;
   props?: {
@@ -199,7 +204,11 @@ type TypedRenderStateDefinition<
       MergeContract<SharedInclude, IncludeProps>,
       MergeContract<SharedCustom, CustomProps>
     >,
-    context: RenderStateContext<SharedComposables & StateComposables, Resources>
+    context: RenderStateContext<
+      SharedComposables & StateComposables,
+      Resources,
+      KnownStates
+    >
   ) => JSX.Element;
   state: State;
 };
@@ -215,7 +224,8 @@ export type TypedRenderStateCallback<
   SharedInclude extends IncludedProps<
     MergedLayoutInProps<Resources, Options, SharedComposables>
   > = {},
-  SharedCustom extends InPropsObject = {}
+  SharedCustom extends InPropsObject = {},
+  KnownStates extends string = string
 > = (
   props: RenderStateProps<
     Resources,
@@ -224,7 +234,7 @@ export type TypedRenderStateCallback<
     SharedInclude,
     SharedCustom
   >,
-  context: RenderStateContext<SharedComposables, Resources>
+  context: RenderStateContext<SharedComposables, Resources, KnownStates>
 ) => JSX.Element;
 
 type NormalizeRenderStateDefinition<Input> = Input extends LazyRenderState<
@@ -257,7 +267,7 @@ export type RenderStateFragment<
 > = {
   [State in StateName<NormalizeRenderStateDefinition<Definition>>]: Definition;
 } & {
-  readonly [definedRenderStateSymbol]: NormalizeRenderStateDefinition<Definition>;
+  readonly [definedRenderStateSymbol]: NormalizeRenderStateDefinition<Definition> & CreatedRenderStateInput;
 } & StateComposableHandle<CallProps>;
 
 type StateCustomProps<Input> = NormalizeStateInput<Input> extends {
@@ -371,7 +381,13 @@ type RenderStateEntry<
   Deferred extends boolean
 > = Deferred extends true
   ? DeferredRenderState<NormalizeRenderStateDefinition<Definition>>
-  : Definition;
+  : Definition & CreatedRenderStateInput;
+
+declare const createdRenderStateType: unique symbol;
+/** Distinguishes independently typed states from inline contextual definitions. */
+export type CreatedRenderStateInput = {
+  readonly [createdRenderStateType]: true;
+};
 
 /**
  * Overloads shared by `createRenderState` and `createRenderState.defer`. Each
@@ -386,7 +402,8 @@ export interface RenderStateOverloads<
   SharedInclude extends IncludedProps<
     MergedLayoutInProps<Resources, Options, SharedComposables>
   > = {},
-  SharedCustom extends InPropsObject = {}
+  SharedCustom extends InPropsObject = {},
+  KnownStates extends string = string
 > {
   <
     const State extends RenderStateName,
@@ -409,7 +426,8 @@ export interface RenderStateOverloads<
       StateComposables,
       IncludeProps,
       SharedInclude,
-      SharedCustom
+      SharedCustom,
+      KnownStates
     >
   ): BoundRenderStateFragment<
     Resources,
@@ -425,7 +443,8 @@ export interface RenderStateOverloads<
         StateComposables,
         IncludeProps,
         SharedInclude,
-        SharedCustom
+        SharedCustom,
+        KnownStates
       >,
       Deferred
     >
@@ -451,7 +470,8 @@ export interface RenderStateOverloads<
         StateComposables,
         IncludeProps,
         SharedInclude,
-        SharedCustom
+        SharedCustom,
+        KnownStates
       >,
       'state'
     >
@@ -469,7 +489,8 @@ export interface RenderStateOverloads<
         StateComposables,
         IncludeProps,
         SharedInclude,
-        SharedCustom
+        SharedCustom,
+        KnownStates
       >,
       Deferred
     >
@@ -480,7 +501,8 @@ export interface RenderStateOverloads<
       Options,
       SharedComposables,
       SharedInclude,
-      SharedCustom
+      SharedCustom,
+      KnownStates
     >
   ): BoundRenderStateFragment<
     Resources,
@@ -492,7 +514,8 @@ export interface RenderStateOverloads<
         Options,
         SharedComposables,
         SharedInclude,
-        SharedCustom
+        SharedCustom,
+        KnownStates
       >,
       Deferred
     >
@@ -523,7 +546,7 @@ type FromStateEntry<
       Ref[Exclude<keyof Ref, 'asComposable' | typeof definedRenderStateSymbol>],
       LazyRenderState<AnyRenderStateDefinition>
     > extends never
-  ? Definition
+  ? Definition & CreatedRenderStateInput
   : LazyRenderState<Definition>;
 
 type ReferenceSchemas<Ref extends RenderStateReference> = StateCustomProps<
@@ -689,7 +712,8 @@ type FromStateDefinition<
           Local,
           ReferenceIncludes<Ref, CustomProps, Include>
         >,
-      Resources
+      Resources,
+      string
     >
   ) => JSX.Element;
 };
@@ -782,6 +806,18 @@ export interface CreateRenderState<
     SharedInclude,
     SharedCustom
   > {
+  /** Bind the full calling-state union for a shell created before its layout. */
+  forStates<const Names extends readonly [string, ...string[]]>(
+    ...states: Names
+  ): RenderStateOverloads<
+    Resources,
+    Options,
+    SharedComposables,
+    false,
+    SharedInclude,
+    SharedCustom,
+    Names[number]
+  >;
   fromState: CreateRenderStateFromState<Resources, Options, SharedComposables>;
   defer: RenderStateOverloads<
     Resources,
@@ -904,6 +940,8 @@ export function createRenderStateBuilder<
       debug ? { ...definition, [layoutDebug]: debug } : definition
     );
   }
+
+  createRenderState.forStates = (..._states: string[]) => createRenderState;
 
   createRenderState.fromState = (input: {
     ref: RenderStateReference;

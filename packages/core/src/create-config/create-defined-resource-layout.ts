@@ -269,7 +269,7 @@ export type DefineLazyDefaults<
   readonly errors: LazyResourceError;
   createRenderState: CreateLazyRenderState<Resources, Options, Composables>;
   /** @deprecated Use createRenderState({ state: 'Error', render }) instead. */
-  createErrorComponent: CreateBoundLazyErrorComponent<Resource, RenderStateContext<Composables, Resources>>;
+  createErrorComponent: CreateBoundLazyErrorComponent<Resource, RenderStateContext<Composables, Resources, 'Error'>>;
 };
 
 /** Reusable helpers produced by {@link createDefinedResourceLayout}. */
@@ -408,7 +408,7 @@ export function createDefinedResourceLayout<
   defineLazyDefaults.createRenderState = createLazyRenderStateBuilder({ resources, options, composables });
   defineLazyDefaults.createErrorComponent = ((render: any) =>
     defineLazyDefaults.createRenderState({ state: 'Error', render })
-  ) as CreateBoundLazyErrorComponent<ResourcePath<Resources>, RenderStateContext<Composables, Resources>>;
+  ) as CreateBoundLazyErrorComponent<ResourcePath<Resources>, RenderStateContext<Composables, Resources, 'Error'>>;
 
   const boundDefineResourceLayout = ((layout: Record<string, unknown>) => {
     const localComposables = layout.composables as
