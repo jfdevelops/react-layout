@@ -1,3 +1,10 @@
+import { usePanelTransition } from './use-panel-transition';
+import { GraphIcon, ChevronUpIcon, FloatingIcon, CloseIcon } from './icons';
+import {
+  isEditable,
+  matchesPanelShortcut,
+  panelShortcutLabel,
+} from './shortcuts';
 import {
   useEffect,
   useId,
@@ -30,7 +37,7 @@ const minDrawerHeight = 160;
 
 /** Shortcuts use `event.code` so they work with any keyboard layout. */
 export const toolbarShortcuts = {
-  toggle: { code: 'KeyL', label: 'Alt+Shift+L' },
+  toggle: { code: 'KeyJ', label: panelShortcutLabel },
   hide: { code: 'KeyH', label: 'Alt+Shift+H' },
 } as const;
 
@@ -38,20 +45,14 @@ function matches(
   event: globalThis.KeyboardEvent,
   shortcut: (typeof toolbarShortcuts)[keyof typeof toolbarShortcuts]
 ) {
+  if (shortcut === toolbarShortcuts.toggle) return matchesPanelShortcut(event);
+
   return (
     event.altKey &&
     event.shiftKey &&
     !event.ctrlKey &&
     !event.metaKey &&
     event.code === shortcut.code
-  );
-}
-
-function isEditable(target: EventTarget | null) {
-  return (
-    target instanceof HTMLElement &&
-    (target.isContentEditable ||
-      ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
   );
 }
 
@@ -78,7 +79,8 @@ export function ToolbarDevtools({
   ...content
 }: ToolbarDevtoolsProps) {
   const [mounted, setMounted] = useState(false);
-  const [expanded, setExpanded] = useState(initialIsOpen);
+  const transition = usePanelTransition(initialIsOpen);
+  const { open: expanded, setOpen: setExpanded } = transition;
   const [hidden, setHidden] = useState(false);
   const [preferences, updatePreferences] = usePanelPreferences(
     content.config,
@@ -104,7 +106,7 @@ export function ToolbarDevtools({
 
   useEffect(() => {
     function onKeyDown(event: globalThis.KeyboardEvent) {
-      if (isEditable(event.target)) return;
+      if (event.repeat || isEditable(event.target)) return;
 
       if (matches(event, toolbarShortcuts.hide)) {
         event.preventDefault();
@@ -127,7 +129,7 @@ export function ToolbarDevtools({
   // Reserve space so the bar and drawer never cover the end of the page.
   const reserved = hidden
     ? 0
-    : toolbarBarHeight + (expanded ? drawerHeight : 0);
+    : toolbarBarHeight + (transition.present ? drawerHeight : 0);
 
   useEffect(() => {
     if (!mounted) return;
@@ -176,6 +178,7 @@ export function ToolbarDevtools({
       }
     >
       <ToolbarShell
+        transition={transition}
         expanded={expanded}
         setExpanded={setExpanded}
         hide={() => setHidden(true)}
@@ -192,6 +195,7 @@ export function ToolbarDevtools({
 }
 
 function ToolbarShell({
+  transition,
   expanded,
   setExpanded,
   hide,
@@ -202,6 +206,7 @@ function ToolbarShell({
   className,
   style,
 }: {
+  transition: ReturnType<typeof usePanelTransition>;
   expanded: boolean;
   setExpanded: (expanded: boolean) => void;
   hide: () => void;
@@ -253,6 +258,7 @@ function ToolbarShell({
         zIndex: 99999,
         display: 'flex',
         flexDirection: 'column',
+        overflow: 'hidden',
         background: '#0b1220',
         color: '#e2e8f0',
         borderTop: '1px solid #334155',
@@ -261,9 +267,17 @@ function ToolbarShell({
         ...style,
       }}
     >
-      {expanded && (
+      {transition.present && (
         <section
           id={drawerId}
+          data-react-layout-devtools-panel
+          aria-hidden={!expanded || undefined}
+          ref={(element) => {
+            if (element) element.inert = !expanded;
+          }}
+          onAnimationEnd={(event) => {
+            if (event.target === event.currentTarget) transition.finish();
+          }}
           aria-label="Layout devtools"
           onKeyDown={(event) => {
             if (event.key !== 'Escape' || event.defaultPrevented) return;
@@ -277,6 +291,7 @@ function ToolbarShell({
           }}
           style={{
             position: 'relative',
+            animation: transition.animation,
             height: drawerHeight,
             display: 'flex',
             flexDirection: 'column',
@@ -345,11 +360,14 @@ function ToolbarShell({
           <ReactLayoutDevtoolsWorkspace />
         </section>
       )}
-      {!expanded && <ComposableOutlines />}
+      {!transition.present && <ComposableOutlines />}
       <div
         role="region"
         aria-label="React Layout Devtools toolbar"
         style={{
+          position: 'relative',
+          zIndex: 3,
+          background: '#0b1220',
           display: 'flex',
           alignItems: 'center',
           gap: 12,
@@ -368,20 +386,7 @@ function ToolbarShell({
             color: '#a7f3d0',
           }}
         >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 28 28"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden="true"
-          >
-            <rect x="9" y="2" width="10" height="7" rx="2" />
-            <path d="M14 9v5M6 14h16M6 14v5M22 14v5" />
-            <rect x="2" y="19" width="8" height="7" rx="2" />
-            <rect x="18" y="19" width="8" height="7" rx="2" />
-          </svg>
+          <GraphIcon />
           React Layout
         </strong>
         <span
@@ -429,15 +434,16 @@ function ToolbarShell({
             ))}
           </select>
         )}
-        <OutlineToggle />
+        <OutlineToggle size="icon-sm" />
         {onSwitchVariant && (
           <HelpTooltip content="Switch to floating panel">
             <Button
+              size="icon-sm"
               aria-label="Switch to floating panel"
               onClick={onSwitchVariant}
               style={barControl}
             >
-              ⧉
+              <FloatingIcon />
             </Button>
           </HelpTooltip>
         )}
@@ -445,20 +451,20 @@ function ToolbarShell({
           content={`Hide toolbar · ${toolbarShortcuts.hide.label} shows it again`}
         >
           <Button
+            size="icon-sm"
             aria-label="Hide toolbar"
             aria-keyshortcuts={toolbarShortcuts.hide.label}
             onClick={hide}
             style={barControl}
           >
-            ×
+            <CloseIcon />
           </Button>
         </HelpTooltip>
         <HelpTooltip
-          content={`${expanded ? 'Collapse' : 'Expand'} devtools · ${
-            toolbarShortcuts.toggle.label
-          }`}
+          content={`${expanded ? 'Collapse' : 'Expand'} devtools · Ctrl/Cmd+J`}
         >
           <Button
+            size="icon-sm"
             ref={toggle}
             aria-label={expanded ? 'Collapse devtools' : 'Expand devtools'}
             aria-expanded={expanded}
@@ -467,18 +473,9 @@ function ToolbarShell({
             onClick={() => setExpanded(!expanded)}
             style={barControl}
           >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              aria-hidden="true"
+            <ChevronUpIcon
               style={{ transform: expanded ? 'rotate(180deg)' : undefined }}
-            >
-              <path d="m18 15-6-6-6 6" />
-            </svg>
+            />
           </Button>
         </HelpTooltip>
       </div>

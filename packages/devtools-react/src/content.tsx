@@ -1,3 +1,4 @@
+import { BackIcon, LocateIcon, ResetIcon, PlusIcon, MinusIcon } from './icons';
 import { ComposableOutlines, OutlineToggle } from './outlines';
 import {
   memo,
@@ -28,8 +29,10 @@ import {
 export { ReactLayoutDevtoolsProvider, useReactLayoutDevtools } from './context';
 export type { ReactLayoutDevtoolsProviderProps } from './context';
 
-export interface ReactLayoutDevtoolsContentProps
-  extends Omit<ReactLayoutDevtoolsProviderProps, 'layout' | 'children'> {
+export interface ReactLayoutDevtoolsContentProps extends Omit<
+  ReactLayoutDevtoolsProviderProps,
+  'layout' | 'children'
+> {
   layout?: 'auto' | 'compact' | 'split';
   children?: ReactNode;
   className?: string;
@@ -88,20 +91,11 @@ export function ReactLayoutDevtoolsToolbar() {
               config.showDetails && (
                 <HelpTooltip content="Back to explorer">
                   <Button
+                    size="icon"
                     aria-label="Back to explorer"
                     onClick={backToExplorer}
                   >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      aria-hidden="true"
-                    >
-                      <path d="M19 12H5m7-7-7 7 7 7" />
-                    </svg>
+                    <BackIcon />
                   </Button>
                 </HelpTooltip>
               )}
@@ -116,9 +110,28 @@ export function ReactLayoutDevtoolsToolbar() {
                 }{' '}
                 active states
                 {graph.nodes.some((node) => node.kind === 'lazy') && (
-                  <> · {graph.nodes.filter((node) => node.kind === 'lazy').length} lazy declarations
-                    {graph.nodes.some((node) => node.kind === 'lazy' && node.status === 'error') &&
-                      <> · {graph.nodes.filter((node) => node.kind === 'lazy' && node.status === 'error').length} failed</>}
+                  <>
+                    {' '}
+                    ·{' '}
+                    {
+                      graph.nodes.filter((node) => node.kind === 'lazy').length
+                    }{' '}
+                    lazy declarations
+                    {graph.nodes.some(
+                      (node) => node.kind === 'lazy' && node.status === 'error'
+                    ) && (
+                      <>
+                        {' '}
+                        ·{' '}
+                        {
+                          graph.nodes.filter(
+                            (node) =>
+                              node.kind === 'lazy' && node.status === 'error'
+                          ).length
+                        }{' '}
+                        failed
+                      </>
+                    )}
                   </>
                 )}
               </div>
@@ -127,6 +140,7 @@ export function ReactLayoutDevtoolsToolbar() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <HelpTooltip content="Locate selection">
               <Button
+                size="icon"
                 type="button"
                 aria-label="Locate selection"
                 title="Locate selection"
@@ -134,19 +148,20 @@ export function ReactLayoutDevtoolsToolbar() {
                 onClick={locateSelection}
                 style={control}
               >
-                ⌖
+                <LocateIcon />
               </Button>
             </HelpTooltip>
             <OutlineToggle />
             <HelpTooltip content="Reset preferences">
               <Button
+                size="icon"
                 type="button"
                 aria-label="Reset preferences"
                 title="Reset preferences"
                 onClick={resetPreferences}
                 style={control}
               >
-                ↺
+                <ResetIcon />
               </Button>
             </HelpTooltip>
             <ViewSwitcher value={view} onChange={setView} />
@@ -214,12 +229,13 @@ export function ReactLayoutDevtoolsToolbar() {
               {view === 'graph' && (
                 <>
                   <Button
+                    size="icon"
                     type="button"
                     aria-label="Zoom out"
                     onClick={() => setZoom((z) => Math.max(0.25, z - 0.25))}
                     style={control}
                   >
-                    -
+                    <MinusIcon />
                   </Button>
                   <Button
                     type="button"
@@ -230,12 +246,13 @@ export function ReactLayoutDevtoolsToolbar() {
                     {Math.round(zoom * 100)}%
                   </Button>
                   <Button
+                    size="icon"
                     type="button"
                     aria-label="Zoom in"
                     onClick={() => setZoom((z) => Math.min(2, z + 0.25))}
                     style={control}
                   >
-                    +
+                    <PlusIcon />
                   </Button>
                 </>
               )}
@@ -282,18 +299,18 @@ const GraphCard = memo(function GraphCard({
             padding: '8px 12px',
             color: '#e2e8f0',
             background: hovered
-            ? palette.composable.background
-            : node.active
-              ? palette.active.background
-              : '#162033',
+              ? palette.composable.background
+              : node.active
+                ? palette.active.background
+                : '#162033',
             border: `2px solid ${
               selected
                 ? '#fff'
                 : node.status === 'error'
-                ? palette.error.color
-                : node.active
-                ? palette.active.color
-                : palette[node.kind].color
+                  ? palette.error.color
+                  : node.active
+                    ? palette.active.color
+                    : palette[node.kind].color
             }`,
             borderRadius: 8,
           }}
@@ -402,7 +419,9 @@ export function ReactLayoutDevtoolsExplorer() {
 
       if (!a || !b) continue;
 
-      paths[edge.relationship === 'references' ? 'references' : 'hierarchy'].push(
+      paths[
+        edge.relationship === 'references' ? 'references' : 'hierarchy'
+      ].push(
         `M${a.x + 224},${a.y + 32} C${a.x + 256},${a.y + 32} ${b.x - 32},${
           b.y + 32
         } ${b.x},${b.y + 32}`
@@ -462,10 +481,12 @@ export function ReactLayoutDevtoolsExplorer() {
                 palette={palette}
                 config={config?.tree}
                 onExpandedChange={(initialExpanded) =>
-                  updatePreferences({ tree: { ...config.tree, initialExpanded } })
+                  updatePreferences({
+                    tree: { ...config.tree, initialExpanded },
+                  })
                 }
                 graph={displayGraph}
-                    hovered={hovered}
+                hovered={hovered}
                 selected={selected}
                 onSelect={setSelected}
               />
@@ -498,7 +519,9 @@ export function ReactLayoutDevtoolsExplorer() {
                         d={edgePaths[kind].join(' ')}
                         fill="none"
                         stroke="#64748b"
-                        strokeDasharray={kind === 'references' ? '5 4' : undefined}
+                        strokeDasharray={
+                          kind === 'references' ? '5 4' : undefined
+                        }
                         markerEnd={`url(#${arrowId})`}
                       />
                     ))}
@@ -522,7 +545,9 @@ export function ReactLayoutDevtoolsExplorer() {
                             fill="none"
                             stroke="#64748b"
                             strokeDasharray={
-                              edge.relationship === 'references' ? '5 4' : undefined
+                              edge.relationship === 'references'
+                                ? '5 4'
+                                : undefined
                             }
                             markerEnd={`url(#${arrowId})`}
                           />

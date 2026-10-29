@@ -1,3 +1,18 @@
+import { usePanelTransition } from './use-panel-transition';
+import {
+  ResizeIcon,
+  GraphIcon,
+  CollapseIcon,
+  ExpandIcon,
+  DockIcon,
+  ToolbarIcon,
+  CloseIcon,
+} from './icons';
+import {
+  isEditable,
+  matchesPanelShortcut,
+  panelShortcutLabel,
+} from './shortcuts';
 import { Button } from './components/ui/button';
 import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
@@ -12,8 +27,7 @@ import { useFloatingPanel } from './use-floating-panel';
 import { usePanelPreferences, type DevtoolsVariant } from './preferences';
 import { ToolbarDevtools } from './toolbar';
 
-export interface ReactLayoutDevtoolsProps
-  extends ReactLayoutDevtoolsContentProps {
+export interface ReactLayoutDevtoolsProps extends ReactLayoutDevtoolsContentProps {
   initialIsOpen?: boolean;
   /** Floating launcher position. Ignored by the toolbar variant. */
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
@@ -36,16 +50,16 @@ export function ReactLayoutDevtools({
     props.storageKey
   );
   const active = preferences.variant ?? variant;
-  // Switching from an open panel keeps the devtools open in the new variant.
-  const [openAfterSwitch, setOpenAfterSwitch] = useState(false);
+  // Toolbar mode starts collapsed when selected from the floating panel.
+  const [openAfterSwitch, setOpenAfterSwitch] = useState<boolean>();
 
   function switchTo(next: DevtoolsVariant) {
-    setOpenAfterSwitch(true);
+    setOpenAfterSwitch(next === 'floating');
 
     updatePreferences({ variant: next });
   }
 
-  const open = openAfterSwitch || initialIsOpen;
+  const open = openAfterSwitch ?? initialIsOpen;
 
   return active === 'toolbar' ? (
     <ToolbarDevtools
@@ -73,10 +87,8 @@ function FloatingDevtools({
   onSwitchVariant: () => void;
 }) {
   const [mounted, setMounted] = useState(false);
-  const [phase, setPhase] = useState<'closed' | 'opening' | 'open' | 'closing'>(
-    initialIsOpen ? 'opening' : 'closed'
-  );
-  const open = phase === 'opening' || phase === 'open';
+  const transition = usePanelTransition(initialIsOpen);
+  const { phase, open, setOpen } = transition;
   const hasOpened = useRef(initialIsOpen);
   const trigger = useRef<HTMLButtonElement>(null);
   const close = useRef<HTMLButtonElement>(null);
@@ -98,23 +110,20 @@ function FloatingDevtools({
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    if (phase !== 'opening' && phase !== 'closing') return;
-
-    // Complete even if a host stylesheet disables animation events.
-    const timeout = setTimeout(
-      () =>
-        setPhase((current) =>
-          current === phase
-            ? phase === 'opening'
-              ? 'open'
-              : 'closed'
-            : current
-        ),
-      phase === 'opening' ? 280 : 220
-    );
-
-    return () => clearTimeout(timeout);
-  }, [phase]);
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (
+        event.repeat ||
+        isEditable(event.target) ||
+        !matchesPanelShortcut(event)
+      )
+        return;
+      event.preventDefault();
+      hasOpened.current = true;
+      setOpen((current) => !current);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [setOpen]);
 
   useEffect(() => {
     if (mounted && open) close.current?.focus();
@@ -126,7 +135,7 @@ function FloatingDevtools({
   }, [mounted, phase]);
 
   function hide() {
-    setPhase('closing');
+    setOpen(false);
   }
 
   if (!mounted) return null;
@@ -151,13 +160,7 @@ function FloatingDevtools({
           onAnimationEnd={(event) => {
             if (event.target !== event.currentTarget) return;
 
-            setPhase((current) =>
-              current === 'closing'
-                ? 'closed'
-                : current === 'opening'
-                ? 'open'
-                : current
-            );
+            transition.finish();
           }}
           onKeyDown={(event) => {
             if (event.key === 'Escape') {
@@ -170,12 +173,7 @@ function FloatingDevtools({
             position: 'fixed',
             left: panel.rect.x,
             top: panel.rect.y,
-            animation:
-              phase === 'opening'
-                ? 'react-layout-devtools-enter 280ms cubic-bezier(0.22, 1, 0.36, 1) both'
-                : phase === 'closing'
-                ? 'react-layout-devtools-exit 220ms cubic-bezier(0.4, 0, 1, 1) both'
-                : undefined,
+            animation: transition.animation,
             width: panel.rect.width,
             height: panel.rect.height,
             boxSizing: 'border-box',
@@ -226,6 +224,7 @@ function FloatingDevtools({
                 }
               >
                 <Button
+                  size="icon"
                   style={panelControl}
                   aria-label={
                     panel.mode === 'expanded'
@@ -238,7 +237,11 @@ function FloatingDevtools({
                     )
                   }
                 >
-                  ⛶
+                  {panel.mode === 'expanded' ? (
+                    <CollapseIcon />
+                  ) : (
+                    <ExpandIcon />
+                  )}
                 </Button>
               </HelpTooltip>
               <HelpTooltip
@@ -247,6 +250,7 @@ function FloatingDevtools({
                 }
               >
                 <Button
+                  size="icon"
                   style={panelControl}
                   aria-label={
                     panel.mode === 'docked' ? 'Undock panel' : 'Dock panel'
@@ -257,26 +261,29 @@ function FloatingDevtools({
                     )
                   }
                 >
-                  ▤
+                  <DockIcon />
                 </Button>
               </HelpTooltip>
               <HelpTooltip content="Switch to bottom toolbar">
                 <Button
+                  size="icon"
                   style={panelControl}
                   aria-label="Switch to bottom toolbar"
                   onClick={onSwitchVariant}
                 >
-                  ▁
+                  <ToolbarIcon />
                 </Button>
               </HelpTooltip>
               <Button
+                size="icon"
                 ref={close}
                 type="button"
                 aria-label="Close React Layout Devtools"
+                aria-keyshortcuts={panelShortcutLabel}
                 onClick={hide}
                 style={panelControl}
               >
-                ×
+                <CloseIcon />
               </Button>
             </div>
           </div>
@@ -300,16 +307,7 @@ function FloatingDevtools({
                 touchAction: 'none',
               }}
             >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 12 12"
-                fill="none"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path d="M2 10L10 2M2 6L6 2" />
-              </svg>
+              <ResizeIcon size={12} />
             </Button>
           )}
           <div style={{ overflow: 'hidden', flex: 1, minHeight: 0 }}>
@@ -331,6 +329,7 @@ function FloatingDevtools({
           ref={trigger}
           type="button"
           aria-label="Open React Layout Devtools"
+          aria-keyshortcuts={panelShortcutLabel}
           aria-expanded={false}
           title="Drag to move · Click to open"
           aria-description="Drag to reposition, or use Alt and arrow keys. Click or press Enter to open."
@@ -344,7 +343,7 @@ function FloatingDevtools({
 
             hasOpened.current = true;
 
-            setPhase('opening');
+            setOpen(true);
           }}
           style={{
             position: 'fixed',
@@ -366,20 +365,7 @@ function FloatingDevtools({
             userSelect: 'none',
           }}
         >
-          <svg
-            width="28"
-            height="28"
-            viewBox="0 0 28 28"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            aria-hidden="true"
-          >
-            <rect x="9" y="2" width="10" height="7" rx="2" />
-            <path d="M14 9v5M6 14h16M6 14v5M22 14v5" />
-            <rect x="2" y="19" width="8" height="7" rx="2" />
-            <rect x="18" y="19" width="8" height="7" rx="2" />
-          </svg>
+          <GraphIcon />
         </Button>
       )}
     </>,
