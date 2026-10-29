@@ -37,23 +37,38 @@ export type LazyResourceStates<Resource = string> = {
   Loading?: LazyResourceLoadingComponent<Resource>;
 };
 
-export type LazyErrorHandlers<Resource, Custom extends object = {}> = {
+type ErrorHandlerContext<Context> = [Context] extends [never]
+  ? []
+  : [context: Context];
+
+export type LazyErrorHandlers<
+  Resource,
+  Custom extends object = {},
+  Context = never,
+> = {
   [Code in LazyResourceError['code']]?: (
     props: Custom &
       Omit<LazyResourceErrorProps<Resource>, 'error'> & {
         error: LazyResourceErrorMap[Code];
       },
+    ...context: ErrorHandlerContext<Context>
   ) => ReactNode;
 } & {
-  fallback?: (props: Custom & LazyResourceErrorProps<Resource>) => ReactNode;
+  fallback?: (
+    props: Custom & LazyResourceErrorProps<Resource>,
+    ...context: ErrorHandlerContext<Context>
+  ) => ReactNode;
 };
 
-export type CreateLazyErrorComponent<Resource> = {
+export type CreateLazyErrorComponent<Resource, Context = never> = {
   <Custom extends object = {}>(
-    render: (props: Custom & LazyResourceErrorProps<Resource>) => ReactNode,
+    render: (
+      props: Custom & LazyResourceErrorProps<Resource>,
+      ...context: ErrorHandlerContext<Context>
+    ) => ReactNode,
   ): ComponentType<Custom & LazyResourceErrorProps<Resource>>;
   <Custom extends object = {}>(
-    handlers: LazyErrorHandlers<Resource, Custom>,
+    handlers: LazyErrorHandlers<Resource, Custom, Context>,
   ): ComponentType<Custom & LazyResourceErrorProps<Resource>>;
 };
 

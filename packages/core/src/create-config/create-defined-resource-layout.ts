@@ -1,7 +1,7 @@
 import { inspectLazy } from '../lazy/inspection';
 import type { ResourcePath } from '../resource';
-import { createLazyErrorComponent } from '../lazy/create-error-component';
-import { lazyDefaultsSymbol, type CreateLazyErrorComponent } from '../lazy/types';
+import { createLazyRenderStateBuilder, type CreateLazyRenderState, type CreateBoundLazyErrorComponent } from '../lazy/create-render-state';
+import { lazyDefaultsSymbol } from '../lazy/types';
 import type { LazyResourceError } from '../errors/lazy-resource-error';
 import {
   getLayoutDebug,
@@ -38,6 +38,7 @@ import {
 import {
   createRenderStateBuilder,
   type CreateRenderState,
+  type RenderStateContext,
   type RenderStateReferences,
   type LayoutComposablesDefinition,
 } from './render-state';
@@ -253,7 +254,12 @@ export type BoundDefineResourceLayout<
 };
 
 /** Registers loading and module-error components used by lazy layouts. */
-export type DefineLazyDefaults<Resource = string> = {
+export type DefineLazyDefaults<
+  Resource = string,
+  Resources extends ReadonlyArray<ResourceDefinition> = ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources> = {},
+  Composables extends ComposableComponents = {},
+> = {
   /**
    * Sets defaults once, before the factory creates its first lazy layout.
    *
@@ -261,7 +267,9 @@ export type DefineLazyDefaults<Resource = string> = {
    */
   (defaults: LazyResourceStates<Resource>): void;
   readonly errors: LazyResourceError;
-  createErrorComponent: CreateLazyErrorComponent<Resource>;
+  createRenderState: CreateLazyRenderState<Resources, Options, Composables>;
+  /** @deprecated Use createRenderState({ state: 'Error', render }) instead. */
+  createErrorComponent: CreateBoundLazyErrorComponent<Resource, RenderStateContext<Composables, Resources>>;
 };
 
 /** Reusable helpers produced by {@link createDefinedResourceLayout}. */
@@ -289,7 +297,7 @@ export type CreateDefinedResourceLayoutResult<
     SharedCustom
   >;
   /** Sets the shared loading and module-error UI used by lazy layouts. */
-  defineLazyDefaults: DefineLazyDefaults<ResourcePath<Resources>>;
+  defineLazyDefaults: DefineLazyDefaults<ResourcePath<Resources>, Resources, Options, Composables>;
   /** Defines a layout using the resources, options, and composables already bound. */
   defineResourceLayout: BoundDefineResourceLayout<
     Resources,
@@ -397,7 +405,10 @@ export function createDefinedResourceLayout<
     value: undefined,
     enumerable: false,
   });
-  defineLazyDefaults.createErrorComponent = createLazyErrorComponent as CreateLazyErrorComponent<ResourcePath<Resources>>;
+  defineLazyDefaults.createRenderState = createLazyRenderStateBuilder({ resources, options, composables });
+  defineLazyDefaults.createErrorComponent = ((render: any) =>
+    defineLazyDefaults.createRenderState({ state: 'Error', render })
+  ) as CreateBoundLazyErrorComponent<ResourcePath<Resources>, RenderStateContext<Composables, Resources>>;
 
   const boundDefineResourceLayout = ((layout: Record<string, unknown>) => {
     const localComposables = layout.composables as
@@ -507,7 +518,7 @@ export function createDefinedResourceLayout<
       }
     ),
     defineLazyDefaults: defineLazyDefaults as DefineLazyDefaults<
-      ResourcePath<Resources>
+      ResourcePath<Resources>, Resources, Options, Composables
     >,
     defineResourceLayout: boundDefineResourceLayout,
     resources: createLayoutResourcesAccessor(resources),
