@@ -25,7 +25,21 @@
   }
 }
 
+@keyframes react-layout-devtools-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+[data-state-icon][data-spinning] {
+  animation: react-layout-devtools-spin 1s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  [data-state-icon][data-spinning] {
+    animation: none;
+  }
+
   [data-react-layout-devtools-panel] {
     animation-duration: 1ms !important;
   }
