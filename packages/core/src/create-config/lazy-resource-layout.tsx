@@ -90,7 +90,7 @@ export function createLazyResourceLayout<
   Module extends Record<string, unknown>,
 >(
   options: LazyResourceLayoutOptions<Resources, Module>,
-  defaults: LazyResourceStates<any>,
+  defaults: LazyResourceStates<any> | (() => LazyResourceStates<any>),
   hooks: LazyResourceLoadHooks = {},
 ): LazyResourceLayoutComponent<Module> {
   const runtime = options as unknown as LazyOptions<Module> & {
@@ -98,7 +98,6 @@ export function createLazyResourceLayout<
     states?: LazyResourceStates;
   };
   const resource = runtime.resource;
-  const states = { ...defaults, ...runtime.states } as LazyResourceStates;
   const loader = createLazyLoader({
     load: runtime.load,
     select: (module) => findDefinedLayoutComponent(module, resource),
@@ -108,6 +107,7 @@ export function createLazyResourceLayout<
   const members = new Map<string, ComponentType<any>>();
   function createMember(member?: string) {
     function LazyMember(props: Record<string, unknown>) {
+      const states = { ...(typeof defaults === 'function' ? defaults() : defaults), ...runtime.states } as LazyResourceStates;
       const Loading = states.Loading;
       return (
         <LazyBoundary
