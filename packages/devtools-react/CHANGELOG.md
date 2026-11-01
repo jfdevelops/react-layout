@@ -1,5 +1,20 @@
 # @jfdevelops/react-layout-devtools-react
 
+## 0.4.0
+
+### Minor Changes
+
+- 6af59d5: Add persisted development composable outlines, labelled by owning layout, with hover and selection linking to the inspector. Instrument intrinsic roots without adding layout wrappers; skip roots without a DOM element.
+- 8213743: Add `variant="toolbar"` to `ReactLayoutDevtools`: a bar docked to the bottom of the viewport with live layout counts, the current resource and state, a state override and the outline toggle. It expands into a resizable drawer with the full devtools, and its height is saved. The page reserves matching space through `--react-layout-devtools-toolbar-height`. Alt+Shift+L toggles the drawer and Alt+Shift+H hides the bar. Users can switch variants from either UI, and the choice persists.
+- 0df8576: Show an icon for each render state in the devtools tree, graph, node details and state override buttons. Built-in `default`, `Loading`, `Error` and `NotFound` states get their own icons, colored from the chip palette; custom states get a generic icon. The Loading icon spins while that state is active or forced, unless the user prefers reduced motion.
+
+### Patch Changes
+
+- 90209c5: Highlight the active state override in the devtools. The pressed override button, including "Auto" when nothing is forced and "Preview this state" when its state is forced, uses the active chip colours and bold text, driven by `aria-pressed`. Keyboard focus shows a distinct white ring.
+- bb23058: Use copied Icons8 SVG components and square icon-button variants. Start toolbar mode collapsed, toggle either panel with Ctrl/Cmd+J, and share opening and closing animations between the toolbar drawer and floating panel.
+- b6c6728: Speed up devtools interactions in large apps. Store notifications are coalesced per microtask through the new `subscribeInspectionBatched`, graph layout and the inspection tree are cached per snapshot, search is deferred, both explorer views stay mounted, and trees and graphs over 200 nodes render only the rows and cards near the viewport.
+- e2f7c2b: Highlight the toolbar's current layout on hover or keyboard focus, and add a per-item highlight button to the inspector. Targeted page highlights work independently of composable outlines and follow mounted roots as the app changes. Mark existing layout roots only in development, without adding DOM wrappers.
+
 ## 0.3.0
 
 ### Minor Changes

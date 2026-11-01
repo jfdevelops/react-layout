@@ -1,5 +1,15 @@
 # @jfdevelops/react-layout-composables
 
+## 0.4.0
+
+### Minor Changes
+
+- 6af59d5: Add persisted development composable outlines, labelled by owning layout, with hover and selection linking to the inspector. Instrument intrinsic roots without adding layout wrappers; skip roots without a DOM element.
+
+### Patch Changes
+
+- e2f7c2b: Highlight the toolbar's current layout on hover or keyboard focus, and add a per-item highlight button to the inspector. Targeted page highlights work independently of composable outlines and follow mounted roots as the app changes. Mark existing layout roots only in development, without adding DOM wrappers.
+
 ## 0.3.1
 
 ### Patch Changes

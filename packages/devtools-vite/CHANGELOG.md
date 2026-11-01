@@ -1,5 +1,11 @@
 # @jfdevelops/react-layout-devtools-vite
 
+## 0.1.2
+
+### Patch Changes
+
+- d0b426a: Bind JavaScript modules during source analysis so workspace .mjs dependencies do not crash the development server and JavaScript layout APIs receive annotations.
+
 ## 0.1.1
 
 ### Patch Changes

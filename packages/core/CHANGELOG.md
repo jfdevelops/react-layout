@@ -1,5 +1,22 @@
 # @jfdevelops/react-layout
 
+## 2.2.0
+
+### Minor Changes
+
+- 6af59d5: Add persisted development composable outlines, labelled by owning layout, with hover and selection linking to the inspector. Instrument intrinsic roots without adding layout wrappers; skip roots without a DOM element.
+
+### Patch Changes
+
+- e2f7c2b: Highlight the toolbar's current layout on hover or keyboard focus, and add a per-item highlight button to the inspector. Targeted page highlights work independently of composable outlines and follow mounted roots as the app changes. Mark existing layout roots only in development, without adding DOM wrappers.
+- 5302263: Allow development hot reloads to replace lazy defaults and read the current defaults when existing lazy layouts render. Preserve production registration guards and resource-specific overrides.
+- fc04a8a: Render lazy members synchronously once their shared module has loaded, avoiding a second loading fallback when a route swaps Loading for its page. Cache member mappings without remounting loaded children, and clear the module and member caches on retry.
+- Updated dependencies [6af59d5]
+- Updated dependencies [b6c6728]
+- Updated dependencies [e2f7c2b]
+  - @jfdevelops/react-layout-composables@0.4.0
+  - @jfdevelops/react-layout-devtools-core@0.4.0
+
 ## 2.1.0
 
 ### Minor Changes
