@@ -1,5 +1,12 @@
 # @jfdevelops/react-layout-devtools-core
 
+## 0.4.0
+
+### Minor Changes
+
+- 6af59d5: Add persisted development composable outlines, labelled by owning layout, with hover and selection linking to the inspector. Instrument intrinsic roots without adding layout wrappers; skip roots without a DOM element.
+- b6c6728: Speed up devtools interactions in large apps. Store notifications are coalesced per microtask through the new `subscribeInspectionBatched`, graph layout and the inspection tree are cached per snapshot, search is deferred, both explorer views stay mounted, and trees and graphs over 200 nodes render only the rows and cards near the viewport.
+
 ## 0.3.0
 
 ### Minor Changes
