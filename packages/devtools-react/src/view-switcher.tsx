@@ -1,3 +1,4 @@
+import { GraphIcon, TreeIcon } from './icons';
 import { HelpTooltip } from './components/ui/tooltip';
 import { Button } from './components/ui/button';
 
@@ -31,6 +32,7 @@ export function ViewSwitcher({
         return (
           <HelpTooltip key={view} content={`${label} view`}>
             <Button
+              size="icon"
               type="button"
               role="tab"
               aria-label={label}
@@ -51,10 +53,10 @@ export function ViewSwitcher({
                   event.key === 'Home'
                     ? 'graph'
                     : event.key === 'End'
-                    ? 'tree'
-                    : view === 'graph'
-                    ? 'tree'
-                    : 'graph';
+                      ? 'tree'
+                      : view === 'graph'
+                        ? 'tree'
+                        : 'graph';
 
                 onChange(next);
 
@@ -78,32 +80,7 @@ export function ViewSwitcher({
                 cursor: 'pointer',
               }}
             >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                {view === 'graph' ? (
-                  <>
-                    <rect x="9" y="2" width="6" height="5" rx="1" />
-                    <path d="M12 7v5M5 12h14M5 12v5M19 12v5" />
-                    <rect x="2" y="17" width="6" height="5" rx="1" />
-                    <rect x="16" y="17" width="6" height="5" rx="1" />
-                  </>
-                ) : (
-                  <>
-                    <path d="M5 4v13q0 2 2 2h3M5 8h5M14 5h6M14 8h4M14 16h6M14 19h4" />
-                    <rect x="10" y="5" width="3" height="3" rx=".5" />
-                    <rect x="10" y="16" width="3" height="3" rx=".5" />
-                  </>
-                )}
-              </svg>
+              {view === 'graph' ? <GraphIcon /> : <TreeIcon />}
             </Button>
           </HelpTooltip>
         );

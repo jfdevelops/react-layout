@@ -1,3 +1,4 @@
+import { NodeHighlight } from './node-highlight';
 import {
   createContext,
   useContext,
@@ -5,6 +6,8 @@ import {
   useEffect,
   useRef,
   useMemo,
+  useCallback,
+  useDeferredValue,
   useState,
   useSyncExternalStore,
   type ReactNode,
@@ -12,6 +15,7 @@ import {
 import {
   getInspectionSource,
   layoutGraph,
+  subscribeInspectionBatched,
   type DevtoolsSessionState,
 } from '@jfdevelops/react-layout-devtools-core';
 import {
@@ -47,25 +51,43 @@ function useController({
   const arrowId = `layout-arrow-${useId().replaceAll(':', '')}`;
   const inspector = useMemo(() => getInspectionSource(source), [source]);
   const graph = useSyncExternalStore(
-    inspector.subscribe,
+    useMemo(
+      () => (listener: () => void) =>
+        subscribeInspectionBatched(inspector, listener),
+      [inspector]
+    ),
     inspector.getSnapshot,
     inspector.getSnapshot
   );
 
   useEffect(() => inspector.connectPreview?.(), [inspector]);
 
+  const [hovered, setHovered] = useState<string>();
+  const [highlighted, setHighlighted] = useState<string>();
+  const [hoverHighlight, setHoverHighlight] = useState<string>();
   const [session, setSession] = useState<DevtoolsSessionState>({ query: '' });
   const { query, selectedNode: selected } = session;
+  useEffect(() => setHighlighted(undefined), [selected]);
 
-  function setQuery(query: string) {
-    setSession((current) => ({ ...current, query }));
-  }
+  const deferredQuery = useDeferredValue(query);
+  const setQuery = useCallback((query: string) => {
+    setSession((current) =>
+      current.query === query ? current : { ...current, query }
+    );
+  }, []);
 
-  function setSelected(selectedNode: string) {
-    if (compact && config.showDetails) setPane('inspector');
+  const setSelected = useCallback(
+    (selectedNode: string) => {
+      if (compact && config.showDetails) setPane('inspector');
 
-    setSession((current) => ({ ...current, selectedNode }));
-  }
+      setSession((current) =>
+        current.selectedNode === selectedNode
+          ? current
+          : { ...current, selectedNode }
+      );
+    },
+    [compact, config.showDetails]
+  );
 
   const view = config.initialView;
   const activeOnly = config.initialFilters.activeOnly;
@@ -114,7 +136,7 @@ function useController({
 
     const element =
       graphPane.current?.querySelector<HTMLElement>(
-        '[aria-selected="true"], [data-selected-node="true"]'
+        `[data-view="${view}"] :is([aria-selected="true"], [data-selected-node="true"])`
       ) ?? graphPane.current;
 
     element?.focus({ preventScroll: true });
@@ -124,6 +146,8 @@ function useController({
     resetSavedPreferences();
 
     setLocateRequest(0);
+
+    revealedRequest.current = 0;
 
     setTreeRevision((revision) => revision + 1);
 
@@ -166,17 +190,13 @@ function useController({
     setLocateRequest((request) => request + 1);
   }
 
-  useEffect(() => {
-    if (!locateRequest || view !== 'graph') return;
-
-    const element = graphPane.current?.querySelector<HTMLElement>(
-      '[data-selected-node="true"]'
-    );
-
-    if (element) reveal(element);
-  }, [locateRequest, view]);
-
-  const palette = resolveChipColors(config?.chipColors);
+  const revealedRequest = useRef(0);
+  const chipColorsKey = JSON.stringify(config.chipColors);
+  const palette = useMemo(
+    () => resolveChipColors(config.chipColors),
+    // Configs are often inline objects; key on content so cards stay memoized.
+    [chipColorsKey]
+  );
   const displayGraph = useMemo(() => {
     const candidates = graph.nodes.filter(
       (node) => showComposables || node.kind !== 'composable'
@@ -188,7 +208,7 @@ function useController({
             (!activeOnly || node.active > 0) &&
             `${node.label} ${node.kind}`
               .toLowerCase()
-              .includes(query.toLowerCase())
+              .includes(deferredQuery.toLowerCase())
         )
         .map((node) => node.id)
     );
@@ -216,9 +236,32 @@ function useController({
         (edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target)
       ),
     };
-  }, [graph, activeOnly, query, showComposables]);
+  }, [graph, activeOnly, deferredQuery, showComposables]);
   const positioned = useMemo(() => layoutGraph(displayGraph), [displayGraph]);
-  const positions = new Map(positioned.map((p) => [p.node.id, p]));
+  const positions = useMemo(
+    () => new Map(positioned.map((p) => [p.node.id, p])),
+    [positioned]
+  );
+
+  // Retries as the deferred search catches up after locate clears filters.
+  useEffect(() => {
+    if (
+      !locateRequest ||
+      view !== 'graph' ||
+      revealedRequest.current === locateRequest
+    )
+      return;
+
+    const element = graphPane.current?.querySelector<HTMLElement>(
+      '[data-view="graph"] [data-selected-node="true"]'
+    );
+
+    if (!element) return;
+
+    revealedRequest.current = locateRequest;
+
+    reveal(element);
+  }, [locateRequest, view, positioned]);
   const selection = graph.nodes.find((n) => n.id === selected);
   const detailsPane = useRef<HTMLElement>(null);
 
@@ -236,6 +279,12 @@ function useController({
 
   return {
     config,
+    hovered,
+    setHovered,
+    highlighted,
+    setHighlighted,
+    hoverHighlight,
+    setHoverHighlight,
     updatePreferences,
     resetPreferences,
     graph,
@@ -296,6 +345,11 @@ export function ReactLayoutDevtoolsProvider({
     <DevtoolsContext.Provider value={controller}>
       <DevtoolsStyles nonce={props.nonce} styleMode={props.styleMode} />
       {children}
+      <NodeHighlight
+        graph={controller.graph}
+        id={controller.hoverHighlight ?? controller.highlighted}
+        color={controller.palette.active.color}
+      />
     </DevtoolsContext.Provider>
   );
 }

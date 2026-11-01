@@ -3,7 +3,13 @@
 All lazy entry points accept a `load` callback and optional `fallback`. Each
 loader imports once, shares its promise between `preload()` and rendering, and
 exposes `status`: `unresolved`, `loading`, `resolved`, or `error`. Retry clears
-the failed import and React's lazy cache so the next attempt imports again.
+the module result and member caches so the next attempt imports again.
+
+Once the module is loaded, new members render synchronously. For example,
+a router can replace `<Page.Loading />` with `<Page />` without briefly showing
+the module-loading fallback again. This also applies after `preload()` and to
+lazy render states and scoped content. The Suspense boundary stays in the tree;
+a retry or a genuinely suspending child can still show its fallback.
 
 ```tsx
 const factory = createDefinedResourceLayout({

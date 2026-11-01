@@ -27,6 +27,7 @@ import {
 } from '@jfdevelops/react-layout-devtools-core';
 import {
   inspectDefinition,
+  markInspectionRoots,
   trackComposable,
   type ActiveInspection,
 } from './inspection';
@@ -2156,7 +2157,14 @@ function defineResourceLayoutImpl<
         );
       }
 
-      return render(renderProps, { ...mergedRenderContext, state });
+      return markInspectionRoots(
+        render(renderProps, { ...mergedRenderContext, state }),
+        [
+          activeInspection.layout,
+          activeInspection.state,
+          ...(resourceId ? [resourceId] : []),
+        ]
+      );
     }
 
     function Component(
@@ -2507,10 +2515,13 @@ function defineResourceLayoutImpl<
             ) => (
               <RenderStateRetryContext.Consumer>
                 {(retry) =>
-                  definition.render(props, {
-                    ...context,
-                    retry,
-                  })
+                  markInspectionRoots(
+                    definition.render(props, { ...context, retry }),
+                    [
+                      activeInspection.layout,
+                      ...(inspectedState ? [inspectedState] : []),
+                    ]
+                  )
                 }
               </RenderStateRetryContext.Consumer>
             )

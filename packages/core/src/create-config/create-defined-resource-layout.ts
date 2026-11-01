@@ -261,7 +261,7 @@ export type DefineLazyDefaults<
   Composables extends ComposableComponents = {},
 > = {
   /**
-   * Sets defaults once, before the factory creates its first lazy layout.
+   * Sets defaults before the first lazy layout. Development reloads may replace them.
    *
    * @param defaults - Shared components for pending module loads and failures.
    */
@@ -384,13 +384,14 @@ export function createDefinedResourceLayout<
   function defineLazyDefaults(
     defaults: LazyResourceStates<ResourcePath<Resources>>
   ): void {
-    if (lazyDefaultsDefined) {
+    const replacingInDevelopment = lazyDefaultsDefined && process.env.NODE_ENV !== 'production';
+    if (lazyDefaultsDefined && !replacingInDevelopment) {
       throw new LayoutConfigurationError(
         'Lazy resource defaults can only be defined once.'
       );
     }
 
-    if (lazyLayoutCreated) {
+    if (lazyLayoutCreated && !replacingInDevelopment) {
       throw new LayoutConfigurationError(
         'Lazy resource defaults must be defined before creating a lazy resource layout.'
       );
@@ -496,7 +497,7 @@ export function createDefinedResourceLayout<
           return module as Module;
         },
       },
-      lazyDefaults,
+      () => lazyDefaults,
       lazyInspection.hooks
     );
   };

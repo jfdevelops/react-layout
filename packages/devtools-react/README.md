@@ -46,6 +46,22 @@ Green nodes are currently mounted, including multiple simultaneous instances. Th
 
 See [devtools-core](../devtools-core/README.md) for the framework-independent inspection protocol.
 
+## Bottom toolbar
+
+```tsx
+<ReactLayoutDevtools source={layout} variant="toolbar" />
+```
+
+`variant="toolbar"` docks a 32px bar to the bottom of the viewport instead of the floating button. The bar shows active layouts, loading resources and failed loads (red when any failed), the most recently mounted `resource · state`, a state override for that layout, and the composable-outline toggle. The drawer starts collapsed when switching to toolbar mode. Its chevron expands a drawer with the full explorer and inspector; drag the drawer's top edge (or focus it and use the arrow keys, with Shift for larger steps) to resize it. The height is saved in preferences. Escape collapses the drawer. Both variants share the same slide animation, including reduced-motion support.
+
+The page is never covered: while docked, `<html>` gets `--react-layout-devtools-toolbar-height` (bar plus open drawer, `0px` when hidden) and `<body>` gets matching bottom padding, restored on unmount. Use the variable for other fixed-bottom elements.
+
+Shortcuts (ignored while typing in a field): Ctrl+J (Windows/Linux) or Cmd+J (macOS) opens or closes the panel in either variant; Alt+Shift+H hides or shows the bar. Hiding lasts until reload.
+
+Hover or focus the current layout in the toolbar to highlight its mounted roots on the page. Click it to keep the highlight visible. Every selected-item panel also has a **Highlight on page** button; click again to clear it. Changing the selected item clears its highlight. These controls work with composable outlines switched off. Layouts with multiple roots or instances highlight each root, and owned composables provide a fallback when a custom component does not forward root attributes.
+
+Both variants have a button to switch to the other. The choice is saved and takes precedence over the `variant` prop until preferences are reset. Production gating is unchanged.
+
 ## Configuration
 
 Both components accept the same optional, typed `config`. Import `ReactLayoutDevtoolsConfig` when sharing a configuration between callers.
@@ -83,6 +99,10 @@ Selected-node details show a filterable Props section instead of a JSON dump. Se
 Included props reuse existing options or composable props; custom props define additional inputs. `true` means required in creation config. `'optional'` permits omission and accepts values in config or on the component. The object form sets `required` and `suppliedVia` explicitly: required values use the chosen location; optional values can be supplied at either location. Inspection reads metadata without executing validators or render callbacks.
 
 The React adapter has no runtime package dependencies. It bundles the framework-independent devtools core at build time and uses only the host app’s React and React DOM peers. Controls and shared tooltips use native React and DOM APIs, with no Tailwind, CSS imports, or provider setup. Some control styles were originally adapted from shadcn/ui; see `THIRD_PARTY_NOTICES` for attribution.
+
+Render states show an icon in the tree, graph, node details and state override buttons: `default` (circle check), `Loading` (`chipColors.loading`), `Error` (`chipColors.error`) and `NotFound` (amber) each have their own, and custom states share a generic dashed square. Icons are decorative; the state name remains the accessible label. The Loading icon spins while that state is active or forced, except under `prefers-reduced-motion`.
+
+In State preview, the pressed override (`Auto` when nothing is forced) uses `chipColors.active` with bold text, driven by `aria-pressed`. Keyboard focus shows a separate white ring.
 
 The details pane is absent until a node is selected, then slides in from the right (respecting reduced-motion preferences). Every selected node uses the same inspector layout: a clickable ancestor path, a node-kind badge, a mounted-count indicator, configuration/props when available, and a relationship tree. Relationships always use expandable tree branches grouped by direction and relationship kind, independent of the main Graph/Tree switcher. Selecting a relationship node opens its inspector. Breadcrumbs remain available regardless of graph/tree filters. The mounted indicator uses `chipColors.active` or `chipColors.inactive`; a separate `unresolved` chip identifies implementations that have not loaded.
 
@@ -233,3 +253,13 @@ attributes. The host still needs to allow the application scripts themselves.
 
 The development fixture at `/csp.html` in the Portless example runs with a nonce
 style policy and `style-src-attr 'none'`, and displays a style-violation counter.
+
+The eye control shows composable outlines in development. Its preference persists
+and Reset preferences clears it. Labels show the composable and owning layout;
+hover highlights its inspector node and clicking the label selects it. The
+fixed overlay follows scrolling, resizing, and DOM changes without changing app
+styles or intercepting app clicks. Intrinsic wrapper roots and single intrinsic
+children receive development markers; fragments and custom wrappers that do not
+forward DOM props are skipped. Production adds neither markers nor an overlay.
+
+Control and state SVGs are copied from [Icons8 Line Awesome](https://github.com/icons8/line-awesome), with one component per icon. The MIT license is retained in `src/icons/LICENSE.md`. No icon dependency or external image request is needed.

@@ -42,6 +42,8 @@ export interface DevtoolsConfig {
   };
   /** Show the node-details pane. Defaults to true. */
   showDetails?: boolean;
+  /** Outline mounted composables in development. */
+  showOutlines?: boolean;
 }
 
 export type ChipPalette = Record<
