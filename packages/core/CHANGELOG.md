@@ -1,5 +1,17 @@
 # @jfdevelops/react-layout
 
+## 2.1.0
+
+### Minor Changes
+
+- 0eeda7e: Expose the current state in layout, lazy-default, and scoped render contexts. Preserve the calling state through shared composables and lazy references, infer inline state unions, and add forStates to bind independently declared shared shells to their calling-state union.
+- 118301d: Add defineLazyDefaults.createRenderState with Loading/Error-specific props, validated include/custom props, and factory composables. Keep createErrorComponent as a deprecated composable-aware alias.
+
+### Patch Changes
+
+- 716b7e5: Allow render states to omit children inherited from shared layout props, including lazy route states and fallbacks.
+- 44a222e: Only synthesize uppercase compound component statics on scoped wrappers, excluding React inspection keys and keeping runtime and type exclusions aligned.
+
 ## 2.0.0
 
 ### Major Changes
