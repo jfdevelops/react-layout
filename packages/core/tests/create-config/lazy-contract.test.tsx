@@ -429,7 +429,7 @@ it('provides type-only errors and stable, typed error component factories with c
       {resource}:{error.message}
     </p>
   );
-  expect(defineLazyDefaults.createErrorComponent(Render)).toBe(Render);
+  expect(defineLazyDefaults.createErrorComponent(Render)).toBeTypeOf('function');
   const Custom = defineLazyDefaults.createErrorComponent<{ title: string }>(
     ({ title, error, resource }) => (
       <p>

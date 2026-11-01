@@ -1,3 +1,4 @@
+import { RenderStateNameContext, ReferencedRenderStateContext } from './render-state-context';
 import {
   createContext,
   createElement,
@@ -79,6 +80,7 @@ export function createStateComposable(
 ): StateComposable<Record<string, unknown>> {
   function StateReference(callProps: Record<string, unknown>) {
     const context = useContext(StateComposableContext);
+    const state = useContext(RenderStateNameContext);
     if (!context) {
       throw new LayoutConfigurationError(
         `Render state "${source.name}" must be used inside a resource layout`,
@@ -95,10 +97,9 @@ export function createStateComposable(
           : [],
       ),
     );
-    return createElement(context.scope.resolve(source), {
-      ...inherited,
-      ...callProps,
-    });
+    return createElement(ReferencedRenderStateContext.Provider, { value: state },
+      createElement(context.scope.resolve(source), { ...inherited, ...callProps }),
+    );
   }
   Object.defineProperty(StateReference, stateReferenceSource, { value: source });
   return withStateComposable(Object.assign(StateReference, {

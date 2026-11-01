@@ -11,7 +11,9 @@ const factory = createDefinedResourceLayout({
 });
 const { defineLazyDefaults, defineResourceLayout, createRenderState } = factory;
 
-const LazyError = defineLazyDefaults.createErrorComponent({
+const LazyError = defineLazyDefaults.createRenderState({
+  state: 'Error',
+  render: {
   resourceModuleLoad: ({ resource, error, retry }) => (
     <div role="alert">
       <p>
@@ -22,9 +24,13 @@ const LazyError = defineLazyDefaults.createErrorComponent({
   ),
   lazyResourceStateNotFound: ({ error }) => <p>Missing state: {error.state}</p>,
   fallback: ({ error }) => <p>{error.message}</p>,
+  },
 });
 defineLazyDefaults({
-  Loading: ({ resource }) => <p>Loading {resource}…</p>,
+  Loading: defineLazyDefaults.createRenderState({
+    state: 'Loading',
+    render: ({ resource }) => <p>Loading {resource}…</p>,
+  }),
   Error: LazyError,
 });
 
@@ -74,29 +80,48 @@ Use `typeof defineLazyDefaults.errors` for the union without importing a type.
 The property is non-enumerable and `undefined` at runtime. Use
 `LazyResourceErrorMap` when a lookup by code is useful.
 
-`createErrorComponent` accepts a render function or an object containing
-optional per-code handlers. Handlers receive the narrowed error type. A
-`fallback` handles omitted codes; without either a handler or fallback, the
-error is rethrown. The function form returns the original component reference.
-The helper can be called before registering defaults and accepts custom props:
+`defineLazyDefaults.createRenderState` accepts `state: 'Loading' | 'Error'`.
+Loading callbacks receive the factory's resource path union. Error callbacks
+also receive `error` and `retry`, or can use per-code handlers plus a `fallback`.
+A missing handler without a fallback rethrows the error. Every callback receives
+`{ composables }` as its second argument, including code handlers.
+
+Declare included option/preset props and custom schemas the same way as layout
+render states. Lazy defaults have no separate create-time configuration call,
+so shorthand includes (`true` and `'optional'`) accept values on the returned
+component; option-definition defaults still apply. Explicit include objects
+preserve `suppliedVia`: `'config'` reads factory option defaults and excludes
+that prop from the component signature, while `'component'` accepts caller
+values. Config-only includes ignore component overrides. Props are validated
+on every render.
 
 ```tsx
-const ErrorCard = defineLazyDefaults.createErrorComponent<{ title: string }>(
-  ({ title, resource, error, retry }) => (
-    <section>
+const ErrorCard = defineLazyDefaults.createRenderState({
+  state: 'Error',
+  props: {
+    include: { title: true }, // title is declared in the factory's options
+    custom: { showReload: createProp.boolean().optional() },
+  },
+  render: ({ title, resource, error, retry, showReload }, { composables }) => (
+    <composables.Layout>
       <h2>{title}</h2>
-      <p>
-        {resource}: {error.message}
-      </p>
-      <button onClick={retry}>Retry</button>
-    </section>
+      <p>{resource}: {error.message}</p>
+      {showReload && <button onClick={retry}>Retry</button>}
+    </composables.Layout>
   ),
-);
+});
 
 defineLazyDefaults({
-  Error: (props) => <ErrorCard {...props} title="Could not load this page" />,
+  Error: (props) => <ErrorCard {...props} title="Could not load this page" showReload />,
 });
 ```
+
+`createErrorComponent` remains supported as a deprecated alias for
+`createRenderState({ state: 'Error', render })`, including its generic custom
+props and handler-map forms. It now wraps the callback to provide composables;
+it no longer returns the original callback by identity. Migrate custom props to
+`props.custom` to get runtime validation. The alias is retained for a minor
+release and scheduled for removal in the next major.
 
 **Migration:** lazy `Error` components handle lazy failures only. Put an error
 boundary around the route to handle ordinary page render exceptions. Compound
@@ -178,3 +203,67 @@ configured by `forResources`. Rebinding the same resource returns the same
 component and helper. Without composables, the helper is `undefined` in both
 runtime and public types. `makeComposable` is reserved as a scoped component
 name.
+
+## Sharing a shell across render states
+
+The second argument to a state's render callback includes `state`. A shared
+state rendered through `asComposable()` sees the outer calling state, even
+through nested or lazy state references. Directly mounting another layout or
+named state starts that component's own state context.
+
+Inline render maps infer the union of their declared state names. Independent
+`createRenderState` definitions use `string`, since they can be reused by any
+calling state. When a shared shell is created before its consuming layout,
+bind its complete literal calling-state union with
+`createRenderState.forStates(...)`; TypeScript cannot infer custom states from
+a later layout declaration. This avoids incorrectly excluding custom callers
+from an unbound shell's context.
+
+```tsx
+const factory = createDefinedResourceLayout({ resources: ['appointments'] });
+const { createRenderState, defineResourceLayout } = factory;
+const createState = createRenderState.forStates('default', 'Loading', 'Error', 'NotFound');
+const Shell = createState({
+  state: 'Layout',
+  props: { custom: { children: createProp.component({ type: 'ReactNode' }).optional() } },
+  composables: (create) => ({
+    Layout: create({ name: 'Layout' }),
+    Content: create({ name: 'Content' }),
+  }),
+  render: ({ children }, { composables, state }) => (
+    <composables.Layout>
+      <header>Appointments</header>
+      <composables.Content>
+        {state === 'Loading' ? <Skeleton /> : children}
+      </composables.Content>
+    </composables.Layout>
+  ),
+});
+const shared = () => ({ Shell: Shell.asComposable() });
+const layout = defineResourceLayout({
+  render: {
+    ...createState({
+      state: 'default', composables: shared,
+      render: (_, { composables }) => <composables.Shell><AppointmentsPage /></composables.Shell>,
+    }),
+    ...createState({
+      state: 'Loading', composables: shared,
+      render: (_, { composables }) => <composables.Shell />,
+    }),
+    ...createState({
+      state: 'Error', composables: shared,
+      render: (_, { composables }) => <composables.Shell><ErrorMessage /></composables.Shell>,
+    }),
+    ...createState({
+      state: 'NotFound', composables: shared,
+      render: (_, { composables }) => <composables.Shell><NotFoundMessage /></composables.Shell>,
+    }),
+  },
+});
+```
+
+Lazy defaults created with `defineLazyDefaults.createRenderState` receive their
+literal `'Loading'` or `'Error'` state in context. They can reuse a factory
+composable backed by the same shell. Scoped component render contexts expose
+`state` alongside their sibling components; `state` is reserved as a scoped
+component name.

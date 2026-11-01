@@ -223,3 +223,7 @@ export type { LazyResourceError, LazyResourceErrorMap } from './errors/lazy-reso
 export type { LazyOptions, LazyHandle, LoadStatus, LazyResourceErrorProps, CreateLazyErrorComponent, LazyErrorHandlers } from './lazy/types';
 
 export type { ScopedComponentRenderFn } from './lazy/scoped-content';
+
+export type { CreateLazyRenderState, LazyDefaultState } from './lazy/create-render-state';
+
+export type { BuiltinRenderStateName } from './create-config/render-state';

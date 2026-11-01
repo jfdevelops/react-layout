@@ -236,7 +236,8 @@ export type ScopedCreateResourceLayoutFn<
     InProps,
     Composables,
     Arguments,
-    CustomProps
+    CustomProps,
+    'default' | Extract<keyof States, string>
   >;
   /** Builds one reusable entry for the selected resources. */
   createResourceComponents: ScopedCreateResourceComponents<
@@ -246,7 +247,8 @@ export type ScopedCreateResourceLayoutFn<
     Arguments,
     CustomProps,
     {},
-    {}
+    {},
+    'default' | Extract<keyof States, string>
   >;
   forResource: ScopedCreateLayoutForResource<
     Resources,

@@ -1,3 +1,9 @@
+import {
+  RenderStateNameContext,
+  ReferencedRenderStateContext,
+  RenderStateFallback,
+} from './render-state-context';
+import type { OptionalStateChildren } from './render-state';
 import { LazyBoundary } from '../lazy/lazy-boundary';
 import { LazyFallbackPropsContext } from '../lazy/fallback-props';
 import { lazyDefaultsSymbol, lazyStatesSymbol, type LazyResourceStates } from '../lazy/types';
@@ -165,8 +171,10 @@ export type LayoutProps<
 
 type LayoutRenderContext<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  Composables extends ComposableComponents
+  Composables extends ComposableComponents,
+  States extends string = import('./render-state').BuiltinRenderStateName
 > = {
+  state: States;
   composables: LayoutRenderComposables<Composables>;
   inProps: Record<string, unknown>;
   /**
@@ -210,7 +218,11 @@ class RenderStateBoundary extends ReactComponent<
 
   render() {
     if (this.state.error !== undefined) {
-      return this.props.fallback(this.state.error, this.retry);
+      return (
+        <RenderStateFallback state="Error">
+          {this.props.fallback(this.state.error, this.retry)}
+        </RenderStateFallback>
+      );
     }
 
     return this.props.children;
@@ -580,7 +592,8 @@ type LayoutRenderFunction<
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
   IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
-  CustomProps extends InPropsObject
+  CustomProps extends InPropsObject,
+  States extends string = import('./render-state').BuiltinRenderStateName
 > = (
   props: LayoutRenderProps<
     Resources,
@@ -589,7 +602,7 @@ type LayoutRenderFunction<
     IncludeProps,
     CustomProps
   >,
-  context: LayoutRenderContext<Resources, Composables>
+  context: LayoutRenderContext<Resources, Composables, States>
 ) => JSX.Element;
 
 type RenderStateComposables<Input> = Input extends {
@@ -632,7 +645,8 @@ type ContextualStateRenderFunction<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
-  Input
+  Input,
+  States extends string = import('./render-state').BuiltinRenderStateName
 > = LayoutRenderFunction<
   Resources,
   Options,
@@ -643,7 +657,8 @@ type ContextualStateRenderFunction<
     Composables & RenderStateComposables<Input>,
     Input
   >,
-  RenderStateCustomProps<Input>
+  RenderStateCustomProps<Input>,
+  States
 >;
 
 type ContextualStateLayoutProps<
@@ -690,7 +705,8 @@ type ContextualLayoutRenderState<
       Options,
       Composables,
       BaseInclude,
-      BaseCustom
+      BaseCustom,
+      keyof States & string
     >
   | CreatedRenderState
   | (RenderStateConfiguration<Input> & {
@@ -708,7 +724,8 @@ type ContextualLayoutRenderState<
         Resources,
         Options,
         Composables,
-        PlainStateWithDefaults<Input, BaseInclude, BaseCustom>
+        PlainStateWithDefaults<Input, BaseInclude, BaseCustom>,
+        keyof States & string
       >;
       state?: RenderStateName;
     });
@@ -820,6 +837,7 @@ export type TypedInlineRenderState<
 };
 
 type CreatedRenderState =
+  | import('./render-state').CreatedRenderStateInput
   | import('./render-state').DeferredRenderState<AnyRenderStateDefinition>
   | import('./render-state').LazyRenderState<AnyRenderStateDefinition>;
 
@@ -1111,6 +1129,29 @@ type RenderStateIncludeProps<Input> = UnwrapRenderState<Input> extends {
   ? IncludeProps
   : {};
 
+function optionalStateChildren(props: AnyRenderStateDefinition['props']) {
+  if (!props) return props;
+  const children = props.custom?.children as (AnyBuiltPropDefinition & { optional?: () => AnyBuiltPropDefinition }) | undefined;
+  const childrenInclude = props.include?.children;
+  return {
+    ...props,
+    include: props.include && {
+      ...props.include,
+      ...('children' in props.include ? {
+        children: typeof childrenInclude === 'object' && childrenInclude !== null
+          ? { ...childrenInclude, required: false }
+          : childrenInclude === true || childrenInclude === 'required'
+          ? { required: false, suppliedVia: 'config' }
+          : 'optional',
+      } : {}),
+    },
+    custom: props.custom && {
+      ...props.custom,
+      ...(children ? { children: children.visibility === 'required' ? children.optional?.() ?? children : children } : {}),
+    },
+  };
+}
+
 function getSynchronousRenderStateDefinition(
   input: unknown,
   fallbackProps?: LayoutProps<any, any, any, any, any>
@@ -1146,7 +1187,7 @@ type ResourceLayoutStateComponents<
   ? {
       [State in Exclude<keyof States & string, 'default'>]: BaseComponent<
         `${Name}.${State}`,
-        Show<
+        Show<OptionalStateChildren<
           ResolveProps<RenderStateCustomProps<States[State]>> &
             ResolvedIncludedComponentProps<
               MergedLayoutInProps<Resources, Options, Composables>,
@@ -1155,10 +1196,10 @@ type ResourceLayoutStateComponents<
                 LayoutIncludeProps<Resources, Options, Composables>
               >
             >
-        >
+        >>
       > &
         ((
-          props: Show<
+          props: Show<OptionalStateChildren<
             ResolveProps<RenderStateCustomProps<States[State]>> &
               ResolvedIncludedComponentProps<
                 MergedLayoutInProps<Resources, Options, Composables>,
@@ -1167,7 +1208,7 @@ type ResourceLayoutStateComponents<
                   LayoutIncludeProps<Resources, Options, Composables>
                 >
               >
-          >
+          >>
         ) => JSX.Element) & {
           readonly resource: Resource;
         };
@@ -1659,7 +1700,8 @@ function defineResourceLayoutImpl<
     boolean
   >,
   inheritedStateScope?: RenderStateScope,
-  inheritedInspection?: ActiveInspection
+  inheritedInspection?: ActiveInspection,
+  renderStateName = 'default'
 ): DefinedResourceLayout<
   Resources,
   InProps,
@@ -2074,6 +2116,7 @@ function defineResourceLayoutImpl<
       ),
       name: layoutContext.name,
       inProps: splitInProps,
+      state: renderStateName,
     } as LayoutRenderContext<Resources, Composables>;
     const stateComponents: Record<
       string,
@@ -2104,11 +2147,16 @@ function defineResourceLayoutImpl<
         );
       }, []);
 
+      const state = useContext(RenderStateNameContext);
       if (CreatedDefaultStateComponent) {
-        return <CreatedDefaultStateComponent {...renderProps} />;
+        return (
+          <ReferencedRenderStateContext.Provider value={state}>
+            <CreatedDefaultStateComponent {...renderProps} />
+          </ReferencedRenderStateContext.Provider>
+        );
       }
 
-      return render(renderProps, mergedRenderContext);
+      return render(renderProps, { ...mergedRenderContext, state });
     }
 
     function Component(
@@ -2120,6 +2168,8 @@ function defineResourceLayoutImpl<
           >
       >
     ) {
+      const referencedState = useContext(ReferencedRenderStateContext);
+      const state = referencedState ?? renderStateName;
       const publishResource = useResourceLayoutShellPublisher();
       const fallbackOptions = useContext(LazyFallbackPropsContext);
 
@@ -2217,19 +2267,23 @@ function defineResourceLayoutImpl<
       >;
 
       const rendered = (
-        <ResourceProvider resource={layoutContext.resource}>
-          <LayoutComposablePresetProvider value={composablePresetProps}>
-            <StateComposableContext.Provider
-              value={{
-                scope: stateScope,
-                props: layoutRenderProps,
-                definitions: mergedResolvedInProps,
-              }}
-            >
-              <RenderDefaultState renderProps={layoutRenderProps} />
-            </StateComposableContext.Provider>
-          </LayoutComposablePresetProvider>
-        </ResourceProvider>
+        <ReferencedRenderStateContext.Provider value={undefined}>
+          <RenderStateNameContext.Provider value={state}>
+            <ResourceProvider resource={layoutContext.resource}>
+              <LayoutComposablePresetProvider value={composablePresetProps}>
+                <StateComposableContext.Provider
+                  value={{
+                    scope: stateScope,
+                    props: layoutRenderProps,
+                    definitions: mergedResolvedInProps,
+                  }}
+                >
+                  <RenderDefaultState renderProps={layoutRenderProps} />
+                </StateComposableContext.Provider>
+              </LayoutComposablePresetProvider>
+            </ResourceProvider>
+          </RenderStateNameContext.Provider>
+        </ReferencedRenderStateContext.Provider>
       );
 
       const ErrorComponent = stateComponents.Error;
@@ -2386,7 +2440,11 @@ function defineResourceLayoutImpl<
         const ErrorComponent =
           fallbackStateName === 'Error' ? undefined : stateComponents.Error;
         const rendered = (
-          <Suspense fallback={LoadingComponent ? <LoadingComponent /> : null}>
+          <Suspense fallback={
+            <RenderStateFallback state="Loading">
+              {LoadingComponent ? <LoadingComponent /> : null}
+            </RenderStateFallback>
+          }>
             <DeferredState {...props} />
           </Suspense>
         );
@@ -2463,7 +2521,7 @@ function defineResourceLayoutImpl<
           options: inProps,
           layout: {
             composables: stateComposables,
-            props: mergeLayoutProps(legacyLayoutProps, definition.props),
+            props: optionalStateChildren(mergeLayoutProps(legacyLayoutProps, definition.props)),
             render: stateRender,
           },
         } as never,
@@ -2471,7 +2529,8 @@ function defineResourceLayoutImpl<
         {
           ...activeInspection,
           state: inspectedState ?? getReferenceStateId(definition, stateName),
-        }
+        },
+        stateName
       );
       const StateComponent = stateLayout.createResourceLayout({
         ...layoutOptions,

@@ -1,3 +1,4 @@
+import { RenderStateFallback } from '../create-config/render-state-context';
 import {
   Component,
   Suspense,
@@ -34,11 +35,13 @@ class LazyErrorBoundary extends Component<
     if (!isLazyResourceError(this.state.error) || !ErrorComponent)
       throw this.state.error;
     return (
-      <ErrorComponent
-        error={this.state.error}
-        retry={this.retry}
-        resource={resource}
-      />
+      <RenderStateFallback state="Error">
+        <ErrorComponent
+          error={this.state.error}
+          retry={this.retry}
+          resource={resource}
+        />
+      </RenderStateFallback>
     );
   }
 }
@@ -75,7 +78,9 @@ export function LazyBoundary({
         rerender();
       }}
     >
-      <Suspense fallback={fallback}>
+      <Suspense fallback={
+        <RenderStateFallback state="Loading">{fallback}</RenderStateFallback>
+      }>
         <Current {...componentProps} />
       </Suspense>
     </LazyErrorBoundary>
