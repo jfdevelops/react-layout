@@ -15,8 +15,12 @@ it.each(['typescript-5-9', 'typescript'])(
       fileURLToPath(new URL('../..', import.meta.url)),
     ).replaceAll('\\', '/');
     const file = `${root}/tests/create-config/reusable-probe.ts`;
+    const entry =
+      process.env.REACT_LAYOUT_TYPE_ENTRY === 'dist'
+        ? '../../dist/index.mjs'
+        : '../../src';
     const source = `
-    import { createDefinedResourceLayout, createProp } from '../../src';
+    import { createDefinedResourceLayout, createProp } from '${entry}';
     const { createReusable } = createDefinedResourceLayout({
       resources: ['users'],
       options: {
@@ -27,8 +31,50 @@ it.each(['typescript-5-9', 'typescript'])(
     createReusable({ props: { include: { /*sources*/ } }, fn: () => null });
     createReusable({ props: { include: { options: { /*options*/ } } }, fn: () => null });
     createReusable({ props: { include: { options: { meta: { /*nested*/ } } } }, fn: () => null });
+    createReusable({ select: { /*selectedSources*/ }, fn: () => null });
+    createReusable({ select: { options: { /*selectedOptions*/ } }, fn: () => null });
+    createReusable({
+      props: { include: { resources: resources => resources.raw()[0] } },
+      fn: (props) => {
+        const input: 'users' = props.resources;
+        return input;
+      },
+    })();
+    const /*hover*/resolvedHelper = createReusable({
+      props: { include: { options: { meta: { owner: owner => owner.toUpperCase() } } } },
+      select: { options: { title: title => title.length } },
+      fn: (props) => {
+        const owner: string = props.meta.owner;
+        const length: number = props.title;
+        return { owner, length };
+      },
+    });
+    resolvedHelper({ options: { meta: { owner: 'jfdevelops' }, title: 'Docs' } });
     const empty = createDefinedResourceLayout({ resources: ['users'] });
     empty.createReusable({ props: { include: { /*empty*/ } }, fn: () => null });
+    // @ts-expect-error Selected source values must be supplied.
+    resolvedHelper({});
+    // @ts-expect-error Every required selected field must be supplied.
+    resolvedHelper({ options: { title: 'Docs', meta: {} } });
+    // @ts-expect-error Sources are resolved values, not validators.
+    resolvedHelper({ options: { title: createProp.string(), meta: { owner: 'owner' } } });
+    // @ts-expect-error Unselected fields are not part of the input contract.
+    resolvedHelper({ options: { title: 'Docs', meta: { owner: 'owner', repo: 'extra' } } });
+    // @ts-expect-error Unknown option selections are rejected.
+    createReusable({ select: { options: { title: true, missing: true } }, fn: () => null });
+    // @ts-expect-error Unknown nested selections are rejected.
+    createReusable({ select: { options: { meta: { missing: true } } }, fn: () => null });
+    // @ts-expect-error Primitive option values cannot be drilled into.
+    createReusable({ select: { options: { title: { value: true } } }, fn: () => null });
+    // @ts-expect-error The callback accepts one resolved argument.
+    createReusable({ fn: (props, selected) => selected });
+    // @ts-expect-error No option source exists on an unconfigured factory.
+    empty.createReusable({ select: { options: true }, fn: () => null });
+    const callerResources = createReusable({ props: { include: { resources: true } }, fn: props => props.resources });
+    // @ts-expect-error Caller resource values must be configured resource names.
+    callerResources({ resources: ['missing'] });
+    // @ts-expect-error Included caller props remain required.
+    callerResources({});
   `;
     const config = ts.readConfigFile(`${root}/tsconfig.json`, ts.sys.readFile);
     const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, root);
@@ -55,8 +101,21 @@ it.each(['typescript-5-9', 'typescript'])(
           .getSemanticDiagnostics(file)
           .map((d) => ts.flattenDiagnosticMessageText(d.messageText, '\n')),
       ).toEqual([]);
+      const hover = ts.displayPartsToString(
+        service.getQuickInfoAtPosition(
+          file,
+          source.indexOf('/*hover*/') + '/*hover*/'.length,
+        )?.displayParts,
+      );
+      expect(hover).toContain('owner: string');
+      expect(hover).toContain('length: number');
+      expect(hover).not.toMatch(
+        /ReusableInput|SelectedOptionProps|ResolvedBuiltPropShape|SourceValues|Expanded</,
+      );
       for (const [marker, expected] of Object.entries({
         sources: ['options', 'resources'],
+        selectedSources: ['options', 'resources'],
+        selectedOptions: ['meta', 'title'],
         options: ['meta', 'title'],
         nested: ['owner', 'repo'],
         empty: ['resources'],

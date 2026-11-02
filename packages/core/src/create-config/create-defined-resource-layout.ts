@@ -510,7 +510,7 @@ export function createDefinedResourceLayout<
   };
 
   return inspection.attach({
-    createReusable: createReusableBuilder(resources, options),
+    createReusable: createReusableBuilder<Resources, Options>(resources, options),
     createRenderState: createRenderStateBuilder<Resources, Options, Composables, SharedInclude, SharedCustom>(
       {
         props: configuration.props,
