@@ -1,5 +1,11 @@
 # @jfdevelops/react-layout-validator
 
+## 0.4.0
+
+### Minor Changes
+
+- f9ebf87: Add `createProp.array(itemDefinition)` with inferred element types, optional arrays, unions, and indexed validation errors. Re-export `createProp` from the composables package.
+
 ## 0.3.1
 
 ### Patch Changes

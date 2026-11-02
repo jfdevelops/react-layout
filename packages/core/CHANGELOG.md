@@ -1,5 +1,20 @@
 # @jfdevelops/react-layout
 
+## 2.3.0
+
+### Minor Changes
+
+- 9638939: Expose optional React children in render props and generated component calls by default. Reserve `props.custom.children: 'required'` for controlling the built-in content slot, with validation. Forward actual children to defined-composable render callbacks and the shell's first render argument.
+- 20882b5: Expose `createReusable` from `createDefinedResourceLayout` for ordinary typed logic functions. Select shared option definitions recursively, preserve unions and optional fields, add custom validators, and infer arbitrary synchronous or asynchronous return values.
+
+### Patch Changes
+
+- Updated dependencies [f9ebf87]
+- Updated dependencies [dbd131a]
+- Updated dependencies [9638939]
+  - @jfdevelops/react-layout-validator@0.4.0
+  - @jfdevelops/react-layout-composables@0.5.0
+
 ## 2.2.0
 
 ### Minor Changes
