@@ -128,6 +128,43 @@ the original declarations through `resources.raw()`. Both calls accept an
 optional selector, while `pick`, `omit`, and `isResource` retain their existing
 behavior.
 
+Use the returned `createReusable` helper for custom logic that shares the
+factory's option types and validators:
+
+```ts
+const { createReusable } = createDefinedResourceLayout({
+  resources: ['panedeck', 'material-ui-helper', 'jfdevelops'],
+  options: {
+    meta: createProp.object({
+      owner: createProp.string(),
+      repo: createProp.string(),
+    }),
+  },
+});
+
+export const createUrl = createReusable({
+  props: {
+    include: { options: { meta: true } },
+    custom: { protocol: createProp.string.enum(['https', 'http']) },
+  },
+  fn: ({ meta, protocol }) => `${protocol}://github.com/${meta.owner}/${meta.repo}`,
+});
+
+createUrl({ meta: { owner: 'jfdevelops', repo: 'react-layout' }, protocol: 'https' });
+```
+
+`include` suggests `resources` and, when defined, `options`. Selected options
+become function arguments directly: `options: { meta: true }` exposes `meta`.
+Use `options: true` for all option definitions, or drill into object definitions
+with `options: { meta: { owner: true } }` to accept `{ meta: { owner: string } }`.
+Union definitions are selected whole to preserve their discriminants. Optional
+definitions stay optional. `resources: true` accepts a `resources` array of the
+configured resource keys. Inputs are validated before `fn` runs, and custom
+definitions must use different names from selected props. Return types, including
+promises, are inferred. A helper with no required inputs can be called without
+arguments. Shared render-state `props` contracts do not implicitly add inputs
+to a reusable function; each helper declares its own contract.
+
 Resource configs can also be assembled independently without losing their
 resource-specific types:
 
