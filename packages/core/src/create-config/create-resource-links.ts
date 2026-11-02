@@ -62,6 +62,7 @@ export interface DefineResourceIconInputResult<
 > {
   render(
     render: (options: {
+      children?: ReactNode;
       resource: LayoutRenderResourcesAccessor<Resources>;
       input: ResolveResourceIconInput<Definition>;
     }) => ReactNode,
@@ -75,6 +76,7 @@ export interface DefineResourceIconFn<
 > {
   <Icon extends ElementType = ElementType>(
     render: (options: {
+      children?: ReactNode;
       resource: LayoutRenderResourcesAccessor<Resources>;
       Icon: Icon;
     }) => ReactNode,
@@ -887,6 +889,7 @@ function createDefineIcon<
 >(): DefineResourceIconFn<Resources> {
   function defineIcon<Icon extends ElementType = ElementType>(
     render: (options: {
+      children?: ReactNode;
       resource: LayoutRenderResourcesAccessor<Resources>;
       Icon: Icon;
     }) => ReactNode,
@@ -920,6 +923,7 @@ function createDefineIcon<
     return {
       render(
         render: (options: {
+      children?: ReactNode;
           resource: LayoutRenderResourcesAccessor<Resources>;
           input: ResolveResourceIconInput<Definition>;
         }) => ReactNode,

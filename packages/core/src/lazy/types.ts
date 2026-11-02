@@ -1,3 +1,4 @@
+import type { WithChildren } from '@jfdevelops/react-layout-composables';
 import type { ComponentType, ReactNode } from 'react';
 import type { LoadStatus } from '@jfdevelops/react-layout-devtools-core';
 import type {
@@ -47,7 +48,7 @@ export type LazyErrorHandlers<
   Context = never,
 > = {
   [Code in LazyResourceError['code']]?: (
-    props: Custom &
+    props: WithChildren<Custom> &
       Omit<LazyResourceErrorProps<Resource>, 'error'> & {
         error: LazyResourceErrorMap[Code];
       },
@@ -55,7 +56,7 @@ export type LazyErrorHandlers<
   ) => ReactNode;
 } & {
   fallback?: (
-    props: Custom & LazyResourceErrorProps<Resource>,
+    props: WithChildren<Custom> & LazyResourceErrorProps<Resource>,
     ...context: ErrorHandlerContext<Context>
   ) => ReactNode;
 };
@@ -63,13 +64,13 @@ export type LazyErrorHandlers<
 export type CreateLazyErrorComponent<Resource, Context = never> = {
   <Custom extends object = {}>(
     render: (
-      props: Custom & LazyResourceErrorProps<Resource>,
+      props: WithChildren<Custom> & LazyResourceErrorProps<Resource>,
       ...context: ErrorHandlerContext<Context>
     ) => ReactNode,
-  ): ComponentType<Custom & LazyResourceErrorProps<Resource>>;
+  ): ComponentType<WithChildren<Custom> & LazyResourceErrorProps<Resource>>;
   <Custom extends object = {}>(
     handlers: LazyErrorHandlers<Resource, Custom, Context>,
-  ): ComponentType<Custom & LazyResourceErrorProps<Resource>>;
+  ): ComponentType<WithChildren<Custom> & LazyResourceErrorProps<Resource>>;
 };
 
 /** Internal factory defaults propagated to layouts without publishing metadata. */

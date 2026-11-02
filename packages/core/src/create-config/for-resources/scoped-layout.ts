@@ -1,3 +1,4 @@
+import type { CustomPropsObject } from '../../custom-props';
 import type { LayoutNameInput } from '../layout-name';
 import type {
   ComposableComponents,
@@ -61,7 +62,7 @@ export type ScopedCreateResourceLayoutFnImpl<
   Composables extends ComposableComponents,
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   Arguments extends ReadonlyArray<unknown>,
-  CustomProps extends InPropsObject,
+  CustomProps extends CustomPropsObject,
   DefaultNamespace extends boolean = false,
   States = {},
   DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
@@ -104,7 +105,7 @@ export type ScopedCreateLayoutForResource<
   Composables extends ComposableComponents,
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   Arguments extends ReadonlyArray<unknown>,
-  CustomProps extends InPropsObject,
+  CustomProps extends CustomPropsObject,
   DefaultNamespace extends boolean = false,
   States = {},
   DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
@@ -163,7 +164,7 @@ export type ScopedCreateResourceLayoutFn<
   Composables extends ComposableComponents,
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   Arguments extends ReadonlyArray<unknown>,
-  CustomProps extends InPropsObject,
+  CustomProps extends CustomPropsObject,
   DefaultNamespace extends boolean = false,
   States = {},
   DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
@@ -287,7 +288,7 @@ export type CreateResourceLayoutForResourcesFn<
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents = {},
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
-  CustomProps extends InPropsObject = {},
+  CustomProps extends CustomPropsObject = {},
   DefaultNamespace extends boolean = false,
   States = {},
   DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,

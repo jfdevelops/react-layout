@@ -116,7 +116,7 @@ describe('resource layout render states', () => {
     render(<Empty.Loading />);
     expect(screen.getByText('No configured children')).toBeInTheDocument();
     () => {
-      // @ts-expect-error config-only children are not component props
+      // The built-in slot accepts children; config-only includes still own its value.
       <Users.Loading children="Unexpected" />;
     };
   });

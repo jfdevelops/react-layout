@@ -1,3 +1,5 @@
+import type { WithChildren } from '@jfdevelops/react-layout-composables';
+import type { CustomPropsObject, ResolveRenderProps } from './custom-props';
 import { LayoutConfigurationError } from './errors';
 import type {
   ComposableComponents,
@@ -22,7 +24,7 @@ export type { InPropsObject };
  * resource render context (top-level).
  */
 export type PropsContextRender<RenderProps, Context, Result = unknown> = (
-  props: RenderProps,
+  props: WithChildren<RenderProps>,
   context: Context,
 ) => Result;
 
@@ -237,9 +239,9 @@ export type LayoutRenderProps<
   IncludeProps extends IncludedProps<
     MergedLayoutInProps<Resources, Options, Composables>
   > = {},
-  CustomProps extends InPropsObject = {},
+  CustomProps extends CustomPropsObject = {},
 > = Show<
-  ResolveProps<CustomProps> &
+  ResolveRenderProps<CustomProps> &
     ResolvedIncludedProps<
       MergedLayoutInProps<Resources, Options, Composables>,
       IncludeProps

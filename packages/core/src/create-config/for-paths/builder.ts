@@ -1,4 +1,5 @@
-import type { JSX } from 'react';
+import type { JSX, ReactNode } from 'react';
+import type { WithChildren } from '@jfdevelops/react-layout-composables';
 import {
   InvalidComponentError,
   InvalidPathError,
@@ -65,6 +66,7 @@ export type ForPathsRenderContext<
   Paths extends ReadonlyArray<string>,
   Params,
 > = {
+  children?: ReactNode;
   /** Declared params merged with the props the component was called with. */
   params: Params;
   /** Creates a getter for any of the paths this component was built for. */
@@ -101,7 +103,7 @@ export interface RenderedPathComponent<
   Params,
   DisplayName extends string = string,
 > {
-  (props: Params): JSX.Element;
+  (props: WithChildren<Params>): JSX.Element;
   displayName: DisplayName;
   /** Type-only view of the props this component accepts. */
   _args: Params;
@@ -487,6 +489,7 @@ export function createTargetPathBuilder<
         validateParams(params, state, validationSets);
 
         return {
+          children: props.children as ReactNode,
           params,
           getComponentForPath: (path: string) => {
             if (!state.paths.includes(path)) {

@@ -1,6 +1,17 @@
+import {
+  normalizeCustomProps,
+  type CustomPropsInput,
+  type NormalizedCustomProps,
+  type CustomPropsObject,
+  type ResolveRenderProps,
+} from '../custom-props';
 import { createLazyLoader, type LazyLoader } from '../lazy/create-lazy-loader';
 import { inspectLazy, withLazyHandle } from '../lazy/inspection';
-import { type LazyHandle, type LazyOptions, type LazyResourceStates } from '../lazy/types';
+import type {
+  LazyHandle,
+  LazyOptions,
+  LazyResourceStates,
+} from '../lazy/types';
 import { LazyResourceModuleShapeError } from '../errors/lazy-resource-error';
 import type { InspectionStore } from '@jfdevelops/react-layout-devtools-core';
 export const lazyLoaderSymbol = Symbol('lazyLoader');
@@ -26,7 +37,7 @@ import {
   type StateComposable,
   type StateComposableHandle,
 } from './state-composable';
-import type { ResolveProps } from '@jfdevelops/react-layout-validator';
+
 import type {
   ComposableComponents,
   CreateLayoutComposable,
@@ -71,7 +82,7 @@ export type AnyRenderStateDefinition = {
   ) => ComposableComponents;
   props?: {
     include?: Record<string, unknown>;
-    custom?: InPropsObject;
+    custom?: CustomPropsObject;
   };
   render: (props: any, context: any) => JSX.Element;
   state?: string;
@@ -147,9 +158,13 @@ export type RenderStateContext<
   retry?: () => void;
 };
 
-/** State callers may omit children even when a shared layout requires them. */
-export type OptionalStateChildren<Props> = Omit<Props, 'children'> &
-  Partial<Pick<Props, Extract<'children', keyof Props>>>;
+/** Legacy state contracts may omit children; explicit shorthand stays required. */
+export type OptionalStateChildren<Props, Custom = {}> = Custom extends {
+  children: 'required';
+}
+  ? Props
+  : Omit<Props, 'children'> &
+      Partial<Pick<Props, Extract<'children', keyof Props>>>;
 
 /**
  * Resolves one state's custom props and explicitly included option/composable
@@ -162,20 +177,17 @@ export type RenderStateProps<
   IncludeProps extends IncludedProps<
     MergedLayoutInProps<Resources, Options, Composables>
   >,
-  CustomProps extends InPropsObject
-> = OptionalStateChildren<LayoutRenderProps<
-  Resources,
-  Options,
-  Composables,
-  IncludeProps,
+  CustomProps extends CustomPropsObject,
+> = OptionalStateChildren<
+  LayoutRenderProps<Resources, Options, Composables, IncludeProps, CustomProps>,
   CustomProps
->>;
+>;
 
 type TypedRenderStateDefinition<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   State extends string,
-  CustomProps extends InPropsObject,
+  CustomProps extends CustomPropsObject,
   SharedComposables extends ComposableComponents,
   StateComposables extends ComposableComponents,
   IncludeProps extends IncludedProps<
@@ -188,13 +200,13 @@ type TypedRenderStateDefinition<
   SharedInclude extends IncludedProps<
     MergedLayoutInProps<Resources, Options, SharedComposables>
   > = {},
-  SharedCustom extends InPropsObject = {},
+  SharedCustom extends CustomPropsObject = {},
   KnownStates extends string = string
 > = {
   composables?: RenderStateComposablesDefinition<Resources, StateComposables>;
   props?: {
     include?: IncludeProps;
-    custom?: CustomProps;
+    custom?: CustomProps & CustomPropsInput<CustomProps>;
   };
   render: (
     props: RenderStateProps<
@@ -224,7 +236,7 @@ export type TypedRenderStateCallback<
   SharedInclude extends IncludedProps<
     MergedLayoutInProps<Resources, Options, SharedComposables>
   > = {},
-  SharedCustom extends InPropsObject = {},
+  SharedCustom extends CustomPropsObject = {},
   KnownStates extends string = string
 > = (
   props: RenderStateProps<
@@ -263,7 +275,7 @@ type StateName<Definition> = Definition extends DeferredRenderState<
  */
 export type RenderStateFragment<
   Definition,
-  CallProps extends object = ResolveProps<StateCustomProps<Definition>>
+  CallProps extends object = ResolveRenderProps<StateCustomProps<Definition>>
 > = {
   [State in StateName<NormalizeRenderStateDefinition<Definition>>]: Definition;
 } & {
@@ -271,7 +283,7 @@ export type RenderStateFragment<
 } & StateComposableHandle<CallProps>;
 
 type StateCustomProps<Input> = NormalizeStateInput<Input> extends {
-  props?: { custom?: infer Props extends InPropsObject };
+  props?: { custom?: infer Props extends CustomPropsObject };
 }
   ? Props
   : {};
@@ -337,16 +349,19 @@ export type RenderStateCallProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
-  Input
-> = OptionalStateChildren<ResolveProps<StateCustomProps<Input>> &
-  StateComponentProps<
-    MergedLayoutInProps<
-      Resources,
-      Options,
-      Composables & StateLocalComposables<Input>
+  Input,
+> = OptionalStateChildren<
+  ResolveRenderProps<StateCustomProps<Input>> &
+    StateComponentProps<
+      MergedLayoutInProps<
+        Resources,
+        Options,
+        Composables & StateLocalComposables<Input>
+      >,
+      StateIncludes<Input>
     >,
-    StateIncludes<Input>
-  >>;
+  StateCustomProps<Input>
+>;
 
 /** Typed references to all the states declared in an inline render map. */
 export type RenderStateReferences<
@@ -402,12 +417,12 @@ export interface RenderStateOverloads<
   SharedInclude extends IncludedProps<
     MergedLayoutInProps<Resources, Options, SharedComposables>
   > = {},
-  SharedCustom extends InPropsObject = {},
+  SharedCustom extends CustomPropsObject = {},
   KnownStates extends string = string
 > {
   <
     const State extends RenderStateName,
-    const CustomProps extends InPropsObject = {},
+    const CustomProps extends CustomPropsObject = {},
     const StateComposables extends ComposableComponents = {},
     const IncludeProps extends IncludedProps<
       MergedLayoutInProps<
@@ -450,7 +465,7 @@ export interface RenderStateOverloads<
     >
   >;
   <
-    const CustomProps extends InPropsObject = {},
+    const CustomProps extends CustomPropsObject = {},
     const StateComposables extends ComposableComponents = {},
     const IncludeProps extends IncludedProps<
       MergedLayoutInProps<
@@ -549,9 +564,9 @@ type FromStateEntry<
   ? Definition & CreatedRenderStateInput
   : LazyRenderState<Definition>;
 
-type ReferenceSchemas<Ref extends RenderStateReference> = StateCustomProps<
+type ReferenceSchemas<Ref extends RenderStateReference> = NormalizedCustomProps<StateCustomProps<
   ReferenceDefinition<Ref>
-> &
+>> &
   MergePresetProps<StateLocalComposables<ReferenceDefinition<Ref>>>;
 
 type DefaultReferenceIncludes<
@@ -589,9 +604,9 @@ type FromStateInProps<
   Options,
   Shared & StateLocalComposables<ReferenceDefinition<Ref>> & Local
 > &
-  StateCustomProps<
+  NormalizedCustomProps<StateCustomProps<
     ReferenceDefinition<Ref>
-  > extends infer Props extends InPropsObject
+  >> extends infer Props extends InPropsObject
   ? Props
   : {};
 
@@ -615,7 +630,7 @@ type ReferenceCarriedProps<
     keyof FromStateInProps<Resources, Options, Shared, Ref, {}>
   >
 > extends infer Selected extends InPropsObject
-  ? ResolveProps<Selected>
+  ? ResolveRenderProps<Selected>
   : {};
 
 type ReferenceRenderProps<
@@ -668,13 +683,13 @@ type FromStateDefinition<
   Shared extends ComposableComponents,
   Ref extends RenderStateReference,
   State extends string,
-  CustomProps extends InPropsObject,
+  CustomProps extends CustomPropsObject,
   Local extends ComposableComponents,
   Include
 > = {
   state: State;
   props?: {
-    custom?: CustomProps;
+    custom?: CustomProps & CustomPropsInput<CustomProps>;
     include?: ReferenceIncludes<Ref, CustomProps, Include>;
   };
   composables: RenderStateComposablesDefinition<
@@ -689,7 +704,7 @@ type FromStateDefinition<
     >
   >;
   render: (
-    props: OptionalStateChildren<ResolveProps<CustomProps> &
+    props: OptionalStateChildren<ResolveRenderProps<CustomProps> &
       ResolvedIncludedProps<
         FromStateInProps<Resources, Options, Shared, Ref, Local>,
         ReferenceIncludes<
@@ -701,7 +716,7 @@ type FromStateDefinition<
         >
           ? Selected
           : {}
-      >>,
+      >, CustomProps>,
     context: RenderStateContext<
       Shared &
         FromStateComposables<
@@ -726,7 +741,7 @@ export type CreateRenderStateFromState<
 > = <
   const Ref extends RenderStateReference,
   const State extends RenderStateName = 'default',
-  const CustomProps extends InPropsObject = {},
+  const CustomProps extends CustomPropsObject = {},
   const Local extends ComposableComponents = {},
   const Include extends
     | IncludedProps<FromStateInProps<Resources, Options, Shared, Ref, Local>>
@@ -737,7 +752,7 @@ export type CreateRenderStateFromState<
   lazy?: boolean;
   state?: State;
   props?: {
-    custom?: CustomProps;
+    custom?: CustomProps & CustomPropsInput<CustomProps>;
     include?: Include &
       Record<
         Exclude<
@@ -797,7 +812,7 @@ export interface CreateRenderState<
   SharedInclude extends IncludedProps<
     MergedLayoutInProps<Resources, Options, SharedComposables>
   > = {},
-  SharedCustom extends InPropsObject = {}
+  SharedCustom extends CustomPropsObject = {}
 > extends RenderStateOverloads<
     Resources,
     Options,
@@ -874,7 +889,7 @@ export type CreateRenderStateBuilderArguments<
   SharedInclude extends IncludedProps<
     MergedLayoutInProps<Resources, Options, SharedComposables>
   > = {},
-  SharedCustom extends InPropsObject = {}
+  SharedCustom extends CustomPropsObject = {}
 > = {
   props?: { include?: SharedInclude; custom?: SharedCustom };
   /** Shared composables whose components and preset props every state can use. */
@@ -893,7 +908,7 @@ export type CreateRenderStateBuilderResult<
   SharedInclude extends IncludedProps<
     MergedLayoutInProps<Resources, Options, SharedComposables>
   > = {},
-  SharedCustom extends InPropsObject = {}
+  SharedCustom extends CustomPropsObject = {}
 > = CreateRenderState<
   Resources,
   Options,
@@ -913,7 +928,7 @@ export function createRenderStateBuilder<
   SharedInclude extends IncludedProps<
     MergedLayoutInProps<Resources, Options, SharedComposables>
   > = {},
-  SharedCustom extends InPropsObject = {}
+  SharedCustom extends CustomPropsObject = {}
 >(
   _arguments: CreateRenderStateBuilderArguments<
     Resources,
@@ -998,7 +1013,7 @@ export function createRenderStateBuilder<
           ...Object.fromEntries(
             Object.entries(source.props?.custom ?? {}).map(([key, prop]) => [
               key,
-              { required: prop.visibility !== 'optional', suppliedVia: 'component' },
+              { required: typeof prop === 'string' ? prop === 'required' : prop.visibility !== 'optional', suppliedVia: 'component' },
             ])
           ),
         }).filter(([key]) => !(key in custom))
@@ -1023,7 +1038,7 @@ export function createRenderStateBuilder<
           ...collectComposablePresetEntries(inherited).map(
             ({ props }) => props
           ),
-          source.props?.custom
+          normalizeCustomProps(source.props?.custom ?? {})
         ) as InPropsObject;
         const selected = Object.fromEntries(
           Object.entries(schemas).filter(([key]) => key in includes)

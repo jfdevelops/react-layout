@@ -8,7 +8,7 @@ import {
   resolvePropDefinitionValues,
   validateProps,
 } from '@jfdevelops/react-layout-validator';
-import { InPropsObject } from './types';
+import { InPropsObject, type WithChildren } from './types';
 import { BaseComponent, Show, UnionToIntersection } from './utils';
 import { CapitalizeFn } from './utils/capitalize';
 
@@ -263,14 +263,14 @@ export type RequiredPresetRenderProps<Props extends InPropsObject> = {
 export type ComposablePresetComponentCallProps<
   Props extends InPropsObject,
   Wrapper = undefined
-> = RequiredPresetRenderProps<Props> &
+> = WithChildren<RequiredPresetRenderProps<Props>> &
   (Wrapper extends undefined ? {} : ComposableComponentWrapperProps<Wrapper>);
 
 export type ComposablePresetComponent<
   Name extends string = string,
   Props extends InPropsObject = InPropsObject,
   Wrapper = undefined
-> = BaseComponent<Name, Show<ResolveProps<Props>>> & {
+> = BaseComponent<Name, Show<WithChildren<ResolveProps<Props>>>> & {
   [composablePresetMetaKey]: ComposablePresetMeta<Props>;
 } & ((props: ComposablePresetComponentCallProps<Props, Wrapper>) => ReactNode);
 
@@ -300,13 +300,7 @@ function resolveComponent<Props>(
   component: ((props: Props) => JSX.Element | ReactNode) | ReactNode,
   props: Props
 ) {
-  const hasProps = Object.keys(props as object).length > 0;
-
-  if (hasProps) {
-    return typeof component === 'function' ? component(props) : component;
-  }
-
-  return component as ReactNode;
+  return typeof component === 'function' ? component(props) : component;
 }
 
 function reactNodeFromSingleFieldOutProps(resolved: unknown): ReactNode {
@@ -477,23 +471,25 @@ export type DefinedComposableComponentRecord<
 type DefinedComposableComponentFactory<
   Name extends string,
   Props extends InPropsObject,
-  Wrapper = undefined
+  Wrapper = undefined,
 > = {
   props: Props;
   (
-    render: (props: Show<ResolveProps<Props>>) => ReactNode
+    render: (props: Show<WithChildren<ResolveProps<Props>>>) => ReactNode,
   ): DefinedComposableComponentRecord<Name, Props, Wrapper>;
   /** Customize this instance without changing the factory's defaults. */
   <
     const Overrides extends InPropsObject = {},
     const CustomName extends string = Name,
-    CustomWrapper = Wrapper
+    CustomWrapper = Wrapper,
   >(options: {
     name?: CustomName;
     props?: Overrides | ((defaults: Props) => Overrides);
     wrapWith?: CustomWrapper;
     render: (
-      props: Show<ResolveProps<Omit<Props, keyof Overrides> & Overrides>>
+      props: Show<
+        WithChildren<ResolveProps<Omit<Props, keyof Overrides> & Overrides>>
+      >,
     ) => ReactNode;
   }): DefinedComposableComponentRecord<
     CustomName,
@@ -516,7 +512,7 @@ function resolvePresetComposableCallProps<Props extends InPropsObject>(
   return validateProps(
     propDefinitions as Record<string, AnyBuiltPropDefinition>,
     presetValues
-  ) as Show<ResolveProps<Props>>;
+  ) as Show<WithChildren<ResolveProps<Props>>>;
 }
 
 export function defineComposableComponent<
@@ -530,7 +526,7 @@ export function defineComposableComponent<
 
   const factory = (
     definition:
-      | ((props: Show<ResolveProps<Props>>) => ReactNode)
+      | ((props: Show<WithChildren<ResolveProps<Props>>>) => ReactNode)
       | {
           name?: string;
           props?: InPropsObject | ((defaults: Props) => InPropsObject);
@@ -561,7 +557,7 @@ export function defineComposableComponent<
       Name,
       Wrapper,
       Props,
-      Show<ResolveProps<Props>>
+      Show<WithChildren<ResolveProps<Props>>>
     >({
       name,
       wrapWith,
@@ -588,8 +584,13 @@ export function defineComposableComponent<
       return component({
         ...(wrapperProps as ComposableComponentWrapperProps<Wrapper>),
         ...validatedPresetProps,
-        children: render,
-      } as unknown as ComposableComponentProps<Wrapper, Props, Show<ResolveProps<Props>>>);
+        children: (resolved: Show<WithChildren<ResolveProps<Props>>>) => render({
+          ...resolved,
+          children: 'children' in props
+            ? (validatedPresetProps as Record<string, unknown>).children
+            : callPropsRecord.children,
+        } as Show<WithChildren<ResolveProps<Props>>>),
+      } as unknown as ComposableComponentProps<Wrapper, Props, Show<WithChildren<ResolveProps<Props>>>>);
     }
 
     PresetComposable.displayName = name;
@@ -598,7 +599,7 @@ export function defineComposableComponent<
     const debug = (options as unknown as Record<symbol, unknown>)[debugKey];
     const presetComponent = Object.assign(PresetComposable, {
       ...(debug ? { [debugKey]: debug } : {}),
-      props: undefined as unknown as Show<ResolveProps<Props>>,
+      props: undefined as unknown as Show<WithChildren<ResolveProps<Props>>>,
       [composablePresetMetaKey]: {
         key: name,
         props,

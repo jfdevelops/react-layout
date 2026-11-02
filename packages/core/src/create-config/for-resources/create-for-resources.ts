@@ -1,3 +1,4 @@
+import { normalizeCustomProps, type CustomPropsObject } from '../../custom-props';
 import { RenderStateNameContext } from '../render-state-context';
 import {
   createScopedLazyContent,
@@ -19,7 +20,7 @@ import {
   type AnyBuiltPropDefinition,
   validateProps,
 } from '@jfdevelops/react-layout-validator';
-import type { InPropsDefinition, InPropsObject } from '../../props';
+import type { InPropsDefinition } from '../../props';
 import type { LayoutResourceKey, ResourceDefinition } from '../../resource';
 import { capitalize } from '../../utils/capitalize';
 import { LayoutConfigurationError } from '../../errors';
@@ -59,7 +60,7 @@ export function createForResources<
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
-  CustomProps extends InPropsObject,
+  CustomProps extends CustomPropsObject,
 >({
   createLayoutForResource,
   createMakeComposableLayout,
@@ -164,7 +165,7 @@ export function createForResources<
 
     type CreateComponentPropsBag = {
       include?: Record<string, true | 'optional'>;
-      custom?: Record<string, AnyBuiltPropDefinition>;
+      custom?: CustomPropsObject;
       defined?: Record<string, unknown>;
     };
 
@@ -258,7 +259,7 @@ export function createForResources<
 
       for (const bag of bags) {
         Object.assign(include, bag?.include);
-        Object.assign(custom, bag?.custom);
+        Object.assign(custom, normalizeCustomProps(bag?.custom ?? {}));
 
         for (const key of Object.keys(bag?.defined ?? {})) {
           include[key] = true;
@@ -271,7 +272,7 @@ export function createForResources<
     function createComponent(componentOptions: {
       props?: {
         include?: Record<string, true | 'optional'>;
-        custom?: Record<string, AnyBuiltPropDefinition>;
+        custom?: CustomPropsObject;
       };
       resources?: Record<string, ScopedComponentEntry>;
       render?: ScopedComponentRenderFn;
@@ -285,7 +286,7 @@ export function createForResources<
         ),
       );
       const include = mergedProps.include ?? {};
-      const custom = mergedProps.custom ?? {};
+      const custom = normalizeCustomProps(mergedProps.custom ?? {});
       const selectedResources = new Set(
         resourceOptions.map(({ resource }) => resource),
       );
@@ -370,7 +371,7 @@ export function createForResources<
                 );
               }
 
-              const ownPropDefinitions = definition.props ?? {};
+              const ownPropDefinitions = normalizeCustomProps(definition.props ?? {});
               // Last call-site own-props / returned component for this scoped
               // entry. Compound statics re-run `render` with these so
               // `<DataTable variant="b" />` then `<DataTable.Loading />` sees "b".
@@ -649,7 +650,7 @@ export function createForResources<
         }
 
         for (const [key, definition] of Object.entries(custom)) {
-          if (key === 'children' || key === 'resource') {
+          if (key === 'resource') {
             continue;
           }
 

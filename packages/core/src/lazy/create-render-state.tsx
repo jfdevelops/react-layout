@@ -1,13 +1,17 @@
+import type {
+  CustomPropsInput,
+  CustomPropsObject,
+  ResolveRenderProps,
+} from '../custom-props';
 import { createElement, type ComponentType, type ReactNode } from 'react';
 import type { ComposableComponents } from '@jfdevelops/react-layout-composables';
 import { LayoutConfigurationError } from '../errors';
 import type { ResourceDefinition, ResourcePath } from '../resource';
-import {
-  type ResolvedIncludedComponentProps,
-  type IncludedProps,
-  type InPropsDefinition,
-  type InPropsObject,
-  type MergedLayoutInProps,
+import type {
+  ResolvedIncludedComponentProps,
+  IncludedProps,
+  InPropsDefinition,
+  MergedLayoutInProps,
 } from '../props';
 import { defineResourceLayout } from '../create-config/define-layout';
 import type {
@@ -16,7 +20,7 @@ import type {
   RenderStateProps,
   OptionalStateChildren,
 } from '../create-config/render-state';
-import type { ResolveProps } from '@jfdevelops/react-layout-validator';
+
 import type {
   LazyResourceErrorProps,
   LazyErrorHandlers,
@@ -54,21 +58,27 @@ export type CreateLazyRenderState<
   Composables extends ComposableComponents,
 > = <
   const State extends LazyDefaultState,
-  const Custom extends InPropsObject = {},
+  const Custom extends CustomPropsObject = {},
   const Include extends IncludedProps<
     MergedLayoutInProps<Resources, Options, Composables>
   > = {},
 >(definition: {
   state: State;
-  props?: { include?: Include; custom?: Custom };
-  render: LazyRender<State, ResourcePath<Resources>, RenderStateProps<Resources, Options, Composables, Include, Custom>, RenderStateContext<Composables, Resources, State>>;
+  props?: { include?: Include; custom?: Custom & CustomPropsInput<Custom> };
+  render: LazyRender<
+    State,
+    ResourcePath<Resources>,
+    RenderStateProps<Resources, Options, Composables, Include, Custom>,
+    RenderStateContext<Composables, Resources, State>
+  >;
 }) => ComponentType<
   OptionalStateChildren<
-    ResolveProps<Custom> &
+    ResolveRenderProps<Custom> &
       ResolvedIncludedComponentProps<
         MergedLayoutInProps<Resources, Options, Composables>,
         LazyDefaultIncludes<Include>
-      >
+      >,
+    Custom
   > &
     BuiltinProps<State, ResourcePath<Resources>>
 >;
@@ -79,7 +89,7 @@ export type CreateBoundLazyErrorComponent<Resource, Context> =
 
 type RuntimeDefinition = {
   state: LazyDefaultState;
-  props?: { include?: Record<string, unknown>; custom?: InPropsObject };
+  props?: { include?: Record<string, unknown>; custom?: CustomPropsObject };
   render:
     | ((props: any, context: any) => ReactNode)
     | LazyErrorHandlers<string, object, any>;
