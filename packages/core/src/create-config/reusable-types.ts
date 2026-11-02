@@ -9,8 +9,21 @@ import type {
   InPropsObject,
   PropsContract,
 } from '../props';
-import type { ResourceDefinition, ResourceEnum } from '../resource';
+import type {
+  ResourceDefinition,
+  ResourceEnum,
+  ResourcePath,
+} from '../resource';
 import type { LayoutResourcesAccessor } from './define-layout';
+import type { Show } from '../utils';
+import type {
+  SingleResourceInput,
+  ReusableResourcesAccessor,
+} from './reusable-resource-input';
+export type {
+  SingleResourceInput,
+  ReusableResourcesAccessor,
+} from './reusable-resource-input';
 
 type Selector<Source> = (source: Source) => unknown;
 type OptionValue<Definition extends AnyBuiltPropDefinition> =
@@ -27,6 +40,25 @@ export type ReusableOptionSelection<Props extends InPropsObject> = {
     : true | Selector<OptionValue<Props[Key]>>;
 };
 
+type ResolvedResourceSelection<
+  Resources extends readonly ResourceDefinition[],
+  Result,
+> = Result extends SingleResourceInput<readonly ResourceDefinition[]>
+  ? ResourcePath<Resources>
+  : Result;
+
+type ResourceCallerInput<
+  Resources extends readonly ResourceDefinition[],
+  Contract,
+> = Contract extends { resources: (...args: any[]) => infer Result }
+  ? Extract<
+      Result,
+      SingleResourceInput<readonly ResourceDefinition[]>
+    > extends never
+    ? {}
+    : { resources: ResourcePath<Resources> }
+  : {};
+
 type OptionDefinitions<
   Resources extends readonly ResourceDefinition[],
   Options extends InPropsDefinition<Resources>,
@@ -42,7 +74,7 @@ export type ReusableInclude<
   Resources extends readonly ResourceDefinition[],
   Options extends InPropsDefinition<Resources>,
 > = {
-  resources?: true | Selector<LayoutResourcesAccessor<Resources>>;
+  resources?: true | Selector<ReusableResourcesAccessor<Resources>>;
 } & (keyof OptionDefinitions<Resources, Options> extends never
   ? {}
   : {
@@ -88,7 +120,7 @@ export type ReusableProps<
 > = (Include extends { resources: true }
   ? { resources: ResourceEnum<Resources>[number][] }
   : Include extends { resources: (...args: any[]) => infer Result }
-  ? { resources: Result }
+  ? { resources: ResolvedResourceSelection<Resources, Result> }
   : {}) &
   (Include extends { options: infer Selection }
     ? Selection extends (...args: any[]) => infer Result
@@ -107,7 +139,7 @@ export type ReusableSelected<
 > = (Selection extends { resources: infer Value }
   ? {
       resources: Value extends (...args: any[]) => infer Result
-        ? Result
+        ? ResolvedResourceSelection<Resources, Result>
         : LayoutResourcesAccessor<Resources>;
     }
   : {}) &
@@ -432,6 +464,8 @@ export type ReusableInput<
     CallerContract<Resources, Options, Include, Select>,
     Custom
   > &
+    ResourceCallerInput<Resources, Include> &
+    ResourceCallerInput<Resources, Select> &
     SourceInput<
       OptionSource<OptionDefinitions<Resources, Options>, Include, true> &
         OptionSource<OptionDefinitions<Resources, Options>, Select, false>
@@ -592,4 +626,6 @@ export type CreateReusable<
     Result,
     Overlap
   >,
-) => ReusableFunction<Resources, Options, Include, Custom, Select, Result>;
+) => Show<
+  ReusableFunction<Resources, Options, Include, Custom, Select, Result>
+>;

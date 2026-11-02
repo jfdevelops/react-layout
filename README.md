@@ -238,6 +238,25 @@ options. In `select`, `resources: true` supplies the full accessor; resource-onl
 helpers need no source input because their data is bound to the factory.
 A callback over the entire options object supplies its result as `props.options`.
 
+Use `resources.single()` inside a resource selector to require one resource key
+from the caller instead of deriving a value automatically:
+
+```ts
+const describeOneResource = createReusable({
+  props: { include: { resources: resources => resources.single() } },
+  fn: ({ resources }) => resources,
+});
+
+describeOneResource({ resources: 'panedeck' });
+```
+
+The caller's `resources` value is required and validated against configured
+resource paths. Nested resources use dot-delimited paths such as
+`'posts.comments.replies'`; parent resource paths remain valid too. `resources: true` still accepts an array of
+resource keys; ordinary resource selectors still supply their results
+automatically. The same single-input descriptor can be returned from
+`select.resources`.
+
 Identical source selections, including the same callback reference, resolve once.
 Different fields of the same selected object merge recursively. Identical `true`
 option selections shared by include and select use the `options` source field

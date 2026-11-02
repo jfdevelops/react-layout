@@ -9,6 +9,11 @@ import { LayoutConfigurationError } from '../errors';
 import { createLayoutResourcesAccessor } from './define-layout';
 import type { CreateReusable, ReusableOverlap } from './reusable-types';
 export type * from './reusable-types';
+import {
+  singleResourceInput,
+  isSingleResourceInput,
+  getResourcePaths,
+} from './reusable-resource-input';
 
 type RuntimeSelection = Record<string, unknown>;
 type PlanLocation = { from: 'props' | 'options' | 'resources'; path: string[] };
@@ -275,8 +280,13 @@ function resolvePlan(
       )
         continue;
       const value = readLocation(node, props, options, resources);
-      if (node.selector) result[key] = node.selector(value);
-      else if (
+      if (node.selector) {
+        const selected = node.selector(value);
+        if (node.source === 'resource' && isSingleResourceInput(selected)) {
+          validateProps({ resources: node.definition! }, props);
+          result[key] = props.resources;
+        } else result[key] = selected;
+      } else if (
         value !== undefined ||
         node.definition?.visibility !== 'optional'
       )
@@ -298,7 +308,17 @@ export function createReusableBuilder(
     typeof entry === 'string' ? entry : entry.value,
   );
   const resource = createProp.string.enum(keys as [string, ...string[]]);
-  const resourcesAccessor = createLayoutResourcesAccessor(resources);
+  const singleResource = createProp.string.enum(
+    getResourcePaths(resources) as [string, ...string[]],
+  );
+  const resourcesAccessor = Object.assign(
+    createLayoutResourcesAccessor(resources),
+    {
+      single() {
+        return { [singleResourceInput]: resources };
+      },
+    },
+  );
 
   function createReusable(definition: {
     props?: PropsContract<RuntimeSelection, InPropsObject>;
@@ -363,6 +383,8 @@ export function createReusableBuilder(
               definition:
                 value === true && from === 'props'
                   ? createProp.array(resource)
+                  : typeof value === 'function'
+                  ? singleResource
                   : undefined,
             },
           });
