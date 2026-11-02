@@ -1,3 +1,7 @@
+import type {
+  CustomPropsInput,
+  CustomPropsObject,
+} from '../custom-props';
 import { createReusableBuilder, type CreateReusable } from './create-reusable';
 import { inspectLazy } from '../lazy/inspection';
 import type { ResourcePath } from '../resource';
@@ -19,7 +23,7 @@ import type {
   CreateLayoutComposable,
 } from '@jfdevelops/react-layout-composables';
 import { LayoutConfigurationError } from '../errors';
-import type { InPropsDefinition, InPropsObject } from '../props';
+import type { InPropsDefinition } from '../props';
 import type { LayoutResourceKey, ResourceDefinition } from '../resource';
 import {
   type CreateViewMapFunctionRenderOptions,
@@ -61,7 +65,7 @@ export type CreateDefinedResourceLayoutOptions<
     Options,
     Composables
   > = {},
-  SharedCustom extends InPropsObject = {},
+  SharedCustom extends CustomPropsObject = {},
   DefaultNaming extends
     | LayoutNameInput<LayoutResourceKey<Resources>>
     | undefined = undefined
@@ -72,7 +76,7 @@ export type CreateDefinedResourceLayoutOptions<
   /** Shared prop contracts, merged by key with layout and state contracts. */
   props?: {
     include?: LayoutIncludeProps<Resources, Options, Composables> & SharedInclude;
-    custom?: SharedCustom;
+    custom?: SharedCustom & CustomPropsInput<SharedCustom>;
   };
   /** Resources supported by every layout created from this factory. */
   resources: Resources;
@@ -88,7 +92,7 @@ export type DefinedResourceLayoutInput<
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
   IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
-  CustomProps extends InPropsObject,
+  CustomProps extends CustomPropsObject,
   Render,
   Namespace extends boolean = false
 > = Omit<
@@ -125,7 +129,7 @@ export type BoundDefineResourceLayout<
     Options,
     Composables
   > = {},
-  SharedCustom extends InPropsObject = {},
+  SharedCustom extends CustomPropsObject = {},
   DefaultNaming extends
     | LayoutNameInput<LayoutResourceKey<Resources>>
     | undefined = undefined
@@ -146,7 +150,7 @@ export type BoundDefineResourceLayout<
       Options,
       BoundLayoutComposables<Composables, LocalComposables>
     > = {},
-    CustomProps extends InPropsObject = {},
+    CustomProps extends CustomPropsObject = {},
     const Naming extends
       | LayoutNameInput<
           LayoutResourceKey<Resources>,
@@ -175,7 +179,7 @@ export type BoundDefineResourceLayout<
           Options,
           BoundLayoutComposables<Composables, LocalComposables>
         > & IncludeProps;
-        custom?: CustomProps;
+        custom?: CustomProps & CustomPropsInput<CustomProps>;
       };
       composables?: (
         create: CreateLayoutComposable<LayoutResourceKey<Resources>>,
@@ -199,7 +203,7 @@ export type BoundDefineResourceLayout<
       Options,
       BoundLayoutComposables<Composables, LocalComposables>
     > = {},
-    CustomProps extends InPropsObject = {},
+    CustomProps extends CustomPropsObject = {},
     LocalComposables extends ComposableComponents = {},
     Namespace extends boolean = DefaultNamespace,
     const Naming extends
@@ -226,7 +230,7 @@ export type BoundDefineResourceLayout<
           Options,
           BoundLayoutComposables<Composables, LocalComposables>
         > & IncludeProps;
-        custom?: CustomProps;
+        custom?: CustomProps & CustomPropsInput<CustomProps>;
       };
       composables?: (
         create: CreateLayoutComposable<LayoutResourceKey<Resources>>,
@@ -284,7 +288,7 @@ export type CreateDefinedResourceLayoutResult<
     Options,
     Composables
   > = {},
-  SharedCustom extends InPropsObject = {},
+  SharedCustom extends CustomPropsObject = {},
   DefaultNaming extends
     | LayoutNameInput<LayoutResourceKey<Resources>>
     | undefined = undefined
@@ -354,7 +358,7 @@ export function createDefinedResourceLayout<
   Composables extends ComposableComponents = {},
   DefaultNamespace extends boolean = false,
   const SharedInclude extends object = {},
-  const SharedCustom extends InPropsObject = {},
+  const SharedCustom extends CustomPropsObject = {},
   const DefaultNaming extends
     | LayoutNameInput<LayoutResourceKey<Resources>>
     | undefined = LayoutNameInput<LayoutResourceKey<Resources>> | undefined
@@ -507,7 +511,7 @@ export function createDefinedResourceLayout<
 
   return inspection.attach({
     createReusable: createReusableBuilder(resources, options),
-    createRenderState: createRenderStateBuilder(
+    createRenderState: createRenderStateBuilder<Resources, Options, Composables, SharedInclude, SharedCustom>(
       {
         props: configuration.props,
         composables,

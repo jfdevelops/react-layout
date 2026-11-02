@@ -24,7 +24,7 @@ type AssertSegmentsProp = 'segments' extends keyof BreadcrumbCallProps
   : never;
 const _segmentsProp: AssertSegmentsProp = true;
 
-// @ts-expect-error children is not a preset prop
+// Every composable accepts the built-in optional children slot.
 presetBreadcrumb({ segments: { home: 'Home' }, children: null });
 
 // @ts-expect-error segments is required

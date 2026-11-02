@@ -1,3 +1,4 @@
+import type { CustomPropsObject } from '../custom-props';
 import type { LayoutNameInput, ResolvedLayoutName } from './layout-name';
 import type { ComposableComponents } from '@jfdevelops/react-layout-composables';
 import type {
@@ -121,7 +122,7 @@ export type CreatedLayoutForResource<
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   Name extends string,
   Resource extends LayoutResourceKey<Resources>,
-  CustomProps extends InPropsObject = {},
+  CustomProps extends CustomPropsObject = {},
   Defaults extends LayoutPropDefaults = {},
   DefaultNamespace extends boolean = false,
   States = {},
@@ -210,7 +211,7 @@ export type SetDefaultPropForResourceFn<
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   Name extends string,
   Resource extends LayoutResourceKey<Resources>,
-  CustomProps extends InPropsObject = {},
+  CustomProps extends CustomPropsObject = {},
   DefaultNamespace extends boolean = false,
   States = {},
 > = <
@@ -305,7 +306,7 @@ type ResourceLayoutBuilder<
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   Name extends string,
   Resource extends LayoutResourceKey<Resources>,
-  CustomProps extends InPropsObject,
+  CustomProps extends CustomPropsObject,
   DefaultNamespace extends boolean = false,
   States = {},
 > = CreatedLayoutForResource<
@@ -392,7 +393,7 @@ type ResourceLayoutNameMapFn<
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
-  CustomProps extends InPropsObject,
+  CustomProps extends CustomPropsObject,
   Resource extends LayoutResourceKey<Resources>,
   DefaultNamespace extends boolean = false,
   States = {},
@@ -434,7 +435,7 @@ type ResourceLayoutNameMapFns<
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
-  CustomProps extends InPropsObject,
+  CustomProps extends CustomPropsObject,
   DefaultNamespace extends boolean = false,
   States = {},
 > = UnionToIntersection<
@@ -457,7 +458,7 @@ export type CreateLayoutForResource<
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents = {},
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
-  CustomProps extends InPropsObject = {},
+  CustomProps extends CustomPropsObject = {},
   DefaultNamespace extends boolean = false,
   States = {},
   DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
@@ -602,7 +603,7 @@ export function createForResource<
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
-  CustomProps extends InPropsObject,
+  CustomProps extends CustomPropsObject,
 >({
   createResourceLayout,
   resolveLayoutOptionDefaults,

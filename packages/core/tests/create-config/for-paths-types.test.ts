@@ -1,4 +1,4 @@
-import type { JSX } from 'react';
+import type { JSX, ReactNode } from 'react';
 import { describe, expectTypeOf, it } from 'vitest';
 import { defineResourceLayout } from '../../src';
 import type {
@@ -289,7 +289,7 @@ describe('forPaths', () => {
 
     expectTypeOf<
       Parameters<typeof ComponentOnly>[0]
-    >().toEqualTypeOf<{ component: 'component' }>();
+    >().toEqualTypeOf<{ component: 'component' } & { children?: ReactNode }>();
   });
 
   it('adds a narrowed componentKey param', () => {
@@ -300,7 +300,7 @@ describe('forPaths', () => {
 
     expectTypeOf<Parameters<typeof Slot>[0]>().toEqualTypeOf<{
       componentKey: 'component';
-    }>();
+    } & { children?: ReactNode }>();
   });
 
   it('marks an optional componentKey as optional', () => {
@@ -311,7 +311,7 @@ describe('forPaths', () => {
 
     expectTypeOf<Parameters<typeof Slot>[0]>().toEqualTypeOf<{
       componentKey?: 'component';
-    }>();
+    } & { children?: ReactNode }>();
   });
 
   it('merges custom params', () => {
@@ -322,7 +322,7 @@ describe('forPaths', () => {
 
     expectTypeOf<Parameters<typeof Heading>[0]>().toEqualTypeOf<{
       heading?: string;
-    }>();
+    } & { children?: ReactNode }>();
   });
 
   it('drops each builder step once it has been used', () => {
@@ -363,7 +363,8 @@ describe('forPaths', () => {
       args: { component: true },
     })('errorComponent');
 
-    expectTypeOf<Parameters<typeof UsersError>[0]>().toEqualTypeOf<{}>();
+    expectTypeOf<Parameters<typeof UsersError>[0]>().toMatchTypeOf<{ children?: ReactNode }>();
+    expectTypeOf<Parameters<typeof UsersError>[0]['children']>().toEqualTypeOf<ReactNode>();
   });
 
   it('closes over an object when several params are bound', () => {

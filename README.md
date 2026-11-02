@@ -102,6 +102,34 @@ Use `createDefinedResourceLayout` to bind resources, options, and composables
 once, then split the returned building blocks across files. Its `composables`
 callback receives the same resource-aware `create` function as the global API.
 
+Render callbacks receive optional `children` in their first argument automatically.
+Generated components accept React children without a custom prop declaration:
+
+```tsx
+defineResourceLayout({
+  resources: ['users'],
+  layout: { render: ({ children }) => <main>{children}</main> },
+});
+```
+
+To require the content slot, set `props.custom.children: 'required'` on the
+layout, render state, shell, or scoped component:
+
+```tsx
+const Content = createRenderState({
+  state: 'Content',
+  props: { custom: { children: 'required' } },
+  render: ({ children }) => <section>{children}</section>,
+});
+```
+
+Omitting the declaration keeps children optional. The `'required'` shorthand is
+reserved for `children`; other custom props still use `createProp` definitions.
+Required children are checked both by TypeScript and at runtime. Existing
+validator-based children declarations remain supported, including their legacy
+fallback-state behavior. Defined composables also receive children in both
+factory overloads, without declaring a prop.
+
 ```tsx
 const {
   createRenderState,
