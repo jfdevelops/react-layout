@@ -203,4 +203,4 @@ export type {
 export { defineLayoutPreview } from './preview';
 export type { LayoutPreviewProps } from './preview';
 
-export type { CreateReusable, ReusableInclude, ReusableOptionSelection, ReusableProps } from './create-reusable';
+export type { CreateReusable, ReusableInclude, ReusableOptionSelection, ReusableProps, ReusableSelected, ReusableResolved, ReusableDefinition, ReusableArguments, ReusableInput, ReusableFunction, ReusableOverlap } from './create-reusable';

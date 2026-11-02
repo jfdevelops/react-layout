@@ -18,6 +18,12 @@ import { Show } from './utils';
 
 export type { InPropsObject };
 
+/** Shared include/custom contract used by configurable layout helpers. */
+export type PropsContract<Include extends object = object, Custom extends object = object> = {
+  include?: Include;
+  custom?: Custom;
+};
+
 /**
  * Two-argument `render(props, context)` used by createComponent and scoped
  * resource components. `Context` is sibling components (scoped) or the

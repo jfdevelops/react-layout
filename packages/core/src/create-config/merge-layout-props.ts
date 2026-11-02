@@ -1,7 +1,9 @@
+import type { PropsContract } from '../props';
+
 /** Merge contracts by section and prop key; the closest declaration wins. */
 export function mergeLayoutProps<
-  A extends { include?: object; custom?: object } | undefined,
-  B extends { include?: object; custom?: object } | undefined
+  A extends PropsContract | undefined,
+  B extends PropsContract | undefined
 >(base: A, local: B) {
   if (!base && !local) return undefined;
   return {

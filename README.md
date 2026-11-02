@@ -193,6 +193,68 @@ promises, are inferred. A helper with no required inputs can be called without
 arguments. Shared render-state `props` contracts do not implicitly add inputs
 to a reusable function; each helper declares its own contract.
 
+Function entries in `props.include` supply their results automatically, so the
+caller does not pass those props. Resource selectors receive the complete
+`resources` accessor, including `raw`, `pick`, `omit`, and `isResource`.
+
+Top-level `select` supplies additional data to the same `fn` argument. Both
+`select` and `props.include` support typed selector functions. Resource selectors
+receive the complete resource accessor; option selectors receive resolved values:
+
+```ts
+const describeResource = createReusable({
+  props: {
+    include: { options: { meta: { owner: owner => owner.toUpperCase() } } },
+    custom: { title: createProp.string() },
+  },
+  select: {
+    resources: resources => resources.raw(),
+    options: { meta: { repo: true } },
+  },
+  fn: ({ title, resources, meta }) => ({
+    title,
+    available: resources,
+    repository: `${meta.owner}/${meta.repo}`,
+  }),
+});
+
+describeResource({
+  title: 'Documentation',
+  options: { meta: { owner: 'jfdevelops', repo: 'react-layout' } },
+});
+```
+
+Supply option source values through the reserved `options` field in the helper's
+single call argument. Only explicitly selected source fields are required:
+`options: { title: title => title.toUpperCase() }` requires only
+`{ options: { title: string } }`. Optional source fields remain optional. Selecting
+all options with `true`, or a callback over the complete options object, requires
+all required configured options; callback property reads are not inferred as
+dependencies. Source values validate before any selector executes, and the source
+container itself does not leak into `fn`.
+
+Options selected by key are flattened into `fn`'s argument, just like included
+options. In `select`, `resources: true` supplies the full accessor; resource-only
+helpers need no source input because their data is bound to the factory.
+A callback over the entire options object supplies its result as `props.options`.
+
+Identical source selections, including the same callback reference, resolve once.
+Different fields of the same selected object merge recursively. Identical `true`
+option selections shared by include and select use the `options` source field
+once rather than requiring a duplicate flattened prop.
+
+Ambiguous collisions raise a configuration error, even when the result types
+match. Rename one property, or set `overlap: 'preferProps'` or
+`overlap: 'preferSelect'` to choose explicitly. Both configured input contracts
+remain validated under an explicit policy; the losing transformation is not run.
+
+Existing `true` entries in `props.include` continue to require caller-supplied,
+validated values in their original flattened shape when they are not shared with
+`select`. Selectors run on each invocation; return values, including promises,
+pass through unchanged. The returned function's hover expands its concrete input
+and return shapes. `PropsContract`, `ReusableDefinition`, `ReusableArguments`,
+and `ReusableFunction` are shared standalone types for consumers and helpers.
+
 Resource configs can also be assembled independently without losing their
 resource-specific types:
 
