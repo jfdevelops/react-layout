@@ -265,7 +265,11 @@ once rather than requiring a duplicate flattened prop.
 Ambiguous collisions raise a configuration error, even when the result types
 match. Rename one property, or set `overlap: 'preferProps'` or
 `overlap: 'preferSelect'` to choose explicitly. Both configured input contracts
-remain validated under an explicit policy; the losing transformation is not run.
+remain validated under an explicit policy. Losing option transformations are not
+run. Resource callbacks also declare caller-input contracts, so each distinct
+resource callback is evaluated once per call even when its output loses an
+overlap. Any `single()` requirement is validated before `fn`, and the winning
+output reuses the cached callback result.
 
 Existing `true` entries in `props.include` continue to require caller-supplied,
 validated values in their original flattened shape when they are not shared with

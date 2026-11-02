@@ -1,5 +1,9 @@
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
-import { createDefinedResourceLayout, createProp } from '../../src';
+import {
+  createDefinedResourceLayout,
+  createProp,
+  type ReusableResourcesAccessor,
+} from '../../src';
 
 const factory = createDefinedResourceLayout({
   resources: ['users', { value: 'posts', subResources: ['comments'] }],
@@ -69,6 +73,83 @@ describe('reusable selectors', () => {
     }
     expect(fn).not.toHaveBeenCalled();
     expect(() => helper({ options: { title: 'Docs' } } as never)).toThrow();
+  });
+
+  it('validates a single-resource include even when preferSelect discards its output', () => {
+    const fn = vi.fn();
+    const helper = factory.createReusable({
+      props: { include: { resources: (resources) => resources.single() } },
+      select: { resources: (resources) => resources.raw() },
+      overlap: 'preferSelect',
+      fn: (props) => {
+        fn(props);
+        return props.resources;
+      },
+    });
+    for (const props of [
+      {},
+      { resources: 'missing' },
+      { resources: ['users'] },
+    ]) {
+      expect(() => helper(props as never)).toThrow();
+    }
+    expect(fn).not.toHaveBeenCalled();
+    expect(helper({ resources: 'posts.comments' })).toEqual(
+      factory.resources.raw(),
+    );
+  });
+
+  it('validates a discarded selected single-resource contract under preferProps', () => {
+    const fn = vi.fn();
+    const helper = factory.createReusable({
+      props: { include: { resources: (resources) => resources.raw() } },
+      select: { resources: (resources) => resources.single() },
+      overlap: 'preferProps',
+      fn: (props) => {
+        fn(props);
+        return props.resources;
+      },
+    });
+    expect(() => helper({} as never)).toThrow();
+    expect(() => helper({ resources: 'missing' } as never)).toThrow();
+    expect(fn).not.toHaveBeenCalled();
+    expect(helper({ resources: 'posts.comments' })).toEqual(
+      factory.resources.raw(),
+    );
+  });
+
+  it('evaluates each resource callback once per call while validating overlap contracts', () => {
+    const single = vi.fn(
+      (resources: ReusableResourcesAccessor<readonly ['users']>) =>
+        resources.single(),
+    );
+    const derived = vi.fn(
+      (resources: ReusableResourcesAccessor<readonly ['users']>) =>
+        resources.raw(),
+    );
+    const { createReusable } = createDefinedResourceLayout({
+      resources: ['users'],
+    });
+    const helper = createReusable({
+      props: { include: { resources: single } },
+      select: { resources: derived },
+      overlap: 'preferSelect',
+      fn: (props) => props.resources,
+    });
+    expect(single).not.toHaveBeenCalled();
+    expect(derived).not.toHaveBeenCalled();
+    expect(helper({ resources: 'users' })).toEqual(['users']);
+    expect(helper({ resources: 'users' })).toEqual(['users']);
+    expect(single).toHaveBeenCalledTimes(2);
+    expect(derived).toHaveBeenCalledTimes(2);
+    single.mockClear();
+    const shared = createReusable({
+      props: { include: { resources: single } },
+      select: { resources: single },
+      fn: (props) => props.resources,
+    });
+    expect(shared({ resources: 'users' })).toBe('users');
+    expect(single).toHaveBeenCalledOnce();
   });
 
   it('infers the resource union and preserves array and derived resource behavior', () => {
