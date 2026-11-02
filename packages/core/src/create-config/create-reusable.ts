@@ -14,6 +14,8 @@ type RuntimeSelection = Record<string, unknown>;
 type PlanLocation = { from: 'props' | 'options' | 'resources'; path: string[] };
 type ValuePlan = PlanLocation & {
   kind: 'value';
+  // Optional ancestors remain tied to the value's original source after merging.
+  guards?: PlanLocation[];
   source: 'option' | 'resource' | 'custom';
   selector?: (value: any) => unknown;
   definition?: AnyBuiltPropDefinition;
@@ -22,16 +24,16 @@ type ObjectPlan = {
   kind: 'object';
   children: Record<string, Plan>;
   optional: boolean;
-  locations: PlanLocation[];
+  guards: PlanLocation[][];
 };
 type Plan = ValuePlan | ObjectPlan;
 
 function objectPlan(
   children: Record<string, Plan>,
   optional = false,
-  locations: PlanLocation[] = [],
+  guards: PlanLocation[][] = [[]],
 ): ObjectPlan {
-  return { kind: 'object', children, optional, locations };
+  return { kind: 'object', children, optional, guards };
 }
 
 function optionPlan(
@@ -39,6 +41,7 @@ function optionPlan(
   selection: unknown,
   from: 'props' | 'options',
   path: string[] = [],
+  optionalPaths: string[][] = [],
 ): ObjectPlan {
   const entries =
     selection === true
@@ -54,6 +57,7 @@ function optionPlan(
       children[key] = {
         ...location,
         from: 'options',
+        guards: optionalPaths.map((path) => ({ from: 'options', path })),
         kind: 'value',
         source: 'option',
         selector: value as ValuePlan['selector'],
@@ -70,21 +74,18 @@ function optionPlan(
         value,
         from,
         location.path,
+        definition.visibility === 'optional'
+          ? [...optionalPaths, location.path]
+          : optionalPaths,
       );
       children[key] = {
         ...nested,
         optional: definition.visibility === 'optional',
-        locations: [
-          location,
-          ...(from === 'props' &&
-          Object.keys(planDefinitions(nested, 'options')).length
-            ? [{ ...location, from: 'options' as const }]
-            : []),
-        ],
       };
     } else if (value === true) {
       children[key] = {
         ...location,
+        guards: optionalPaths.map((path) => ({ from, path })),
         kind: 'value',
         source: 'option',
         definition,
@@ -94,7 +95,20 @@ function optionPlan(
         `Invalid reusable selection for "${key}".`,
       );
   }
-  return objectPlan(children);
+  const origins = new Set<PlanLocation['from']>();
+  function collectOrigins(node: Plan) {
+    if (node.kind === 'value') origins.add(node.from);
+    else Object.values(node.children).forEach(collectOrigins);
+  }
+  Object.values(children).forEach(collectOrigins);
+  if (!origins.size) origins.add(from);
+  return objectPlan(
+    children,
+    false,
+    [...origins].map((origin) =>
+      optionalPaths.map((path) => ({ from: origin, path })),
+    ),
+  );
 }
 
 function sameSelection(left: ValuePlan, right: ValuePlan) {
@@ -141,7 +155,7 @@ function mergePlans(
     kind: 'object',
     children,
     optional: left.optional && right.optional,
-    locations: [...left.locations, ...right.locations],
+    guards: [...left.guards, ...right.guards],
   };
 }
 
@@ -243,15 +257,23 @@ function resolvePlan(
   for (const [key, node] of Object.entries(plan.children)) {
     if (node.kind === 'object') {
       if (
-        !node.optional ||
-        node.locations.some(
-          (location) =>
-            readLocation(location, props, options, resources) !== undefined,
+        node.guards.some((group) =>
+          group.every(
+            (location) =>
+              readLocation(location, props, options, resources) !== undefined,
+          ),
         )
       ) {
         result[key] = resolvePlan(node, props, options, resources);
       }
     } else {
+      if (
+        node.guards?.some(
+          (location) =>
+            readLocation(location, props, options, resources) === undefined,
+        )
+      )
+        continue;
       const value = readLocation(node, props, options, resources);
       if (node.selector) result[key] = node.selector(value);
       else if (

@@ -70,6 +70,27 @@ it.each(['typescript-5-9', 'typescript'])(
     createReusable({ fn: (props, selected) => selected });
     // @ts-expect-error No option source exists on an unconfigured factory.
     empty.createReusable({ select: { options: true }, fn: () => null });
+    const optionalFactory = createDefinedResourceLayout({
+      resources: ['users'],
+      options: { optional: createProp.object({ label: createProp.string(), count: createProp.number() }).optional() },
+    });
+    const splitOptional = optionalFactory.createReusable({
+      props: { include: { options: { optional: { label: true } } } },
+      select: { options: { optional: { count: count => count.toFixed(0) } } },
+      fn: props => {
+        if (props.optional) {
+          // @ts-expect-error Presence of the object does not guarantee the other source's field.
+          const count: string = props.optional.count;
+          // @ts-expect-error The caller's source container may also be absent.
+          const label: string = props.optional.label;
+          const maybeCount: string | undefined = props.optional.count;
+          return maybeCount;
+        }
+      },
+    });
+    splitOptional({ optional: { label: 'Docs' } });
+    splitOptional({ options: { optional: { count: 2 } } });
+    splitOptional();
     const callerResources = createReusable({ props: { include: { resources: true } }, fn: props => props.resources });
     // @ts-expect-error Caller resource values must be configured resource names.
     callerResources({ resources: ['missing'] });

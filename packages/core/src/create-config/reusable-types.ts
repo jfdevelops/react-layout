@@ -221,6 +221,86 @@ type MergeValues<Left, Right, Overlap, LeftShape, RightShape> = Omit<
     >;
   };
 
+// A merged object can exist while only one of its optional source containers exists.
+type IndependentSources<
+  Props extends InPropsObject,
+  Include,
+  Select,
+> = keyof CallerOptions<Props, Include, Select> extends never
+  ? false
+  : keyof (SourceValues<Props, Include, true> &
+      SourceValues<Props, Select, false>) extends never
+  ? false
+  : true;
+
+type BranchSelection<Selection> = Selection extends Selector<any>
+  ? {}
+  : Selection;
+
+type GuardedFields<
+  Value,
+  Props extends InPropsObject,
+  Include,
+  Select,
+  Shape,
+  Independent extends boolean,
+> = {
+  [Key in keyof Value]: Key extends keyof Props
+    ? Key extends keyof Shape
+      ? Shape[Key] extends object
+        ? Props[Key] extends { properties: infer Nested extends InPropsObject }
+          ?
+              | GuardedObject<
+                  NonNullable<Value[Key]>,
+                  Nested,
+                  BranchSelection<SelectionAt<Include, Key>>,
+                  BranchSelection<SelectionAt<Select, Key>>,
+                  Shape[Key],
+                  IndependentSources<
+                    Nested,
+                    BranchSelection<SelectionAt<Include, Key>>,
+                    BranchSelection<SelectionAt<Select, Key>>
+                  > extends true
+                    ? Independent extends true
+                      ? true
+                      : Props[Key]['visibility'] extends 'optional'
+                      ? true
+                      : false
+                    : false
+                >
+              | Extract<Value[Key], undefined>
+          : Value[Key]
+        : Value[Key]
+      : Value[Key]
+    : Value[Key];
+};
+
+type GuardedObject<
+  Value,
+  Props extends InPropsObject,
+  Include,
+  Select,
+  Shape,
+  Independent extends boolean = false,
+> = Independent extends true
+  ? Partial<GuardedFields<Value, Props, Include, Select, Shape, Independent>>
+  : GuardedFields<Value, Props, Include, Select, Shape, Independent>;
+
+type MergedShape<
+  Resources extends readonly ResourceDefinition[],
+  Options extends InPropsDefinition<Resources>,
+  Include,
+  Custom,
+  Select,
+  Overlap,
+> = MergeValues<
+  ContractShape<OptionDefinitions<Resources, Options>, Include, Custom>,
+  ContractShape<OptionDefinitions<Resources, Options>, Select, {}>,
+  Overlap,
+  ContractShape<OptionDefinitions<Resources, Options>, Include, Custom>,
+  ContractShape<OptionDefinitions<Resources, Options>, Select, {}>
+>;
+
 export type ReusableResolved<
   Resources extends readonly ResourceDefinition[],
   Options extends InPropsDefinition<Resources>,
@@ -229,12 +309,18 @@ export type ReusableResolved<
   Select,
   Overlap = undefined,
 > = Expanded<
-  MergeValues<
-    ReusableProps<Resources, Options, Include, Custom>,
-    ReusableSelected<Resources, Options, Select>,
-    Overlap,
-    ContractShape<OptionDefinitions<Resources, Options>, Include, Custom>,
-    ContractShape<OptionDefinitions<Resources, Options>, Select, {}>
+  GuardedObject<
+    MergeValues<
+      ReusableProps<Resources, Options, Include, Custom>,
+      ReusableSelected<Resources, Options, Select>,
+      Overlap,
+      ContractShape<OptionDefinitions<Resources, Options>, Include, Custom>,
+      ContractShape<OptionDefinitions<Resources, Options>, Select, {}>
+    >,
+    OptionDefinitions<Resources, Options>,
+    Include extends { options: infer Selection } ? Selection : {},
+    Select extends { options: infer Selection } ? Selection : {},
+    MergedShape<Resources, Options, Include, Custom, Select, Overlap>
   >
 >;
 

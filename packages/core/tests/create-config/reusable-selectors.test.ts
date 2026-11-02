@@ -265,6 +265,150 @@ describe('reusable selectors', () => {
     expect(helper()).toEqual({});
   });
 
+  it('guards each optional source independently when merging object fields', () => {
+    const { createReusable } = createDefinedResourceLayout({
+      resources: ['users'],
+      options: {
+        optional: createProp
+          .object({ label: createProp.string(), count: createProp.number() })
+          .optional(),
+      },
+    });
+    const count = vi.fn((value: number) => value.toFixed(0));
+    const helper = createReusable({
+      props: { include: { options: { optional: { label: true } } } },
+      select: { options: { optional: { count } } },
+      fn: (props) => {
+        expectTypeOf(props.optional?.label).toEqualTypeOf<string | undefined>();
+        expectTypeOf(props.optional?.count).toEqualTypeOf<string | undefined>();
+        return props;
+      },
+    });
+    expect(helper({ optional: { label: 'Docs' } })).toEqual({
+      optional: { label: 'Docs' },
+    });
+    expect(count).not.toHaveBeenCalled();
+    expect(helper({ options: { optional: { count: 2 } } })).toEqual({
+      optional: { count: '2' },
+    });
+    expect(
+      helper({
+        optional: { label: 'Docs' },
+        options: { optional: { count: 2 } },
+      }),
+    ).toEqual({ optional: { label: 'Docs', count: '2' } });
+    expect(helper()).toEqual({});
+    expect(count).toHaveBeenCalledTimes(2);
+  });
+
+  it('guards sources split within include and retains precise same-source fields', () => {
+    const { createReusable } = createDefinedResourceLayout({
+      resources: ['users'],
+      options: {
+        optional: createProp
+          .object({ label: createProp.string(), count: createProp.number() })
+          .optional(),
+      },
+    });
+    const helper = createReusable({
+      props: {
+        include: {
+          options: {
+            optional: { label: true, count: (count) => count.toFixed(0) },
+          },
+        },
+      },
+      fn: (props) => {
+        expectTypeOf(props.optional?.label).toEqualTypeOf<string | undefined>();
+        expectTypeOf(props.optional?.count).toEqualTypeOf<string | undefined>();
+        return props;
+      },
+    });
+    expect(helper({ optional: { label: 'Docs' } })).toEqual({
+      optional: { label: 'Docs' },
+    });
+    expect(helper({ options: { optional: { count: 2 } } })).toEqual({
+      optional: { count: '2' },
+    });
+    const sameSource = createReusable({
+      props: {
+        include: {
+          options: { optional: { label: (label) => label.toUpperCase() } },
+        },
+      },
+      select: { options: { optional: { count: (count) => count.toFixed(0) } } },
+      fn: (props) => {
+        if (props.optional) {
+          expectTypeOf(props.optional.label).toEqualTypeOf<string>();
+          expectTypeOf(props.optional.count).toEqualTypeOf<string>();
+        }
+        return props;
+      },
+    });
+    expect(
+      sameSource({ options: { optional: { label: 'Docs', count: 2 } } }),
+    ).toEqual({ optional: { label: 'DOCS', count: '2' } });
+  });
+
+  it('preserves optional ancestor guards on required nested objects', () => {
+    const { createReusable } = createDefinedResourceLayout({
+      resources: ['users'],
+      options: {
+        optional: createProp
+          .object({
+            shared: createProp.object({
+              label: createProp.string(),
+              count: createProp.number(),
+            }),
+            caller: createProp.object({ title: createProp.string() }),
+            selected: createProp.object({ count: createProp.number() }),
+          })
+          .optional(),
+      },
+    });
+    const helper = createReusable({
+      props: {
+        include: {
+          options: { optional: { shared: { label: true }, caller: true } },
+        },
+      },
+      select: {
+        options: {
+          optional: {
+            shared: { count: (count) => count.toFixed(0) },
+            selected: { count: true },
+          },
+        },
+      },
+      fn: (props) => {
+        expectTypeOf(props.optional?.shared?.label).toEqualTypeOf<
+          string | undefined
+        >();
+        expectTypeOf(props.optional?.shared?.count).toEqualTypeOf<
+          string | undefined
+        >();
+        if (props.optional?.caller)
+          expectTypeOf(props.optional.caller.title).toEqualTypeOf<string>();
+        if (props.optional?.selected)
+          expectTypeOf(props.optional.selected.count).toEqualTypeOf<number>();
+        return props;
+      },
+    });
+    expect(
+      helper({
+        optional: { shared: { label: 'Docs' }, caller: { title: 'Title' } },
+      }),
+    ).toEqual({
+      optional: { shared: { label: 'Docs' }, caller: { title: 'Title' } },
+    });
+    expect(
+      helper({
+        options: { optional: { shared: { count: 2 }, selected: { count: 3 } } },
+      }),
+    ).toEqual({ optional: { shared: { count: '2' }, selected: { count: 3 } } });
+    expect(helper()).toEqual({});
+  });
+
   it('passes async results through without adding required resource inputs', async () => {
     const helper = factory.createReusable({
       select: { resources: async (resources) => resources.raw()[0] },
