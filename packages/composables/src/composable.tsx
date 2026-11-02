@@ -483,6 +483,23 @@ type DefinedComposableComponentFactory<
   (
     render: (props: Show<ResolveProps<Props>>) => ReactNode
   ): DefinedComposableComponentRecord<Name, Props, Wrapper>;
+  /** Customize this instance without changing the factory's defaults. */
+  <
+    const Overrides extends InPropsObject = {},
+    const CustomName extends string = Name,
+    CustomWrapper = Wrapper
+  >(options: {
+    name?: CustomName;
+    props?: Overrides | ((defaults: Props) => Overrides);
+    wrapWith?: CustomWrapper;
+    render: (
+      props: Show<ResolveProps<Omit<Props, keyof Overrides> & Overrides>>
+    ) => ReactNode;
+  }): DefinedComposableComponentRecord<
+    CustomName,
+    Omit<Props, keyof Overrides> & Overrides,
+    CustomWrapper
+  >;
 };
 
 function resolvePresetComposableCallProps<Props extends InPropsObject>(
@@ -512,8 +529,34 @@ export function defineComposableComponent<
   const { name, props = {} as Props, wrapWith } = options;
 
   const factory = (
-    render: (props: Show<ResolveProps<Props>>) => ReactNode
+    definition:
+      | ((props: Show<ResolveProps<Props>>) => ReactNode)
+      | {
+          name?: string;
+          props?: InPropsObject | ((defaults: Props) => InPropsObject);
+          wrapWith?: unknown;
+          render: (props: any) => ReactNode;
+        }
   ): DefinedComposableComponentRecord<Name, Props, Wrapper> => {
+    if (typeof definition !== 'function') {
+      const overrides =
+        typeof definition.props === 'function'
+          ? definition.props(props)
+          : definition.props;
+
+      return defineComposableComponent({
+        ...options,
+        name: definition.name ?? name,
+        props: { ...props, ...overrides },
+        wrapWith: 'wrapWith' in definition ? definition.wrapWith : wrapWith,
+      })(definition.render) as unknown as DefinedComposableComponentRecord<
+        Name,
+        Props,
+        Wrapper
+      >;
+    }
+
+    const render = definition;
     const component = createComposableComponent<
       Name,
       Wrapper,
