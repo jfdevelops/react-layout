@@ -9,6 +9,11 @@ import { LayoutConfigurationError } from '../errors';
 import { createLayoutResourcesAccessor } from './define-layout';
 import type { CreateReusable, ReusableOverlap } from './reusable-types';
 export type * from './reusable-types';
+import {
+  singleResourceInput,
+  isSingleResourceInput,
+  getResourcePaths,
+} from './reusable-resource-input';
 
 type RuntimeSelection = Record<string, unknown>;
 type PlanLocation = { from: 'props' | 'options' | 'resources'; path: string[] };
@@ -20,6 +25,9 @@ type ValuePlan = PlanLocation & {
   selector?: (value: any) => unknown;
   definition?: AnyBuiltPropDefinition;
 };
+type ResourceSelector = NonNullable<ValuePlan['selector']>;
+type ResourceSelections = Map<ResourceSelector, unknown>;
+
 type ObjectPlan = {
   kind: 'object';
   children: Record<string, Plan>;
@@ -252,6 +260,7 @@ function resolvePlan(
   props: Record<string, unknown>,
   options: Record<string, unknown>,
   resources: unknown,
+  resourceSelections: ResourceSelections,
 ) {
   const result: Record<string, unknown> = {};
   for (const [key, node] of Object.entries(plan.children)) {
@@ -264,7 +273,13 @@ function resolvePlan(
           ),
         )
       ) {
-        result[key] = resolvePlan(node, props, options, resources);
+        result[key] = resolvePlan(
+          node,
+          props,
+          options,
+          resources,
+          resourceSelections,
+        );
       }
     } else {
       if (
@@ -275,8 +290,16 @@ function resolvePlan(
       )
         continue;
       const value = readLocation(node, props, options, resources);
-      if (node.selector) result[key] = node.selector(value);
-      else if (
+      if (node.selector) {
+        const selected =
+          node.source === 'resource'
+            ? resourceSelections.get(node.selector)
+            : node.selector(value);
+        result[key] =
+          node.source === 'resource' && isSingleResourceInput(selected)
+            ? props.resources
+            : selected;
+      } else if (
         value !== undefined ||
         node.definition?.visibility !== 'optional'
       )
@@ -298,7 +321,17 @@ export function createReusableBuilder(
     typeof entry === 'string' ? entry : entry.value,
   );
   const resource = createProp.string.enum(keys as [string, ...string[]]);
-  const resourcesAccessor = createLayoutResourcesAccessor(resources);
+  const singleResource = createProp.string.enum(
+    getResourcePaths(resources) as [string, ...string[]],
+  );
+  const resourcesAccessor = Object.assign(
+    createLayoutResourcesAccessor(resources),
+    {
+      single() {
+        return { [singleResourceInput]: resources };
+      },
+    },
+  );
 
   function createReusable(definition: {
     props?: PropsContract<RuntimeSelection, InPropsObject>;
@@ -410,6 +443,12 @@ export function createReusableBuilder(
             optionPlan(optionDefinitions, sources, 'options'),
             'options',
           );
+    const resourceSelectors = new Set(
+      [include.resources, select.resources].filter(
+        (selector): selector is ResourceSelector =>
+          typeof selector === 'function',
+      ),
+    );
     const needsOptions = Object.keys(sourceDefinitions).length > 0;
     if (needsOptions && Object.hasOwn(callerDefinitions, 'options')) {
       throw new LayoutConfigurationError(
@@ -436,7 +475,17 @@ export function createReusableBuilder(
       }
       const values = (props.options ?? {}) as Record<string, unknown>;
       validateProps(sourceDefinitions, values);
-      return definition.fn(resolvePlan(plan, props, values, resourcesAccessor));
+      // Resource callbacks also declare caller inputs, independently of overlap precedence.
+      const resourceSelections: ResourceSelections = new Map();
+      for (const selector of resourceSelectors) {
+        const selected = selector(resourcesAccessor);
+        if (isSingleResourceInput(selected))
+          validateProps({ resources: singleResource }, props);
+        resourceSelections.set(selector, selected);
+      }
+      return definition.fn(
+        resolvePlan(plan, props, values, resourcesAccessor, resourceSelections),
+      );
     };
   }
   return createReusable as unknown;

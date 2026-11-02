@@ -1,5 +1,9 @@
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
-import { createDefinedResourceLayout, createProp } from '../../src';
+import {
+  createDefinedResourceLayout,
+  createProp,
+  type ReusableResourcesAccessor,
+} from '../../src';
 
 const factory = createDefinedResourceLayout({
   resources: ['users', { value: 'posts', subResources: ['comments'] }],
@@ -46,6 +50,173 @@ describe('reusable selectors', () => {
       nested: { label: 'DOCS' },
     });
     expect(input.options.nested.label).toBe('docs');
+  });
+
+  it('accepts and validates one caller-supplied resource with single()', () => {
+    const fn = vi.fn();
+    const helper = factory.createReusable({
+      props: { include: { resources: (resources) => resources.single() } },
+      select: { options: { title: (title) => title.toUpperCase() } },
+      fn: (props) => {
+        fn(props);
+        return `${props.resources}: ${props.title}`;
+      },
+    });
+    expect(helper({ resources: 'posts', options: { title: 'Docs' } })).toBe(
+      'posts: DOCS',
+    );
+    fn.mockClear();
+    for (const resources of ['missing', ['users'], 1, undefined]) {
+      expect(() =>
+        helper({ resources, options: { title: 'Docs' } } as never),
+      ).toThrow();
+    }
+    expect(fn).not.toHaveBeenCalled();
+    expect(() => helper({ options: { title: 'Docs' } } as never)).toThrow();
+  });
+
+  it('validates a single-resource include even when preferSelect discards its output', () => {
+    const fn = vi.fn();
+    const helper = factory.createReusable({
+      props: { include: { resources: (resources) => resources.single() } },
+      select: { resources: (resources) => resources.raw() },
+      overlap: 'preferSelect',
+      fn: (props) => {
+        fn(props);
+        return props.resources;
+      },
+    });
+    for (const props of [
+      {},
+      { resources: 'missing' },
+      { resources: ['users'] },
+    ]) {
+      expect(() => helper(props as never)).toThrow();
+    }
+    expect(fn).not.toHaveBeenCalled();
+    expect(helper({ resources: 'posts.comments' })).toEqual(
+      factory.resources.raw(),
+    );
+  });
+
+  it('validates a discarded selected single-resource contract under preferProps', () => {
+    const fn = vi.fn();
+    const helper = factory.createReusable({
+      props: { include: { resources: (resources) => resources.raw() } },
+      select: { resources: (resources) => resources.single() },
+      overlap: 'preferProps',
+      fn: (props) => {
+        fn(props);
+        return props.resources;
+      },
+    });
+    expect(() => helper({} as never)).toThrow();
+    expect(() => helper({ resources: 'missing' } as never)).toThrow();
+    expect(fn).not.toHaveBeenCalled();
+    expect(helper({ resources: 'posts.comments' })).toEqual(
+      factory.resources.raw(),
+    );
+  });
+
+  it('evaluates each resource callback once per call while validating overlap contracts', () => {
+    const single = vi.fn(
+      (resources: ReusableResourcesAccessor<readonly ['users']>) =>
+        resources.single(),
+    );
+    const derived = vi.fn(
+      (resources: ReusableResourcesAccessor<readonly ['users']>) =>
+        resources.raw(),
+    );
+    const { createReusable } = createDefinedResourceLayout({
+      resources: ['users'],
+    });
+    const helper = createReusable({
+      props: { include: { resources: single } },
+      select: { resources: derived },
+      overlap: 'preferSelect',
+      fn: (props) => props.resources,
+    });
+    expect(single).not.toHaveBeenCalled();
+    expect(derived).not.toHaveBeenCalled();
+    expect(helper({ resources: 'users' })).toEqual(['users']);
+    expect(helper({ resources: 'users' })).toEqual(['users']);
+    expect(single).toHaveBeenCalledTimes(2);
+    expect(derived).toHaveBeenCalledTimes(2);
+    single.mockClear();
+    const shared = createReusable({
+      props: { include: { resources: single } },
+      select: { resources: single },
+      fn: (props) => props.resources,
+    });
+    expect(shared({ resources: 'users' })).toBe('users');
+    expect(single).toHaveBeenCalledOnce();
+  });
+
+  it('infers the resource union and preserves array and derived resource behavior', () => {
+    const helper = factory.createReusable({
+      props: { include: { resources: (resources) => resources.single() } },
+      fn: (props) => {
+        expectTypeOf(props.resources).toEqualTypeOf<
+          'users' | 'posts' | 'posts.comments'
+        >();
+        return props.resources;
+      },
+    });
+    expectTypeOf(helper)
+      .parameter(0)
+      .toEqualTypeOf<{ resources: 'users' | 'posts' | 'posts.comments' }>();
+    expect(helper({ resources: 'users' })).toBe('users');
+    expect(helper({ resources: 'posts.comments' })).toBe('posts.comments');
+    const array = factory.createReusable({
+      props: { include: { resources: true } },
+      fn: (props) => props.resources,
+    });
+    expect(array({ resources: ['users', 'posts'] })).toEqual([
+      'users',
+      'posts',
+    ]);
+    const derived = factory.createReusable({
+      select: { resources: (resources) => resources.raw()[0] },
+      fn: (props) => props.resources,
+    });
+    expect(derived()).toBe('users');
+    const selected = factory.createReusable({
+      select: { resources: (resources) => resources.single() },
+      fn: (props) => props.resources,
+    });
+    expect(selected({ resources: 'posts' })).toBe('posts');
+  });
+
+  it('accepts complete nested paths and rejects unqualified or invalid subresources', () => {
+    const { createReusable } = createDefinedResourceLayout({
+      resources: [
+        'users',
+        {
+          value: 'posts',
+          subResources: [{ value: 'comments', subResources: ['replies'] }],
+        },
+      ],
+    });
+    const helper = createReusable({
+      props: { include: { resources: (resources) => resources.single() } },
+      fn: (props) => {
+        expectTypeOf(props.resources).toEqualTypeOf<
+          'users' | 'posts' | 'posts.comments' | 'posts.comments.replies'
+        >();
+        return props.resources;
+      },
+    });
+    expect(helper({ resources: 'posts.comments.replies' })).toBe(
+      'posts.comments.replies',
+    );
+    for (const resources of [
+      'comments',
+      'replies',
+      'posts.replies',
+      'posts.comments.missing',
+    ]) {
+      expect(() => helper({ resources } as never)).toThrow();
+    }
   });
 
   it('requires only explicitly selected option values', () => {

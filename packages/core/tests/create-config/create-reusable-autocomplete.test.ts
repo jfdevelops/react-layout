@@ -91,6 +91,30 @@ it.each(['typescript-5-9', 'typescript'])(
     splitOptional({ optional: { label: 'Docs' } });
     splitOptional({ options: { optional: { count: 2 } } });
     splitOptional();
+    const /*singleHover*/singleResource = createReusable({
+      props: { include: { resources: resources => resources.single() } },
+      fn: props => { const resource: 'users' = props.resources; return resource; },
+    });
+    singleResource({ resources: 'users' });
+    // @ts-expect-error A single resource must be supplied.
+    singleResource();
+    // @ts-expect-error Arrays are not single resource values.
+    singleResource({ resources: ['users'] });
+    // @ts-expect-error Only configured resource names are allowed.
+    singleResource({ resources: 'missing' });
+    const nestedFactory = createDefinedResourceLayout({ resources: [{ value: 'posts', subResources: [{ value: 'comments', subResources: ['replies'] }] }] });
+    const nestedResource = nestedFactory.createReusable({
+      props: { include: { resources: resources => resources.single() } },
+      fn: props => {
+        const path: 'posts' | 'posts.comments' | 'posts.comments.replies' = props.resources;
+        return path;
+      },
+    });
+    nestedResource({ resources: 'posts.comments.replies' });
+    // @ts-expect-error Subresources must be qualified by their parent path.
+    nestedResource({ resources: 'comments' });
+    // @ts-expect-error Missing intermediate path segments are invalid.
+    nestedResource({ resources: 'posts.replies' });
     const callerResources = createReusable({ props: { include: { resources: true } }, fn: props => props.resources });
     // @ts-expect-error Caller resource values must be configured resource names.
     callerResources({ resources: ['missing'] });
@@ -127,6 +151,16 @@ it.each(['typescript-5-9', 'typescript'])(
           file,
           source.indexOf('/*hover*/') + '/*hover*/'.length,
         )?.displayParts,
+      );
+      const singleHover = ts.displayPartsToString(
+        service.getQuickInfoAtPosition(
+          file,
+          source.indexOf('/*singleHover*/') + '/*singleHover*/'.length,
+        )?.displayParts,
+      );
+      expect(singleHover).toMatch(/resources: ["']users["']/);
+      expect(singleHover).not.toMatch(
+        /SingleResourceInput|ReusableInput|Expanded</,
       );
       expect(hover).toContain('owner: string');
       expect(hover).toContain('length: number');

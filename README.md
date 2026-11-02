@@ -238,6 +238,25 @@ options. In `select`, `resources: true` supplies the full accessor; resource-onl
 helpers need no source input because their data is bound to the factory.
 A callback over the entire options object supplies its result as `props.options`.
 
+Use `resources.single()` inside a resource selector to require one resource key
+from the caller instead of deriving a value automatically:
+
+```ts
+const describeOneResource = createReusable({
+  props: { include: { resources: resources => resources.single() } },
+  fn: ({ resources }) => resources,
+});
+
+describeOneResource({ resources: 'panedeck' });
+```
+
+The caller's `resources` value is required and validated against configured
+resource paths. Nested resources use dot-delimited paths such as
+`'posts.comments.replies'`; parent resource paths remain valid too. `resources: true` still accepts an array of
+resource keys; ordinary resource selectors still supply their results
+automatically. The same single-input descriptor can be returned from
+`select.resources`.
+
 Identical source selections, including the same callback reference, resolve once.
 Different fields of the same selected object merge recursively. Identical `true`
 option selections shared by include and select use the `options` source field
@@ -246,7 +265,11 @@ once rather than requiring a duplicate flattened prop.
 Ambiguous collisions raise a configuration error, even when the result types
 match. Rename one property, or set `overlap: 'preferProps'` or
 `overlap: 'preferSelect'` to choose explicitly. Both configured input contracts
-remain validated under an explicit policy; the losing transformation is not run.
+remain validated under an explicit policy. Losing option transformations are not
+run. Resource callbacks also declare caller-input contracts, so each distinct
+resource callback is evaluated once per call even when its output loses an
+overlap. Any `single()` requirement is validated before `fn`, and the winning
+output reuses the cached callback result.
 
 Existing `true` entries in `props.include` continue to require caller-supplied,
 validated values in their original flattened shape when they are not shared with

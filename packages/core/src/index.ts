@@ -229,5 +229,5 @@ export type { CreateLazyRenderState, LazyDefaultState } from './lazy/create-rend
 
 export type { BuiltinRenderStateName } from './create-config/render-state';
 
-export type { CreateReusable, ReusableInclude, ReusableOptionSelection, ReusableProps, ReusableSelected, ReusableResolved, ReusableDefinition, ReusableArguments, ReusableInput, ReusableFunction, ReusableOverlap } from './create-config/create-reusable';
+export type { CreateReusable, ReusableInclude, ReusableOptionSelection, ReusableProps, ReusableSelected, ReusableResolved, ReusableDefinition, ReusableArguments, ReusableInput, ReusableFunction, ReusableOverlap, ReusableResourcesAccessor, SingleResourceInput } from './create-config/create-reusable';
 export type { ChildrenRequirement, CustomPropsObject } from './custom-props';
