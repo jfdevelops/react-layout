@@ -3962,8 +3962,11 @@ function createResourceLayoutShellComponent(
     const renderProps = {
       ...validatedCustomProps,
       ...renderIncludedProps,
-      children: outlet == null ? outlet : shellChildren,
     };
+    // Explicit validators may narrow children to values such as strings.
+    if (typeof shell.props?.custom?.children !== 'function') {
+      renderProps.children = outlet == null ? outlet : shellChildren;
+    }
     const renderContext = {
       composables: resolvedComposables,
       resource,

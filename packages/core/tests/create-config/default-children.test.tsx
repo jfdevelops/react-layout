@@ -1,7 +1,11 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, expectTypeOf, it } from 'vitest';
 import { createElement, type ReactNode } from 'react';
-import { createDefinedResourceLayout, defineResourceLayout } from '../../src';
+import {
+  createDefinedResourceLayout,
+  createProp,
+  defineResourceLayout,
+} from '../../src';
 import { renderCapturingError } from './helpers';
 
 afterEach(cleanup);
@@ -74,7 +78,9 @@ describe('default render children', () => {
   it('provides the shell content region as props.children', () => {
     const { Shell } = defineResourceLayout.withLayout({
       resources: ['users'],
-      shell: { render: ({ children }) => <main>{children ?? 'Empty shell'}</main> },
+      shell: {
+        render: ({ children }) => <main>{children ?? 'Empty shell'}</main>,
+      },
     });
     const view = render(
       <Shell>
@@ -100,6 +106,67 @@ describe('default render children', () => {
     expect(
       renderCapturingError(createElement(Shell, {} as never))?.message,
     ).toContain('children');
+  });
+
+  it.each([false, true])(
+    'retains shell resource reporting with shorthand required = %s',
+    (required) => {
+      const { Shell, createResourceLayout } = defineResourceLayout.withLayout({
+        resources: ['users'],
+        shell: {
+          props: required
+            ? { custom: { children: 'required' as const } }
+            : undefined,
+          render: ({ children }, { resources }) => (
+            <main>
+              <span data-testid="current-resource">
+                {resources.current ?? 'none'}
+              </span>
+              {children}
+            </main>
+          ),
+        },
+        layout: { render: () => <p>Page</p> },
+      });
+      const Users = createResourceLayout({ resource: 'users', name: 'Users' });
+      render(
+        <Shell>
+          <Users />
+        </Shell>,
+      );
+      expect(screen.getByTestId('current-resource')).toHaveTextContent('users');
+    },
+  );
+
+  it('preserves explicitly validated string children in shell render props', () => {
+    const { Shell } = defineResourceLayout.withLayout({
+      resources: ['users'],
+      shell: {
+        props: { custom: { children: createProp.string() } },
+        render: ({ children }) => {
+          expectTypeOf(children).toEqualTypeOf<string>();
+          return <header>{children.toUpperCase()}</header>;
+        },
+      },
+    });
+    render(<Shell>Title</Shell>);
+    expect(screen.getByText('TITLE')).toBeInTheDocument();
+  });
+
+  it('preserves optional validator-based shell children when supplied or omitted', () => {
+    const { Shell } = defineResourceLayout.withLayout({
+      resources: ['users'],
+      shell: {
+        props: { custom: { children: createProp.string().optional() } },
+        render: ({ children }) => (
+          <header>{children?.toUpperCase() ?? 'Empty'}</header>
+        ),
+      },
+    });
+    const view = render(<Shell>Title</Shell>);
+    expect(screen.getByText('TITLE')).toBeInTheDocument();
+    view.rerender(<Shell />);
+    expect(screen.getByText('Empty')).toBeInTheDocument();
   });
 
   it('preserves children through derived states and deferred renders', async () => {
