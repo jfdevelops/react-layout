@@ -1,5 +1,18 @@
 # @jfdevelops/react-layout-composables
 
+## 0.5.0
+
+### Minor Changes
+
+- f9ebf87: Add `createProp.array(itemDefinition)` with inferred element types, optional arrays, unions, and indexed validation errors. Re-export `createProp` from the composables package.
+- dbd131a: Add an object overload to factories returned by `defineComposableComponent`, allowing per-instance prop extensions and overrides, names, wrappers, and render callbacks. Preserve the existing render-callback overload and factory defaults.
+- 9638939: Expose optional React children in render props and generated component calls by default. Reserve `props.custom.children: 'required'` for controlling the built-in content slot, with validation. Forward actual children to defined-composable render callbacks and the shell's first render argument.
+
+### Patch Changes
+
+- Updated dependencies [f9ebf87]
+  - @jfdevelops/react-layout-validator@0.4.0
+
 ## 0.4.0
 
 ### Minor Changes
