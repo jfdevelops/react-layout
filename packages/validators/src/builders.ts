@@ -1,3 +1,4 @@
+import { ArrayProp } from './array';
 import { JSX } from 'react';
 import { BaseProp } from './base';
 import { ComponentProp, ComponentPropWithPropertiesProp, RenderChildrenProp } from './component';
@@ -117,7 +118,9 @@ type EnumWrappedPropState<
 > = PrimitiveWrappedPropState<Type, Visibility, never>;
 
 type WrappedPropState<Prop extends AnyBaseProp> =
-  Prop extends StringProp<infer Visibility>
+  Prop extends ArrayProp<infer Item, infer Visibility>
+    ? { type: 'array'; visibility: Visibility; itemProp: Item }
+    : Prop extends StringProp<infer Visibility>
     ? StringWrappedPropState<Visibility>
     : Prop extends NumberProp<infer Visibility>
       ? NumberWrappedPropState<Visibility>
@@ -174,7 +177,9 @@ export type WrappedProp<Prop extends AnyBaseProp> = ((
   value: unknown,
 ) => ReturnType<Prop['validate']>) &
   WrappedPropState<Prop> &
-  WrappedPropChainMembers<Prop> & {
+  (Prop extends ArrayProp<infer Item, infer Visibility>
+    ? OptionalChain<Visibility, ArrayProp<Item, 'optional'>>
+    : WrappedPropChainMembers<Prop>) & {
     _baseProp: Prop;
     or<Other extends AnyBaseProp>(other: {
       _baseProp: Other;
@@ -429,6 +434,10 @@ function getPropState<Prop extends AnyBaseProp>(
   if (prop instanceof RenderChildrenProp) {
     state.renderProps = prop.renderProps;
     state.childrenType = prop.childrenType;
+  }
+
+  if (prop instanceof ArrayProp) {
+    state.itemProp = prop.itemProp;
   }
 
   if (prop instanceof RecordProp) {
@@ -858,6 +867,9 @@ export const createProp = {
   boolean: createPrimitivePropBuilder('boolean'),
   object: createObjectProp,
   record: createRecordProp,
+  /** Creates an array whose elements are validated by the supplied definition. */
+  array: <Item extends AnyBuiltPropDefinition>(item: Item) =>
+    wrapProp(new ArrayProp(item, 'required')),
   component: <Type extends ComponentPropType>(options: { type: Type }) =>
     createComponentPropBuilder(options.type),
   /**

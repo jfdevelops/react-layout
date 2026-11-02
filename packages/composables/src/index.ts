@@ -1,3 +1,4 @@
+export { createProp } from '@jfdevelops/react-layout-validator';
 export {
   collectComposablePresetEntries,
   composablePresetMetaKey,
