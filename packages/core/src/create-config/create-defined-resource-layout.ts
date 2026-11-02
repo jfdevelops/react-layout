@@ -1,3 +1,4 @@
+import { createReusableBuilder, type CreateReusable } from './create-reusable';
 import { inspectLazy } from '../lazy/inspection';
 import type { ResourcePath } from '../resource';
 import { createLazyRenderStateBuilder, type CreateLazyRenderState, type CreateBoundLazyErrorComponent } from '../lazy/create-render-state';
@@ -288,6 +289,8 @@ export type CreateDefinedResourceLayoutResult<
     | LayoutNameInput<LayoutResourceKey<Resources>>
     | undefined = undefined
 > = {
+  /** Creates a custom logic function with selected options and custom props. */
+  createReusable: CreateReusable<Resources, Options>;
   /** Creates eager, deferred, or separately imported render-state fragments. */
   createRenderState: CreateRenderState<
     Resources,
@@ -503,6 +506,7 @@ export function createDefinedResourceLayout<
   };
 
   return inspection.attach({
+    createReusable: createReusableBuilder(resources, options),
     createRenderState: createRenderStateBuilder(
       {
         props: configuration.props,

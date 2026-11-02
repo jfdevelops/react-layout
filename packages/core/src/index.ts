@@ -227,3 +227,5 @@ export type { ScopedComponentRenderFn } from './lazy/scoped-content';
 export type { CreateLazyRenderState, LazyDefaultState } from './lazy/create-render-state';
 
 export type { BuiltinRenderStateName } from './create-config/render-state';
+
+export type { CreateReusable, ReusableInclude, ReusableOptionSelection, ReusableProps } from './create-config/create-reusable';

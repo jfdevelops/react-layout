@@ -202,3 +202,5 @@ export type {
 } from './render-state';
 export { defineLayoutPreview } from './preview';
 export type { LayoutPreviewProps } from './preview';
+
+export type { CreateReusable, ReusableInclude, ReusableOptionSelection, ReusableProps } from './create-reusable';
