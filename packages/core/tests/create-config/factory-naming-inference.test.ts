@@ -6,7 +6,9 @@ import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
-const root = fileURLToPath(new URL('../..', import.meta.url));
+const root = resolve(
+  fileURLToPath(new URL('../..', import.meta.url))
+).replaceAll('\\', '/');
 const typeEntry = process.env.REACT_LAYOUT_TYPE_ENTRY;
 const declarationEntry = typeEntry
   ? resolve(root, typeEntry === 'dist' ? 'dist/index.d.mts' : typeEntry)
@@ -20,7 +22,7 @@ it.each(['typescript-5-9', 'typescript'])(
   (compilerPackage) => {
     const ts: typeof TypeScript = require(compilerPackage);
     const config = ts.readConfigFile(
-      resolve(root, 'tsconfig.json'),
+      `${root}/tsconfig.json`,
       ts.sys.readFile
     );
     const parsed = ts.parseJsonConfigFileContent(
@@ -30,13 +32,12 @@ it.each(['typescript-5-9', 'typescript'])(
     );
     const paths = published
       ? {
-          '@jfdevelops/react-layout': [declarationEntry]
+          '@jfdevelops/react-layout': [
+            (declarationEntry ?? '').replaceAll('\\', '/')
+          ]
         }
       : parsed.options.paths;
-    const completionFile = resolve(
-      root,
-      'tests/create-config/naming-parts-probe.ts'
-    );
+    const completionFile = `${root}/tests/create-config/naming-parts-probe.ts`;
     const completionSource = `
       import { defineLayoutName } from '@jfdevelops/react-layout';
       const naming = defineLayoutName({ pattern: ({ resource, capitalize }, parts) =>
@@ -58,14 +59,14 @@ it.each(['typescript-5-9', 'typescript'])(
         .namingFn({ pattern: ({ resource }, parts) => \`\${parts.section}\${resource}\${parts.suffix}\` });
       strings({ /*stringParts*/ });
     `;
+    const isProbe = (file: string) => file.replaceAll('\\', '/') === completionFile;
     const service = ts.createLanguageService({
       getScriptFileNames: () => [completionFile],
       getScriptVersion: () => '1',
       getScriptSnapshot: (file) => {
-        const contents =
-          file === completionFile
-            ? completionSource
-            : ts.sys.readFile(file);
+        const contents = isProbe(file)
+          ? completionSource
+          : ts.sys.readFile(file);
         return contents === undefined
           ? undefined
           : ts.ScriptSnapshot.fromString(contents);
@@ -73,8 +74,9 @@ it.each(['typescript-5-9', 'typescript'])(
       getCurrentDirectory: () => root,
       getCompilationSettings: () => ({ ...parsed.options, paths }),
       getDefaultLibFileName: ts.getDefaultLibFilePath,
-      fileExists: ts.sys.fileExists,
-      readFile: ts.sys.readFile,
+      fileExists: (file) => isProbe(file) || ts.sys.fileExists(file),
+      readFile: (file) =>
+        isProbe(file) ? completionSource : ts.sys.readFile(file),
       readDirectory: ts.sys.readDirectory
     });
     try {
@@ -105,23 +107,17 @@ it.each(['typescript-5-9', 'typescript'])(
     }
     const program = ts.createProgram({
       rootNames: [
-        resolve(
-          root,
-          'tests/create-config/fixtures/named-factory/usage.tsx'
-        ),
-        resolve(root, 'vitest.setup.ts')
+        `${root}/tests/create-config/fixtures/named-factory/usage.tsx`,
+        `${root}/vitest.setup.ts`
       ],
       options: { ...parsed.options, paths }
     });
     expect(
       program.getSourceFile(
-        declarationEntry ?? resolve(root, 'src/index.ts')
+        (declarationEntry ?? `${root}/src/index.ts`).replaceAll('\\', '/')
       )
     ).toBeDefined();
-    const fixtureRoot = resolve(
-      root,
-      'tests/create-config/fixtures/named-factory'
-    );
+    const fixtureRoot = `${root}/tests/create-config/fixtures/named-factory`;
     // Check the consumer modules with each compiler. The implementation itself
     // is checked separately by the workspace's own TypeScript compiler.
     const diagnostics = [
@@ -129,7 +125,9 @@ it.each(['typescript-5-9', 'typescript'])(
       ...program.getSyntacticDiagnostics(),
       ...program
         .getSourceFiles()
-        .filter((file) => file.fileName.startsWith(fixtureRoot))
+        .filter((file) =>
+          file.fileName.replaceAll('\\', '/').startsWith(fixtureRoot)
+        )
         .flatMap((file) => program.getSemanticDiagnostics(file))
     ];
     expect(
