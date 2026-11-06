@@ -4,11 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-patchedDependencies:
-  '@jfdevelops/create-error@0.2.0':
-    hash: afc71b16c3f866f54416d30f467784ddc31736feb04f281a5fc4772ea422f4a9
-    path: patches/@jfdevelops__create-error@0.2.0.patch
-
 importers:
 
   .:
@@ -148,8 +143,8 @@ importers:
   packages/composables:
     dependencies:
       '@jfdevelops/create-error':
-        specifier: 0.2.0
-        version: 0.2.0(patch_hash=afc71b16c3f866f54416d30f467784ddc31736feb04f281a5fc4772ea422f4a9)
+        specifier: 0.2.1
+        version: 0.2.1
       '@jfdevelops/react-layout-validator':
         specifier: workspace:*
         version: link:../validators
@@ -203,8 +198,8 @@ importers:
   packages/core:
     dependencies:
       '@jfdevelops/create-error':
-        specifier: 0.2.0
-        version: 0.2.0(patch_hash=afc71b16c3f866f54416d30f467784ddc31736feb04f281a5fc4772ea422f4a9)
+        specifier: 0.2.1
+        version: 0.2.1
       '@jfdevelops/react-layout-composables':
         specifier: workspace:*
         version: link:../composables
@@ -361,8 +356,8 @@ importers:
   packages/validators:
     dependencies:
       '@jfdevelops/create-error':
-        specifier: 0.2.0
-        version: 0.2.0(patch_hash=afc71b16c3f866f54416d30f467784ddc31736feb04f281a5fc4772ea422f4a9)
+        specifier: 0.2.1
+        version: 0.2.1
       arktype:
         specifier: 2.2.8
         version: 2.2.8
@@ -758,8 +753,8 @@ packages:
       '@types/node':
         optional: true
 
-  '@jfdevelops/create-error@0.2.0':
-    resolution: {integrity: sha512-ZzD36TzBRUsfHb9M112PWzUmFJtHytArtnpdGL7uZnhYJ1DSBdnyqTFQIgkiotT1zqhczxnHm0NwTi5STBahJQ==}
+  '@jfdevelops/create-error@0.2.1':
+    resolution: {integrity: sha512-sTbCdEy+f850Qqlo3SpGMk7GydQn+IvMDQ/ZkwTuwZvCWsbZrSfysOMIrPiJeaM6nhMZP/cSMcnTwN/PpiOMCA==}
     engines: {node: '>=20.19.0'}
 
   '@jridgewell/gen-mapping@0.3.13':
@@ -3708,7 +3703,7 @@ snapshots:
     optionalDependencies:
       '@types/node': 24.10.1
 
-  '@jfdevelops/create-error@0.2.0(patch_hash=afc71b16c3f866f54416d30f467784ddc31736feb04f281a5fc4772ea422f4a9)':
+  '@jfdevelops/create-error@0.2.1':
     dependencies:
       '@standard-schema/spec': 1.1.0
 

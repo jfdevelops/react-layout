@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { expect, it } from 'vitest';
 
 it.each(['empty', 'populated'])('suggests state and include keys in %s objects across every API', (stage) => {
-  const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
+  const root = resolve(fileURLToPath(new URL('../..', import.meta.url))).replaceAll('\\', '/');
   const file = `${root}/tests/create-config/autocomplete-probe.tsx`;
   const source = `
     import { defineResourceLayout, createDefinedResourceLayout, createProp } from '../../src';
@@ -72,18 +72,30 @@ it.each(['empty', 'populated'])('suggests state and include keys in %s objects a
     + '/*breadcrumbInclude*/' + breadcrumbTest.slice(includeEnd);
   const config = ts.readConfigFile(`${root}/tsconfig.json`, ts.sys.readFile);
   const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, root);
+  const normalized = (name: string) => name.replaceAll('\\', '/');
+  const isProbe = (name: string) => normalized(name) === file;
+  const isBreadcrumb = (name: string) => normalized(name) === breadcrumbFile;
   const service = ts.createLanguageService({
     getScriptFileNames: () => [file, breadcrumbFile],
     getScriptVersion: () => '1',
     getScriptSnapshot: (name) => {
-      const contents = name === file ? source : name === breadcrumbFile ? breadcrumbSource : ts.sys.readFile(name);
+      const contents = isProbe(name)
+        ? source
+        : isBreadcrumb(name)
+          ? breadcrumbSource
+          : ts.sys.readFile(name);
       return contents === undefined ? undefined : ts.ScriptSnapshot.fromString(contents);
     },
     getCurrentDirectory: () => root,
     getCompilationSettings: () => parsed.options,
     getDefaultLibFileName: ts.getDefaultLibFilePath,
-    fileExists: ts.sys.fileExists,
-    readFile: ts.sys.readFile,
+    fileExists: (name) => isProbe(name) || isBreadcrumb(name) || ts.sys.fileExists(name),
+    readFile: (name) =>
+      isProbe(name)
+        ? source
+        : isBreadcrumb(name)
+          ? breadcrumbSource
+          : ts.sys.readFile(name),
     readDirectory: ts.sys.readDirectory,
   });
 
