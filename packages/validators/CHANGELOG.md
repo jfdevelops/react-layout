@@ -1,5 +1,11 @@
 # @jfdevelops/react-layout-validator
 
+## 0.4.1
+
+### Patch Changes
+
+- 0e7c7d3: Bump `@jfdevelops/create-error` to 0.2.1 and drop the local type-export patch now that the published package re-exports the needed types.
+
 ## 0.4.0
 
 ### Minor Changes
