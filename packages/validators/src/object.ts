@@ -1,3 +1,4 @@
+import { validateDefinition } from './standard-schema';
 import type {
   BuiltPropShape,
   ExtractDefinitionValue,
@@ -57,7 +58,7 @@ export class ObjectProp<
       }
 
       try {
-        prop(propertyValue);
+        validateDefinition(prop, propertyValue);
       } catch (error) {
         if (!(error instanceof PropError)) {
           throw error;
@@ -106,7 +107,7 @@ export class ObjectProp<
       }
 
       try {
-        prop(propertyValue);
+        validateDefinition(prop, propertyValue);
       } catch {
         return false;
       }

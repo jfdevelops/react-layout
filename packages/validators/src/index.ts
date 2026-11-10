@@ -1,4 +1,7 @@
 export { ArrayProp } from './array';
+export { isStandardSchema, validateDefinition } from './standard-schema';
+export type { DefinitionVisibility, LegacyPropDefinition, InputDefinitions, ResolveInputProps, ResolvedInputShape, ResolveLayoutInputProps } from './types';
+export type { StandardSchemaV1 } from '@standard-schema/spec';
 export { BaseProp, primitiveTypes } from './base';
 export { PropError, type PropErrorOptions } from './prop-error';
 export { InvalidRecordKeyError, InvalidWrapperError } from './errors';

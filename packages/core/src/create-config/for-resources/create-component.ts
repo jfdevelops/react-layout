@@ -1,7 +1,12 @@
+import type { OptionSchema } from '../../option-schema';
+import type { StandardSchemaV1 } from '@jfdevelops/react-layout-validator';
+import type { InputDefinitions } from '@jfdevelops/react-layout-validator';
 import type {
   CustomPropsInput,
   NormalizedCustomProps,
   ResolveRenderPropsAsDefined,
+  ResolveCallPropsAsDefined,
+  ResolveCallProps,
   CustomPropsObject,
   ResolveRenderProps,
 } from '../../custom-props';
@@ -188,10 +193,13 @@ export type ScopedResourceComponentProps<
   >,
   ComponentCustomProps extends CustomPropsObject,
   Resource extends string,
+  Input extends boolean = false,
 > = Show<
   Omit<
     ResolvedIncludedPropsAsDefined<
-      ScopedComponentAvailableProps<
+      Input extends true ? InputDefinitions<ScopedComponentAvailableProps<
+        Resources, InProps, Composables, LayoutCustomProps
+      >> : ScopedComponentAvailableProps<
         Resources,
         InProps,
         Composables,
@@ -199,7 +207,7 @@ export type ScopedResourceComponentProps<
       >,
       ComponentIncludeProps
     > &
-      ResolveRenderPropsAsDefined<ComponentCustomProps>,
+      (Input extends true ? ResolveCallPropsAsDefined<ComponentCustomProps> : ResolveRenderPropsAsDefined<ComponentCustomProps>),
     'resource'
   > & {
     children?: ReactNode;
@@ -240,6 +248,7 @@ export type ScopedResourceComponentCallProps<
   DefinedProps extends object = {},
 > = WithDefinedOptional<
   Show<
+    (InProps extends OptionSchema ? StandardSchemaV1.InferInput<InProps> : {}) &
     ScopedResourceComponentProps<
       Resources,
       InProps,
@@ -247,7 +256,8 @@ export type ScopedResourceComponentCallProps<
       LayoutCustomProps,
       ComponentIncludeProps,
       ComponentCustomProps,
-      Resource
+      Resource,
+      true
     > &
       Omit<PropsFromRenderResult<RenderResult>, 'children' | 'resource'>
   >,
@@ -361,7 +371,7 @@ export type PropsFromScopedRender<Definition> = Definition extends {
  * component type returned from `render`.
  */
 export type ScopedComponentCallProps<Definition> = Show<
-  ResolveRenderPropsAsDefined<ScopedComponentOwnProps<Definition>> &
+  ResolveCallPropsAsDefined<ScopedComponentOwnProps<Definition>> &
     PropsFromScopedRender<Definition>
 >;
 
@@ -503,7 +513,7 @@ export type ScopedResourceComponentRenderContext<
    * internally from that resource's entry options. Accepts the layout's
    * custom props.
    */
-  Root: (props: Show<ResolveRenderProps<LayoutCustomProps>>) => JSX.Element;
+  Root: (props: Show<ResolveCallProps<LayoutCustomProps>>) => JSX.Element;
   state: StateNames;
 } & {
   [Resource in keyof ComponentsByResource as Capitalize<

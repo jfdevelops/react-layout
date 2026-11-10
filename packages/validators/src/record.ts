@@ -1,3 +1,4 @@
+import { validateDefinition } from './standard-schema';
 import type {
   AnyBuiltPropDefinition,
   ExtractDefinitionValue,
@@ -15,7 +16,7 @@ function assertAllowedRecordKey(
   }
 
   try {
-    keyProp(key);
+    validateDefinition(keyProp, key);
   } catch {
     throw new InvalidRecordKeyError(`"${key}" is not an allowed record key.`);
   }
@@ -60,7 +61,7 @@ export class RecordProp<
 
     for (const key of Object.keys(recordValue)) {
       assertAllowedRecordKey(key, this.keyProp);
-      this.valueProp(recordValue[key]);
+      validateDefinition(this.valueProp, recordValue[key]);
       validatedRecord[key] = recordValue[
         key
       ] as ExtractDefinitionValue<ValueProp>;
@@ -81,7 +82,7 @@ export class RecordProp<
     try {
       for (const key of Object.keys(recordValue)) {
         assertAllowedRecordKey(key, this.keyProp);
-        this.valueProp(recordValue[key]);
+        validateDefinition(this.valueProp, recordValue[key]);
       }
 
       return true;

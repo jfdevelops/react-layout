@@ -1,3 +1,4 @@
+import { validateOptionSchema, type OptionSchema } from '../../option-schema';
 import { normalizeCustomProps, type CustomPropsObject } from '../../custom-props';
 import { RenderStateNameContext } from '../render-state-context';
 import {
@@ -38,10 +39,13 @@ import {
   withScopedCompoundStatics,
 } from './scoped-render';
 
+const rawSchemaInputs = Symbol('rawSchemaInputs');
+
 type CreateForResourcesOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
 > = {
   lazyEnvironment?: LazyEnvironment;
+  optionSchema?: OptionSchema;
   createLayoutForResource: (
     defaultName: string | undefined,
     resource: LayoutResourceKey<Resources>,
@@ -67,6 +71,7 @@ export function createForResources<
   createResourceLayout,
   getComponentPropDefinitions,
   lazyEnvironment,
+  optionSchema,
 }: CreateForResourcesOptions<Resources>) {
   return ((...resourcesOrOptions: Array<unknown>) => {
     const firstArgument = resourcesOrOptions[0];
@@ -391,16 +396,16 @@ export function createForResources<
                   );
                 }
 
-                const resolvedOwnProps = ownProps ?? {};
-                cachedOwnProps = resolvedOwnProps;
+                let resolvedOwnProps = ownProps ?? {};
 
-                validateProps(ownPropDefinitions, resolvedOwnProps, {
+                resolvedOwnProps = validateProps(ownPropDefinitions, resolvedOwnProps, {
                   layoutName:
                     entry.name ??
                     defaultNames.get(resource) ??
                     capitalize(resource),
                   resource,
                 });
+                cachedOwnProps = resolvedOwnProps;
 
                 // Mount a returned component type with call-site props; pass
                 // nodes (elements, portals, null) through unchanged.
@@ -529,7 +534,8 @@ export function createForResources<
       >();
 
       function Root(rootProps: Record<string, unknown>) {
-        const componentProps = useContext(componentPropsContext);
+        const contextProps = useContext(componentPropsContext);
+        const componentProps = contextProps && ((contextProps as Record<symbol, Record<string, unknown>>)[rawSchemaInputs] ?? contextProps);
 
         if (componentProps === undefined) {
           throw new LayoutConfigurationError(
@@ -556,7 +562,7 @@ export function createForResources<
           const layoutOptions: Record<string, unknown> = {};
           const defined = entry.props?.defined ?? {};
 
-          for (const key of Object.keys(availableDefinitions)) {
+          for (const key of (optionSchema ? Object.keys(componentProps).filter((key) => key !== 'resource' && key !== 'children' && !Object.hasOwn(custom, key)) : Object.keys(availableDefinitions))) {
             if (key in defined) {
               layoutOptions[key] = defined[key];
             }
@@ -589,7 +595,7 @@ export function createForResources<
         const definedCustom: Record<string, unknown> = {};
         const forwardedRootProps: Record<string, unknown> = {};
 
-        for (const key of Object.keys(getComponentPropDefinitions(resource))) {
+        for (const key of (optionSchema ? Object.keys(componentProps).filter((key) => key !== 'resource' && key !== 'children' && !Object.hasOwn(custom, key)) : Object.keys(getComponentPropDefinitions(resource)))) {
           if (key in componentProps) {
             forwardedRootProps[key] = componentProps[key];
           }
@@ -630,7 +636,14 @@ export function createForResources<
 
         const defined =
           definedEntries.get(componentResource)?.props?.defined ?? {};
-        const resolvedComponentProps = { ...defined, ...componentProps };
+        const rawComponentProps = { ...defined, ...componentProps };
+        let resolvedComponentProps = { ...rawComponentProps };
+        if (optionSchema) {
+          const inputs = Object.fromEntries(Object.entries(rawComponentProps).filter(([key]) =>
+            key !== 'resource' && key !== 'children' && !Object.hasOwn(custom, key),
+          ));
+          Object.assign(resolvedComponentProps, validateOptionSchema(optionSchema, inputs, { resource: componentResource }));
+        }
         const availableDefinitions =
           getComponentPropDefinitions(componentResource);
         const definitionsToValidate: Record<string, AnyBuiltPropDefinition> =
@@ -657,13 +670,15 @@ export function createForResources<
           definitionsToValidate[key] = definition;
         }
 
-        validateProps(definitionsToValidate, resolvedComponentProps, {
+        resolvedComponentProps = validateProps(definitionsToValidate, resolvedComponentProps, {
           layoutName:
             definedEntries.get(componentResource)?.name ??
             defaultNames.get(componentResource) ??
             capitalize(componentResource),
           resource: componentResource,
         });
+
+        if (optionSchema) Object.defineProperty(resolvedComponentProps, rawSchemaInputs, { value: rawComponentProps });
 
         // Top-level render may return a component type; mount it with the full
         // component props (include/custom + inferred return-type props).

@@ -1,13 +1,14 @@
+import { isStandardSchema } from './standard-schema';
+import type { AnyBuiltPropDefinition } from './types';
+
 type ValueBackedDefinition = {
   _baseProp?: {
     value?: unknown;
   };
 };
 
-export function isPropDefinitionShape(value: unknown): value is {
-  visibility: unknown;
-} {
-  return typeof value === 'function' && value !== null && 'visibility' in value;
+export function isPropDefinitionShape(value: unknown): value is AnyBuiltPropDefinition {
+  return isStandardSchema(value) || (typeof value === 'function' && 'visibility' in value);
 }
 
 export function resolvePropDefinitionValues(input: Record<string, unknown>) {

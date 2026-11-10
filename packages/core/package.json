@@ -40,9 +40,9 @@
   "dependencies": {
     "@jfdevelops/create-error": "0.2.1",
     "@jfdevelops/react-layout-composables": "workspace:*",
+    "@jfdevelops/react-layout-devtools-core": "workspace:*",
     "@jfdevelops/react-layout-validator": "workspace:*",
-    "arktype": "2.2.8",
-    "@jfdevelops/react-layout-devtools-core": "workspace:*"
+    "arktype": "2.2.8"
   },
   "peerDependencies": {
     "react": ">=18",
@@ -69,7 +69,12 @@
     "typescript": "6.0.3",
     "typescript-5-9": "npm:typescript@5.9.3",
     "unrun": "0.3.0",
+    "valibot": "^1.5.0",
     "vite": "8.0.10",
-    "vitest": "4.1.5"
+    "vitest": "4.1.5",
+    "zod": "^4.6.7",
+    "@jfdevelops/react-layout-adapter-zod": "workspace:*",
+    "@jfdevelops/react-layout-adapter-valibot": "workspace:*",
+    "@jfdevelops/react-layout-adapter-arktype": "workspace:*"
   }
 }

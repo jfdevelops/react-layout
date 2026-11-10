@@ -7,6 +7,11 @@ export default defineConfig({
   preview: { allowedHosts: ['.localhost'] },
   resolve: {
     alias: {
+      '@jfdevelops/react-layout-adapters': path.resolve(__dirname, '../adapters/src/index.ts'),
+      '@jfdevelops/react-layout-adapter-zod': path.resolve(__dirname, '../adapter-zod/src/index.ts'),
+      '@jfdevelops/react-layout-adapter-valibot': path.resolve(__dirname, '../adapter-valibot/src/index.ts'),
+      '@jfdevelops/react-layout-adapter-arktype': path.resolve(__dirname, '../adapter-arktype/src/index.ts'),
+
       '@jfdevelops/react-layout': path.resolve(__dirname, 'src/index.ts'),
       '@jfdevelops/react-layout-composable-breadcrumb': path.resolve(
         __dirname,

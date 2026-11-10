@@ -22,6 +22,18 @@
       ],
       "@jfdevelops/react-layout-devtools-core": [
         "../devtools-core/src/index.ts"
+      ],
+      "@jfdevelops/react-layout-adapter-zod": [
+        "../adapter-zod/src/index.ts"
+      ],
+      "@jfdevelops/react-layout-adapter-valibot": [
+        "../adapter-valibot/src/index.ts"
+      ],
+      "@jfdevelops/react-layout-adapter-arktype": [
+        "../adapter-arktype/src/index.ts"
+      ],
+      "@jfdevelops/react-layout-adapters": [
+        "../adapters/src/index.ts"
       ]
     }
   },

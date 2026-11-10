@@ -1,9 +1,11 @@
+import { optionDefinitions, schemaOptionDefinitions, validateOptionSchema, type OptionSchema } from '../option-schema';
 import {
   normalizeCustomProps,
   type CustomPropsInput,
   type NormalizedCustomProps,
   type CustomPropsObject,
   type ResolveRenderProps,
+  type ResolveCallProps,
 } from '../custom-props';
 import {
   RenderStateNameContext,
@@ -79,8 +81,11 @@ import {
   createPrimitivePropBuilder,
   createProp,
   type ResolveLayoutProps,
+  type ResolveLayoutInputProps,
   resolvePropDefinitionValues,
   validateProps,
+  isPropDefinitionShape,
+  isStandardSchema,
 } from '@jfdevelops/react-layout-validator';
 import {
   IncludedProps,
@@ -459,7 +464,7 @@ type SplitLayoutInPropDefinition<
 function isBuiltPropDefinition(
   value: unknown
 ): value is AnyBuiltPropDefinition {
-  return typeof value === 'function' && value !== null && 'visibility' in value;
+  return isPropDefinitionShape(value);
 }
 
 function isSplitLayoutInPropDefinition(
@@ -1208,7 +1213,7 @@ type ResourceLayoutStateComponents<
         `${Name}.${State}`,
         Show<
           OptionalStateChildren<
-            ResolveRenderProps<RenderStateCustomProps<States[State]>> &
+            ResolveCallProps<RenderStateCustomProps<States[State]>> &
               ResolvedIncludedComponentProps<
                 MergedLayoutInProps<Resources, Options, Composables>,
                 Extract<
@@ -1223,7 +1228,7 @@ type ResourceLayoutStateComponents<
         ((
           props: Show<
             OptionalStateChildren<
-              ResolveRenderProps<RenderStateCustomProps<States[State]>> &
+              ResolveCallProps<RenderStateCustomProps<States[State]>> &
                 ResolvedIncludedComponentProps<
                   MergedLayoutInProps<Resources, Options, Composables>,
                   Extract<
@@ -1260,8 +1265,8 @@ export type ResourceLayoutComponent<
   Options extends InPropsDefinition<Resources> = {},
   PropDefinitions extends InPropsObject = NormalizedCustomProps<Props>
 > = ResourceLayoutComposition<Name, Composables> &
-  BaseComponent<Name, Show<ResolveRenderProps<Props> & IncludedCallProps>> & {
-    (props: Show<ResolveRenderProps<Props> & IncludedCallProps>): JSX.Element;
+  BaseComponent<Name, Show<ResolveCallProps<Props> & IncludedCallProps>> & {
+    (props: Show<ResolveCallProps<Props> & IncludedCallProps>): JSX.Element;
     /**
      * A type-only property containing the resource associated with this
      * component. This property is `undefined` at runtime.
@@ -1283,8 +1288,12 @@ export type LayoutPropsForResource<
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents = {},
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {}
-> = [keyof IncludeProps] extends [never]
-  ? ResolveLayoutProps<InferredInProps<Resources, InProps>> &
+> = InProps extends OptionSchema
+  ? Omit<import('@jfdevelops/react-layout-validator').StandardSchemaV1.InferInput<InProps>,
+      keyof ResolvedIncludedComponentProps<MergedLayoutInProps<Resources, InProps, Composables>, IncludeProps>> &
+      RequiredPresetLayoutProps<Composables>
+  : [keyof IncludeProps] extends [never]
+  ? ResolveLayoutInputProps<InferredInProps<Resources, InProps>> &
       RequiredPresetLayoutProps<Composables>
   : ResolvedIncludedConfigProps<
       MergedLayoutInProps<Resources, InProps, Composables>,
@@ -1762,9 +1771,9 @@ function defineResourceLayoutImpl<
       source: getLayoutDebug(options)?.source ?? getLayoutDebug(layout)?.source,
       details: {
         props: layout.props,
-        propSchemas: typeof inProps === 'function' ? undefined : inProps,
+        propSchemas: typeof inProps === 'function' && !isStandardSchema(inProps) ? undefined : inProps,
         options:
-          typeof inProps === 'function'
+          typeof inProps === 'function' && !isStandardSchema(inProps)
             ? 'Resource-specific schemas'
             : Object.keys(inProps),
         states:
@@ -1857,16 +1866,18 @@ function defineResourceLayoutImpl<
       >();
     const nameProp = createProp.string().literal(name);
     const rawResolvedOptions =
-      typeof inProps === 'function'
+      typeof inProps === 'function' && !isStandardSchema(inProps)
         ? inProps({
             resource: resourcesEnum,
             name: nameProp,
           })
         : inProps;
     const { resolvedInProps, splitInProps } = splitLayoutInProps({
-      ...(rawResolvedOptions as Record<string, unknown>),
+      ...optionDefinitions(rawResolvedOptions, Object.keys(layoutOptionProps)),
       ...(instancePropDefinitions as Record<string, unknown> | undefined),
-      ...layoutOptionProps,
+      ...Object.fromEntries(Object.entries(layoutOptionProps).filter(([, value]) =>
+        isBuiltPropDefinition(value) || isSplitLayoutInPropDefinition(value),
+      )),
     });
     const { composables, props: legacyLayoutProps } = layout;
     const renderStates = (
@@ -2090,7 +2101,10 @@ function defineResourceLayoutImpl<
       }
     }
 
-    const mergedResolvedInProps = { ...resolvedInProps };
+    const rootOptionSchema = isStandardSchema(rawResolvedOptions) ? rawResolvedOptions as OptionSchema : undefined;
+    const mergedResolvedInProps = rootOptionSchema
+      ? Object.assign(schemaOptionDefinitions(rootOptionSchema, Object.keys(includeLayoutProps ?? {})), resolvedInProps)
+      : { ...resolvedInProps };
 
     for (const {
       props: presetPropDefinitions,
@@ -2222,6 +2236,18 @@ function defineResourceLayoutImpl<
         ...validationContext,
       });
       const includedPropKeys = Object.keys(includeLayoutProps ?? {});
+      const rootInputs = {
+        ...(fallbackOptions?.owner === activeInspection.layout ? fallbackOptions.props : layoutOptionValues),
+      };
+      delete rootInputs.resource;
+      for (const key of includedPropKeys) {
+        if (allowsComponentPassthrough(includeLayoutProps?.[key]) && Object.hasOwn(props, key)) {
+          rootInputs[key] = (props as Record<string, unknown>)[key];
+        }
+      }
+      const rootValues = rootOptionSchema
+        ? validateOptionSchema(rootOptionSchema, rootInputs, validationContext)
+        : undefined;
       const includedPropDefinitions = pick(
         mergedResolvedInProps,
         includedPropKeys
@@ -2244,7 +2270,12 @@ function defineResourceLayoutImpl<
           ? readLayoutOptionValue(key, definition, fallbackOptions?.owner === activeInspection.layout ? fallbackOptions.props : layoutOptionValues)
           : undefined;
         const splitValue = key in splitInProps ? splitInProps[key] : undefined;
-        const value = callSiteValue ?? layoutOptionValue ?? splitValue;
+        const value = rootValues ? rootValues[key]
+          : isStandardSchema(definition)
+          ? allowsComponentPassthrough(includeBehavior) && Object.hasOwn(props, key)
+            ? (props as Record<string, unknown>)[key]
+            : layoutOptionValue !== undefined ? layoutOptionValue : splitValue
+          : callSiteValue ?? layoutOptionValue ?? splitValue;
 
         if (value !== undefined) {
           includedPropValues[key] = value;
@@ -2307,7 +2338,8 @@ function defineResourceLayoutImpl<
                   value={{
                     scope: stateScope,
                     props: layoutRenderProps,
-                    definitions: mergedResolvedInProps,
+                    definitions: { ...mergedResolvedInProps, ...resolvedLayoutProps },
+                    inputProps: { ...rootInputs, ...props },
                   }}
                 >
                   <RenderDefaultState renderProps={layoutRenderProps} />
@@ -2758,14 +2790,14 @@ function defineResourceLayoutImpl<
   function getComponentPropDefinitions(resource: LayoutResourceKey<Resources>) {
     const componentName = 'ScopedResourceComponent';
     const rawResolvedOptions =
-      typeof inProps === 'function'
+      typeof inProps === 'function' && !isStandardSchema(inProps)
         ? inProps({
             resource: resourcesEnum,
             name: createProp.string().literal(componentName),
           })
         : inProps;
     const { resolvedInProps } = splitLayoutInProps(
-      rawResolvedOptions as Record<string, unknown>
+      optionDefinitions(rawResolvedOptions)
     );
     const renderStates = (
       typeof layout.render === 'function'
@@ -2798,10 +2830,10 @@ function defineResourceLayoutImpl<
       Object.assign(resolvedInProps, presetPropDefinitions);
     }
 
-    return {
-      ...resolvedInProps,
-      ...normalizeCustomProps(mergeLayoutProps(layout.props, defaultState?.props)?.custom ?? {}),
-    };
+    return Object.assign(
+      isStandardSchema(rawResolvedOptions) ? optionDefinitions(rawResolvedOptions) : resolvedInProps,
+      normalizeCustomProps(mergeLayoutProps(layout.props, defaultState?.props)?.custom ?? {}),
+    );
   }
 
   const { createLayoutForResourceBuilder, forResource } = createForResource<
@@ -2827,6 +2859,7 @@ function defineResourceLayoutImpl<
       : {}),
     createResourceLayout: definedResourceLayout as never,
     getComponentPropDefinitions,
+    optionSchema: isStandardSchema(inProps) ? inProps as OptionSchema : undefined,
     lazyEnvironment: {
       store: inheritedInspection?.store ?? inspection!.store,
       parent: inheritedInspection?.layout ?? inspection!.definition,
@@ -3333,7 +3366,8 @@ export type ResourceLayoutShellProps<
   >,
   ShellCustomProps extends CustomPropsObject
 > = Show<
-  ResolveRenderProps<ShellCustomProps> &
+  (Options extends OptionSchema ? import('@jfdevelops/react-layout-validator').StandardSchemaV1.InferInput<Options> : {}) &
+  ResolveCallProps<ShellCustomProps> &
     ResolvedIncludedComponentProps<
       MergedLayoutInProps<Resources, Options, ShellComposables>,
       ShellIncludeProps
@@ -3688,14 +3722,14 @@ function createResourceLayoutShellComponent(
   // resource, so — like the component path in `defineResourceLayoutImpl` — the
   // enum stands in for `resource` while resolving the definitions.
   const rawResolvedOptions =
-    typeof inProps === 'function'
+    typeof inProps === 'function' && !isStandardSchema(inProps)
       ? inProps({
           resource: resourcesEnum,
           name: createProp.string().literal(shellName),
         })
       : inProps;
   const { resolvedInProps, splitInProps } = splitLayoutInProps(
-    rawResolvedOptions as Record<string, unknown>
+    optionDefinitions(rawResolvedOptions)
   );
 
   const includeShellProps = shell.props?.include;
@@ -3809,10 +3843,14 @@ function createResourceLayoutShellComponent(
       resource: resource ?? '',
     };
 
-    const mergedResolvedInProps = { ...resolvedInProps } as Record<
-      string,
-      unknown
-    >;
+    const rootOptionSchema = isStandardSchema(rawResolvedOptions) ? rawResolvedOptions as OptionSchema : undefined;
+    const rootInputs = Object.fromEntries(Object.entries(props).filter(([key]) =>
+      key !== 'resource' && key !== 'children' && !Object.hasOwn(shellCustomDefinitions, key),
+    ));
+    const rootValues = rootOptionSchema ? validateOptionSchema(rootOptionSchema, rootInputs, validationContext) : undefined;
+    const mergedResolvedInProps = rootOptionSchema
+      ? Object.assign(schemaOptionDefinitions(rootOptionSchema, includeShellPropKeys), resolvedInProps)
+      : { ...resolvedInProps } as Record<string, unknown>;
 
     for (const {
       props: presetPropDefinitions,
@@ -3846,7 +3884,12 @@ function createResourceLayoutShellComponent(
           })
         : undefined;
       const splitValue = key in splitInProps ? splitInProps[key] : undefined;
-      const value = callSiteValue ?? configValue ?? splitValue;
+      const value = rootValues ? rootValues[key]
+        : isStandardSchema(definition)
+        ? allowsComponentPassthrough(behavior) && Object.hasOwn(props, key)
+          ? props[key]
+          : configValue !== undefined ? configValue : splitValue
+        : callSiteValue ?? configValue ?? splitValue;
 
       if (value !== undefined) {
         includedPropValues[key] = value;
@@ -3964,7 +4007,7 @@ function createResourceLayoutShellComponent(
       ...renderIncludedProps,
     };
     // Explicit validators may narrow children to values such as strings.
-    if (typeof shell.props?.custom?.children !== 'function') {
+    if (!isPropDefinitionShape(shell.props?.custom?.children)) {
       renderProps.children = outlet == null ? outlet : shellChildren;
     }
     const renderContext = {

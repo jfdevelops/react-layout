@@ -1,3 +1,4 @@
+import { validateDefinition } from './standard-schema';
 import { BaseProp } from './base';
 import {
   PropError,
@@ -29,7 +30,7 @@ export class ArrayProp<
 
     for (let index = 0; index < value.length; index++) {
       try {
-        this.itemProp(value[index]);
+        validateDefinition(this.itemProp, value[index]);
       } catch (error) {
         if (!(error instanceof PropError)) throw error;
         const path =

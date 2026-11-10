@@ -1,7 +1,7 @@
 import type {
   CustomPropsInput,
   CustomPropsObject,
-  ResolveRenderProps,
+  ResolveCallProps,
 } from '../custom-props';
 import { createElement, type ComponentType, type ReactNode } from 'react';
 import type { ComposableComponents } from '@jfdevelops/react-layout-composables';
@@ -73,7 +73,7 @@ export type CreateLazyRenderState<
   >;
 }) => ComponentType<
   OptionalStateChildren<
-    ResolveRenderProps<Custom> &
+    ResolveCallProps<Custom> &
       ResolvedIncludedComponentProps<
         MergedLayoutInProps<Resources, Options, Composables>,
         LazyDefaultIncludes<Include>
