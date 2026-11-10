@@ -1,6 +1,6 @@
 # Hosted surfaces
 
-> Status: design proposal. Not implemented yet.
+> Status: implemented.
 >
 > Goal: type the product relationship between a root layout family and
 > structurally different hosted families (side panes, settings overlays)
@@ -48,11 +48,11 @@ chrome, not a different chrome attached to a host resource.
 
 Every surface definition uses the same slots:
 
-| Slot | Meaning |
-| --- | --- |
-| `resources` | Addressable ids for **this** surface (domain resources, pane modes, settings sections, …) |
-| `host` | Optional attachment to a host layout's resources (`resources` subset or `'*'`) |
-| `options` / `composables` / `props` / `render` / `shell` | Existing layout contract |
+| Slot                                                     | Meaning                                                                                   |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `resources`                                              | Addressable ids for **this** surface (domain resources, pane modes, settings sections, …) |
+| `host`                                                   | Optional attachment to a host layout's resources (`resources` subset or `'*'`)            |
+| `options` / `composables` / `props` / `render` / `shell` | Existing layout contract                                                                  |
 
 No per-surface special keys such as `modes`, `kind`, or ad-hoc relationship
 fields. A pane mode is a resource id on the pane surface. Overlay behavior
@@ -104,29 +104,30 @@ families call `defineResourceSurface`:
 // admin/$resource/-pane/layout.tsx
 import { defineResourceSurface } from '../../-utils/layout/base';
 
-export const { createRenderState, defineResourceLayout } = defineResourceSurface({
-  resources: ['create', 'detail', 'edit'],
-  host: {
-    resources: [
-      'appointments',
-      'locations',
-      'services',
-      'purposes',
-      'payments',
-      'logs',
-      'templates',
-      'team',
-      'documents',
-      'automations',
-    ], // must be ⊆ admin resources
-  },
-  options: {
-    title: createProp.component({ type: 'ReactNode' }),
-  },
-  composables: (create) => ({
-    // pane chrome composables
-  }),
-});
+export const { createRenderState, defineResourceLayout } =
+  defineResourceSurface({
+    resources: ['create', 'detail', 'edit'],
+    host: {
+      resources: [
+        'appointments',
+        'locations',
+        'services',
+        'purposes',
+        'payments',
+        'logs',
+        'templates',
+        'team',
+        'documents',
+        'automations',
+      ], // must be ⊆ admin resources
+    },
+    options: {
+      title: createProp.component({ type: 'ReactNode' }),
+    },
+    composables: (create) => ({
+      // pane chrome composables
+    }),
+  });
 
 export const resourcePaneLayout = defineResourceLayout({
   render: {
@@ -139,25 +140,26 @@ export const resourcePaneLayout = defineResourceLayout({
 // admin/$resource/-settings/layout.tsx
 import { defineResourceSurface } from '../../-utils/layout/base';
 
-export const { createRenderState, defineResourceLayout } = defineResourceSurface({
-  resources: [
-    'general',
-    'booking',
-    'payments',
-    'channels',
-    'notifications',
-    'exports',
-    'launch',
-    'limits',
-  ],
-  host: {
-    resources: '*', // openable over any host resource
-  },
-  options: {
-    title: createProp.component({ type: 'ReactNode' }),
-    description: createProp.component({ type: 'ReactNode' }),
-  },
-});
+export const { createRenderState, defineResourceLayout } =
+  defineResourceSurface({
+    resources: [
+      'general',
+      'booking',
+      'payments',
+      'channels',
+      'notifications',
+      'exports',
+      'launch',
+      'limits',
+    ],
+    host: {
+      resources: '*', // openable over any host resource
+    },
+    options: {
+      title: createProp.component({ type: 'ReactNode' }),
+      description: createProp.component({ type: 'ReactNode' }),
+    },
+  });
 ```
 
 Auth and other unrelated product areas stay on a standalone
@@ -223,16 +225,17 @@ resourcePaneLayout.createResourceLayout({
 ### Conditional typing (conceptual)
 
 ```ts
-type ForResourceOptions<Layout> =
-  Layout extends HostedLayout<infer HostResources>
-    ? {
-        resource: LayoutResources<Layout>;
-        hostedBy: HostResources;
-      }
-    : {
-        resource: LayoutResources<Layout>;
-        // hostedBy is not part of the type
-      };
+type ForResourceOptions<Layout> = Layout extends HostedLayout<
+  infer HostResources
+>
+  ? {
+      resource: LayoutResources<Layout>;
+      hostedBy: HostResources;
+    }
+  : {
+      resource: LayoutResources<Layout>;
+      // hostedBy is not part of the type
+    };
 ```
 
 Rules:
@@ -360,11 +363,11 @@ createDefinedResourceLayout(...)
         └─ createResourceLayout.forResource({ resource, hostedBy })
 ```
 
-| Style | Entrypoint | Host reference |
-| --- | --- | --- |
-| One-shot | `defineResourceSurfaces` | `host.surface: 'page'` string key |
-| Multi-file | `createDefinedResourceLayout` → `defineResourceSurface` | Implicit via returned helper |
-| Feature modules | `forResource` / `createResourceLayout` | Conditional `hostedBy` option |
+| Style           | Entrypoint                                              | Host reference                    |
+| --------------- | ------------------------------------------------------- | --------------------------------- |
+| One-shot        | `defineResourceSurfaces`                                | `host.surface: 'page'` string key |
+| Multi-file      | `createDefinedResourceLayout` → `defineResourceSurface` | Implicit via returned helper      |
+| Feature modules | `forResource` / `createResourceLayout`                  | Conditional `hostedBy` option     |
 
 ## Out of scope for v1
 

@@ -219,15 +219,52 @@ export type {
 export { defineLayoutPreview } from './create-config/preview';
 export type { LayoutPreviewProps } from './create-config/preview';
 
-export { LazyResourceModuleShapeError, LazyResourceStateNotFoundError, isLazyResourceError } from './errors/lazy-resource-error';
-export type { LazyResourceError, LazyResourceErrorMap } from './errors/lazy-resource-error';
-export type { LazyOptions, LazyHandle, LoadStatus, LazyResourceErrorProps, CreateLazyErrorComponent, LazyErrorHandlers } from './lazy/types';
+export {
+  LazyResourceModuleShapeError,
+  LazyResourceStateNotFoundError,
+  isLazyResourceError,
+} from './errors/lazy-resource-error';
+export type {
+  LazyResourceError,
+  LazyResourceErrorMap,
+} from './errors/lazy-resource-error';
+export type {
+  LazyOptions,
+  LazyHandle,
+  LoadStatus,
+  LazyResourceErrorProps,
+  CreateLazyErrorComponent,
+  LazyErrorHandlers,
+} from './lazy/types';
 
 export type { ScopedComponentRenderFn } from './lazy/scoped-content';
 
-export type { CreateLazyRenderState, LazyDefaultState } from './lazy/create-render-state';
+export type {
+  CreateLazyRenderState,
+  LazyDefaultState,
+} from './lazy/create-render-state';
 
 export type { BuiltinRenderStateName } from './create-config/render-state';
 
-export type { CreateReusable, ReusableInclude, ReusableOptionSelection, ReusableProps, ReusableSelected, ReusableResolved, ReusableDefinition, ReusableArguments, ReusableInput, ReusableFunction, ReusableOverlap, ReusableResourcesAccessor, SingleResourceInput } from './create-config/create-reusable';
+export type {
+  CreateReusable,
+  ReusableInclude,
+  ReusableOptionSelection,
+  ReusableProps,
+  ReusableSelected,
+  ReusableResolved,
+  ReusableDefinition,
+  ReusableArguments,
+  ReusableInput,
+  ReusableFunction,
+  ReusableOverlap,
+  ReusableResourcesAccessor,
+  SingleResourceInput,
+} from './create-config/create-reusable';
 export type { ChildrenRequirement, CustomPropsObject } from './custom-props';
+
+export { defineResourceSurfaces } from './create-config/resource-surfaces';
+export type {
+  DefineResourceSurface,
+  SurfaceHost,
+} from './create-config/resource-surface';

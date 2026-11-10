@@ -78,7 +78,9 @@ const { createResourceLayout } = defineResourceLayout({
       Loading: () => <p>Loading users…</p>,
       Error: {
         props: {
-          custom: { error: createProp.object({ message: createProp.string() }) },
+          custom: {
+            error: createProp.object({ message: createProp.string() }),
+          },
         },
         render: ({ error }) => <p>{error.message}</p>,
       },
@@ -131,18 +133,17 @@ fallback-state behavior. Defined composables also receive children in both
 factory overloads, without declaring a prop.
 
 ```tsx
-const {
-  createRenderState,
-  defineResourceLayout,
-} = createDefinedResourceLayout({
-  resources: ['users'],
-  options: {
-    title: createProp.string(),
-  },
-  composables: (create) => ({
-    Layout: create({ name: 'PageLayout' }),
-  }),
-});
+const { createRenderState, defineResourceLayout } = createDefinedResourceLayout(
+  {
+    resources: ['users'],
+    options: {
+      title: createProp.string(),
+    },
+    composables: (create) => ({
+      Layout: create({ name: 'PageLayout' }),
+    }),
+  }
+);
 
 export const Loading = createRenderState({
   state: 'Loading',
@@ -175,10 +176,14 @@ export const createUrl = createReusable({
     include: { options: { meta: true } },
     custom: { protocol: createProp.string.enum(['https', 'http']) },
   },
-  fn: ({ meta, protocol }) => `${protocol}://github.com/${meta.owner}/${meta.repo}`,
+  fn: ({ meta, protocol }) =>
+    `${protocol}://github.com/${meta.owner}/${meta.repo}`,
 });
 
-createUrl({ meta: { owner: 'jfdevelops', repo: 'react-layout' }, protocol: 'https' });
+createUrl({
+  meta: { owner: 'jfdevelops', repo: 'react-layout' },
+  protocol: 'https',
+});
 ```
 
 `include` suggests `resources` and, when defined, `options`. Selected options
@@ -204,11 +209,11 @@ receive the complete resource accessor; option selectors receive resolved values
 ```ts
 const describeResource = createReusable({
   props: {
-    include: { options: { meta: { owner: owner => owner.toUpperCase() } } },
+    include: { options: { meta: { owner: (owner) => owner.toUpperCase() } } },
     custom: { title: createProp.string() },
   },
   select: {
-    resources: resources => resources.raw(),
+    resources: (resources) => resources.raw(),
     options: { meta: { repo: true } },
   },
   fn: ({ title, resources, meta }) => ({
@@ -243,7 +248,7 @@ from the caller instead of deriving a value automatically:
 
 ```ts
 const describeOneResource = createReusable({
-  props: { include: { resources: resources => resources.single() } },
+  props: { include: { resources: (resources) => resources.single() } },
   fn: ({ resources }) => resources,
 });
 
@@ -325,16 +330,20 @@ later in the object. On a bound `defineResourceLayout`, this is the flat
 ```tsx
 defineResourceLayout({
   composables: (_create, states) => ({
-    Message: states.Message.asComposable({ props: { include: { message: true } } }),
+    Message: states.Message.asComposable({
+      props: { include: { message: true } },
+    }),
     ExplicitMessage: states.Message,
   }),
   render: {
     default: {
       props: { custom: { message: createProp.string() } },
-      render: (_props, { composables }) => <>
-        <composables.Message />
-        <composables.ExplicitMessage message="Explicit value" />
-      </>,
+      render: (_props, { composables }) => (
+        <>
+          <composables.Message />
+          <composables.ExplicitMessage message='Explicit value' />
+        </>
+      ),
     },
     Message: {
       props: { custom: { message: createProp.string() } },
@@ -359,11 +368,8 @@ mapped state entries](https://github.com/microsoft/TypeScript/issues/53018), whi
 Entire created resource components can also be loaded lazily:
 
 ```tsx
-const {
-  defineLazyDefaults,
-  defineResourceLayout,
-  resources,
-} = createDefinedResourceLayout({ resources: ['users'] });
+const { defineLazyDefaults, defineResourceLayout, resources } =
+  createDefinedResourceLayout({ resources: ['users'] });
 
 defineLazyDefaults({
   Loading: GenericResourceLoading,
@@ -387,7 +393,6 @@ requiredness and optionality. Their value types are `unknown` until the preset
 schema is available; TypeScript cannot infer a callback's return value into its
 own arguments. Shared preset and option props retain their known value types.
 
-
 ### Deriving render states
 
 `createRenderState` render callbacks expose the resource accessor as `context.resources`, including `resources.current` and the typed selection helpers.
@@ -407,7 +412,9 @@ const Notice = createRenderState.fromState({
   props: { custom: { heading: createProp.string() } },
   render: ({ heading }, { composables, resources }) => (
     <section>
-      <h2>{heading} — {resources.current}</h2>
+      <h2>
+        {heading} — {resources.current}
+      </h2>
       <composables.Ref />
     </section>
   ),
@@ -436,12 +443,17 @@ const definition = defineResourceLayout({
   },
 });
 
-const Users = definition.createResourceLayout({ resource: 'users', name: 'Users' });
+const Users = definition.createResourceLayout({
+  resource: 'users',
+  name: 'Users',
+});
 <Users.Root />;
 <Users.Loading />;
 
 const Callable = definition.createResourceLayout({
-  resource: 'users', name: 'Callable', namespace: false,
+  resource: 'users',
+  name: 'Callable',
+  namespace: false,
 });
 <Callable />;
 ```
@@ -452,10 +464,10 @@ In namespace mode, component metadata and `makeComposable` remain available on `
 
 ## Workspace
 
-| Path | Description |
-| --- | --- |
-| `packages/core` | `@jfdevelops/react-layout` — the published library |
-| `examples/basic-example` | Demo app showing resource layouts in action |
+| Path                     | Description                                        |
+| ------------------------ | -------------------------------------------------- |
+| `packages/core`          | `@jfdevelops/react-layout` — the published library |
+| `examples/basic-example` | Demo app showing resource layouts in action        |
 
 ## Development
 
@@ -522,3 +534,34 @@ Use `ReactLayoutDevtools` from `@jfdevelops/react-layout-devtools-react` for a f
 See [devtools and shared defaults](docs/devtools-and-shared-defaults.md) for setup, global prop contracts, reusable naming conventions, and local overrides.
 
 See [lazy loading](docs/lazy-loading.md) for shared preload and retry behavior, typed lazy errors, and scoped content shells that avoid circular imports.
+
+### Hosted surface families
+
+Use `defineResourceSurface` from a defined layout factory when a pane or overlay
+has its own resources, props, and chrome but belongs to the root product area.
+
+```tsx
+const admin = createDefinedResourceLayout({ resources: ['users', 'teams'] });
+const panes = admin.defineResourceSurface({
+  resources: ['create', 'detail'],
+  host: { resources: ['users'] },
+});
+const paneLayout = panes.defineResourceLayout({ render: () => <aside /> });
+const UserCreatePane = paneLayout.createResourceLayout.forResource({
+  resource: 'create',
+  hostedBy: 'users',
+})();
+```
+
+Hosted factories require `hostedBy` for direct creation and for resource binding
+through `forResource` or `forResources`. Use `host: { resources: '*' }` to allow
+any root resource. Omitting `host` creates an independent family. Root factories
+keep their existing API and reject `hostedBy`.
+
+For one-file definitions, `defineResourceSurfaces({ page: { resources, render },
+pane: { resources, host: { surface: 'page', resources: '*' }, render } })` returns
+one completed layout per key. Each entry supports the existing `options`,
+`composables`, `props`, and `render` contracts; an optional `shell` uses the
+existing persistent `withLayout` implementation. You can also pass completed
+layouts to register them without changing their types or identity. See
+[Hosted surfaces](docs/hosted-surfaces.md) for the full multi-file example.
