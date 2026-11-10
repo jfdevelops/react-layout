@@ -10,6 +10,26 @@ import * as valibot from '@jfdevelops/react-layout-adapter-valibot';
 import * as arktype from '@jfdevelops/react-layout-adapter-arktype';
 
 describe('Standard Schema props', () => {
+  it('forwards raw map-form option inputs to Root while exposing outputs to scoped renders', () => {
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users'],
+      options: { count: z.string().transform(Number) },
+      layout: {
+        props: { include: { count: true } },
+        render: ({ count }) => <p>{count + 1}</p>,
+      },
+    });
+    const Directory = createResourceLayout.forResources('users').createComponent({
+      props: { include: { count: true } },
+      resources: { users: { render: () => <aside>Content</aside> } },
+      render: ({ count }, { Root }) => <main>{count + 1}<Root /></main>,
+    });
+    const markup = renderToStaticMarkup(<Directory resource="users" count="2" />);
+
+    expect(markup).toContain('>3<p');
+    expect(markup).toContain('>3</p>');
+  });
+
   it('accepts schema aliases alongside legacy definitions and native React schemas', () => {
     const titleSchema = z.string();
     const options = {

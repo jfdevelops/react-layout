@@ -11,8 +11,51 @@ export function isStandardSchema(value: unknown): value is StandardSchemaV1 {
     'validate' in standard && typeof standard.validate === 'function';
 }
 
+function containsStandardSchema(definition: unknown, visited = new Set<unknown>()): boolean {
+  if (isStandardSchema(definition)) {
+
+    return true;
+  }
+
+  if (definition === null || (typeof definition !== 'object' && typeof definition !== 'function') || visited.has(definition)) {
+
+    return false;
+  }
+
+  visited.add(definition);
+  const children: unknown[] = [];
+
+  if ('properties' in definition && typeof definition.properties === 'object' && definition.properties !== null) {
+    children.push(...Object.values(definition.properties));
+  }
+
+  if ('itemProp' in definition) {
+    children.push(definition.itemProp);
+  }
+
+  if ('valueProp' in definition) {
+    children.push(definition.valueProp);
+  }
+
+  if ('keyProp' in definition) {
+    children.push(definition.keyProp);
+  }
+
+  if ('members' in definition && Array.isArray(definition.members)) {
+    children.push(...definition.members);
+  }
+
+  return children.some((child) => containsStandardSchema(child, visited));
+}
+
 export function validateDefinition(definition: AnyBuiltPropDefinition, value: unknown) {
-  if (!isStandardSchema(definition)) return definition(value);
+  if (!isStandardSchema(definition)) {
+    const result = definition(value);
+
+    // Pure legacy validation preserves input instances and undeclared fields.
+    // Only schema-backed containers introduce parsed/defaulted output values.
+    return result === undefined || !containsStandardSchema(definition) ? value : result;
+  }
   const result = definition['~standard'].validate(value);
   if (result instanceof Promise || ('then' in result && typeof result.then === 'function')) {
     // Handle rejected async refinements without leaking an unhandled rejection.

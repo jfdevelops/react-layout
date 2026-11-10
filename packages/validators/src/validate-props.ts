@@ -73,7 +73,15 @@ export function validateProps<T extends object>(
     }
 
     try {
-      prop(value);
+      const validatedValue = validateDefinition(prop, value);
+
+      if (!Object.is(validatedValue, value)) {
+        if (validatedProps === props) {
+          validatedProps = { ...props };
+        }
+
+        (validatedProps as Record<string, unknown>)[key] = validatedValue;
+      }
     } catch (error) {
       if (!(error instanceof PropError)) {
         throw error;

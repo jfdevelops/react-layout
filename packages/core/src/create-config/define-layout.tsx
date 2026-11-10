@@ -2248,6 +2248,12 @@ function defineResourceLayoutImpl<
       const rootValues = rootOptionSchema
         ? validateOptionSchema(rootOptionSchema, rootInputs, validationContext)
         : undefined;
+
+      if (rootOptionSchema && rootValues) {
+        // Whole-object outputs must not run through preset input schemas again.
+        Object.assign(mergedResolvedInProps, schemaOptionDefinitions(rootOptionSchema, Object.keys(rootValues)));
+      }
+
       const includedPropDefinitions = pick(
         mergedResolvedInProps,
         includedPropKeys
@@ -3858,6 +3864,10 @@ function createResourceLayoutShellComponent(
       Object.assign(mergedResolvedInProps, presetPropDefinitions);
     }
 
+    if (rootOptionSchema && rootValues) {
+      Object.assign(mergedResolvedInProps, schemaOptionDefinitions(rootOptionSchema, Object.keys(rootValues)));
+    }
+
     // Included props: definition-time defaults from `options`, overridden by
     // anything passed to `<Shell>` (component passthrough). Computed before
     // preset validation so config-passthrough includes can reuse the defaults.
@@ -3925,6 +3935,11 @@ function createResourceLayoutShellComponent(
           );
           const values = Object.fromEntries(
             entries.flatMap(([propKey]) => {
+              if (rootValues && Object.hasOwn(rootValues, propKey)) {
+
+                return Object.hasOwn(rootInputs, propKey) ? [[propKey, rootInputs[propKey]]] : [];
+              }
+
               if (propKey in props) {
                 return [[propKey, props[propKey]]];
               }

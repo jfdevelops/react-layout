@@ -61,10 +61,10 @@ export class RecordProp<
 
     for (const key of Object.keys(recordValue)) {
       assertAllowedRecordKey(key, this.keyProp);
-      validateDefinition(this.valueProp, recordValue[key]);
-      validatedRecord[key] = recordValue[
-        key
-      ] as ExtractDefinitionValue<ValueProp>;
+      validatedRecord[key] = validateDefinition(
+        this.valueProp,
+        recordValue[key],
+      ) as ExtractDefinitionValue<ValueProp>;
     }
 
     return validatedRecord;
