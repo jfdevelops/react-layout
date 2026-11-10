@@ -3829,6 +3829,7 @@ function defineResourceLayoutWithLayoutImpl(
     [layoutDebug]: getLayoutDebug(options),
     resources,
     options: inProps,
+    name: options.name,
     layout: resolvedLayout,
     namespace: options.namespace,
     shellId,
