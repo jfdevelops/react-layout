@@ -6,7 +6,7 @@ A React library for building resource-based page layouts. Define a shared layout
 
 - **Define layouts by resource** — group pages under resources like `users`, `settings`, or nested sub-resources.
 - **Reuse layout structure** — composable slots (e.g. `Layout`, `Title`, `Content`) keep markup consistent across pages.
-- **Type-safe props** — validate and infer layout props with a small built-in prop builder.
+- **Type-safe props** — validate and infer layout props with Standard Schema libraries and native React adapters. See the [migration guide](./docs/standard-schema.md); the legacy prop builder remains supported during deprecation.
 
 ## Quick example
 
