@@ -11,7 +11,7 @@ export function isStandardSchema(value: unknown): value is StandardSchemaV1 {
     'validate' in standard && typeof standard.validate === 'function';
 }
 
-function containsStandardSchema(definition: unknown, visited = new Set<unknown>()): boolean {
+export function containsStandardSchema(definition: unknown, visited = new Set<unknown>()): boolean {
   if (isStandardSchema(definition)) {
 
     return true;

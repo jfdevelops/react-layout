@@ -1,5 +1,8 @@
 import type { AnyBaseProp, ExtractPropValue, PropVisibility } from './types';
 import { BaseProp } from './base';
+import { containsStandardSchema } from './standard-schema';
+import { PropError } from './prop-error';
+import { InvalidRecordKeyError } from './errors';
 
 export class UnionProp<
   const Members extends readonly AnyBaseProp[],
@@ -18,7 +21,17 @@ export class UnionProp<
 
   validate(value: unknown) {
     for (const member of this.members) {
-      if (member.allows(value)) return;
+      try {
+        const result = member.validate(value);
+
+        return containsStandardSchema(member)
+          ? result as ExtractPropValue<Members[number]>
+          : undefined;
+      } catch (error) {
+        if (!(error instanceof PropError) && !(error instanceof InvalidRecordKeyError)) {
+          throw error;
+        }
+      }
     }
 
     throw this.createError(value);

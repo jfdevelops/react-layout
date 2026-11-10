@@ -86,6 +86,7 @@ import {
   validateProps,
   isPropDefinitionShape,
   isStandardSchema,
+  PropError,
 } from '@jfdevelops/react-layout-validator';
 import {
   IncludedProps,
@@ -3934,8 +3935,12 @@ function createResourceLayoutShellComponent(
             })
           );
           const values = Object.fromEntries(
-            entries.flatMap(([propKey]) => {
+            entries.flatMap(([propKey, definition]) => {
               if (rootValues && Object.hasOwn(rootValues, propKey)) {
+                if (!isStandardSchema(definition)) {
+
+                  return [[propKey, rootValues[propKey]]];
+                }
 
                 return Object.hasOwn(rootInputs, propKey) ? [[propKey, rootInputs[propKey]]] : [];
               }
@@ -3951,6 +3956,32 @@ function createResourceLayoutShellComponent(
               return [];
             })
           );
+
+          for (const [propKey, definition] of Object.entries(validatedDefinitions)) {
+            if (!isStandardSchema(definition) || !rootValues || !Object.hasOwn(rootValues, propKey) || Object.hasOwn(rootInputs, propKey)) {
+              continue;
+            }
+
+            try {
+              // Prefer the preset's own default when it accepts an omitted input.
+              const omittedValues: Record<string, unknown> = {};
+              const defaulted = validateProps({ [propKey]: definition }, omittedValues, validationContext);
+
+              if (defaulted[propKey] === undefined && rootValues[propKey] !== undefined) {
+                values[propKey] = rootValues[propKey];
+              } else {
+                values[propKey] = defaulted[propKey];
+                delete validatedDefinitions[propKey];
+              }
+            } catch (error) {
+              if (!(error instanceof PropError)) {
+                throw error;
+              }
+
+              // Required presets may instead consume a defaulted/transformed option.
+              values[propKey] = rootValues[propKey];
+            }
+          }
 
           return [
             key,

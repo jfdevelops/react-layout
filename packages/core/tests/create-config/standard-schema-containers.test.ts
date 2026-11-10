@@ -53,3 +53,38 @@ it('preserves undefined schema outputs and legacy primitive values', () => {
   expect(createProp.object({ value: absent })({ value: 'value' })).toEqual({ value: undefined });
   expect(validateProps({ value: createProp.object({ name: createProp.string() }) }, { value: { name: 'Name' } })).toEqual({ value: { name: 'Name' } });
 });
+
+it('propagates transforms and defaults from union container members', () => {
+  const count = z.string().transform(Number);
+  const cases = [
+    { definition: createProp.array(count).or(createProp.boolean()), input: ['2'], output: [2] },
+    { definition: createProp.object({ count: z.string().default('2').transform(Number) }).or(createProp.boolean()), input: {}, output: { count: 2 } },
+    { definition: createProp.record(count).or(createProp.boolean()), input: { first: '2' }, output: { first: 2 } },
+  ];
+
+  for (const { definition, input, output } of cases) {
+    expect(definition(input)).toEqual(output);
+    expect(validateProps({ value: definition }, { value: input })).toEqual({ value: output });
+    expect(createProp.object({ value: definition })({ value: input })).toEqual({ value: output });
+    expect(definition(true)).toBeUndefined();
+    expect(validateProps({ value: definition }, { value: true })).toEqual({ value: true });
+    expect(() => definition(null)).toThrow();
+  }
+});
+
+it('validates the selected union member once and preserves pure legacy inputs', () => {
+  let transforms = 0;
+  const definition = createProp.array(z.string().transform((value) => {
+    transforms++;
+
+    return Number(value);
+  })).or(createProp.boolean());
+
+  expect(validateProps({ value: definition }, { value: ['2'] })).toEqual({ value: [2] });
+  expect(transforms).toBe(1);
+  const cause = new Error('Cause');
+  const error = new Error('Failure', { cause });
+  const legacy = createProp.object({ message: createProp.string() }).or(createProp.boolean());
+
+  expect(validateProps({ error: legacy }, { error }).error).toBe(error);
+});
