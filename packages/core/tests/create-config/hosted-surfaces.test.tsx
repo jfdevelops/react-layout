@@ -241,10 +241,11 @@ it('preserves option contracts in the bag API', () => {
 const shellBag = defineResourceSurfaces({
   page: {
     resources: ['users'],
+    name: 'UsersPage',
     shell: {
       render: (_props, { children }) => <main>{children}</main>,
     },
-    render: () => <p>Shell page</p>,
+    render: (_props, { name }) => <p>Shell page: {name}</p>,
   },
 });
 
@@ -252,12 +253,24 @@ it('uses the existing persistent shell implementation', () => {
   const Page = shellBag.page.createResourceLayout({
     resource: 'users',
   });
+  const Overridden = shellBag.page.createResourceLayout({
+    resource: 'users',
+    name: 'CustomUsersPage',
+  });
   render(
     <shellBag.page.Shell>
       <Page />
+      <Overridden />
     </shellBag.page.Shell>
   );
-  expect(screen.getByText('Shell page').closest('main')).toBeTruthy();
+  expect(Page.displayName).toBe('UsersPage');
+  expect(Overridden.displayName).toBe('CustomUsersPage');
+  expect(
+    screen.getByText('Shell page: UsersPage').closest('main')
+  ).toBeTruthy();
+  expect(
+    screen.getByText('Shell page: CustomUsersPage').closest('main')
+  ).toBeTruthy();
 });
 
 it('keeps surfaces without a host independent', () => {
