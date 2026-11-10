@@ -1,5 +1,11 @@
 # @jfdevelops/react-layout
 
+## 2.7.0
+
+### Minor Changes
+
+- da5a3e4: Add typed hosted surface families and the defineResourceSurfaces bag API, with conditional hostedBy selection and runtime host validation.
+
 ## 2.6.0
 
 ### Minor Changes
