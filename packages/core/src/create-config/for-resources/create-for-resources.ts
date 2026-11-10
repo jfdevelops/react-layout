@@ -678,7 +678,7 @@ export function createForResources<
           resource: componentResource,
         });
 
-        if (optionSchema) Object.defineProperty(resolvedComponentProps, rawSchemaInputs, { value: rawComponentProps });
+        Object.defineProperty(resolvedComponentProps, rawSchemaInputs, { value: rawComponentProps });
 
         // Top-level render may return a component type; mount it with the full
         // component props (include/custom + inferred return-type props).

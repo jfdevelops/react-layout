@@ -28,9 +28,12 @@ export class ArrayProp<
       throw this.createError(value);
     }
 
+    const validatedValues: ExtractDefinitionValue<Item>[] = [];
+
     for (let index = 0; index < value.length; index++) {
       try {
-        validateDefinition(this.itemProp, value[index]);
+        const validatedValue = validateDefinition(this.itemProp, value[index]);
+        validatedValues.push(validatedValue as ExtractDefinitionValue<Item>);
       } catch (error) {
         if (!(error instanceof PropError)) throw error;
         const path =
@@ -50,7 +53,7 @@ export class ArrayProp<
       }
     }
 
-    return value as ExtractDefinitionValue<Item>[];
+    return validatedValues;
   }
 
   allows(value: unknown): value is ExtractDefinitionValue<Item>[] {

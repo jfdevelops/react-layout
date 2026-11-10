@@ -1,9 +1,10 @@
 import { expect, expectTypeOf, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { createElement } from 'react';
 import { z } from 'zod';
 import * as v from 'valibot';
 import { type } from 'arktype';
-import { defineResourceLayout, createDefinedResourceLayout } from '../../src';
+import { defineResourceLayout, createDefinedResourceLayout, defineComposableComponent, createProp } from '../../src';
 import { reactNode, reactElement } from '@jfdevelops/react-layout-adapter-zod';
 
 it('accepts an aliased whole object schema and preserves object refinements and transforms', () => {
@@ -123,4 +124,81 @@ it('validates whole object schemas on persistent shells', () => {
     layout: { render: () => <p>Page</p> },
   });
   expect(renderToStaticMarkup(<Shell count="2"><aside>Content</aside></Shell>)).toContain('>3<aside>Content</aside></main>');
+});
+
+it('keeps whole-object outputs separate from preset schema inputs in layouts', () => {
+  const count = z.string().transform(Number);
+  const preset = defineComposableComponent({ name: 'Count', props: { count } });
+  const { createResourceLayout } = defineResourceLayout({
+    resources: ['users'],
+    options: z.object({ count }),
+    layout: {
+      composables: () => preset(({ count }) => <span>{count + 1}</span>),
+      props: { include: { count: true } },
+      render: ({ count }, { composables }) => <main>{count + 1}<composables.Count count="4" /></main>,
+    },
+  });
+  const Users = createResourceLayout({ resource: 'users', name: 'Users', count: '2' });
+  const markup = renderToStaticMarkup(<Users />);
+
+  expect(markup).toContain('>3<span');
+  expect(markup).toContain('>5</span>');
+});
+
+it('validates preset defaults from raw inputs rather than whole-object shell outputs', () => {
+  const count = z.string().default('2').transform(Number);
+  const preset = defineComposableComponent({ name: 'Count', props: { count } });
+  const { Shell } = defineResourceLayout.withLayout({
+    resources: ['users'],
+    options: z.object({ count }),
+    shell: {
+      composables: () => preset(({ count }) => <span>{count + 1}</span>),
+      props: { include: { count: { required: true, suppliedVia: 'component' } } },
+      render: ({ count }, { composables }) => <main>{count + 1}<composables.Count /></main>,
+    },
+    layout: { render: () => <p>Page</p> },
+  });
+  const markup = renderToStaticMarkup(<Shell />);
+
+  expect(markup).toContain('>3<span');
+  expect(markup).toContain('>3</span>');
+});
+
+it('supplies resolved shell defaults to required legacy and schema presets without defaults', () => {
+  const preset = defineComposableComponent({
+    name: 'Summary',
+    props: { count: createProp.number(), label: z.string(), optional: z.string().optional() },
+  });
+  const { Shell } = defineResourceLayout.withLayout({
+    resources: ['users'],
+    options: z.object({ count: z.number().default(2), label: z.string().default('Items'), optional: z.string().default('Available') }),
+    shell: {
+      composables: () => preset(({ count, label, optional }) => <span>{count + 1}:{label}:{optional}</span>),
+      props: { include: { count: true, label: true, optional: true } },
+      render: ({ count }, { composables }) => <main>{count + 1}{createElement(composables.Summary, {} as never)}</main>,
+    },
+    layout: { render: () => <p>Page</p> },
+  });
+  const markup = renderToStaticMarkup(<Shell />);
+
+  expect(markup).toContain('>3<span');
+  expect(markup).toContain('>3:Items:Available</span>');
+});
+
+it('supplies transformed shell defaults to schema presets accepting the resolved output', () => {
+  const preset = defineComposableComponent({ name: 'Count', props: { count: z.number() } });
+  const { Shell } = defineResourceLayout.withLayout({
+    resources: ['users'],
+    options: z.object({ count: z.string().default('2').transform(Number) }),
+    shell: {
+      composables: () => preset(({ count }) => <span>{count + 1}</span>),
+      props: { include: { count: true } },
+      render: ({ count }, { composables }) => <main>{count + 1}{createElement(composables.Count, {} as never)}</main>,
+    },
+    layout: { render: () => <p>Page</p> },
+  });
+  const markup = renderToStaticMarkup(<Shell />);
+
+  expect(markup).toContain('>3<span');
+  expect(markup).toContain('>3</span>');
 });

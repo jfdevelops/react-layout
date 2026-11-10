@@ -1,7 +1,6 @@
-import { validateDefinition } from './standard-schema';
+import { isStandardSchema, validateDefinition } from './standard-schema';
 import type {
   BuiltPropShape,
-  ExtractDefinitionValue,
   PropVisibility,
   ResolvedBuiltPropShape,
 } from './types';
@@ -44,7 +43,7 @@ export class ObjectProp<
       const prop = this.properties[key];
       const propertyValue = objectValue[key];
 
-      if (propertyValue === undefined) {
+      if (propertyValue === undefined && !isStandardSchema(prop)) {
         if (prop.visibility !== 'optional') {
           throw new PropError({
             path: key,
@@ -58,7 +57,11 @@ export class ObjectProp<
       }
 
       try {
-        validateDefinition(prop, propertyValue);
+        const validatedValue = validateDefinition(prop, propertyValue);
+
+        if (key in objectValue || validatedValue !== undefined) {
+          (validatedObject as Record<string, unknown>)[key] = validatedValue;
+        }
       } catch (error) {
         if (!(error instanceof PropError)) {
           throw error;
@@ -79,9 +82,6 @@ export class ObjectProp<
             : createMissingPropMessage({ path }),
         });
       }
-      (validatedObject as Record<string, ExtractDefinitionValue<Shape[string]>>)[
-        key
-      ] = propertyValue as ExtractDefinitionValue<Shape[typeof key]>;
     }
 
     return validatedObject;
@@ -98,7 +98,7 @@ export class ObjectProp<
       const prop = this.properties[key];
       const propertyValue = objectValue[key];
 
-      if (propertyValue === undefined) {
+      if (propertyValue === undefined && !isStandardSchema(prop)) {
         if (prop.visibility !== 'optional') {
           return false;
         }
