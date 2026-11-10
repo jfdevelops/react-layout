@@ -1,6 +1,6 @@
 {
   "name": "@jfdevelops/react-layout-adapter-arktype",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Native arktype schemas for React nodes and elements in React Layout.",
   "repository": {
     "type": "git",
