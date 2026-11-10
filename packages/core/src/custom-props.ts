@@ -2,6 +2,8 @@ import {
   createProp,
   type AnyBuiltPropDefinition,
   type ResolveProps,
+  type ResolveInputProps,
+  type ResolvedInputShape,
   type ResolvedBuiltPropShape,
 } from '@jfdevelops/react-layout-validator';
 import type { WithChildren } from '@jfdevelops/react-layout-composables';
@@ -33,6 +35,12 @@ export type NormalizedCustomProps<Props extends CustomPropsObject> = {
 
 export type ResolveRenderProps<Props extends CustomPropsObject> = WithChildren<
   ResolveProps<NormalizedCustomProps<Props>>
+>;
+export type ResolveCallProps<Props extends CustomPropsObject> = WithChildren<
+  ResolveInputProps<NormalizedCustomProps<Props>>
+>;
+export type ResolveCallPropsAsDefined<Props extends CustomPropsObject> = WithChildren<
+  ResolvedInputShape<NormalizedCustomProps<Props>>
 >;
 export type ResolveRenderPropsAsDefined<Props extends CustomPropsObject> =
   WithChildren<ResolvedBuiltPropShape<NormalizedCustomProps<Props>>>;

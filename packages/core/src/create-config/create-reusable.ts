@@ -1,12 +1,14 @@
 import {
   createProp,
   validateProps,
+  isStandardSchema,
   type AnyBuiltPropDefinition,
 } from '@jfdevelops/react-layout-validator';
 import type { InPropsDefinition, InPropsObject, PropsContract } from '../props';
 import type { ResourceDefinition } from '../resource';
 import { LayoutConfigurationError } from '../errors';
 import { createLayoutResourcesAccessor } from './define-layout';
+import { schemaOptionDefinitions, validateOptionSchema, type OptionSchema } from '../option-schema';
 import type { CreateReusable, ReusableOverlap } from './reusable-types';
 export type * from './reusable-types';
 import {
@@ -315,8 +317,38 @@ export function createReusableBuilder<
 >(resources: Resources, options: Options): CreateReusable<Resources, Options>;
 export function createReusableBuilder(
   resources: readonly ResourceDefinition[],
-  options: InPropsObject | ((...args: any[]) => InPropsObject),
+  options: InPropsObject | OptionSchema | ((...args: any[]) => InPropsObject),
 ) {
+  if (isStandardSchema(options)) {
+    return function createSchemaReusable(definition: {
+      props?: PropsContract<RuntimeSelection, InPropsObject>;
+      select?: RuntimeSelection;
+      overlap?: ReusableOverlap;
+      fn: (props: Record<string, unknown>) => unknown;
+    }) {
+      return function schemaReusable(props: Record<string, unknown> = {}) {
+        const selection = definition.props?.include?.options;
+        const usesOptions = selection !== undefined || definition.select?.options !== undefined;
+        if (!usesOptions) return createReusableBuilder(resources, {})(definition as never)(props);
+        const source = props.options ?? {};
+        if (source === null || typeof source !== 'object' || Array.isArray(source)) {
+          throw new LayoutConfigurationError('Reusable source options must be an object.');
+        }
+        const callerKeys = selection === true
+          ? Object.keys(props).filter((key) => key !== 'options' && key !== 'resources' && !Object.hasOwn(definition.props?.custom ?? {}, key))
+          : Object.entries((typeof selection === 'object' && selection) || {}).filter(([, value]) => value === true).map(([key]) => key);
+        const input = { ...source };
+        for (const key of callerKeys) if (Object.hasOwn(props, key)) (input as Record<string, unknown>)[key] = props[key];
+        const values = validateOptionSchema(options as OptionSchema, input);
+        const definitions = schemaOptionDefinitions(options as OptionSchema, Object.keys(values));
+        const reusable = createReusableBuilder(resources, definitions)(definition as never);
+        const callerValues = Object.fromEntries(
+          Object.entries(values).filter(([key]) => selection === true || callerKeys.includes(key)),
+        );
+        return reusable({ ...props, ...callerValues, options: values });
+      };
+    } as unknown;
+  }
   const keys = resources.map((entry) =>
     typeof entry === 'string' ? entry : entry.value,
   );
@@ -348,10 +380,10 @@ export function createReusableBuilder(
     ) {
       throw new LayoutConfigurationError('Unknown reusable overlap policy.');
     }
-    const optionDefinitions =
+    const optionDefinitions = (
       typeof options === 'function'
         ? options({ name: createProp.string.literal('Reusable'), resource })
-        : options;
+        : options) as InPropsObject;
 
     function compile(selection: RuntimeSelection, from: 'props' | 'options') {
       let plan = objectPlan({});
@@ -461,7 +493,7 @@ export function createReusableBuilder(
       const definitions = definition.overlap
         ? callerDefinitions
         : effectiveCallerDefinitions;
-      validateProps(definitions, props);
+      props = validateProps(definitions, props);
       if (
         needsOptions &&
         props.options !== undefined &&
@@ -473,8 +505,10 @@ export function createReusableBuilder(
           'Reusable source options must be an object.',
         );
       }
-      const values = (props.options ?? {}) as Record<string, unknown>;
-      validateProps(sourceDefinitions, values);
+      const values = validateProps(
+        sourceDefinitions,
+        (props.options ?? {}) as Record<string, unknown>,
+      );
       // Resource callbacks also declare caller inputs, independently of overlap precedence.
       const resourceSelections: ResourceSelections = new Map();
       for (const selector of resourceSelectors) {

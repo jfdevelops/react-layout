@@ -1,8 +1,13 @@
 import {
   type AnyBuiltPropDefinition,
+  type DefinitionVisibility,
+  type InputDefinitions,
   type ExtractDefinitionValue,
   type ResolvedBuiltPropShape,
+  type ResolvedInputShape,
+  type StandardSchemaV1,
 } from '@jfdevelops/react-layout-validator';
+import type { OptionSchema } from '../option-schema';
 import type {
   InferredInProps,
   InPropsDefinition,
@@ -28,7 +33,7 @@ export type {
 type Selector<Source> = (source: Source) => unknown;
 type OptionValue<Definition extends AnyBuiltPropDefinition> =
   | ExtractDefinitionValue<Definition>
-  | (Definition['visibility'] extends 'optional' ? undefined : never);
+  | (DefinitionVisibility<Definition> extends 'optional' ? undefined : never);
 
 /** Select or transform resolved option values, or drill into object values. */
 export type ReusableOptionSelection<Props extends InPropsObject> = {
@@ -100,13 +105,13 @@ type SelectedOptionValue<
 type SelectedOptionProps<Props extends InPropsObject, Selection> = {
   [Key in keyof Props & keyof Selection as Selection[Key] extends Selector<any>
     ? Key
-    : Props[Key]['visibility'] extends 'required'
+    : DefinitionVisibility<Props[Key]> extends 'required'
     ? Key
     : never]: SelectedOptionValue<Props[Key], Selection[Key]>;
 } & {
   [Key in keyof Props & keyof Selection as Selection[Key] extends Selector<any>
     ? never
-    : Props[Key]['visibility'] extends 'optional'
+    : DefinitionVisibility<Props[Key]> extends 'optional'
     ? Key
     : never]?: SelectedOptionValue<Props[Key], Selection[Key]>;
 };
@@ -295,7 +300,7 @@ type GuardedFields<
                   > extends true
                     ? Independent extends true
                       ? true
-                      : Props[Key]['visibility'] extends 'optional'
+                      : DefinitionVisibility<Props[Key]> extends 'optional'
                       ? true
                       : false
                     : false
@@ -413,7 +418,7 @@ type SourceValues<
         Props,
         Selection,
         CallbacksOnly
-      > as Props[Key]['visibility'] extends 'required'
+      > as DefinitionVisibility<Props[Key]> extends 'required'
         ? Key
         : never]: SourceValue<Props[Key], Selection[Key], CallbacksOnly>;
     } & {
@@ -421,7 +426,7 @@ type SourceValues<
         Props,
         Selection,
         CallbacksOnly
-      > as Props[Key]['visibility'] extends 'optional'
+      > as DefinitionVisibility<Props[Key]> extends 'optional'
         ? Key
         : never]?: SourceValue<Props[Key], Selection[Key], CallbacksOnly>;
     };
@@ -451,24 +456,41 @@ type SourceInput<Values> = keyof Values extends never
   ? { options?: Values }
   : { options: Values };
 
+type InputOptionDefinitions<Resources extends readonly ResourceDefinition[], Options extends InPropsDefinition<Resources>> = InputDefinitions<OptionDefinitions<Resources, Options>>;
+
+type SchemaCallerKeys<Schema extends OptionSchema, Include> = Include extends { options: infer Selection }
+  ? Selection extends true ? keyof StandardSchemaV1.InferInput<Schema>
+    : { [Key in keyof Selection]: Selection[Key] extends true ? Key : never }[keyof Selection] & keyof StandardSchemaV1.InferInput<Schema>
+  : never;
+
+type SchemaReusableInput<Schema extends OptionSchema, Include, Select> =
+  'options' extends keyof Include | keyof Select
+    ? Pick<StandardSchemaV1.InferInput<Schema>, SchemaCallerKeys<Schema, Include>> &
+      SourceInput<Omit<StandardSchemaV1.InferInput<Schema>, SchemaCallerKeys<Schema, Include>>>
+    : {};
+
 export type ReusableInput<
   Resources extends readonly ResourceDefinition[],
   Options extends InPropsDefinition<Resources>,
   Include,
   Custom extends InPropsObject,
   Select,
-> = Expanded<
+> = Options extends OptionSchema ? Expanded<
+  SchemaReusableInput<Options, Include, Select> & ResolvedInputShape<Custom> &
+  ReusableProps<Resources, {}, Omit<Include, 'options'>, {}> &
+  ResourceCallerInput<Resources, Include> & ResourceCallerInput<Resources, Select>
+> : Expanded<
   ReusableProps<
     Resources,
-    Options,
+    InputOptionDefinitions<Resources, Options>,
     CallerContract<Resources, Options, Include, Select>,
-    Custom
+    InputDefinitions<Custom>
   > &
     ResourceCallerInput<Resources, Include> &
     ResourceCallerInput<Resources, Select> &
     SourceInput<
-      OptionSource<OptionDefinitions<Resources, Options>, Include, true> &
-        OptionSource<OptionDefinitions<Resources, Options>, Select, false>
+      OptionSource<InputOptionDefinitions<Resources, Options>, Include, true> &
+        OptionSource<InputOptionDefinitions<Resources, Options>, Select, false>
     >
 >;
 

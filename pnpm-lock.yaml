@@ -88,6 +88,97 @@ importers:
         specifier: 8.0.10
         version: 8.0.10(@types/node@24.10.1)(jiti@2.7.0)
 
+  packages/adapter-arktype:
+    dependencies:
+      '@jfdevelops/react-layout-adapters':
+        specifier: workspace:*
+        version: link:../adapters
+    devDependencies:
+      '@types/react':
+        specifier: 18.3.28
+        version: 18.3.28
+      arktype:
+        specifier: 2.2.8
+        version: 2.2.8
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      tsdown:
+        specifier: 0.22.1
+        version: 0.22.1(typescript@6.0.3)(unrun@0.3.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+
+  packages/adapter-valibot:
+    dependencies:
+      '@jfdevelops/react-layout-adapters':
+        specifier: workspace:*
+        version: link:../adapters
+    devDependencies:
+      '@types/react':
+        specifier: 18.3.28
+        version: 18.3.28
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      tsdown:
+        specifier: 0.22.1
+        version: 0.22.1(typescript@6.0.3)(unrun@0.3.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      valibot:
+        specifier: ^1.5.0
+        version: 1.5.0(typescript@6.0.3)
+
+  packages/adapter-zod:
+    dependencies:
+      '@jfdevelops/react-layout-adapters':
+        specifier: workspace:*
+        version: link:../adapters
+    devDependencies:
+      '@types/react':
+        specifier: 18.3.28
+        version: 18.3.28
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      tsdown:
+        specifier: 0.22.1
+        version: 0.22.1(typescript@6.0.3)(unrun@0.3.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+
+  packages/adapters:
+    dependencies:
+      '@standard-schema/spec':
+        specifier: ^1.1.0
+        version: 1.1.0
+    devDependencies:
+      '@types/node':
+        specifier: 24.10.1
+        version: 24.10.1
+      '@types/react':
+        specifier: 18.3.28
+        version: 18.3.28
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      tsdown:
+        specifier: 0.22.1
+        version: 0.22.1(typescript@6.0.3)(unrun@0.3.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: 4.1.5
+        version: 4.1.5(@types/node@24.10.1)(@vitest/coverage-v8@4.1.5)(@vitest/ui@4.1.5)(jsdom@29.0.2(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@24.10.1)(typescript@6.0.3))(vite@8.0.10(@types/node@24.10.1)(jiti@2.7.0))
+
   packages/composable-breadcrumb:
     dependencies:
       '@jfdevelops/react-layout-composables':
@@ -213,6 +304,15 @@ importers:
         specifier: 2.2.8
         version: 2.2.8
     devDependencies:
+      '@jfdevelops/react-layout-adapter-arktype':
+        specifier: workspace:*
+        version: link:../adapter-arktype
+      '@jfdevelops/react-layout-adapter-valibot':
+        specifier: workspace:*
+        version: link:../adapter-valibot
+      '@jfdevelops/react-layout-adapter-zod':
+        specifier: workspace:*
+        version: link:../adapter-zod
       '@jfdevelops/react-layout-composable-breadcrumb':
         specifier: workspace:*
         version: link:../composable-breadcrumb
@@ -261,12 +361,18 @@ importers:
       unrun:
         specifier: 0.3.0
         version: 0.3.0
+      valibot:
+        specifier: ^1.5.0
+        version: 1.5.0(typescript@6.0.3)
       vite:
         specifier: 8.0.10
         version: 8.0.10(@types/node@24.10.1)(jiti@2.7.0)
       vitest:
         specifier: 4.1.5
         version: 4.1.5(@types/node@24.10.1)(@vitest/coverage-v8@4.1.5)(@vitest/ui@4.1.5)(jsdom@29.0.2(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@24.10.1)(typescript@6.0.3))(vite@8.0.10(@types/node@24.10.1)(jiti@2.7.0))
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
 
   packages/devtools-core:
     devDependencies:
@@ -358,6 +464,9 @@ importers:
       '@jfdevelops/create-error':
         specifier: 0.2.1
         version: 0.2.1
+      '@standard-schema/spec':
+        specifier: ^1.1.0
+        version: 1.1.0
       arktype:
         specifier: 2.2.8
         version: 2.2.8
@@ -3032,6 +3141,14 @@ packages:
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
+  valibot@1.5.0:
+    resolution: {integrity: sha512-nil6AkP2TChWL43Z5uJ6GTxX01CUA+g8LWUM+N/rB9NBbkUMaUsi9PUNzlUPgoKASgmx9f7eGOYpJ04/fSa6FQ==}
+    peerDependencies:
+      typescript: '>=5'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   validate-npm-package-name@7.0.2:
     resolution: {integrity: sha512-hVDIBwsRruT73PbK7uP5ebUt+ezEtCmzZz3F59BSr2F6OVFnJ/6h8liuvdLrQ88Xmnk6/+xGGuq+pG9WwTuy3A==}
     engines: {node: ^20.17.0 || >=22.9.0}
@@ -3208,6 +3325,9 @@ packages:
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
+  zod@4.6.7:
+    resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
+
 snapshots:
 
   '@adobe/css-tools@4.4.4': {}
@@ -3276,7 +3396,7 @@ snapshots:
 
   '@babel/generator@8.0.0-rc.6':
     dependencies:
-      '@babel/parser': 8.0.0-rc.6
+      '@babel/parser': 8.0.7
       '@babel/types': 8.0.6
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/trace-mapping': 0.3.31
@@ -5788,6 +5908,10 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
+  valibot@1.5.0(typescript@6.0.3):
+    optionalDependencies:
+      typescript: 6.0.3
+
   validate-npm-package-name@7.0.2: {}
 
   vary@1.1.2: {}
@@ -5909,3 +6033,5 @@ snapshots:
       zod: 3.25.76
 
   zod@3.25.76: {}
+
+  zod@4.6.7: {}

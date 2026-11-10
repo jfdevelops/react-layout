@@ -9,6 +9,7 @@ import {
 import { LayoutConfigurationError } from '../errors';
 import type { IncludedProps } from '../props';
 import { capitalize } from '../utils/capitalize';
+import { isStandardSchema } from '@jfdevelops/react-layout-validator';
 
 /** Props selected here are inherited from the containing state's render props. */
 export type StateComposableOptions<
@@ -69,6 +70,7 @@ export const StateComposableContext = createContext<{
   scope: RenderStateScope;
   props: Record<string, unknown>;
   definitions: Record<string, unknown>;
+  inputProps?: Record<string, unknown>;
 } | undefined>(undefined);
 
 /** @internal Defers state resolution until render, allowing forward references. */
@@ -91,11 +93,14 @@ export function createStateComposable(
         const definition = context.definitions[key];
         return options.normalizeIncludedKeys && typeof definition === 'function' &&
           'type' in definition && definition.type === 'JSX.Element' ? capitalize(key) : key;
-      }).flatMap((key) =>
-        Object.prototype.hasOwnProperty.call(context.props, key) && context.props[key] !== undefined
-          ? [[key, context.props[key]]]
-          : [],
-      ),
+      }).flatMap((key) => {
+        // References validate their own inputs. Carry the original schema input,
+        // rather than applying the source schema's transform to its output again.
+        const values = isStandardSchema(context.definitions[key])
+          ? context.inputProps ?? context.props
+          : context.props;
+        return Object.hasOwn(values, key) && values[key] !== undefined ? [[key, values[key]]] : [];
+      }),
     );
     return createElement(ReferencedRenderStateContext.Provider, { value: state },
       createElement(context.scope.resolve(source), { ...inherited, ...callProps }),

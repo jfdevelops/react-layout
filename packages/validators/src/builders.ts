@@ -861,6 +861,7 @@ function createComponentPropBuilder<
   }) as unknown as ComponentPropBuilder<Type, Visibility>;
 }
 
+/** @deprecated Use Standard Schema libraries and React Layout adapters instead. */
 export const createProp = {
   string: createPrimitivePropBuilder('string'),
   number: createPrimitivePropBuilder('number'),

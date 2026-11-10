@@ -4,6 +4,7 @@ import {
   type NormalizedCustomProps,
   type CustomPropsObject,
   type ResolveRenderProps,
+  type ResolveCallProps,
 } from '../custom-props';
 import { createLazyLoader, type LazyLoader } from '../lazy/create-lazy-loader';
 import { inspectLazy, withLazyHandle } from '../lazy/inspection';
@@ -275,7 +276,7 @@ type StateName<Definition> = Definition extends DeferredRenderState<
  */
 export type RenderStateFragment<
   Definition,
-  CallProps extends object = ResolveRenderProps<StateCustomProps<Definition>>
+  CallProps extends object = ResolveCallProps<StateCustomProps<Definition>>
 > = {
   [State in StateName<NormalizeRenderStateDefinition<Definition>>]: Definition;
 } & {
@@ -351,7 +352,7 @@ export type RenderStateCallProps<
   Composables extends ComposableComponents,
   Input,
 > = OptionalStateChildren<
-  ResolveRenderProps<StateCustomProps<Input>> &
+  ResolveCallProps<StateCustomProps<Input>> &
     StateComponentProps<
       MergedLayoutInProps<
         Resources,

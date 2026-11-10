@@ -10,11 +10,13 @@ import {
   EnumWrappedProp,
   LiteralWrappedProp,
   ResolveLayoutProps,
+  ResolveLayoutInputProps,
   ResolveLayoutPropsAsDefined,
   ResolveProps,
 } from '@jfdevelops/react-layout-validator';
 import { ResourceDefinition, ResourceEnum } from './resource';
 import { Show } from './utils';
+import type { OptionSchema, SchemaOptionDefinitions } from './option-schema';
 
 export type { InPropsObject };
 
@@ -69,11 +71,12 @@ export type InPropsFunction<
 ) => InPropsObject;
 export type InPropsDefinition<
   Resources extends ReadonlyArray<ResourceDefinition>,
-> = InPropsObject | InPropsFunction<Resources>;
+> = InPropsObject | OptionSchema | InPropsFunction<Resources>;
 export type InferredInProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
-> = Options extends InPropsFunction<Resources> ? ReturnType<Options> : Options;
+> = Options extends OptionSchema ? SchemaOptionDefinitions<Options>
+  : Options extends InPropsFunction<Resources> ? ReturnType<Options> : Options;
 export type MergedLayoutInProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
@@ -202,11 +205,11 @@ export type ResolvedIncludedProps<
 export type ResolvedIncludedConfigProps<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,
-> = ResolveLayoutProps<
+> = ResolveLayoutInputProps<
   SelectedIncludedProps<Props, IncludeProps, 'required', 'config'>
 > &
   Partial<
-    ResolveLayoutProps<
+    ResolveLayoutInputProps<
       SelectedIncludedProps<Props, IncludeProps, 'optional', 'config'>
     >
   >;
@@ -214,11 +217,11 @@ export type ResolvedIncludedConfigProps<
 export type ResolvedIncludedComponentProps<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,
-> = ResolveLayoutProps<
+> = ResolveLayoutInputProps<
   SelectedIncludedProps<Props, IncludeProps, 'required', 'component'>
 > &
   Partial<
-    ResolveLayoutProps<
+    ResolveLayoutInputProps<
       SelectedIncludedProps<Props, IncludeProps, 'optional', 'component'>
     >
   >;

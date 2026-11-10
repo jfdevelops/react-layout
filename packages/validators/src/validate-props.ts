@@ -1,4 +1,5 @@
 import type { AnyBuiltPropDefinition } from './types';
+import { isStandardSchema, validateDefinition } from './standard-schema';
 import {
   createMismatchedPropMessage,
   createMissingPropMessage,
@@ -15,8 +16,32 @@ export function validateProps<T extends object>(
   props: T,
   context?: PropValidationContext,
 ) {
+  let validatedProps = props;
   for (const key in shape) {
     const prop = shape[key];
+
+    if (isStandardSchema(prop)) {
+      try {
+        const value = validateDefinition(prop, (props as Record<string, unknown>)[key]);
+        if (validatedProps === props) validatedProps = { ...props };
+        if (key in props || value !== undefined) {
+          (validatedProps as Record<string, unknown>)[key] = value;
+        }
+      } catch (error) {
+        if (!(error instanceof PropError)) throw error;
+        const path = error.path === 'value' ? key : `${key}.${error.path}`;
+        throw new PropError({
+          layoutName: context?.layoutName,
+          resource: context?.resource,
+          path,
+          received: error.received,
+          expected: error.expected,
+          message: `Invalid prop "${path}": ${error.message}`,
+          issues: error.issues?.map((issue) => ({ ...issue, path: [key, ...(issue.path ?? [])] })),
+        });
+      }
+      continue;
+    }
 
     if (prop.visibility === 'required' && !(key in props)) {
       throw new PropError({
@@ -48,7 +73,15 @@ export function validateProps<T extends object>(
     }
 
     try {
-      prop(value);
+      const validatedValue = validateDefinition(prop, value);
+
+      if (!Object.is(validatedValue, value)) {
+        if (validatedProps === props) {
+          validatedProps = { ...props };
+        }
+
+        (validatedProps as Record<string, unknown>)[key] = validatedValue;
+      }
     } catch (error) {
       if (!(error instanceof PropError)) {
         throw error;
@@ -79,5 +112,5 @@ export function validateProps<T extends object>(
     }
   }
 
-  return props;
+  return validatedProps;
 }

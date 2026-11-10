@@ -1,0 +1,51 @@
+{
+  "name": "@jfdevelops/react-layout-adapter-valibot",
+  "version": "0.0.0",
+  "description": "Native valibot schemas for React nodes and elements in React Layout.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jfdevelops/react-layout.git",
+    "directory": "packages/adapter-valibot"
+  },
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "valibot": "^1.0.0",
+    "react": ">=18"
+  },
+  "devDependencies": {
+    "valibot": "^1.5.0",
+    "react": "18.3.1",
+    "@types/react": "18.3.28",
+    "tsdown": "0.22.1",
+    "typescript": "6.0.3"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "dependencies": {
+    "@jfdevelops/react-layout-adapters": "workspace:*"
+  }
+}

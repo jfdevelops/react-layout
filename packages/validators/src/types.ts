@@ -1,5 +1,6 @@
 import type { ReactNode, JSX } from 'react';
 import type { BaseProp } from './base';
+import type { StandardSchemaV1 } from '@standard-schema/spec';
 
 export type PrimitiveTypesMap = PrimitiveValueTypes & {
   object: object;
@@ -50,7 +51,7 @@ export type SafeKeyOf<T extends object> = keyof T & string;
 export type ExtractPropValue<Prop extends AnyBaseProp> =
   Prop extends BaseProp<any, any, infer V> ? V : never;
 
-export interface AnyBuiltPropDefinition {
+export interface LegacyPropDefinition {
   (value: unknown): unknown;
   visibility: PropVisibility;
   // Keep the public shape so definitions from another installed version do
@@ -58,26 +59,49 @@ export interface AnyBuiltPropDefinition {
   _baseProp?: Pick<AnyBaseProp, keyof AnyBaseProp>;
 }
 
+export type AnyBuiltPropDefinition = LegacyPropDefinition | (StandardSchemaV1 & {
+  visibility?: never;
+  _baseProp?: never;
+});
+
+export type DefinitionVisibility<Definition extends AnyBuiltPropDefinition> =
+  Definition extends StandardSchemaV1
+    ? undefined extends StandardSchemaV1.InferOutput<Definition> ? 'optional' : 'required'
+    : Definition extends LegacyPropDefinition ? Definition['visibility'] : never;
+
+/** Preserve legacy slot metadata while resolving schema caller input separately. */
+export type InputDefinitions<Shape extends BuiltPropShape> = {
+  [Key in keyof Shape]: Shape[Key] extends StandardSchemaV1
+    ? ((value: unknown) => StandardSchemaV1.InferInput<Shape[Key]>) & {
+        visibility: undefined extends StandardSchemaV1.InferInput<Shape[Key]> ? 'optional' : 'required';
+      }
+    : Shape[Key];
+};
+
+export type ResolveInputProps<Shape extends BuiltPropShape> = ResolveProps<InputDefinitions<Shape>>;
+export type ResolvedInputShape<Shape extends BuiltPropShape> = ResolvedBuiltPropShape<InputDefinitions<Shape>>;
+export type ResolveLayoutInputProps<Shape extends BuiltPropShape> = ResolveLayoutProps<InputDefinitions<Shape>>;
+
 export interface BuiltPropShape {
   [key: string]: AnyBuiltPropDefinition;
 }
 
 export type ResolveBuiltPropValue<Definition extends AnyBuiltPropDefinition> =
-  ReturnType<Definition>;
+  ExtractDefinitionValue<Definition>;
 
 export type ExtractDefinitionValue<D extends AnyBuiltPropDefinition> =
-  D extends {
+  D extends StandardSchemaV1 ? StandardSchemaV1.InferOutput<D> : D extends {
     _baseProp: infer P extends AnyBaseProp;
   }
     ? ExtractPropValue<P>
-    : ReturnType<D>;
+    : D extends LegacyPropDefinition ? ReturnType<D> : never;
 
 export type ResolvedBuiltPropShape<Shape extends BuiltPropShape> = {
-  [Key in keyof Shape as Shape[Key]['visibility'] extends 'required'
+  [Key in keyof Shape as DefinitionVisibility<Shape[Key]> extends 'required'
     ? Key
     : never]: ExtractDefinitionValue<Shape[Key]>;
 } & {
-  [Key in keyof Shape as Shape[Key]['visibility'] extends 'required'
+  [Key in keyof Shape as DefinitionVisibility<Shape[Key]> extends 'required'
     ? never
     : Key]?: ExtractDefinitionValue<Shape[Key]>;
 };
@@ -93,11 +117,11 @@ type ResolvedPropKey<K extends string, D extends AnyBuiltPropDefinition> =
 
 export type ResolveProps<Shape extends Record<string, AnyBuiltPropDefinition>> =
   {
-    [K in SafeKeyOf<Shape> as Shape[K]['visibility'] extends 'required'
+    [K in SafeKeyOf<Shape> as DefinitionVisibility<Shape[K]> extends 'required'
       ? ResolvedPropKey<K, Shape[K]>
       : never]: ExtractDefinitionValue<Shape[K]>;
   } & {
-    [K in SafeKeyOf<Shape> as Shape[K]['visibility'] extends 'required'
+    [K in SafeKeyOf<Shape> as DefinitionVisibility<Shape[K]> extends 'required'
       ? never
       : ResolvedPropKey<K, Shape[K]>]?: ExtractDefinitionValue<Shape[K]>;
   };
@@ -126,7 +150,7 @@ type ExtractLayoutDefinitionValue<D extends AnyBuiltPropDefinition> =
 type RequiredLayoutPropKeys<
   Shape extends Record<string, AnyBuiltPropDefinition>,
 > = {
-  [K in SafeKeyOf<Shape>]: Shape[K]['visibility'] extends 'required'
+  [K in SafeKeyOf<Shape>]: DefinitionVisibility<Shape[K]> extends 'required'
     ? K
     : never;
 }[SafeKeyOf<Shape>];
