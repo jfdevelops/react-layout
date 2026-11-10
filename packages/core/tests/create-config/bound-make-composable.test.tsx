@@ -9,10 +9,18 @@ function composableScope() {
     resources: ['availability', 'appointments'],
     layout: {
       composables: () => ({
-        Layout: createComposableComponent({ name: 'Layout' }),
-        Header: createComposableComponent({ name: 'Header' }),
-        Breadcrumb: createComposableComponent({ name: 'Breadcrumb' }),
-        Content: createComposableComponent({ name: 'Content' }),
+        Layout: createComposableComponent({
+          name: 'Layout',
+        }),
+        Header: createComposableComponent({
+          name: 'Header',
+        }),
+        Breadcrumb: createComposableComponent({
+          name: 'Breadcrumb',
+        }),
+        Content: createComposableComponent({
+          name: 'Content',
+        }),
       }),
       render: () => <section />,
     },
@@ -24,8 +32,15 @@ function composableScope() {
       appointments: 'AppointmentsPage',
     },
   });
-  const Calendar = scope.createComponent({ render: () => <section /> });
-  return { definition, scope, Calendar };
+  const Calendar = scope.createComponent({
+    render: () => <section />,
+  });
+
+  return {
+    definition,
+    scope,
+    Calendar,
+  };
 }
 
 it('exposes the same typed, renderable parts as a directly created resource layout', () => {
@@ -34,10 +49,14 @@ it('exposes the same typed, renderable parts as a directly created resource layo
   const Detail = Availability.makeComposable({
     name: 'AvailabilityDetailPage',
   });
-  const Direct = definition.createResourceLayout({
-    resource: 'availability',
-    name: 'AvailabilityPage',
-  }).makeComposable({ name: 'AvailabilityDetailPage' });
+  const Direct = definition
+    .createResourceLayout({
+      resource: 'availability',
+      name: 'AvailabilityPage',
+    })
+    .makeComposable({
+      name: 'AvailabilityDetailPage',
+    });
 
   expect(Detail.displayName).toBe('AvailabilityDetailPage');
   expectTypeOf(Detail.Header).toEqualTypeOf<typeof Direct.Header>();
@@ -78,9 +97,7 @@ it('preserves the bound component and helper identity and uses per-resource defa
   const Availability = createCalendar('availability');
   expect(createCalendar('availability')).toBe(Availability);
   expect(Calendar.asHOF()('availability')).toBe(Availability);
-  expect(createCalendar('availability').makeComposable).toBe(
-    Availability.makeComposable,
-  );
+  expect(createCalendar('availability').makeComposable).toBe(Availability.makeComposable);
   expect(Availability.makeComposable().displayName).toBe('AvailabilityPage');
   expect(Availability.makeComposable({}).displayName).toBe('AvailabilityPage');
   const Appointments = createCalendar('appointments');
@@ -92,17 +109,21 @@ it('preserves the bound component and helper identity and uses per-resource defa
 it('does not attach makeComposable when no composables are configured', () => {
   const definition = defineResourceLayout({
     resources: ['availability'],
-    layout: { render: () => <section /> },
+    layout: {
+      render: () => <section />,
+    },
   });
-  const Calendar = definition.createResourceLayout
-    .forResources('availability')
-    .createComponent({ render: () => <section /> });
+  const Calendar = definition.createResourceLayout.forResources('availability').createComponent({
+    render: () => <section />,
+  });
   const Availability = Calendar.asHOF()('availability');
   expect(Availability.makeComposable).toBeUndefined();
   expect(Object.hasOwn(Availability, 'makeComposable')).toBe(false);
   expectTypeOf(Availability.makeComposable).toEqualTypeOf<undefined>();
   () => {
     // @ts-expect-error a layout without composables has no callable helper
-    Availability.makeComposable({ name: 'Unavailable' });
+    Availability.makeComposable({
+      name: 'Unavailable',
+    });
   };
 });

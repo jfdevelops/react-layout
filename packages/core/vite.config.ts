@@ -3,14 +3,27 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  server: { allowedHosts: ['.localhost'] },
-  preview: { allowedHosts: ['.localhost'] },
+  server: {
+    allowedHosts: ['.localhost'],
+  },
+  preview: {
+    allowedHosts: ['.localhost'],
+  },
   resolve: {
     alias: {
       '@jfdevelops/react-layout-adapters': path.resolve(__dirname, '../adapters/src/index.ts'),
-      '@jfdevelops/react-layout-adapter-zod': path.resolve(__dirname, '../adapter-zod/src/index.ts'),
-      '@jfdevelops/react-layout-adapter-valibot': path.resolve(__dirname, '../adapter-valibot/src/index.ts'),
-      '@jfdevelops/react-layout-adapter-arktype': path.resolve(__dirname, '../adapter-arktype/src/index.ts'),
+      '@jfdevelops/react-layout-adapter-zod': path.resolve(
+        __dirname,
+        '../adapter-zod/src/index.ts',
+      ),
+      '@jfdevelops/react-layout-adapter-valibot': path.resolve(
+        __dirname,
+        '../adapter-valibot/src/index.ts',
+      ),
+      '@jfdevelops/react-layout-adapter-arktype': path.resolve(
+        __dirname,
+        '../adapter-arktype/src/index.ts',
+      ),
 
       '@jfdevelops/react-layout': path.resolve(__dirname, 'src/index.ts'),
       '@jfdevelops/react-layout-composable-breadcrumb': path.resolve(
@@ -21,10 +34,7 @@ export default defineConfig({
         __dirname,
         '../devtools-core/src/index.ts',
       ),
-      '@jfdevelops/react-layout-validator': path.resolve(
-        __dirname,
-        '../validators/src/index.ts',
-      ),
+      '@jfdevelops/react-layout-validator': path.resolve(__dirname, '../validators/src/index.ts'),
       '@jfdevelops/react-layout-composables': path.resolve(
         __dirname,
         '../composables/src/index.ts',
@@ -41,4 +51,4 @@ export default defineConfig({
       reporter: ['text', 'html'],
     },
   },
-})
+});

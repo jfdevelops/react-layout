@@ -1,28 +1,19 @@
 import { isStandardSchema, validateDefinition } from './standard-schema';
-import type {
-  BuiltPropShape,
-  PropVisibility,
-  ResolvedBuiltPropShape,
-} from './types';
+import type { BuiltPropShape, PropVisibility, ResolvedBuiltPropShape } from './types';
 import { BaseProp } from './base';
-import {
-  createMismatchedPropMessage,
-  createMissingPropMessage,
-  PropError,
-} from './prop-error';
+import { createMismatchedPropMessage, createMissingPropMessage, PropError } from './prop-error';
 
 export class ObjectProp<
   const Shape extends BuiltPropShape,
   Visibility extends PropVisibility,
-> extends BaseProp<
-  'object',
-  Visibility,
-  ResolvedBuiltPropShape<Shape>
-> {
+> extends BaseProp<'object', Visibility, ResolvedBuiltPropShape<Shape>> {
   readonly properties: Shape;
 
   constructor(properties: Shape, visibility: Visibility) {
-    super({ type: 'object', visibility });
+    super({
+      type: 'object',
+      visibility,
+    });
     this.properties = properties;
   }
 
@@ -49,7 +40,9 @@ export class ObjectProp<
             path: key,
             received: Object.keys(objectValue),
             expected: Object.keys(this.properties),
-            message: createMissingPropMessage({ path: key }),
+            message: createMissingPropMessage({
+              path: key,
+            }),
           });
         }
 
@@ -79,7 +72,9 @@ export class ObjectProp<
                 received: error.received,
                 expected: error.expected,
               })
-            : createMissingPropMessage({ path }),
+            : createMissingPropMessage({
+                path,
+              }),
         });
       }
     }

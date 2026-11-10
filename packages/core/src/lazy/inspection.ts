@@ -26,13 +26,16 @@ export function inspectLazy(
     });
   }
   update('unresolved');
-  if (parent) store.edge(parent, id, 'declares');
+  if (parent) {
+    store.edge(parent, id, 'declares');
+  }
   const hooks: LazyResourceLoadHooks = {
     onLoadStart: () => update('loading'),
     onLoadSuccess: () => update('resolved'),
     onLoadError: (error) => update('error', error),
     onMount: () => store.mount(id),
   };
+
   return {
     id,
     store,
@@ -49,8 +52,15 @@ export function withLazyHandle<T extends object>(
   handle: import('./types').LazyHandle,
 ): T & import('./types').LazyHandle {
   Object.defineProperties(target, {
-    preload: { value: handle.preload, enumerable: false },
-    status: { get: () => handle.status, enumerable: false },
+    preload: {
+      value: handle.preload,
+      enumerable: false,
+    },
+    status: {
+      get: () => handle.status,
+      enumerable: false,
+    },
   });
+
   return target as T & import('./types').LazyHandle;
 }

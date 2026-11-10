@@ -41,10 +41,16 @@ describe('getComponent', () => {
   it('returns the root component for a resource', () => {
     const root = <div data-testid='users-root'>users</div>;
     const config = createResourceConfig({
-      users: { component: root },
+      users: {
+        component: root,
+      },
     });
 
-    expect(config.getComponent({ resource: 'users' })).toBe(root);
+    expect(
+      config.getComponent({
+        resource: 'users',
+      }),
+    ).toBe(root);
   });
 
   it('returns a nested sub-resource component', () => {
@@ -65,7 +71,10 @@ describe('getComponent', () => {
     expect(
       config.getComponent({
         resource: 'users',
-        subResource: { value: 'managers', subResource: 'female' },
+        subResource: {
+          value: 'managers',
+          subResource: 'female',
+        },
       }),
     ).toBe(female);
   });
@@ -81,7 +90,9 @@ describe('getComponent', () => {
             component: <div>male managers</div>,
             wfh: {
               component: <div>work from home</div>,
-              domestic: { component: domestic },
+              domestic: {
+                component: domestic,
+              },
             },
           },
         },
@@ -110,7 +121,9 @@ describe('getComponent', () => {
     const config = createResourceConfig({
       users: {
         component: <div>users</div>,
-        admins: { component: admins },
+        admins: {
+          component: admins,
+        },
       },
     });
 
@@ -145,7 +158,9 @@ describe('getComponent', () => {
     const config = createResourceConfig({
       groups: {
         component: <div>list</div>,
-        new: { component: created },
+        new: {
+          component: created,
+        },
       },
     });
 
@@ -159,20 +174,28 @@ describe('getComponent', () => {
 
   it('throws when the resource is not configured', () => {
     const config = createResourceConfig({
-      users: { component: <div>users</div> },
+      users: {
+        component: <div>users</div>,
+      },
     });
 
-    expect(() => config.getComponent({ resource: 'groups' })).toThrowError(
-      InvalidResourceError,
-    );
-    expect(() => config.getComponent({ resource: 'groups' })).toThrowError(
-      /"groups" is not available\. Available resources are users/,
-    );
+    expect(() =>
+      config.getComponent({
+        resource: 'groups',
+      }),
+    ).toThrowError(InvalidResourceError);
+    expect(() =>
+      config.getComponent({
+        resource: 'groups',
+      }),
+    ).toThrowError(/"groups" is not available\. Available resources are users/);
   });
 
   it('throws when the sub-resource path is not configured', () => {
     const config = createResourceConfig({
-      users: { component: <div>users</div> },
+      users: {
+        component: <div>users</div>,
+      },
     });
 
     expect(() =>
@@ -185,7 +208,9 @@ describe('getComponent', () => {
 
   it('throws when the requested component slot is missing', () => {
     const config = createResourceConfig({
-      users: { component: <div>users</div> },
+      users: {
+        component: <div>users</div>,
+      },
     });
 
     expect(() =>
@@ -226,16 +251,24 @@ describe('getComponent', () => {
     });
 
     expect(getFemale()).toBe(female);
-    expect(getFemale({ component: 'component' })).toBe(female);
+    expect(
+      getFemale({
+        component: 'component',
+      }),
+    ).toBe(female);
   });
 
   it('forResource binds only resource when subResource is omitted', () => {
     const root = <div data-testid='users-bound'>users</div>;
     const config = createResourceConfig({
-      users: { component: root },
+      users: {
+        component: root,
+      },
     });
 
-    const getUsers = config.getComponent.forResource({ resource: 'users' });
+    const getUsers = config.getComponent.forResource({
+      resource: 'users',
+    });
 
     expect(getUsers()).toBe(root);
   });
@@ -250,9 +283,15 @@ describe('getComponent', () => {
       },
     });
 
-    const getUsers = config.getComponent.forResource({ resource: 'users' });
+    const getUsers = config.getComponent.forResource({
+      resource: 'users',
+    });
 
-    expect(getUsers({ component: 'errorComponent' })).toBe(error);
+    expect(
+      getUsers({
+        component: 'errorComponent',
+      }),
+    ).toBe(error);
   });
 });
 
@@ -278,19 +317,28 @@ describe('getComponent with a sub-resource on a specific resource', () => {
   it('combines independently defined resource config fragments', () => {
     const templates = createResourceConfig.forResource('templates', {
       component: <div>templates</div>,
-      deleted: { component: <div>deleted</div> },
+      deleted: {
+        component: <div>deleted</div>,
+      },
     });
     const appointments = createResourceConfig.forResource('appointments', {
       component: <div>appointments</div>,
     });
-    const config = createResourceConfig({ ...templates, ...appointments });
+    const config = createResourceConfig({
+      ...templates,
+      ...appointments,
+    });
 
-    expect(config.getComponent({ resource: 'templates' })).toBe(
-      templates.templates.component,
-    );
-    expect(config.getComponent({ resource: 'appointments' })).toBe(
-      appointments.appointments.component,
-    );
+    expect(
+      config.getComponent({
+        resource: 'templates',
+      }),
+    ).toBe(templates.templates.component);
+    expect(
+      config.getComponent({
+        resource: 'appointments',
+      }),
+    ).toBe(appointments.appointments.component);
   });
 
   it('returns the default component for the selected sub-resource', () => {
@@ -298,8 +346,12 @@ describe('getComponent with a sub-resource on a specific resource', () => {
     const config = createResourceConfig({
       templates: {
         component: <div>templates</div>,
-        detail: { component: <div>templates-detail</div> },
-        deleted: { component: deleted },
+        detail: {
+          component: <div>templates-detail</div>,
+        },
+        deleted: {
+          component: deleted,
+        },
       },
     });
 
@@ -339,7 +391,9 @@ describe('getComponent with a sub-resource on a specific resource', () => {
         component: <div>templates</div>,
         deleted: {
           component: <div>deleted</div>,
-          expired: { component: expired },
+          expired: {
+            component: expired,
+          },
         },
       },
     });
@@ -372,8 +426,6 @@ describe('getComponent with a sub-resource on a specific resource', () => {
     });
 
     expect(config.getComponent('templates.deleted.expired')).toBe(expired);
-    expect(
-      config.getComponent('templates.deleted.expired.errorComponent'),
-    ).toBe(expiredError);
+    expect(config.getComponent('templates.deleted.expired.errorComponent')).toBe(expiredError);
   });
 });

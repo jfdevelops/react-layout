@@ -18,11 +18,7 @@ import {
   subscribeInspectionBatched,
   type DevtoolsSessionState,
 } from '@jfdevelops/react-layout-devtools-core';
-import {
-  initialGraphZoom,
-  resolveChipColors,
-  type ReactLayoutDevtoolsConfig,
-} from './config';
+import { initialGraphZoom, resolveChipColors, type ReactLayoutDevtoolsConfig } from './config';
 import { DevtoolsStyles } from './styles';
 import { usePanelPreferences } from './preferences';
 
@@ -46,18 +42,19 @@ function useController({
 }: Omit<ReactLayoutDevtoolsProviderProps, 'children'>) {
   const compact = layout === 'compact';
   const [pane, setPane] = useState<'explorer' | 'inspector'>('explorer');
-  const [config, updatePreferences, resetSavedPreferences] =
-    usePanelPreferences(defaults, storageKey);
+  const [config, updatePreferences, resetSavedPreferences] = usePanelPreferences(
+    defaults,
+    storageKey,
+  );
   const arrowId = `layout-arrow-${useId().replaceAll(':', '')}`;
   const inspector = useMemo(() => getInspectionSource(source), [source]);
   const graph = useSyncExternalStore(
     useMemo(
-      () => (listener: () => void) =>
-        subscribeInspectionBatched(inspector, listener),
-      [inspector]
+      () => (listener: () => void) => subscribeInspectionBatched(inspector, listener),
+      [inspector],
     ),
     inspector.getSnapshot,
-    inspector.getSnapshot
+    inspector.getSnapshot,
   );
 
   useEffect(() => inspector.connectPreview?.(), [inspector]);
@@ -65,28 +62,40 @@ function useController({
   const [hovered, setHovered] = useState<string>();
   const [highlighted, setHighlighted] = useState<string>();
   const [hoverHighlight, setHoverHighlight] = useState<string>();
-  const [session, setSession] = useState<DevtoolsSessionState>({ query: '' });
+  const [session, setSession] = useState<DevtoolsSessionState>({
+    query: '',
+  });
   const { query, selectedNode: selected } = session;
   useEffect(() => setHighlighted(undefined), [selected]);
 
   const deferredQuery = useDeferredValue(query);
   const setQuery = useCallback((query: string) => {
     setSession((current) =>
-      current.query === query ? current : { ...current, query }
+      current.query === query
+        ? current
+        : {
+            ...current,
+            query,
+          },
     );
   }, []);
 
   const setSelected = useCallback(
     (selectedNode: string) => {
-      if (compact && config.showDetails) setPane('inspector');
+      if (compact && config.showDetails) {
+        setPane('inspector');
+      }
 
       setSession((current) =>
         current.selectedNode === selectedNode
           ? current
-          : { ...current, selectedNode }
+          : {
+              ...current,
+              selectedNode,
+            },
       );
     },
-    [compact, config.showDetails]
+    [compact, config.showDetails],
   );
 
   const view = config.initialView;
@@ -95,32 +104,41 @@ function useController({
   const zoom = config.initialZoom;
 
   const setView = (initialView: 'graph' | 'tree') => {
-    updatePreferences({ initialView });
+    updatePreferences({
+      initialView,
+    });
 
     setPane('explorer');
   };
 
   const setActiveOnly = (activeOnly: boolean) =>
     updatePreferences({
-      initialFilters: { ...config.initialFilters, activeOnly },
+      initialFilters: {
+        ...config.initialFilters,
+        activeOnly,
+      },
     });
 
   const setShowComposables = (showComposables: boolean) =>
     updatePreferences({
-      initialFilters: { ...config.initialFilters, showComposables },
+      initialFilters: {
+        ...config.initialFilters,
+        showComposables,
+      },
     });
 
   const setZoom = (change: number | ((previous: number) => number)) =>
     updatePreferences({
-      initialZoom: initialGraphZoom(
-        typeof change === 'function' ? change(zoom) : change
-      ),
+      initialZoom: initialGraphZoom(typeof change === 'function' ? change(zoom) : change),
     });
 
   const [treeRevision, setTreeRevision] = useState(0);
   const [locateRequest, setLocateRequest] = useState(0);
   const graphPane = useRef<HTMLDivElement>(null);
-  const explorerScroll = useRef({ left: 0, top: 0 });
+  const explorerScroll = useRef({
+    left: 0,
+    top: 0,
+  });
   const restoreExplorerFocus = useRef(false);
 
   function backToExplorer() {
@@ -130,16 +148,20 @@ function useController({
   }
 
   useEffect(() => {
-    if (pane !== 'explorer' || !restoreExplorerFocus.current) return;
+    if (pane !== 'explorer' || !restoreExplorerFocus.current) {
+      return;
+    }
 
     restoreExplorerFocus.current = false;
 
     const element =
       graphPane.current?.querySelector<HTMLElement>(
-        `[data-view="${view}"] :is([aria-selected="true"], [data-selected-node="true"])`
+        `[data-view="${view}"] :is([aria-selected="true"], [data-selected-node="true"])`,
       ) ?? graphPane.current;
 
-    element?.focus({ preventScroll: true });
+    element?.focus({
+      preventScroll: true,
+    });
   }, [pane]);
 
   function resetPreferences() {
@@ -157,25 +179,21 @@ function useController({
   function reveal(element: HTMLElement) {
     const pane = graphPane.current;
 
-    if (!pane) return;
+    if (!pane) {
+      return;
+    }
 
     const bounds = element.getBoundingClientRect();
     const viewport = pane.getBoundingClientRect();
 
     pane.scrollTo({
-      left:
-        pane.scrollLeft +
-        bounds.left -
-        viewport.left -
-        (pane.clientWidth - bounds.width) / 2,
-      top:
-        pane.scrollTop +
-        bounds.top -
-        viewport.top -
-        (pane.clientHeight - bounds.height) / 2,
+      left: pane.scrollLeft + bounds.left - viewport.left - (pane.clientWidth - bounds.width) / 2,
+      top: pane.scrollTop + bounds.top - viewport.top - (pane.clientHeight - bounds.height) / 2,
     });
 
-    element.focus({ preventScroll: true });
+    element.focus({
+      preventScroll: true,
+    });
   }
 
   function locateSelection() {
@@ -184,7 +202,10 @@ function useController({
     setQuery('');
 
     updatePreferences({
-      initialFilters: { activeOnly: false, showComposables: true },
+      initialFilters: {
+        activeOnly: false,
+        showComposables: true,
+      },
     });
 
     setLocateRequest((request) => request + 1);
@@ -195,22 +216,18 @@ function useController({
   const palette = useMemo(
     () => resolveChipColors(config.chipColors),
     // Configs are often inline objects; key on content so cards stay memoized.
-    [chipColorsKey]
+    [chipColorsKey],
   );
   const displayGraph = useMemo(() => {
-    const candidates = graph.nodes.filter(
-      (node) => showComposables || node.kind !== 'composable'
-    );
+    const candidates = graph.nodes.filter((node) => showComposables || node.kind !== 'composable');
     const visible = new Set(
       candidates
         .filter(
           (node) =>
             (!activeOnly || node.active > 0) &&
-            `${node.label} ${node.kind}`
-              .toLowerCase()
-              .includes(deferredQuery.toLowerCase())
+            `${node.label} ${node.kind}`.toLowerCase().includes(deferredQuery.toLowerCase()),
         )
-        .map((node) => node.id)
+        .map((node) => node.id),
     );
     // Retain ancestors so filtering preserves the explanation of each match.
     let added = true;
@@ -232,31 +249,25 @@ function useController({
 
     return {
       nodes,
-      edges: graph.edges.filter(
-        (edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target)
-      ),
+      edges: graph.edges.filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target)),
     };
   }, [graph, activeOnly, deferredQuery, showComposables]);
   const positioned = useMemo(() => layoutGraph(displayGraph), [displayGraph]);
-  const positions = useMemo(
-    () => new Map(positioned.map((p) => [p.node.id, p])),
-    [positioned]
-  );
+  const positions = useMemo(() => new Map(positioned.map((p) => [p.node.id, p])), [positioned]);
 
   // Retries as the deferred search catches up after locate clears filters.
   useEffect(() => {
-    if (
-      !locateRequest ||
-      view !== 'graph' ||
-      revealedRequest.current === locateRequest
-    )
+    if (!locateRequest || view !== 'graph' || revealedRequest.current === locateRequest) {
       return;
+    }
 
     const element = graphPane.current?.querySelector<HTMLElement>(
-      '[data-view="graph"] [data-selected-node="true"]'
+      '[data-view="graph"] [data-selected-node="true"]',
     );
 
-    if (!element) return;
+    if (!element) {
+      return;
+    }
 
     revealedRequest.current = locateRequest;
 
@@ -269,8 +280,11 @@ function useController({
     if (detailsPane.current) {
       detailsPane.current.scrollTop = 0;
 
-      if (compact && pane === 'inspector')
-        detailsPane.current.focus({ preventScroll: true });
+      if (compact && pane === 'inspector') {
+        detailsPane.current.focus({
+          preventScroll: true,
+        });
+      }
     }
   }, [selection?.id, pane, compact]);
 
@@ -325,9 +339,7 @@ function useController({
   };
 }
 
-const DevtoolsContext = createContext<ReturnType<typeof useController> | null>(
-  null
-);
+const DevtoolsContext = createContext<ReturnType<typeof useController> | null>(null);
 
 export function ReactLayoutDevtoolsProvider({
   children,
@@ -339,7 +351,9 @@ export function ReactLayoutDevtoolsProvider({
   useEffect(() => setMounted(true), []);
 
   // Inspector UI is client-only: SSR must not emit blocked style attributes.
-  if (!mounted) return null;
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <DevtoolsContext.Provider value={controller}>
@@ -357,10 +371,11 @@ export function ReactLayoutDevtoolsProvider({
 export function useDevtoolsContext() {
   const value = useContext(DevtoolsContext);
 
-  if (!value)
+  if (!value) {
     throw new Error(
-      'Devtools components must be inside ReactLayoutDevtoolsProvider or ReactLayoutDevtoolsContent.'
+      'Devtools components must be inside ReactLayoutDevtoolsProvider or ReactLayoutDevtoolsContent.',
     );
+  }
 
   return value;
 }

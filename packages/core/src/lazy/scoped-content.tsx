@@ -5,19 +5,13 @@ import { createLazyLoader } from './create-lazy-loader';
 import { LazyBoundary } from './lazy-boundary';
 import { inspectLazy, withLazyHandle } from './inspection';
 import { LazyResourceModuleShapeError } from '../errors/lazy-resource-error';
-import {
-  definedRenderStateSymbol,
-  findDefinedRenderState,
-} from '../create-config/render-state';
+import { definedRenderStateSymbol, findDefinedRenderState } from '../create-config/render-state';
 import {
   isRenderableComponentType,
   resolveScopedRenderResult,
   type ScopedRenderResult,
 } from '../create-config/for-resources/scoped-render';
-import {
-  inspectionId,
-  type InspectionStore,
-} from '@jfdevelops/react-layout-devtools-core';
+import { inspectionId, type InspectionStore } from '@jfdevelops/react-layout-devtools-core';
 
 export type ScopedComponentRenderFn<
   Props = Record<string, unknown>,
@@ -55,20 +49,25 @@ export function createScopedLazyContent(
   environment?: LazyEnvironment,
 ) {
   const options =
-    typeof input.lazy === 'function' ? { load: input.lazy } : input.lazy;
+    typeof input.lazy === 'function'
+      ? {
+          load: input.lazy,
+        }
+      : input.lazy;
   const componentId = environment?.store.node({
     id: inspectionId('component'),
     kind: 'component',
     label,
-    details: { resource },
+    details: {
+      resource,
+    },
   });
   if (componentId && environment) {
     environment.store.edge(environment.parent, componentId, 'declares');
   }
   const inspection = inspectLazy(label, environment?.store, componentId);
   if (componentId) {
-    inspection.hooks.onMount = () =>
-      inspection.store.mount(componentId, inspection.id);
+    inspection.hooks.onMount = () => inspection.store.mount(componentId, inspection.id);
   }
   const loader = createLazyLoader({
     load: options.load,
@@ -78,18 +77,22 @@ export function createScopedLazyContent(
       const candidates = Object.values(module).filter(
         (value) =>
           isRenderableComponentType(value) ||
-          (typeof value === 'object' &&
-            value !== null &&
-            definedRenderStateSymbol in value),
+          (typeof value === 'object' && value !== null && definedRenderStateSymbol in value),
       );
-      if (candidates.length !== 1)
+      if (candidates.length !== 1) {
         throw new LazyResourceModuleShapeError(label, candidates.length);
+      }
       const selected = candidates[0];
       const render =
-        typeof selected === 'object' &&
-        selected !== null &&
-        definedRenderStateSymbol in selected
-          ? (await findDefinedRenderState({ State: selected }, label)).render
+        typeof selected === 'object' && selected !== null && definedRenderStateSymbol in selected
+          ? (
+              await findDefinedRenderState(
+                {
+                  State: selected,
+                },
+                label,
+              )
+            ).render
           : (selected as ScopedComponentRenderFn);
       // The render callback runs as a React component so hooks remain legal.
       function Loaded({
@@ -101,12 +104,15 @@ export function createScopedLazyContent(
       }) {
         if (
           typeof render !== 'function' ||
-          (render as unknown as { prototype?: { isReactComponent?: unknown } })
-            .prototype?.isReactComponent
-        )
+          (render as unknown as { prototype?: { isReactComponent?: unknown } }).prototype
+            ?.isReactComponent
+        ) {
           return createElement(render as ComponentType<any>, callProps);
+        }
+
         return resolveScopedRenderResult(render(callProps, context), callProps);
       }
+
       return Loaded;
     },
   });
@@ -129,7 +135,10 @@ export function createScopedLazyContent(
       errorComponent.current = function ScopedFallbackError(props) {
         return (
           <LazyFallbackPropsContext.Provider
-            value={{ owner: nearest.owner, props: currentProps.current }}
+            value={{
+              owner: nearest.owner,
+              props: currentProps.current,
+            }}
           >
             <NearestError {...props} />
           </LazyFallbackPropsContext.Provider>
@@ -137,13 +146,16 @@ export function createScopedLazyContent(
       };
     }
     const Loading = nearest.Loading ?? defaults.Loading;
-    const fallback =
-      input.fallback !== undefined ? input.fallback : options.fallback;
+    const fallback = input.fallback !== undefined ? input.fallback : options.fallback;
+
     return (
       <LazyBoundary
         loader={loader}
         resource={resource}
-        componentProps={{ callProps, context }}
+        componentProps={{
+          callProps,
+          context,
+        }}
         ErrorComponent={errorComponent.current ?? defaults.Error}
         onMount={inspection.hooks.onMount}
         fallback={
@@ -151,7 +163,10 @@ export function createScopedLazyContent(
             fallback
           ) : Loading ? (
             <LazyFallbackPropsContext.Provider
-              value={{ owner: nearest.owner, props: callProps }}
+              value={{
+                owner: nearest.owner,
+                props: callProps,
+              }}
             >
               <Loading resource={resource} />
             </LazyFallbackPropsContext.Provider>
@@ -161,5 +176,6 @@ export function createScopedLazyContent(
     );
   }, loader);
   inspection.store.attach(Content);
+
   return Content;
 }

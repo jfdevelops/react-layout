@@ -10,10 +10,7 @@ import type { WithChildren } from '@jfdevelops/react-layout-composables';
 import { LayoutConfigurationError } from './errors';
 
 export type ChildrenRequirement = 'required';
-export type CustomPropsObject = Record<
-  string,
-  AnyBuiltPropDefinition | ChildrenRequirement
-> & {
+export type CustomPropsObject = Record<string, AnyBuiltPropDefinition | ChildrenRequirement> & {
   children?: AnyBuiltPropDefinition | ChildrenRequirement;
 };
 
@@ -29,8 +26,8 @@ export type NormalizedCustomProps<Props extends CustomPropsObject> = {
   [Key in keyof Props]: Props[Key] extends AnyBuiltPropDefinition
     ? Props[Key]
     : Key extends 'children'
-    ? RequiredChildren
-    : never;
+      ? RequiredChildren
+      : never;
 };
 
 export type ResolveRenderProps<Props extends CustomPropsObject> = WithChildren<
@@ -42,21 +39,23 @@ export type ResolveCallProps<Props extends CustomPropsObject> = WithChildren<
 export type ResolveCallPropsAsDefined<Props extends CustomPropsObject> = WithChildren<
   ResolvedInputShape<NormalizedCustomProps<Props>>
 >;
-export type ResolveRenderPropsAsDefined<Props extends CustomPropsObject> =
-  WithChildren<ResolvedBuiltPropShape<NormalizedCustomProps<Props>>>;
+export type ResolveRenderPropsAsDefined<Props extends CustomPropsObject> = WithChildren<
+  ResolvedBuiltPropShape<NormalizedCustomProps<Props>>
+>;
 
-export function normalizeCustomProps<Props extends CustomPropsObject>(
-  props: Props,
-) {
+export function normalizeCustomProps<Props extends CustomPropsObject>(props: Props) {
   return Object.fromEntries(
     Object.entries(props).map(([key, definition]) => {
-      if (typeof definition !== 'string') return [key, definition];
-      if (key !== 'children' || definition !== 'required') {
-        throw new LayoutConfigurationError(
-          'Only custom.children accepts the required shorthand.',
-        );
+      if (typeof definition !== 'string') {
+        return [key, definition];
       }
-      const children = createProp.component({ type: 'ReactNode' });
+      if (key !== 'children' || definition !== 'required') {
+        throw new LayoutConfigurationError('Only custom.children accepts the required shorthand.');
+      }
+      const children = createProp.component({
+        type: 'ReactNode',
+      });
+
       return [key, children];
     }),
   ) as NormalizedCustomProps<Props>;

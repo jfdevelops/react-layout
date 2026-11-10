@@ -29,18 +29,17 @@ function capturePropError(validate: () => unknown) {
 
 function createRenderFunctionProp() {
   const renderProp = new RenderChildrenProp(
-    { title: createProp.string() },
+    {
+      title: createProp.string(),
+    },
     'ReactNode',
     'required',
   );
 
-  return Object.assign(
-    (value: unknown) => renderProp.validate(value),
-    {
-      _baseProp: renderProp,
-      visibility: 'required' as const,
-    },
-  );
+  return Object.assign((value: unknown) => renderProp.validate(value), {
+    _baseProp: renderProp,
+    visibility: 'required' as const,
+  });
 }
 
 const propErrorCases: Array<PropErrorCase> = [
@@ -68,7 +67,9 @@ const propErrorCases: Array<PropErrorCase> = [
   {
     name: 'object',
     createDefinition: () =>
-      createProp.object({ title: createProp.string() }),
+      createProp.object({
+        title: createProp.string(),
+      }),
     invalidValue: [],
     received: 'array',
     expected: 'object',
@@ -83,14 +84,19 @@ const propErrorCases: Array<PropErrorCase> = [
   {
     name: 'JSX element',
     createDefinition: () =>
-      createProp.component({ type: 'JSX.Element' }),
+      createProp.component({
+        type: 'JSX.Element',
+      }),
     invalidValue: 'content',
     received: 'string',
     expected: 'JSX.Element',
   },
   {
     name: 'ReactNode',
-    createDefinition: () => createProp.component({ type: 'ReactNode' }),
+    createDefinition: () =>
+      createProp.component({
+        type: 'ReactNode',
+      }),
     invalidValue: () => null,
     received: 'function',
     expected: 'ReactNode',
@@ -118,8 +124,7 @@ const propErrorCases: Array<PropErrorCase> = [
   },
   {
     name: 'union',
-    createDefinition: () =>
-      createProp.string().or(createProp.number()),
+    createDefinition: () => createProp.string().or(createProp.number()),
     invalidValue: false,
     received: 'boolean',
     expected: 'union',
@@ -130,9 +135,14 @@ describe.each(propErrorCases)('$name prop errors', (propCase) => {
   it('reports when the required prop is missing', () => {
     const error = capturePropError(() =>
       validateProps(
-        { value: propCase.createDefinition() },
+        {
+          value: propCase.createDefinition(),
+        },
         {},
-        { layoutName: 'ContactsPage', resource: 'contacts' },
+        {
+          layoutName: 'ContactsPage',
+          resource: 'contacts',
+        },
       ),
     );
 
@@ -143,17 +153,23 @@ describe.each(propErrorCases)('$name prop errors', (propCase) => {
       resource: 'contacts',
       received: [],
       expected: ['value'],
-      message:
-        'Missing required prop "value" in layout "ContactsPage" (resource: "contacts").',
+      message: 'Missing required prop "value" in layout "ContactsPage" (resource: "contacts").',
     });
   });
 
   it('reports when the prop type does not match', () => {
     const error = capturePropError(() =>
       validateProps(
-        { value: propCase.createDefinition() },
-        { value: propCase.invalidValue },
-        { layoutName: 'ContactsPage', resource: 'contacts' },
+        {
+          value: propCase.createDefinition(),
+        },
+        {
+          value: propCase.invalidValue,
+        },
+        {
+          layoutName: 'ContactsPage',
+          resource: 'contacts',
+        },
       ),
     );
 
@@ -171,12 +187,21 @@ describe.each(propErrorCases)('$name prop errors', (propCase) => {
 
 describe('nested object prop errors', () => {
   it('reports when a required nested prop is missing', () => {
-    const metadata = createProp.object({ count: createProp.number() });
+    const metadata = createProp.object({
+      count: createProp.number(),
+    });
     const error = capturePropError(() =>
       validateProps(
-        { metadata },
-        { metadata: {} },
-        { layoutName: 'ContactsPage', resource: 'contacts' },
+        {
+          metadata,
+        },
+        {
+          metadata: {},
+        },
+        {
+          layoutName: 'ContactsPage',
+          resource: 'contacts',
+        },
       ),
     );
 
@@ -193,12 +218,23 @@ describe('nested object prop errors', () => {
   });
 
   it('reports when a nested prop type does not match', () => {
-    const metadata = createProp.object({ count: createProp.number() });
+    const metadata = createProp.object({
+      count: createProp.number(),
+    });
     const error = capturePropError(() =>
       validateProps(
-        { metadata },
-        { metadata: { count: 'three' } },
-        { layoutName: 'ContactsPage', resource: 'contacts' },
+        {
+          metadata,
+        },
+        {
+          metadata: {
+            count: 'three',
+          },
+        },
+        {
+          layoutName: 'ContactsPage',
+          resource: 'contacts',
+        },
       ),
     );
 

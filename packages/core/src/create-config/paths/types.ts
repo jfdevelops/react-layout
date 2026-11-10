@@ -54,9 +54,7 @@ type SubResourceTailPaths<
       ?
           | Key
           | `${Key}.${ParameterizedEntryPath<
-              NestedSubResourceDefinitions<
-                ResourceDefinitionForKey<SubDefs, Key>
-              >,
+              NestedSubResourceDefinitions<ResourceDefinitionForKey<SubDefs, Key>>,
               readonly [...DepthAcc, unknown]
             >}`
       : never
@@ -86,9 +84,7 @@ type ParameterizedEntryPathForResource<
   Resource extends LayoutResourceKey<Resources>,
 > = ParameterizedEntryPath<SubResourceDefinitionsFor<Resources, Resource>>;
 
-type AnyParameterizedEntryPath<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-> =
+type AnyParameterizedEntryPath<Resources extends ReadonlyArray<ResourceDefinition>> =
   LayoutResourceKey<Resources> extends infer Resource
     ? Resource extends LayoutResourceKey<Resources>
       ? ParameterizedEntryPathForResource<Resources, Resource>
@@ -101,9 +97,7 @@ type AnyParameterizedEntryPath<
  * fixed slots stay literal, so `'$resource.detail.$component'` leaves `resource` and
  * `component` to the call site.
  */
-export type ParameterizedResourcePath<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-> =
+export type ParameterizedResourcePath<Resources extends ReadonlyArray<ResourceDefinition>> =
   | LayoutResourceKey<Resources>
   | ResourcePathVariable
   | (LayoutResourceKey<Resources> extends infer Resource
@@ -134,9 +128,7 @@ type IndexNode<Node, Key> = Key extends keyof ConfigNodeOf<Node>
   ? NonNullable<ConfigNodeOf<Node>[Key]>
   : never;
 
-type ComponentKeysAtNodes<Node> = Node extends unknown
-  ? ComponentKeysAtNode<Node>
-  : never;
+type ComponentKeysAtNodes<Node> = Node extends unknown ? ComponentKeysAtNode<Node> : never;
 
 /** Sub-resource keys on a node and on every node below it, matching nested params. */
 type SubResourceKeysBelowNode<
@@ -146,12 +138,7 @@ type SubResourceKeysBelowNode<
   ? never
   : SubResourceKeysAtNode<Node> extends infer Key
     ? Key extends SubResourceKeysAtNode<Node>
-      ?
-          | Key
-          | SubResourceKeysBelowNode<
-              IndexNode<Node, Key>,
-              readonly [...DepthAcc, unknown]
-            >
+      ? Key | SubResourceKeysBelowNode<IndexNode<Node, Key>, readonly [...DepthAcc, unknown]>
       : never
     : never;
 
@@ -165,10 +152,7 @@ type AnySubResourceNode<
     ? Key extends SubResourceKeysAtNode<Node>
       ?
           | IndexNode<Node, Key>
-          | AnySubResourceNode<
-              IndexNode<Node, Key>,
-              readonly [...DepthAcc, unknown]
-            >
+          | AnySubResourceNode<IndexNode<Node, Key>, readonly [...DepthAcc, unknown]>
       : never
     : never;
 
@@ -193,10 +177,9 @@ export type ResolveConfigNode<Node, Path extends string> = [Node] extends [never
       : ResolveConfigNodeSegment<Node, Path>;
 
 /** Resource keys present in a created config, falling back to every declared resource. */
-export type ConfigResourceKeys<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  Config,
-> = [Extract<LayoutResourceKey<Resources>, keyof Config>] extends [never]
+export type ConfigResourceKeys<Resources extends ReadonlyArray<ResourceDefinition>, Config> = [
+  Extract<LayoutResourceKey<Resources>, keyof Config>,
+] extends [never]
   ? LayoutResourceKey<Resources>
   : Extract<LayoutResourceKey<Resources>, keyof Config>;
 
@@ -217,24 +200,18 @@ export type PathResourceCandidates<
   PathHead<Path> extends ResourcePathVariable
     ? ConfigResourceKeys<Resources, Config> extends infer Resource
       ? Resource extends ConfigResourceKeys<Resources, Config>
-        ? [
-            ResolveConfigNode<
-              ResourceNode<Config, Resource>,
-              PathTail<Path>
-            >,
-          ] extends [never]
+        ? [ResolveConfigNode<ResourceNode<Config, Resource>, PathTail<Path>>] extends [never]
           ? never
           : Resource
         : never
       : never
     : Extract<PathHead<Path>, ConfigResourceKeys<Resources, Config>>;
 
-type StripTrailingComponentVariable<Path extends string> =
-  Path extends ComponentPathVariable
-    ? ''
-    : Path extends `${infer Head}.${ComponentPathVariable}`
-      ? Head
-      : Path;
+type StripTrailingComponentVariable<Path extends string> = Path extends ComponentPathVariable
+  ? ''
+  : Path extends `${infer Head}.${ComponentPathVariable}`
+    ? Head
+    : Path;
 
 /** Component slot keys configured on the node a path resolves to. */
 export type PathComponentKeys<
@@ -266,14 +243,12 @@ export type PathSubResourceKeys<
     : never;
 
 /** Sub-resource keys configured for one resource, at any depth. */
-export type ResourceSubResourceKeys<Config, Resource> =
-  SubResourceKeysBelowNode<ResourceNode<Config, Resource>>;
+export type ResourceSubResourceKeys<Config, Resource> = SubResourceKeysBelowNode<
+  ResourceNode<Config, Resource>
+>;
 
 /** Every sub-resource key configured anywhere in a config map. */
-export type ConfigSubResourceKeys<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  Config,
-> =
+export type ConfigSubResourceKeys<Resources extends ReadonlyArray<ResourceDefinition>, Config> =
   ConfigResourceKeys<Resources, Config> extends infer Resource
     ? Resource extends ConfigResourceKeys<Resources, Config>
       ? ResourceSubResourceKeys<Config, Resource>
@@ -282,10 +257,7 @@ export type ConfigSubResourceKeys<
 
 type ComponentKeysForPath<Config, Resource, Tail extends string> =
   ComponentKeysAtNodes<
-    ResolveConfigNode<
-      ResourceNode<Config, Resource>,
-      StripTrailingComponentVariable<Tail>
-    >
+    ResolveConfigNode<ResourceNode<Config, Resource>, StripTrailingComponentVariable<Tail>>
   > extends infer Keys
     ? [Keys] extends [never]
       ? ComponentSlotKey
@@ -299,9 +271,7 @@ export type PathVariablesForResource<
   Path extends string,
   Resource extends LayoutResourceKey<Resources>,
 > = Show<
-  ('resource' extends ExtractPathVariables<Path>
-    ? { resource: Resource }
-    : {}) &
+  ('resource' extends ExtractPathVariables<Path> ? { resource: Resource } : {}) &
     ('subResource' extends ExtractPathVariables<Path>
       ? { subResource: SubResourceParamForResource<Resources, Resource> }
       : {}) &
@@ -341,18 +311,10 @@ type ResolveSubResourceParamNode<
           value: infer Value extends string;
           subResource: infer Nested;
         }
-      ? ResolveSubResourceParamNode<
-          IndexNode<Node, Value>,
-          Nested,
-          readonly [...DepthAcc, unknown]
-        >
+      ? ResolveSubResourceParamNode<IndexNode<Node, Value>, Nested, readonly [...DepthAcc, unknown]>
       : never;
 
-type ResolveNodeSegmentWithVariables<
-  Node,
-  Segment extends string,
-  Variables,
-> = Node extends unknown
+type ResolveNodeSegmentWithVariables<Node, Segment extends string, Variables> = Node extends unknown
   ? Segment extends SubResourcePathVariable
     ? ResolveSubResourceParamNode<Node, VariableValue<Variables, 'subResource'>>
     : Segment extends ComponentPathVariable
@@ -360,11 +322,7 @@ type ResolveNodeSegmentWithVariables<
       : IndexNode<Node, Segment>
   : never;
 
-type ResolveNodeWithVariables<
-  Node,
-  Path extends string,
-  Variables,
-> = [Node] extends [never]
+type ResolveNodeWithVariables<Node, Path extends string, Variables> = [Node] extends [never]
   ? never
   : Path extends ''
     ? Node
@@ -390,10 +348,7 @@ export type ResolveParameterizedPathValue<
       PathHead<Path> extends ResourcePathVariable
         ? ResourceNode<
             Config,
-            Extract<
-              VariableValue<Variables, 'resource'>,
-              LayoutResourceKey<Resources>
-            >
+            Extract<VariableValue<Variables, 'resource'>, LayoutResourceKey<Resources>>
           >
         : ResourceNode<Config, PathHead<Path>>,
       PathTail<Path>,

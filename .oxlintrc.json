@@ -1,0 +1,244 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react", "react-hooks", "jsx-a11y", "import", "vitest", "oxc"],
+  "jsPlugins": ["@stylistic/eslint-plugin", "./tools/oxlint-plugin.mjs"],
+  "categories": {
+    "correctness": "error"
+  },
+  "rules": {
+    "@stylistic/object-curly-newline": [
+      "error",
+      {
+        "ObjectExpression": {
+          "minProperties": 1
+        }
+      }
+    ],
+    "@stylistic/padding-line-between-statements": [
+      "error",
+      {
+        "blankLine": "always",
+        "prev": "*",
+        "next": "return"
+      }
+    ],
+    "eslint/curly": ["error", "all"],
+    "workspace/object-property-newline": "error",
+    "eslint/no-unused-vars": [
+      "error",
+      {
+        "ignoreRestSiblings": true,
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ]
+  },
+  "ignorePatterns": ["**/dist/**", "**/coverage/**", "**/node_modules/**", "**/routeTree.gen.ts"],
+  "overrides": [
+    {
+      "files": [
+        "packages/composables/tests/defined-composable-overloads.test-d.tsx",
+        "packages/core/tests/create-config/bound-make-composable.test.tsx",
+        "packages/core/tests/create-config/define-layout-types.test.ts",
+        "packages/core/tests/create-config/devtools-and-defaults.test.tsx",
+        "packages/core/tests/create-config/devtools-preview.test.tsx",
+        "packages/core/tests/create-config/fixtures/named-factory/default-state.tsx",
+        "packages/core/tests/create-config/fixtures/named-factory/layout-state.tsx",
+        "packages/core/tests/create-config/for-paths-types.test.ts",
+        "packages/core/tests/create-config/from-state.test.tsx",
+        "packages/core/tests/create-config/get-component-types.test.ts",
+        "packages/core/tests/create-config/include-prop-aliases.test.tsx",
+        "packages/core/tests/create-config/lazy-contract.test.tsx",
+        "packages/core/tests/create-config/lazy-default-render-states.test.tsx",
+        "packages/core/tests/create-config/namespace.test.tsx",
+        "packages/core/tests/create-config/render-states-types.test.tsx",
+        "packages/core/tests/create-config/render-states.test.tsx",
+        "packages/core/tests/create-config/state-composables-types.test.tsx",
+        "packages/devtools-react/src/tree.tsx"
+      ],
+      "rules": {
+        "eslint/no-unused-expressions": "off"
+      }
+    },
+    {
+      "files": [
+        "examples/basic-example/src/App.tsx",
+        "packages/core/src/create-config/define-layout.tsx",
+        "packages/core/src/create-config/for-resources/create-component.ts",
+        "packages/core/tests/create-config/create-component.test.tsx",
+        "packages/core/tests/create-config/create-resource-links.test.tsx",
+        "packages/core/tests/create-config/get-component-types.test.ts",
+        "packages/core/tests/create-config/lazy-contract.test.tsx",
+        "packages/devtools-react/src/floating.tsx",
+        "packages/validators/src/builders.ts"
+      ],
+      "rules": {
+        "eslint/no-unused-vars": "off"
+      }
+    },
+    {
+      "files": ["examples/basic-example/src/App.tsx"],
+      "rules": {
+        "jsx-a11y/heading-has-content": "off"
+      }
+    },
+    {
+      "files": [
+        "packages/devtools-react/src/floating.tsx",
+        "packages/devtools-react/src/toolbar.tsx"
+      ],
+      "rules": {
+        "jsx-a11y/no-noninteractive-element-interactions": "off"
+      }
+    },
+    {
+      "files": ["packages/devtools-react/src/content.tsx"],
+      "rules": {
+        "jsx-a11y/no-noninteractive-tabindex": "off"
+      }
+    },
+    {
+      "files": [
+        "packages/devtools-react/src/content.tsx",
+        "packages/devtools-react/src/floating.tsx",
+        "packages/devtools-react/src/relationship-tree.tsx",
+        "packages/devtools-react/src/toolbar.tsx",
+        "packages/devtools-react/src/tree.tsx"
+      ],
+      "rules": {
+        "jsx-a11y/prefer-tag-over-role": "off"
+      }
+    },
+    {
+      "files": ["packages/devtools-react/src/content.tsx"],
+      "rules": {
+        "react/immutability": "off"
+      }
+    },
+    {
+      "files": ["packages/core/tests/create-config/standard-schema.test.tsx"],
+      "rules": {
+        "react/jsx-key": "off"
+      }
+    },
+    {
+      "files": [
+        "packages/core/tests/create-config/default-children.test-d.tsx",
+        "packages/core/tests/create-config/render-states.test.tsx"
+      ],
+      "rules": {
+        "react/no-children-prop": "off"
+      }
+    },
+    {
+      "files": [
+        "packages/devtools-react/src/context.tsx",
+        "packages/devtools-react/src/floating.tsx",
+        "packages/devtools-react/src/outlines.tsx",
+        "packages/devtools-react/src/toolbar.tsx",
+        "packages/devtools-react/src/tree.tsx"
+      ],
+      "rules": {
+        "react/set-state-in-effect": "off"
+      }
+    },
+    {
+      "files": ["packages/core/src/lazy/lazy-boundary.tsx"],
+      "rules": {
+        "react/static-components": "off"
+      }
+    },
+    {
+      "files": [
+        "packages/core/src/create-config/define-layout.tsx",
+        "packages/core/src/create-config/inspection.ts",
+        "packages/devtools-react/src/context.tsx",
+        "packages/devtools-react/src/outlines.tsx",
+        "packages/devtools-react/src/toolbar.tsx",
+        "packages/devtools-react/src/use-draggable-fab.ts"
+      ],
+      "rules": {
+        "react-hooks/exhaustive-deps": "off"
+      }
+    },
+    {
+      "files": [
+        "packages/core/tests/create-config/define-layout-types.test.ts",
+        "packages/core/tests/create-config/for-paths-types.test.ts",
+        "packages/core/tests/create-config/get-component-types.test.ts",
+        "packages/core/tests/create-config/render-states-types.test.tsx",
+        "packages/core/tests/create-config/state-composables-types.test.tsx"
+      ],
+      "rules": {
+        "vitest/expect-expect": "off"
+      }
+    },
+    {
+      "files": [
+        "packages/core/tests/create-config/create-resource-links.test.tsx",
+        "packages/core/tests/create-config/from-state.test.tsx",
+        "packages/core/tests/create-config/layout-name-parts.test.ts",
+        "packages/core/tests/create-config/lazy-contract.test.tsx",
+        "packages/core/tests/create-config/standard-schema-errors.test.ts",
+        "packages/validators/tests/array.test.ts",
+        "packages/validators/tests/prop-error.test.tsx"
+      ],
+      "rules": {
+        "vitest/no-conditional-expect": "off"
+      }
+    },
+    {
+      "files": ["packages/core/tests/create-config/layout-name-parts.test.ts"],
+      "rules": {
+        "vitest/no-conditional-tests": "off"
+      }
+    },
+    {
+      "files": [
+        "packages/core/tests/create-config/layout-name-parts.test.ts",
+        "packages/core/tests/create-config/lazy-contract.test.tsx",
+        "packages/core/tests/create-config/lazy-default-render-states.test.tsx",
+        "packages/core/tests/create-config/lazy-loader-cache.test.tsx",
+        "packages/core/tests/create-config/lazy-resolved-members.test.tsx",
+        "packages/core/tests/create-config/render-states.test.tsx",
+        "packages/core/tests/create-config/reusable-selectors.test.ts",
+        "packages/core/tests/create-config/scoped-compound-statics.test.tsx",
+        "packages/core/tests/create-config/with-layout.test.tsx",
+        "packages/core/tests/errors/errors.test.ts",
+        "packages/devtools-core/tests/format-details.test.ts",
+        "packages/devtools-react/tests/node-debug.test.tsx",
+        "packages/devtools-react/tests/node-highlight.test.tsx",
+        "packages/devtools-react/tests/outlines.test.tsx",
+        "packages/devtools-react/tests/performance.test.tsx",
+        "packages/devtools-react/tests/relationship-tree.test.tsx",
+        "packages/devtools-react/tests/toolbar.test.tsx",
+        "packages/devtools-react/tests/viewer.test.tsx"
+      ],
+      "rules": {
+        "vitest/require-mock-type-parameters": "off"
+      }
+    },
+    {
+      "files": [
+        "packages/composables/tests/defined-composable-overloads.test.tsx",
+        "packages/core/tests/create-config/create-reusable.test.ts",
+        "packages/core/tests/create-config/reusable-selectors.test.ts",
+        "packages/core/tests/create-config/standard-schema-containers.test.ts"
+      ],
+      "rules": {
+        "vitest/require-to-throw-message": "off"
+      }
+    },
+    {
+      "files": [
+        "packages/core/tests/create-config/create-reusable-autocomplete.test.ts",
+        "packages/core/tests/create-config/factory-naming-inference.test.ts",
+        "packages/core/tests/create-config/render-states-autocomplete.test.ts"
+      ],
+      "rules": {
+        "vitest/valid-expect": "off"
+      }
+    }
+  ]
+}

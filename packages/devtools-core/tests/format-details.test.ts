@@ -7,7 +7,11 @@ it('formats repeated validators independently and never invokes callbacks', () =
   });
   const render = vi.fn();
   const result = JSON.parse(
-    formatInspectionDetails({ first: validator, second: validator, render })
+    formatInspectionDetails({
+      first: validator,
+      second: validator,
+      render,
+    }),
   );
   expect(result.first).toBe('string (optional)');
   expect(result.second).toBe('string (optional)');
@@ -16,7 +20,9 @@ it('formats repeated validators independently and never invokes callbacks', () =
   expect(render).not.toHaveBeenCalled();
 });
 it('retains circular reference protection for schemas and ordinary details', () => {
-  const details: Record<string, unknown> = { count: 5n };
+  const details: Record<string, unknown> = {
+    count: 5n,
+  };
   details.self = details;
   expect(JSON.parse(formatInspectionDetails(details))).toEqual({
     count: '5',
@@ -26,11 +32,13 @@ it('retains circular reference protection for schemas and ordinary details', () 
     type: 'object',
     visibility: 'required',
   };
-  const validator = Object.assign(() => {}, { _baseProp: base });
-  base.properties = { self: validator };
-  expect(describePropValidator(validator)).toBe(
-    '{ self: recursive } (required)'
-  );
+  const validator = Object.assign(() => {}, {
+    _baseProp: base,
+  });
+  base.properties = {
+    self: validator,
+  };
+  expect(describePropValidator(validator)).toBe('{ self: recursive } (required)');
 });
 it('describes render-prop signatures and distinguishes plain functions', () => {
   const title = Object.assign(() => {}, {
@@ -41,12 +49,12 @@ it('describes render-prop signatures and distinguishes plain functions', () => {
     _baseProp: {
       type: 'function',
       visibility: 'optional',
-      renderProps: { title },
+      renderProps: {
+        title,
+      },
       childrenType: 'ReactNode',
     },
   });
-  expect(describePropValidator(render)).toBe(
-    '(props: { title: string }) => ReactNode (optional)'
-  );
+  expect(describePropValidator(render)).toBe('(props: { title: string }) => ReactNode (optional)');
   expect(describePropValidator(() => {})).toBeUndefined();
 });

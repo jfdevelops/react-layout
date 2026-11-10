@@ -23,7 +23,7 @@ import {
   ErrorState,
   NamedState,
   Overridden,
-  Page
+  Page,
 } from './fixtures/named-factory/usage';
 
 afterEach(cleanup);
@@ -32,32 +32,38 @@ it('renders a named factory through imported states and reused state props', () 
   render(Page);
   expect(Appointments.displayName).toBe('AppointmentsLayout');
   expect(
-    screen.getByRole('heading', { name: 'Appointments' })
+    screen.getByRole('heading', {
+      name: 'Appointments',
+    }),
   ).toBeInTheDocument();
   expect(screen.getByRole('navigation')).toHaveTextContent('Calendar');
   expect(
-    screen.getByRole('button', { name: 'Add appointment' })
+    screen.getByRole('button', {
+      name: 'Add appointment',
+    }),
   ).toBeInTheDocument();
   expect(screen.getByText('Bookings')).toBeInTheDocument();
 });
 
 it('keeps imported compound states, preset overrides, and required custom props', () => {
   const view = render(NamedState);
-  expect(Appointments.Layout.displayName).toBe(
-    'AppointmentsLayout.Layout'
-  );
+  expect(Appointments.Layout.displayName).toBe('AppointmentsLayout.Layout');
   expect(screen.getByRole('navigation')).toHaveTextContent('Upcoming');
   expect(screen.getByText('Upcoming bookings')).toBeInTheDocument();
   view.rerender(ErrorState);
-  expect(
-    screen.getByText('Appointments: Unable to load bookings')
-  ).toBeInTheDocument();
+  expect(screen.getByText('Appointments: Unable to load bookings')).toBeInTheDocument();
 });
 
 it('allows definition and component naming callbacks to override the factory', () => {
   expect(Dashboard.displayName).toBe('DashboardPage');
   expect(Overridden.displayName).toBe('DashboardOverride');
-  render(<Overridden segments={{ page: 'Dashboard' }} />);
+  render(
+    <Overridden
+      segments={{
+        page: 'Dashboard',
+      }}
+    />,
+  );
   expect(screen.getByRole('navigation')).toHaveTextContent('Dashboard');
 });
 
@@ -72,9 +78,7 @@ it('inherits naming defaults before deriving resource names across builders and 
   expect(GeneratedBound.displayName).toBe('UsersLayout');
   expect(generatedNamespace.Root.displayName).toBe('UsersLayout');
   expect(Generated.Loading.displayName).toBe('UsersLayout.Loading');
-  expect(generatedNamespace.Loading.displayName).toBe(
-    'UsersLayout.Loading'
-  );
+  expect(generatedNamespace.Loading.displayName).toBe('UsersLayout.Loading');
   expect(FactoryNamed.displayName).toBe('FactoryUsers');
   expect(FactoryScoped.displayName).toBe('FactoryUsers');
   expect(FactoryBound.displayName).toBe('FactoryUsers');
@@ -84,7 +88,7 @@ it('inherits naming defaults before deriving resource names across builders and 
 
 it('keeps literal text and supplied values separate from naming placeholders', () => {
   expect(PlaceholderNamed.displayName).toBe(
-    '__layout_append__UsersDetailusersPage__layout_append____layout_prefix__LayoutCapitalizedResourceToken'
+    '__layout_append__UsersDetailusersPage__layout_append____layout_prefix__LayoutCapitalizedResourceToken',
   );
 });
 
@@ -102,7 +106,5 @@ it('narrows optional numeric parts before formatting omitted, zero, and supplied
   expect(ZeroNumericPart.displayName).toBe('UsersV0');
   expect(SuppliedNumericPart.displayName).toBe('UsersV2');
   render(<OmittedNumericPart />);
-  expect(
-    screen.getByText('Optional numeric naming parts')
-  ).toBeInTheDocument();
+  expect(screen.getByText('Optional numeric naming parts')).toBeInTheDocument();
 });

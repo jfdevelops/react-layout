@@ -11,12 +11,14 @@ async function bundle(entry: string) {
     configFile: false,
     root,
     logLevel: 'silent',
-    define: { 'process.env.NODE_ENV': JSON.stringify('production') },
+    define: {
+      'process.env.NODE_ENV': JSON.stringify('production'),
+    },
     resolve: {
       alias: {
         '@jfdevelops/react-layout-devtools-core': path.resolve(
           root,
-          '../devtools-core/src/index.ts'
+          '../devtools-core/src/index.ts',
         ),
       },
     },

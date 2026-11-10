@@ -149,19 +149,24 @@ describe('React Layout errors', () => {
   it('uses a custom renderer with the error scope and context', () => {
     const error = new InvalidConfigError({
       reason: 'Missing resources',
-      config: { resources: [] },
+      config: {
+        resources: [],
+      },
     });
     const renderer = vi.fn();
 
     expect(
       error.renderMessage((scope, context) => {
         renderer(scope, context);
+
         return `${scope}: ${context.reason}`;
       }),
     ).toBe('config: Missing resources');
     expect(renderer).toHaveBeenCalledWith('config', {
       reason: 'Missing resources',
-      config: { resources: [] },
+      config: {
+        resources: [],
+      },
       scope: 'config',
     });
   });
@@ -171,7 +176,12 @@ describe('React Layout errors', () => {
       reason: 'Nested configuration is invalid',
       config: {
         fallback: undefined,
-        entries: [{ value: 'header' }, undefined],
+        entries: [
+          {
+            value: 'header',
+          },
+          undefined,
+        ],
       },
     });
 
@@ -184,7 +194,12 @@ describe('React Layout errors', () => {
         reason: 'Nested configuration is invalid',
         config: {
           fallback: null,
-          entries: [{ value: 'header' }, null],
+          entries: [
+            {
+              value: 'header',
+            },
+            null,
+          ],
         },
         scope: 'config',
       },

@@ -20,12 +20,8 @@ type ExpectedSegmentValue =
       isActive?: boolean | undefined;
     };
 
-type AssertSegmentRecord = SegmentRecord extends Record<
-  string,
-  ExpectedSegmentValue
->
-  ? true
-  : SegmentRecord;
+type AssertSegmentRecord =
+  SegmentRecord extends Record<string, ExpectedSegmentValue> ? true : SegmentRecord;
 type AssertSegmentValue = SegmentValue extends ExpectedSegmentValue
   ? ExpectedSegmentValue extends SegmentValue
     ? true

@@ -7,11 +7,7 @@ import {
   defineResourceLayout,
   MissingResourceProviderError,
 } from '../../src';
-import {
-  renderCapturingError,
-  testResourceLayout,
-  testResourceLayoutWithRender,
-} from './helpers';
+import { renderCapturingError, testResourceLayout, testResourceLayoutWithRender } from './helpers';
 
 function createContactsComposableLayout() {
   const createBreadcrumbComposable = defineComposableComponent({
@@ -25,9 +21,7 @@ function createContactsComposableLayout() {
   });
 
   const Breadcrumbs = createBreadcrumbComposable((props) => (
-    <nav aria-label='Breadcrumb'>
-      {Object.values(props.segments).join(' / ')}
-    </nav>
+    <nav aria-label='Breadcrumb'>{Object.values(props.segments).join(' / ')}</nav>
   ));
 
   const { createResourceLayout } = defineResourceLayout({
@@ -57,7 +51,10 @@ function createContactsComposableLayout() {
     },
   });
 
-  return { createResourceLayout, Breadcrumbs };
+  return {
+    createResourceLayout,
+    Breadcrumbs,
+  };
 }
 
 describe('defineResourceLayout', () => {
@@ -90,7 +87,9 @@ describe('defineResourceLayout', () => {
   it('returns a provider for components outside a created layout', () => {
     const { ResourceProvider, useResource } = defineResourceLayout({
       resources: ['users', 'posts'],
-      layout: { render: () => <section /> },
+      layout: {
+        render: () => <section />,
+      },
     });
 
     function CurrentResource() {
@@ -109,7 +108,9 @@ describe('defineResourceLayout', () => {
   it('throws a custom error when useResource is called outside its provider', () => {
     const { useResource } = defineResourceLayout({
       resources: ['users'],
-      layout: { render: () => <section /> },
+      layout: {
+        render: () => <section />,
+      },
     });
 
     function CurrentResource() {
@@ -137,9 +138,7 @@ describe('defineResourceLayout', () => {
           render: () => <section />,
         },
       }),
-    ).toThrowError(
-      'Sub-resource "new" under "users" collides with a reserved config key',
-    );
+    ).toThrowError('Sub-resource "new" under "users" collides with a reserved config key');
   });
 
   it('binds resources via forResources and merges optional extras', () => {
@@ -208,7 +207,9 @@ describe('defineResourceLayout', () => {
     expect(screen.getByText('UsersPage')).toBeInTheDocument();
     expect(screen.getByText('users')).toBeInTheDocument();
     expect(
-      screen.getByRole('heading', { name: 'Directory' }),
+      screen.getByRole('heading', {
+        name: 'Directory',
+      }),
     ).toBeInTheDocument();
   });
 
@@ -253,16 +254,11 @@ describe('defineResourceLayout', () => {
     const { createResourceLayout } = testResourceLayout({
       resources: ['admins'],
       layout: {
-        render: (_props, context) => (
-          <span>{`${context.resources.current}:${context.name}`}</span>
-        ),
+        render: (_props, context) => <span>{`${context.resources.current}:${context.name}`}</span>,
       },
     });
 
-    const createScopedResourceLayout = createResourceLayout.forResources(
-      'users',
-      'admins',
-    );
+    const createScopedResourceLayout = createResourceLayout.forResources('users', 'admins');
     const UsersPage = createScopedResourceLayout({
       resource: 'users',
       name: 'UsersPage',
@@ -289,9 +285,7 @@ describe('defineResourceLayout', () => {
     const { createResourceLayout } = testResourceLayout({
       resources: ['admins'],
       layout: {
-        render: (_props, context) => (
-          <span>{`${context.resources.current}:${context.name}`}</span>
-        ),
+        render: (_props, context) => <span>{`${context.resources.current}:${context.name}`}</span>,
       },
     });
 
@@ -299,8 +293,12 @@ describe('defineResourceLayout', () => {
       resources: ['users', 'admins'],
       name: (resource) => `${resource}Test`,
     });
-    const UsersPage = createScopedResourceLayout({ resource: 'users' });
-    const AdminsPage = createScopedResourceLayout({ resource: 'admins' });
+    const UsersPage = createScopedResourceLayout({
+      resource: 'users',
+    });
+    const AdminsPage = createScopedResourceLayout({
+      resource: 'admins',
+    });
 
     render(
       <>
@@ -317,9 +315,7 @@ describe('defineResourceLayout', () => {
     const { createResourceLayout } = testResourceLayout({
       resources: ['admins'],
       layout: {
-        render: (_props, context) => (
-          <span>{`${context.resources.current}:${context.name}`}</span>
-        ),
+        render: (_props, context) => <span>{`${context.resources.current}:${context.name}`}</span>,
       },
     });
 
@@ -330,8 +326,12 @@ describe('defineResourceLayout', () => {
         admins: 'AdminDirectory',
       },
     });
-    const UsersPage = createScopedResourceLayout({ resource: 'users' });
-    const AdminsPage = createScopedResourceLayout({ resource: 'admins' });
+    const UsersPage = createScopedResourceLayout({
+      resource: 'users',
+    });
+    const AdminsPage = createScopedResourceLayout({
+      resource: 'admins',
+    });
 
     render(
       <>
@@ -368,8 +368,12 @@ describe('defineResourceLayout', () => {
       },
     });
     const createUsersPage = createScopedResourceLayout
-      .forResource({ resource: 'users' })
-      .setDefaults({ title: 'Directory' });
+      .forResource({
+        resource: 'users',
+      })
+      .setDefaults({
+        title: 'Directory',
+      });
     const UsersPage = createUsersPage({});
 
     render(<UsersPage />);
@@ -407,7 +411,9 @@ describe('defineResourceLayout', () => {
     const { createResourceLayout } = testResourceLayoutWithRender;
 
     expect(() =>
-      createResourceLayout.forResource({ name: 'UsersPage' } as never),
+      createResourceLayout.forResource({
+        name: 'UsersPage',
+      } as never),
     ).toThrowError('"resource" is required when calling "forResource"');
   });
 
@@ -424,7 +430,9 @@ describe('defineResourceLayout', () => {
             description: true,
           },
           custom: {
-            children: createProp.component({ type: 'ReactNode' }),
+            children: createProp.component({
+              type: 'ReactNode',
+            }),
           },
         },
         render: (props) => (
@@ -447,11 +455,12 @@ describe('defineResourceLayout', () => {
     render(<UsersPage>Body content</UsersPage>);
 
     expect(
-      screen.getByRole('heading', { name: 'Users page' }).textContent,
+      screen.getByRole('heading', {
+        name: 'Users page',
+      }).textContent,
     ).toBe('Users page');
     expect(
-      screen.getByText('Resolved include props should reach render as strings.')
-        .textContent,
+      screen.getByText('Resolved include props should reach render as strings.').textContent,
     ).toBe('Resolved include props should reach render as strings.');
     expect(screen.getByText('Body content').textContent).toBe('Body content');
   });
@@ -479,7 +488,9 @@ describe('defineResourceLayout', () => {
     });
 
     const createUsersPage = createResourceLayout
-      .forResource({ resource: 'users' })
+      .forResource({
+        resource: 'users',
+      })
       .setDefaults({
         title: 'Default title',
         description: 'Default description',
@@ -491,20 +502,24 @@ describe('defineResourceLayout', () => {
     render(<UsersPage />);
 
     expect(
-      screen.getByRole('heading', { name: 'Default title' }).textContent,
+      screen.getByRole('heading', {
+        name: 'Default title',
+      }).textContent,
     ).toBe('Default title');
-    expect(screen.getByText('Default description').textContent).toBe(
-      'Default description',
-    );
+    expect(screen.getByText('Default description').textContent).toBe('Default description');
   });
 
   it('creates JSX.Element props at layout creation time with defined props', () => {
     const { createResourceLayout } = testResourceLayout({
       options: {
         title: createProp.string(),
-        actions: createProp.component({ type: 'JSX.Element' }).props({
-          label: createProp.string(),
-        }),
+        actions: createProp
+          .component({
+            type: 'JSX.Element',
+          })
+          .props({
+            label: createProp.string(),
+          }),
       },
       layout: {
         props: {
@@ -526,18 +541,20 @@ describe('defineResourceLayout', () => {
       resource: 'users',
       name: 'UsersPage',
       title: 'Users page',
-      Actions: (componentProps) => (
-        <button type='button'>{componentProps.label}</button>
-      ),
+      Actions: (componentProps) => <button type='button'>{componentProps.label}</button>,
     });
 
     render(<UsersPage />);
 
     expect(
-      screen.getByRole('heading', { name: 'Users page' }).textContent,
+      screen.getByRole('heading', {
+        name: 'Users page',
+      }).textContent,
     ).toBe('Users page');
     expect(
-      screen.getByRole('button', { name: 'Create user' }).textContent,
+      screen.getByRole('button', {
+        name: 'Create user',
+      }).textContent,
     ).toBe('Create user');
   });
 
@@ -545,9 +562,13 @@ describe('defineResourceLayout', () => {
     const { createResourceLayout } = testResourceLayout({
       options: {
         title: createProp.string(),
-        actions: createProp.component({ type: 'JSX.Element' }).props({
-          label: createProp.string(),
-        }),
+        actions: createProp
+          .component({
+            type: 'JSX.Element',
+          })
+          .props({
+            label: createProp.string(),
+          }),
       },
       layout: {
         props: {
@@ -566,7 +587,9 @@ describe('defineResourceLayout', () => {
     });
 
     const createUsersPage = createResourceLayout
-      .forResource({ resource: 'users' })
+      .forResource({
+        resource: 'users',
+      })
       .setDefaults({
         title: 'Users page',
         Actions: (props) => <button>{props.label}</button>,
@@ -578,10 +601,14 @@ describe('defineResourceLayout', () => {
     render(<UsersPage />);
 
     expect(
-      screen.getByRole('heading', { name: 'Users page' }).textContent,
+      screen.getByRole('heading', {
+        name: 'Users page',
+      }).textContent,
     ).toBe('Users page');
     expect(
-      screen.getByRole('button', { name: 'Default action' }).textContent,
+      screen.getByRole('button', {
+        name: 'Default action',
+      }).textContent,
     ).toBe('Default action');
   });
 
@@ -608,7 +635,9 @@ describe('defineResourceLayout', () => {
     });
 
     const createUsersPage = createResourceLayout
-      .forResource({ resource: 'users' })
+      .forResource({
+        resource: 'users',
+      })
       .setDefaults({
         title: 'Users page',
         description: 'Base description',
@@ -621,7 +650,9 @@ describe('defineResourceLayout', () => {
     render(<UsersPage />);
 
     expect(
-      screen.getByRole('heading', { name: 'Users page' }).textContent,
+      screen.getByRole('heading', {
+        name: 'Users page',
+      }).textContent,
     ).toBe('Users page');
     expect(screen.getByText('Base description with suffix').textContent).toBe(
       'Base description with suffix',
@@ -644,8 +675,12 @@ describe('defineResourceLayout', () => {
     });
 
     const createUsersPage = createResourceLayout
-      .forResource({ resource: 'users' })
-      .setDefaults({ title: 'Default title' });
+      .forResource({
+        resource: 'users',
+      })
+      .setDefaults({
+        title: 'Default title',
+      });
     const UsersPage = createUsersPage({
       name: 'UsersPage',
       title: 'Explicit title',
@@ -654,7 +689,9 @@ describe('defineResourceLayout', () => {
     render(<UsersPage />);
 
     expect(
-      screen.getByRole('heading', { name: 'Explicit title' }).textContent,
+      screen.getByRole('heading', {
+        name: 'Explicit title',
+      }).textContent,
     ).toBe('Explicit title');
   });
 
@@ -706,9 +743,7 @@ describe('defineResourceLayout', () => {
     });
 
     const Breadcrumbs = createBreadcrumbComposable((props) => (
-      <nav aria-label='Breadcrumb'>
-        {Object.values(props.segments).join(' / ')}
-      </nav>
+      <nav aria-label='Breadcrumb'>{Object.values(props.segments).join(' / ')}</nav>
     ));
 
     const { createResourceLayout } = defineResourceLayout({
@@ -748,15 +783,13 @@ describe('defineResourceLayout', () => {
 
     render(<ContactsPage />);
 
-    expect(screen.getByLabelText('Breadcrumb')).toHaveTextContent(
-      'Contacts / Single Males',
-    );
+    expect(screen.getByLabelText('Breadcrumb')).toHaveTextContent('Contacts / Single Males');
     expect(
-      screen.getByRole('heading', { name: 'Single Male Records' }),
+      screen.getByRole('heading', {
+        name: 'Single Male Records',
+      }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('paragraph')).toHaveTextContent(
-      'Contacts / Single Males',
-    );
+    expect(screen.getByRole('paragraph')).toHaveTextContent('Contacts / Single Males');
   });
 
   it('forwards optional included props from the call site', () => {
@@ -770,9 +803,7 @@ describe('defineResourceLayout', () => {
       },
     });
     const Breadcrumbs = createBreadcrumbComposable((props) => (
-      <nav aria-label='Breadcrumb'>
-        {Object.values(props.segments).join(' / ')}
-      </nav>
+      <nav aria-label='Breadcrumb'>{Object.values(props.segments).join(' / ')}</nav>
     ));
     const { createResourceLayout } = defineResourceLayout({
       resources: ['contacts'],
@@ -780,7 +811,9 @@ describe('defineResourceLayout', () => {
         title: createProp.string(),
       },
       layout: {
-        composables: () => ({ ...Breadcrumbs }),
+        composables: () => ({
+          ...Breadcrumbs,
+        }),
         props: {
           include: {
             title: true,
@@ -789,9 +822,7 @@ describe('defineResourceLayout', () => {
         },
         render: (props, { composables }) => (
           <section>
-            {props.segments ? (
-              <composables.Breadcrumbs segments={props.segments} />
-            ) : null}
+            {props.segments ? <composables.Breadcrumbs segments={props.segments} /> : null}
             <h1>{props.title}</h1>
           </section>
         ),
@@ -806,27 +837,31 @@ describe('defineResourceLayout', () => {
       resource: 'contacts',
       name: 'DefaultContactsPage',
       title: 'Contacts',
-      segments: { contacts: 'Factory contacts' },
+      segments: {
+        contacts: 'Factory contacts',
+      },
     });
 
     const { rerender } = render(
-      <ContactsPage segments={{ contacts: 'Call-site contacts' }} />,
+      <ContactsPage
+        segments={{
+          contacts: 'Call-site contacts',
+        }}
+      />,
     );
-    expect(screen.getByLabelText('Breadcrumb')).toHaveTextContent(
-      'Call-site contacts',
-    );
+    expect(screen.getByLabelText('Breadcrumb')).toHaveTextContent('Call-site contacts');
 
     rerender(<DefaultContactsPage />);
-    expect(screen.getByLabelText('Breadcrumb')).toHaveTextContent(
-      'Factory contacts',
-    );
+    expect(screen.getByLabelText('Breadcrumb')).toHaveTextContent('Factory contacts');
 
     rerender(
-      <DefaultContactsPage segments={{ contacts: 'Override contacts' }} />,
+      <DefaultContactsPage
+        segments={{
+          contacts: 'Override contacts',
+        }}
+      />,
     );
-    expect(screen.getByLabelText('Breadcrumb')).toHaveTextContent(
-      'Override contacts',
-    );
+    expect(screen.getByLabelText('Breadcrumb')).toHaveTextContent('Override contacts');
 
     rerender(<ContactsPage />);
     expect(screen.queryByLabelText('Breadcrumb')).not.toBeInTheDocument();
@@ -849,7 +884,9 @@ describe('defineResourceLayout', () => {
         configLabel: createProp.string(),
       },
       layout: {
-        composables: () => ({ ...Breadcrumbs }),
+        composables: () => ({
+          ...Breadcrumbs,
+        }),
         props: {
           include: {
             segments: {
@@ -872,15 +909,20 @@ describe('defineResourceLayout', () => {
         ),
       },
     });
-    const createContactsPane =
-      createResourceLayout.forResources('contacts');
+    const createContactsPane = createResourceLayout.forResources('contacts');
     const ContactsPane = createContactsPane({
       resource: 'contacts',
       name: 'ContactsPane',
       configLabel: 'Factory value',
     });
 
-    render(<ContactsPane segments={{ contacts: 'Call-site value' }} />);
+    render(
+      <ContactsPane
+        segments={{
+          contacts: 'Call-site value',
+        }}
+      />,
+    );
 
     expect(screen.getByText('Call-site value')).toBeInTheDocument();
     expect(screen.getByText('Factory value')).toBeInTheDocument();
@@ -914,7 +956,7 @@ describe('defineResourceLayout', () => {
     const { rerender } = render(<ContactsPane />);
     expect(screen.getByText('Factory default')).toBeInTheDocument();
 
-    rerender(<ContactsPane label="Call-site override" />);
+    rerender(<ContactsPane label='Call-site override' />);
     expect(screen.getByText('Call-site override')).toBeInTheDocument();
   });
 
@@ -939,8 +981,7 @@ describe('defineResourceLayout', () => {
       resource: 'contacts',
       received: [],
       expected: ['segments'],
-      message:
-        'Missing required prop "segments" in layout "ContactsPage" (resource: "contacts").',
+      message: 'Missing required prop "segments" in layout "ContactsPage" (resource: "contacts").',
     });
   });
 
@@ -998,9 +1039,7 @@ describe('defineResourceLayout', () => {
       const fromLayout = createResourceLayout(layoutOptions).makeComposable();
 
       expect(fromTopLevel.displayName).toBe(fromLayout.displayName);
-      expect(fromTopLevel.Breadcrumbs.displayName).toBe(
-        fromLayout.Breadcrumbs.displayName,
-      );
+      expect(fromTopLevel.Breadcrumbs.displayName).toBe(fromLayout.Breadcrumbs.displayName);
     });
 
     it('is not available when the layout has no composables', () => {
@@ -1037,22 +1076,28 @@ describe('defineResourceLayout', () => {
     });
 
     it('defineResources returns its arguments as a resources array', () => {
-      expect(
-        defineResourceLayout.defineResources('users', 'posts'),
-      ).toEqual(['users', 'posts']);
+      expect(defineResourceLayout.defineResources('users', 'posts')).toEqual(['users', 'posts']);
     });
 
     it('exposes normalized and raw resources with selectors', () => {
       const { resources } = defineResourceLayout({
         resources: resourceDefs,
-        layout: { render: () => <section /> },
+        layout: {
+          render: () => <section />,
+        },
       });
 
       expect(resources()).toEqual([
-        { value: 'users' },
+        {
+          value: 'users',
+        },
         {
           value: 'posts',
-          subResources: [{ value: 'comments' }],
+          subResources: [
+            {
+              value: 'comments',
+            },
+          ],
         },
       ]);
       expect(resources.raw()).toEqual(resourceDefs);
@@ -1065,7 +1110,9 @@ describe('defineResourceLayout', () => {
     it('returns a selection thunk from pick/omit with its own isResource guard', () => {
       const { resources } = defineResourceLayout({
         resources: resourceDefs,
-        layout: { render: () => <section /> },
+        layout: {
+          render: () => <section />,
+        },
       });
 
       const picked = resources.pick('users');
@@ -1073,7 +1120,10 @@ describe('defineResourceLayout', () => {
 
       expect(picked()).toEqual(['users']);
       expect(omitted()).toEqual([
-        { value: 'posts', subResources: ['comments'] },
+        {
+          value: 'posts',
+          subResources: ['comments'],
+        },
       ]);
 
       expect(picked.isResource('users')).toBe(true);
@@ -1125,7 +1175,12 @@ describe('defineResourceLayout', () => {
         isUsers: true,
         isNope: false,
         rawResources: resourceDefs,
-        picked: [{ value: 'posts', subResources: ['comments'] }],
+        picked: [
+          {
+            value: 'posts',
+            subResources: ['comments'],
+          },
+        ],
       });
     });
   });

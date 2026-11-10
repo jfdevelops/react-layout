@@ -1,22 +1,20 @@
 import { validateDefinition } from './standard-schema';
 import { BaseProp } from './base';
-import {
-  PropError,
-  createMismatchedPropMessage,
-  createMissingPropMessage,
-} from './prop-error';
-import type {
-  AnyBuiltPropDefinition,
-  ExtractDefinitionValue,
-  PropVisibility,
-} from './types';
+import { PropError, createMismatchedPropMessage, createMissingPropMessage } from './prop-error';
+import type { AnyBuiltPropDefinition, ExtractDefinitionValue, PropVisibility } from './types';
 
 export class ArrayProp<
   Item extends AnyBuiltPropDefinition,
   Visibility extends PropVisibility = 'required',
 > extends BaseProp<'array', Visibility, ExtractDefinitionValue<Item>[]> {
-  constructor(readonly itemProp: Item, visibility: Visibility) {
-    super({ type: 'array', visibility });
+  constructor(
+    readonly itemProp: Item,
+    visibility: Visibility,
+  ) {
+    super({
+      type: 'array',
+      visibility,
+    });
   }
 
   optional(this: ArrayProp<Item, 'required'>) {
@@ -35,9 +33,10 @@ export class ArrayProp<
         const validatedValue = validateDefinition(this.itemProp, value[index]);
         validatedValues.push(validatedValue as ExtractDefinitionValue<Item>);
       } catch (error) {
-        if (!(error instanceof PropError)) throw error;
-        const path =
-          error.path === 'value' ? `${index}` : `${index}.${error.path}`;
+        if (!(error instanceof PropError)) {
+          throw error;
+        }
+        const path = error.path === 'value' ? `${index}` : `${index}.${error.path}`;
         throw new PropError({
           path,
           received: error.received,
@@ -48,7 +47,9 @@ export class ArrayProp<
                 received: error.received,
                 expected: error.expected,
               })
-            : createMissingPropMessage({ path }),
+            : createMissingPropMessage({
+                path,
+              }),
         });
       }
     }
@@ -59,6 +60,7 @@ export class ArrayProp<
   allows(value: unknown): value is ExtractDefinitionValue<Item>[] {
     try {
       this.validate(value);
+
       return true;
     } catch {
       return false;

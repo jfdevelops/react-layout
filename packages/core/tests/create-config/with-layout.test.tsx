@@ -23,13 +23,15 @@ function defineAdminLayout(onSidebarMount?: () => void) {
     shell: {
       composables: (create) => ({
         Layout: create({
-          name: ({ capitalize, resource }) =>
-            resource ? `${capitalize(resource)}Shell` : 'Shell',
+          name: ({ capitalize, resource }) => (resource ? `${capitalize(resource)}Shell` : 'Shell'),
         }),
       }),
       props: {
         include: {
-          title: { required: false, suppliedVia: 'component' },
+          title: {
+            required: false,
+            suppliedVia: 'component',
+          },
         },
       },
       render: ({ title }, { resource, resources, children }) => (
@@ -45,7 +47,9 @@ function defineAdminLayout(onSidebarMount?: () => void) {
     layout: {
       props: {
         custom: {
-          children: createProp.component({ type: 'ReactNode' }),
+          children: createProp.component({
+            type: 'ReactNode',
+          }),
         },
       },
       render: ({ children }, { resources }) => (
@@ -106,26 +110,18 @@ describe('defineResourceLayout.withLayout', () => {
           <button type='button' onClick={() => setResource('posts')}>
             go
           </button>
-          {resource === 'users' ? (
-            <UsersPage>u</UsersPage>
-          ) : (
-            <PostsPage>p</PostsPage>
-          )}
+          {resource === 'users' ? <UsersPage>u</UsersPage> : <PostsPage>p</PostsPage>}
         </Shell>
       );
     }
 
     render(<App />);
-    const sidebarBefore = screen.getByText('sidebar').getAttribute(
-      'data-mounted-at',
-    );
+    const sidebarBefore = screen.getByText('sidebar').getAttribute('data-mounted-at');
 
     fireEvent.click(screen.getByText('go'));
 
     // Same DOM node, same mount timestamp -> reconciled in place, not remounted.
-    expect(screen.getByText('sidebar').getAttribute('data-mounted-at')).toBe(
-      sidebarBefore,
-    );
+    expect(screen.getByText('sidebar').getAttribute('data-mounted-at')).toBe(sidebarBefore);
     expect(onSidebarMount).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId('current')).toHaveTextContent('posts');
   });
@@ -179,25 +175,17 @@ describe('defineResourceLayout.withLayout', () => {
           <button type='button' onClick={() => setResource('posts')}>
             go
           </button>
-          {resource === 'users' ? (
-            <UsersPage>u</UsersPage>
-          ) : (
-            <PostsPage>p</PostsPage>
-          )}
+          {resource === 'users' ? <UsersPage>u</UsersPage> : <PostsPage>p</PostsPage>}
         </Shell>
       );
     }
 
     render(<App />);
-    const chromeBefore = screen.getByTestId('chrome').getAttribute(
-      'data-mounted-at',
-    );
+    const chromeBefore = screen.getByTestId('chrome').getAttribute('data-mounted-at');
 
     fireEvent.click(screen.getByText('go'));
 
-    expect(screen.getByTestId('chrome').getAttribute('data-mounted-at')).toBe(
-      chromeBefore,
-    );
+    expect(screen.getByTestId('chrome').getAttribute('data-mounted-at')).toBe(chromeBefore);
     expect(onChromeMount).toHaveBeenCalledTimes(1);
     expect(screen.getByText('p')).toBeInTheDocument();
   });
@@ -220,11 +208,15 @@ describe('defineResourceLayout.withLayout', () => {
       resources: ['users'],
       shell: {
         composables: (create) => ({
-          Layout: create({ name: 'Shell' }),
+          Layout: create({
+            name: 'Shell',
+          }),
           ...Breadcrumb,
         }),
         props: {
-          include: { segments: true },
+          include: {
+            segments: true,
+          },
         },
         render: (_props, { composables, children }) => (
           <composables.Layout>{children}</composables.Layout>
@@ -272,12 +264,16 @@ describe('defineResourceLayout.withLayout', () => {
   });
 
   it('names the shell Layout composable per the reported resource', () => {
-    const Marker = createComposableComponent({ name: 'Marker' });
+    const Marker = createComposableComponent({
+      name: 'Marker',
+    });
     const { createResourceLayout, Shell } = defineResourceLayout.withLayout({
       resources: ['users', 'posts'],
       shell: {
         composables: (create) => ({
-          Layout: create({ name: 'Shell' }),
+          Layout: create({
+            name: 'Shell',
+          }),
           Marker: create({
             name: ({ capitalize, resource }) =>
               resource ? `${capitalize(resource)}Marker` : 'Marker',
@@ -313,9 +309,7 @@ describe('defineResourceLayout.withLayout', () => {
     const { createResourceLayout, Shell } = defineResourceLayout.withLayout({
       resources: ['users'],
       shell: {
-        render: (_props, { children }) => (
-          <div data-testid='shell'>{children}</div>
-        ),
+        render: (_props, { children }) => <div data-testid='shell'>{children}</div>,
       },
     });
     const UsersPage = createResourceLayout.forResource({
@@ -349,7 +343,11 @@ describe('defineResourceLayout.withLayout', () => {
       layout: {
         props: {
           custom: {
-            children: createProp.component({ type: 'ReactNode' }).optional(),
+            children: createProp
+              .component({
+                type: 'ReactNode',
+              })
+              .optional(),
           },
         },
         render: ({ children }) => <>{children}</>,
@@ -386,8 +384,12 @@ describe('defineResourceLayout.withLayout', () => {
     expect(typeof defined.createResourceLinks).toBe('function');
     expect(typeof defined.createResourceLayout).toBe('function');
     expect(defined.resources()).toEqual([
-      { value: 'users' },
-      { value: 'posts' },
+      {
+        value: 'users',
+      },
+      {
+        value: 'posts',
+      },
     ]);
     expect(defined.resources.raw()).toEqual(['users', 'posts']);
   });

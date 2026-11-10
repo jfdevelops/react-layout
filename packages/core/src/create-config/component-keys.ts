@@ -35,9 +35,7 @@ export function isSharedBranchKey(key: string): key is SharedBranchKey {
   return (SHARED_BRANCH_KEYS as readonly string[]).includes(key);
 }
 
-export function isResourceConfigComponentKey(
-  key: string,
-): key is ResourceConfigComponentKey {
+export function isResourceConfigComponentKey(key: string): key is ResourceConfigComponentKey {
   return (RESOURCE_CONFIG_COMPONENT_KEYS as readonly string[]).includes(key);
 }
 
@@ -47,20 +45,13 @@ export function isResourceConfigComponentKey(
  */
 export function isConfigNode(value: unknown): value is Record<string, unknown> {
   return (
-    typeof value === 'object' &&
-    value !== null &&
-    !Array.isArray(value) &&
-    !isValidElement(value)
+    typeof value === 'object' && value !== null && !Array.isArray(value) && !isValidElement(value)
   );
 }
 
 /** Component slots configured on a node, in declaration order. */
-export function readComponentKeys(
-  node: Record<string, unknown>,
-): ResourceConfigComponentKey[] {
-  return RESOURCE_CONFIG_COMPONENT_KEYS.filter(
-    (key) => node[key] !== undefined,
-  );
+export function readComponentKeys(node: Record<string, unknown>): ResourceConfigComponentKey[] {
+  return RESOURCE_CONFIG_COMPONENT_KEYS.filter((key) => node[key] !== undefined);
 }
 
 /**

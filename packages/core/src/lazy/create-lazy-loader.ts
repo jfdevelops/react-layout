@@ -19,7 +19,7 @@ export type LazyLoader<Selected> = LazyHandle & {
   reset(): void;
   component(
     member?: PropertyKey,
-    map?: (selected: Selected) => ComponentType<any>
+    map?: (selected: Selected) => ComponentType<any>,
   ): ComponentType<any>;
 };
 
@@ -33,25 +33,25 @@ export function createLazyLoader<Module, Selected>(options: {
   let promise: Promise<Selected> | undefined;
   let preloadPromise: Promise<void> | undefined;
   let status: LoadStatus = 'unresolved';
-  let settled:
-    { ok: true; value: Selected } | { ok: false; error: unknown } | undefined;
+  let settled: { ok: true; value: Selected } | { ok: false; error: unknown } | undefined;
   const components = new Map<unknown, ComponentType<any>>();
   let generation = 0;
 
   function get() {
-    if (promise) return promise;
+    if (promise) {
+      return promise;
+    }
     const attempt = generation;
     status = 'loading';
     options.hooks?.onLoadStart?.();
     promise = Promise.resolve()
       .then(options.load)
       .catch((cause: unknown) => {
-        if (isLazyResourceError(cause)) throw cause;
+        if (isLazyResourceError(cause)) {
+          throw cause;
+        }
         if (process.env.NODE_ENV !== 'production') {
-          console.error(
-            `[react-layout] lazy "${options.label}" failed to load`,
-            cause
-          );
+          console.error(`[react-layout] lazy "${options.label}" failed to load`, cause);
         }
         throw new ResourceModuleLoadError(options.label, cause);
       })
@@ -59,21 +59,29 @@ export function createLazyLoader<Module, Selected>(options: {
       .then(
         (selected) => {
           if (attempt === generation) {
-            settled = { ok: true, value: selected };
+            settled = {
+              ok: true,
+              value: selected,
+            };
             status = 'resolved';
             options.hooks?.onLoadSuccess?.();
           }
+
           return selected;
         },
         (error: LazyResourceError) => {
           if (attempt === generation) {
-            settled = { ok: false, error };
+            settled = {
+              ok: false,
+              error,
+            };
             status = 'error';
             options.hooks?.onLoadError?.(error);
           }
           throw error;
-        }
+        },
       );
+
     return promise;
   }
 
@@ -103,8 +111,12 @@ export function createLazyLoader<Module, Selected>(options: {
         // shared import is pending, rather than starting a promise per member.
         // Keep this component stable so later renders preserve child state.
         component = function LazyMember(props: Record<string, unknown>) {
-          if (!settled) throw get();
-          if (!settled.ok) throw settled.error;
+          if (!settled) {
+            throw get();
+          }
+          if (!settled.ok) {
+            throw settled.error;
+          }
           if (!resolved || resolved.generation !== generation) {
             try {
               const candidate = map
@@ -113,10 +125,7 @@ export function createLazyLoader<Module, Selected>(options: {
                   ? settled.value
                   : (settled.value as Record<PropertyKey, unknown>)[member];
               if (typeof candidate !== 'function') {
-                throw new LazyResourceStateNotFoundError(
-                  options.label,
-                  String(member)
-                );
+                throw new LazyResourceStateNotFoundError(options.label, String(member));
               }
               resolved = {
                 generation,
@@ -124,18 +133,26 @@ export function createLazyLoader<Module, Selected>(options: {
                 value: candidate as ComponentType<any>,
               };
             } catch (error) {
-              resolved = { generation, ok: false, error };
+              resolved = {
+                generation,
+                ok: false,
+                error,
+              };
               if (isLazyResourceError(error)) {
                 status = 'error';
                 options.hooks?.onLoadError?.(error);
               }
             }
           }
-          if (!resolved.ok) throw resolved.error;
+          if (!resolved.ok) {
+            throw resolved.error;
+          }
+
           return createElement(resolved.value, props);
         };
         components.set(key, component);
       }
+
       return component;
     },
   };

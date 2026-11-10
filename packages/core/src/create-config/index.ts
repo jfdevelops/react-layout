@@ -121,11 +121,7 @@ export type {
   SubResourceFromGetComponentBound,
   ValidateForResourceBound,
 } from './get-component';
-export {
-  createForPaths,
-  createGetComponentForPath,
-  createTargetPathBuilder,
-} from './for-paths';
+export { createForPaths, createGetComponentForPath, createTargetPathBuilder } from './for-paths';
 export type {
   CreateGetComponentForPath,
   ForPaths,
@@ -196,10 +192,7 @@ export type {
   StateComposable,
   StateComposableOptions,
 } from './state-composable';
-export type {
-  RenderStateCallProps,
-  RenderStateReferences,
-} from './render-state';
+export type { RenderStateCallProps, RenderStateReferences } from './render-state';
 export { defineLayoutPreview } from './preview';
 export type { LayoutPreviewProps } from './preview';
 

@@ -25,21 +25,15 @@ import { UnionProp } from './union';
 import { createPropsFromComponent } from './component-props';
 
 type ExtractVisibility<Prop extends AnyBaseProp> =
-  Prop extends BaseProp<any, infer V extends PropVisibility, any>
-    ? V
-    : PropVisibility;
+  Prop extends BaseProp<any, infer V extends PropVisibility, any> ? V : PropVisibility;
 
 type OptionalChain<
   Visibility extends PropVisibility,
   OptionalProp extends AnyBaseProp,
-> = Visibility extends 'required'
-  ? { optional(): WrappedProp<OptionalProp> }
-  : {};
+> = Visibility extends 'required' ? { optional(): WrappedProp<OptionalProp> } : {};
 
 type ConfigChain<Prop extends AnyBaseProp> = {
-  config<const Config extends PropConfig>(
-    config: Config,
-  ): ConfiguredWrappedProp<Prop, Config>;
+  config<const Config extends PropConfig>(config: Config): ConfiguredWrappedProp<Prop, Config>;
 };
 
 type PrimitiveWrappedPropState<
@@ -51,10 +45,7 @@ type PrimitiveWrappedPropState<
   visibility: Visibility;
 } & ([Value] extends [never] ? {} : { value: Value });
 
-type ObjectWrappedPropState<
-  Shape extends BuiltPropShape,
-  Visibility extends PropVisibility,
-> = {
+type ObjectWrappedPropState<Shape extends BuiltPropShape, Visibility extends PropVisibility> = {
   type: 'object';
   visibility: Visibility;
   properties: Shape;
@@ -101,12 +92,21 @@ type RecordWrappedPropState<
   keyProp: KeyProp;
 };
 
-type StringWrappedPropState<Visibility extends PropVisibility> =
-  PrimitiveWrappedPropState<'string', Visibility, string | undefined>;
-type NumberWrappedPropState<Visibility extends PropVisibility> =
-  PrimitiveWrappedPropState<'number', Visibility, number | undefined>;
-type BooleanWrappedPropState<Visibility extends PropVisibility> =
-  PrimitiveWrappedPropState<'boolean', Visibility, boolean | undefined>;
+type StringWrappedPropState<Visibility extends PropVisibility> = PrimitiveWrappedPropState<
+  'string',
+  Visibility,
+  string | undefined
+>;
+type NumberWrappedPropState<Visibility extends PropVisibility> = PrimitiveWrappedPropState<
+  'number',
+  Visibility,
+  number | undefined
+>;
+type BooleanWrappedPropState<Visibility extends PropVisibility> = PrimitiveWrappedPropState<
+  'boolean',
+  Visibility,
+  boolean | undefined
+>;
 type LiteralWrappedPropState<
   Value,
   Type extends PrimitivePropType,
@@ -121,53 +121,40 @@ type WrappedPropState<Prop extends AnyBaseProp> =
   Prop extends ArrayProp<infer Item, infer Visibility>
     ? { type: 'array'; visibility: Visibility; itemProp: Item }
     : Prop extends StringProp<infer Visibility>
-    ? StringWrappedPropState<Visibility>
-    : Prop extends NumberProp<infer Visibility>
-      ? NumberWrappedPropState<Visibility>
-      : Prop extends BooleanProp<infer Visibility>
-        ? BooleanWrappedPropState<Visibility>
-        : Prop extends LiteralProp<infer Value, infer Type, infer Visibility>
-          ? LiteralWrappedPropState<Value, Type, Visibility>
-          : Prop extends EnumProp<infer _Values, infer Type, infer Visibility>
-            ? EnumWrappedPropState<Type, Visibility>
-            : Prop extends ObjectProp<infer Shape, infer Visibility>
-              ? ObjectWrappedPropState<Shape, Visibility>
-              : Prop extends ComponentPropWithPropertiesProp<
-                    infer Type,
-                    infer Shape,
-                    infer Visibility
-                  >
-                ? ComponentWithPropsWrappedPropState<Type, Shape, Visibility>
-                : Prop extends ComponentProp<infer Type, infer Visibility>
-                  ? { type: Type; visibility: Visibility }
-                  : Prop extends UnionProp<infer Members, infer Visibility>
-                    ? UnionWrappedPropState<Members, Visibility>
-                    : Prop extends RenderChildrenProp<
-                          infer Shape,
-                          infer ChildrenType,
-                          infer Visibility
-                        >
-                      ? RenderChildrenWrappedPropState<
-                          Shape,
-                          ChildrenType,
-                          Visibility
-                        >
-                      : Prop extends RecordProp<
-                            infer ValueProp,
-                            infer KeyProp,
+      ? StringWrappedPropState<Visibility>
+      : Prop extends NumberProp<infer Visibility>
+        ? NumberWrappedPropState<Visibility>
+        : Prop extends BooleanProp<infer Visibility>
+          ? BooleanWrappedPropState<Visibility>
+          : Prop extends LiteralProp<infer Value, infer Type, infer Visibility>
+            ? LiteralWrappedPropState<Value, Type, Visibility>
+            : Prop extends EnumProp<infer _Values, infer Type, infer Visibility>
+              ? EnumWrappedPropState<Type, Visibility>
+              : Prop extends ObjectProp<infer Shape, infer Visibility>
+                ? ObjectWrappedPropState<Shape, Visibility>
+                : Prop extends ComponentPropWithPropertiesProp<
+                      infer Type,
+                      infer Shape,
+                      infer Visibility
+                    >
+                  ? ComponentWithPropsWrappedPropState<Type, Shape, Visibility>
+                  : Prop extends ComponentProp<infer Type, infer Visibility>
+                    ? { type: Type; visibility: Visibility }
+                    : Prop extends UnionProp<infer Members, infer Visibility>
+                      ? UnionWrappedPropState<Members, Visibility>
+                      : Prop extends RenderChildrenProp<
+                            infer Shape,
+                            infer ChildrenType,
                             infer Visibility
                           >
-                        ? RecordWrappedPropState<
-                            ValueProp,
-                            KeyProp,
-                            Visibility
-                          >
-                        : never;
+                        ? RenderChildrenWrappedPropState<Shape, ChildrenType, Visibility>
+                        : Prop extends RecordProp<infer ValueProp, infer KeyProp, infer Visibility>
+                          ? RecordWrappedPropState<ValueProp, KeyProp, Visibility>
+                          : never;
 
-type ConfiguredWrappedProp<
-  Prop extends AnyBaseProp,
-  Config extends PropConfig,
-> = ((value: unknown) => ReturnType<Prop['validate']>) &
+type ConfiguredWrappedProp<Prop extends AnyBaseProp, Config extends PropConfig> = ((
+  value: unknown,
+) => ReturnType<Prop['validate']>) &
   WrappedPropState<Prop> & {
     _baseProp: Prop;
     config: Config;
@@ -204,11 +191,7 @@ type GetValueForWrapper<
   Type extends PrimitivePropType,
   For extends WrapperFor,
   Value extends PrimitiveTypesMap[Type],
-> = For extends 'literal'
-  ? Value
-  : For extends 'enum'
-    ? NonEmptyReadonlyArray<Value>
-    : never;
+> = For extends 'literal' ? Value : For extends 'enum' ? NonEmptyReadonlyArray<Value> : never;
 
 type WrappedPropFor<
   Type extends PrimitivePropType,
@@ -241,18 +224,8 @@ type WrappedPropBuilder<
   };
 
 type PrimitivePropTypeMap<Visibility extends PropVisibility> = {
-  string: WrappedPropBuilder<
-    'string',
-    Visibility,
-    StringProp<Visibility>,
-    StringProp<'optional'>
-  >;
-  number: WrappedPropBuilder<
-    'number',
-    Visibility,
-    NumberProp<Visibility>,
-    NumberProp<'optional'>
-  >;
+  string: WrappedPropBuilder<'string', Visibility, StringProp<Visibility>, StringProp<'optional'>>;
+  number: WrappedPropBuilder<'number', Visibility, NumberProp<Visibility>, NumberProp<'optional'>>;
   boolean: WrappedPropBuilder<
     'boolean',
     Visibility,
@@ -296,15 +269,8 @@ type WrappedObjectProp<Prop> =
     : never;
 
 type WrappedComponentWithPropsProp<Prop> =
-  Prop extends ComponentPropWithPropertiesProp<
-    infer Type,
-    infer Shape,
-    infer Visibility
-  >
-    ? OptionalChain<
-        Visibility,
-        ComponentPropWithPropertiesProp<Type, Shape, 'optional'>
-      >
+  Prop extends ComponentPropWithPropertiesProp<infer Type, infer Shape, infer Visibility>
+    ? OptionalChain<Visibility, ComponentPropWithPropertiesProp<Type, Shape, 'optional'>>
     : never;
 
 type WrappedUnionProp<Prop> =
@@ -314,15 +280,10 @@ type WrappedUnionProp<Prop> =
 
 type WrappedRecordProp<Prop> =
   Prop extends RecordProp<infer ValueProp, infer KeyProp, infer Visibility>
-    ? OptionalChain<
-        Visibility,
-        RecordProp<ValueProp, KeyProp, 'optional'>
-      >
+    ? OptionalChain<Visibility, RecordProp<ValueProp, KeyProp, 'optional'>>
     : never;
 
-type WrappedPropChainMembers<Prop extends AnyBaseProp> = [
-  WrappedSpecialProp<Prop>,
-] extends [never]
+type WrappedPropChainMembers<Prop extends AnyBaseProp> = [WrappedSpecialProp<Prop>] extends [never]
   ? [WrappedObjectProp<Prop>] extends [never]
     ? [WrappedComponentWithPropsProp<Prop>] extends [never]
       ? [WrappedUnionProp<Prop>] extends [never]
@@ -387,20 +348,17 @@ type PrimitivePropBuilder<
   enum: EnumPropBuilder<Type, Visibility>;
   config<const Config extends PropConfig>(
     config: Config,
-  ): ConfiguredWrappedProp<
-    PrimitiveBasePropInstanceMap<Visibility>[Type],
+  ): ConfiguredWrappedProp<PrimitiveBasePropInstanceMap<Visibility>[Type], Config>;
+} & (Visibility extends 'required' ? { optional(): PrimitivePropBuilder<Type, 'optional'> } : {});
+
+function createConfiguredWrappedProp<Prop extends AnyBaseProp, const Config extends PropConfig>(
+  prop: Prop,
+  config: Config,
+): ConfiguredWrappedProp<Prop, Config> {
+  const validate = ((value: unknown) => prop.validate(value)) as ConfiguredWrappedProp<
+    Prop,
     Config
   >;
-} & (Visibility extends 'required'
-    ? { optional(): PrimitivePropBuilder<Type, 'optional'> }
-    : {});
-
-function createConfiguredWrappedProp<
-  Prop extends AnyBaseProp,
-  const Config extends PropConfig,
->(prop: Prop, config: Config): ConfiguredWrappedProp<Prop, Config> {
-  const validate = ((value: unknown) =>
-    prop.validate(value)) as ConfiguredWrappedProp<Prop, Config>;
 
   return Object.assign(validate, getPropState(prop), {
     _baseProp: prop,
@@ -408,9 +366,7 @@ function createConfiguredWrappedProp<
   });
 }
 
-function getPropState<Prop extends AnyBaseProp>(
-  prop: Prop,
-): WrappedPropState<Prop> {
+function getPropState<Prop extends AnyBaseProp>(prop: Prop): WrappedPropState<Prop> {
   const state = {
     type: prop.type,
     visibility: prop.visibility,
@@ -420,10 +376,7 @@ function getPropState<Prop extends AnyBaseProp>(
     state.value = prop.value;
   }
 
-  if (
-    prop instanceof ObjectProp ||
-    prop instanceof ComponentPropWithPropertiesProp
-  ) {
+  if (prop instanceof ObjectProp || prop instanceof ComponentPropWithPropertiesProp) {
     state.properties = prop.properties;
   }
 
@@ -449,14 +402,11 @@ function getPropState<Prop extends AnyBaseProp>(
 }
 
 function flattenUnionMembers(prop: AnyBaseProp): AnyBaseProp[] {
-  return prop instanceof UnionProp
-    ? [...(prop.members as AnyBaseProp[])]
-    : [prop];
+  return prop instanceof UnionProp ? [...(prop.members as AnyBaseProp[])] : [prop];
 }
 
 function wrapProp<Prop extends AnyBaseProp>(prop: Prop): WrappedProp<Prop> {
-  const validate = ((value: unknown) =>
-    prop.validate(value)) as WrappedProp<Prop>;
+  const validate = ((value: unknown) => prop.validate(value)) as WrappedProp<Prop>;
   const chainedProps = getPropState(prop) as Record<string, unknown>;
   const methodNames = ['optional', 'literal', 'enum', 'config'] as const;
 
@@ -465,16 +415,13 @@ function wrapProp<Prop extends AnyBaseProp>(prop: Prop): WrappedProp<Prop> {
 
     if (typeof method === 'function') {
       if (methodName === 'config') {
-        chainedProps.config = <const Config extends PropConfig>(
-          config: Config,
-        ) => createConfiguredWrappedProp(prop, config);
+        chainedProps.config = <const Config extends PropConfig>(config: Config) =>
+          createConfiguredWrappedProp(prop, config);
         continue;
       }
 
       chainedProps[methodName] = (...args: unknown[]) => {
-        const nextProp = (
-          method as (...methodArgs: unknown[]) => AnyBaseProp
-        ).apply(prop, args);
+        const nextProp = (method as (...methodArgs: unknown[]) => AnyBaseProp).apply(prop, args);
 
         return wrapProp(nextProp);
       };
@@ -483,22 +430,16 @@ function wrapProp<Prop extends AnyBaseProp>(prop: Prop): WrappedProp<Prop> {
 
   chainedProps._baseProp = prop;
   chainedProps.or = (other: WrappedProp<AnyBaseProp>) => {
-    const otherBase = (other as unknown as Record<string, unknown>)
-      ._baseProp as AnyBaseProp;
-    const members = [
-      ...flattenUnionMembers(prop),
-      ...flattenUnionMembers(otherBase),
-    ] as never;
+    const otherBase = (other as unknown as Record<string, unknown>)._baseProp as AnyBaseProp;
+    const members = [...flattenUnionMembers(prop), ...flattenUnionMembers(otherBase)] as never;
+
     return wrapProp(new UnionProp(members, prop.visibility));
   };
 
   return Object.assign(validate, chainedProps);
 }
 
-function createPrimitiveProp<
-  Type extends PrimitivePropType,
-  Visibility extends PropVisibility,
->(
+function createPrimitiveProp<Type extends PrimitivePropType, Visibility extends PropVisibility>(
   type: Type,
   visibility: Visibility,
 ): PrimitiveBasePropInstanceMap<Visibility>[Type] {
@@ -518,14 +459,12 @@ function createPrimitiveProp<
   }
 }
 
-function createWrappedProp<
-  Type extends PrimitivePropType,
-  Visibility extends PropVisibility,
->(type: Type, visibility: Visibility) {
+function createWrappedProp<Type extends PrimitivePropType, Visibility extends PropVisibility>(
+  type: Type,
+  visibility: Visibility,
+) {
   return <For extends WrapperFor>(wrapperFor: For) =>
-    <Value extends PrimitiveTypesMap[Type]>(
-      value: GetValueForWrapper<Type, For, Value>,
-    ) => {
+    <Value extends PrimitiveTypesMap[Type]>(value: GetValueForWrapper<Type, For, Value>) => {
       if (wrapperFor === 'literal') {
         return wrapProp(
           new LiteralProp(value as never, type, visibility),
@@ -545,26 +484,23 @@ function createWrappedProp<
 export function createPrimitivePropBuilder<
   Type extends PrimitivePropType,
   Visibility extends PropVisibility = 'required',
->(
-  type: Type,
-  visibility = 'required' as Visibility,
-): PrimitivePropBuilder<Type, Visibility> {
+>(type: Type, visibility = 'required' as Visibility): PrimitivePropBuilder<Type, Visibility> {
   const propWrapper = createWrappedProp(type, visibility);
   const builder = (() =>
-    wrapProp(
-      createPrimitiveProp(type, visibility),
-    )) as unknown as PrimitivePropBuilder<Type, Visibility>;
+    wrapProp(createPrimitiveProp(type, visibility))) as unknown as PrimitivePropBuilder<
+    Type,
+    Visibility
+  >;
 
   return Object.assign(builder, {
     literal: propWrapper('literal'),
     enum: propWrapper('enum'),
     config: <const Config extends PropConfig>(config: Config) =>
-      createConfiguredWrappedProp(
-        createPrimitiveProp(type, visibility),
-        config,
-      ),
+      createConfiguredWrappedProp(createPrimitiveProp(type, visibility), config),
     ...(visibility === 'required'
-      ? { optional: () => createPrimitivePropBuilder(type, 'optional') }
+      ? {
+          optional: () => createPrimitivePropBuilder(type, 'optional'),
+        }
       : {}),
   }) as unknown as PrimitivePropBuilder<Type, Visibility>;
 }
@@ -607,14 +543,18 @@ function createRecordProp<
   if (isRecordPropOptions(options)) {
     const { value, key } = options;
 
-    return wrapProp(
-      new RecordProp(value, key, 'required'),
-    ) as RecordValueDefinition<ValueProp, KeyProp, 'required'>;
+    return wrapProp(new RecordProp(value, key, 'required')) as RecordValueDefinition<
+      ValueProp,
+      KeyProp,
+      'required'
+    >;
   }
 
-  return wrapProp(
-    new RecordProp(options, undefined, 'required'),
-  ) as RecordValueDefinition<ValueProp, KeyProp, 'required'>;
+  return wrapProp(new RecordProp(options, undefined, 'required')) as RecordValueDefinition<
+    ValueProp,
+    KeyProp,
+    'required'
+  >;
 }
 
 type ChildrenPropFor<
@@ -622,9 +562,7 @@ type ChildrenPropFor<
   ChildrenVisibility extends PropVisibility,
   RenderProps extends BuiltPropShape | undefined,
 > = (RenderProps extends BuiltPropShape
-  ? WrappedProp<
-      RenderChildrenProp<RenderProps, ChildrenType, ChildrenVisibility>
-    >
+  ? WrappedProp<RenderChildrenProp<RenderProps, ChildrenType, ChildrenVisibility>>
   : WrappedProp<ComponentProp<ChildrenType, ChildrenVisibility>>) &
   AnyBuiltPropDefinition;
 
@@ -648,32 +586,20 @@ export type ComponentPropWithChildrenBuilder<
   Visibility extends PropVisibility,
   ChildrenProp extends AnyBuiltPropDefinition,
 > = ((value: unknown) => void) & {
-  _baseProp: ComponentPropWithPropertiesProp<
-    Type,
-    { children: ChildrenProp },
-    Visibility
-  >;
+  _baseProp: ComponentPropWithPropertiesProp<Type, { children: ChildrenProp }, Visibility>;
   type: Type;
   visibility: Visibility;
   props<const Shape extends BuiltPropShape>(
     shape: Shape,
   ): WrappedProp<
-    ComponentPropWithPropertiesProp<
-      Type,
-      WithChildrenShape<Shape, ChildrenProp>,
-      Visibility
-    >
+    ComponentPropWithPropertiesProp<Type, WithChildrenShape<Shape, ChildrenProp>, Visibility>
   >;
   or<Other extends AnyBaseProp>(other: {
     _baseProp: Other;
   }): WrappedProp<
     UnionProp<
       readonly [
-        ComponentPropWithPropertiesProp<
-          Type,
-          { children: ChildrenProp },
-          Visibility
-        >,
+        ComponentPropWithPropertiesProp<Type, { children: ChildrenProp }, Visibility>,
         Other,
       ],
       Visibility
@@ -681,11 +607,7 @@ export type ComponentPropWithChildrenBuilder<
   >;
 } & (Visibility extends 'required'
     ? {
-        optional(): ComponentPropWithChildrenBuilder<
-          Type,
-          'optional',
-          ChildrenProp
-        >;
+        optional(): ComponentPropWithChildrenBuilder<Type, 'optional', ChildrenProp>;
       }
     : {});
 
@@ -707,11 +629,7 @@ export type ComponentPropBuilder<
     ChildrenVisibility extends PropVisibility = 'optional',
     const RenderProps extends BuiltPropShape | undefined = undefined,
   >(
-    options?: WithChildrenOptions<
-      ChildrenType,
-      ChildrenVisibility,
-      RenderProps
-    >,
+    options?: WithChildrenOptions<ChildrenType, ChildrenVisibility, RenderProps>,
   ): ComponentPropWithChildrenBuilder<
     Type,
     Visibility,
@@ -719,12 +637,8 @@ export type ComponentPropBuilder<
   >;
   or<Other extends AnyBaseProp>(other: {
     _baseProp: Other;
-  }): WrappedProp<
-    UnionProp<readonly [ComponentProp<Type, Visibility>, Other], Visibility>
-  >;
-} & (Visibility extends 'required'
-    ? { optional(): ComponentPropBuilder<Type, 'optional'> }
-    : {});
+  }): WrappedProp<UnionProp<readonly [ComponentProp<Type, Visibility>, Other], Visibility>>;
+} & (Visibility extends 'required' ? { optional(): ComponentPropBuilder<Type, 'optional'> } : {});
 
 function createComponentPropWithChildrenBuilder<
   Type extends ComponentPropType,
@@ -737,7 +651,9 @@ function createComponentPropWithChildrenBuilder<
 ): ComponentPropWithChildrenBuilder<Type, Visibility, ChildrenProp> {
   const baseProp = new ComponentPropWithPropertiesProp(
     type,
-    { children: childrenProp },
+    {
+      children: childrenProp,
+    },
     visibility,
   );
   const validate = ((value: unknown) =>
@@ -755,32 +671,25 @@ function createComponentPropWithChildrenBuilder<
       wrapProp(
         new ComponentPropWithPropertiesProp(
           type,
-          { ...shape, children: childrenProp },
+          {
+            ...shape,
+            children: childrenProp,
+          },
           visibility,
         ),
       ),
     or: (other: { _baseProp: AnyBaseProp }) => {
-      const members = [
-        baseProp,
-        ...flattenUnionMembers(other._baseProp),
-      ] as never;
+      const members = [baseProp, ...flattenUnionMembers(other._baseProp)] as never;
+
       return wrapProp(new UnionProp(members, baseProp.visibility));
     },
     ...(visibility === 'required'
       ? {
           optional: () =>
-            createComponentPropWithChildrenBuilder(
-              type,
-              'optional' as const,
-              childrenProp,
-            ),
+            createComponentPropWithChildrenBuilder(type, 'optional' as const, childrenProp),
         }
       : {}),
-  }) as unknown as ComponentPropWithChildrenBuilder<
-    Type,
-    Visibility,
-    ChildrenProp
-  >;
+  }) as unknown as ComponentPropWithChildrenBuilder<Type, Visibility, ChildrenProp>;
 }
 
 function buildChildrenProp<
@@ -795,32 +704,23 @@ function buildChildrenProp<
   if (renderProps !== undefined) {
     return wrapProp(
       new RenderChildrenProp(renderProps, childrenType, childrenVisibility),
-    ) as unknown as ChildrenPropFor<
-      ChildrenType,
-      ChildrenVisibility,
-      RenderProps
-    >;
+    ) as unknown as ChildrenPropFor<ChildrenType, ChildrenVisibility, RenderProps>;
   }
 
   return wrapProp(
     new ComponentProp(childrenType, childrenVisibility),
-  ) as unknown as ChildrenPropFor<
-    ChildrenType,
-    ChildrenVisibility,
-    RenderProps
-  >;
+  ) as unknown as ChildrenPropFor<ChildrenType, ChildrenVisibility, RenderProps>;
 }
 
 function createComponentPropBuilder<
   Type extends ComponentPropType,
   Visibility extends PropVisibility = 'required',
->(
-  type: Type,
-  visibility = 'required' as Visibility,
-): ComponentPropBuilder<Type, Visibility> {
+>(type: Type, visibility = 'required' as Visibility): ComponentPropBuilder<Type, Visibility> {
   const prop = new ComponentProp(type, visibility);
-  const validate = ((value: unknown) =>
-    prop.validate(value)) as ComponentPropBuilder<Type, Visibility>;
+  const validate = ((value: unknown) => prop.validate(value)) as ComponentPropBuilder<
+    Type,
+    Visibility
+  >;
 
   return Object.assign(validate, {
     type,
@@ -835,16 +735,12 @@ function createComponentPropBuilder<
       ChildrenVisibility extends PropVisibility = 'optional',
       const RenderProps extends BuiltPropShape | undefined = undefined,
     >(
-      options?: WithChildrenOptions<
-        ChildrenType,
-        ChildrenVisibility,
-        RenderProps
-      >,
+      options?: WithChildrenOptions<ChildrenType, ChildrenVisibility, RenderProps>,
     ) => {
       const childrenType = (options?.type ?? 'ReactNode') as ChildrenType;
-      const childrenVisibility = (options?.visibility ??
-        'optional') as ChildrenVisibility;
+      const childrenVisibility = (options?.visibility ?? 'optional') as ChildrenVisibility;
       const renderProps = (options?.props ?? undefined) as RenderProps;
+
       return createComponentPropWithChildrenBuilder(
         type,
         visibility,
@@ -853,10 +749,13 @@ function createComponentPropBuilder<
     },
     or: (other: { _baseProp: AnyBaseProp }) => {
       const members = [prop, ...flattenUnionMembers(other._baseProp)] as never;
+
       return wrapProp(new UnionProp(members, prop.visibility));
     },
     ...(visibility === 'required'
-      ? { optional: () => createComponentPropBuilder(type, 'optional') }
+      ? {
+          optional: () => createComponentPropBuilder(type, 'optional'),
+        }
       : {}),
   }) as unknown as ComponentPropBuilder<Type, Visibility>;
 }

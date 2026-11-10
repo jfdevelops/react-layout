@@ -43,7 +43,12 @@ function objectPlan(
   optional = false,
   guards: PlanLocation[][] = [[]],
 ): ObjectPlan {
-  return { kind: 'object', children, optional, guards };
+  return {
+    kind: 'object',
+    children,
+    optional,
+    guards,
+  };
 }
 
 function optionPlan(
@@ -59,15 +64,22 @@ function optionPlan(
       : (selection as RuntimeSelection);
   const children: Record<string, Plan> = {};
   for (const [key, value] of Object.entries(entries ?? {})) {
-    if (!Object.hasOwn(definitions, key))
+    if (!Object.hasOwn(definitions, key)) {
       throw new LayoutConfigurationError(`Unknown reusable option "${key}".`);
+    }
     const definition = definitions[key];
-    const location: PlanLocation = { from, path: [...path, key] };
+    const location: PlanLocation = {
+      from,
+      path: [...path, key],
+    };
     if (typeof value === 'function') {
       children[key] = {
         ...location,
         from: 'options',
-        guards: optionalPaths.map((path) => ({ from: 'options', path })),
+        guards: optionalPaths.map((path) => ({
+          from: 'options',
+          path,
+        })),
         kind: 'value',
         source: 'option',
         selector: value as ValuePlan['selector'],
@@ -84,9 +96,7 @@ function optionPlan(
         value,
         from,
         location.path,
-        definition.visibility === 'optional'
-          ? [...optionalPaths, location.path]
-          : optionalPaths,
+        definition.visibility === 'optional' ? [...optionalPaths, location.path] : optionalPaths,
       );
       children[key] = {
         ...nested,
@@ -95,28 +105,39 @@ function optionPlan(
     } else if (value === true) {
       children[key] = {
         ...location,
-        guards: optionalPaths.map((path) => ({ from, path })),
+        guards: optionalPaths.map((path) => ({
+          from,
+          path,
+        })),
         kind: 'value',
         source: 'option',
         definition,
       };
-    } else
-      throw new LayoutConfigurationError(
-        `Invalid reusable selection for "${key}".`,
-      );
+    } else {
+      throw new LayoutConfigurationError(`Invalid reusable selection for "${key}".`);
+    }
   }
   const origins = new Set<PlanLocation['from']>();
   function collectOrigins(node: Plan) {
-    if (node.kind === 'value') origins.add(node.from);
-    else Object.values(node.children).forEach(collectOrigins);
+    if (node.kind === 'value') {
+      origins.add(node.from);
+    } else {
+      Object.values(node.children).forEach(collectOrigins);
+    }
   }
   Object.values(children).forEach(collectOrigins);
-  if (!origins.size) origins.add(from);
+  if (!origins.size) {
+    origins.add(from);
+  }
+
   return objectPlan(
     children,
     false,
     [...origins].map((origin) =>
-      optionalPaths.map((path) => ({ from: origin, path })),
+      optionalPaths.map((path) => ({
+        from: origin,
+        path,
+      })),
     ),
   );
 }
@@ -136,7 +157,9 @@ function mergePlans(
   overlap?: ReusableOverlap,
   path: string[] = [],
 ): ObjectPlan {
-  const children = { ...left.children };
+  const children = {
+    ...left.children,
+  };
   for (const [key, other] of Object.entries(right.children)) {
     const current = children[key];
     if (!current) {
@@ -152,15 +175,17 @@ function mergePlans(
     ) {
       // A shared option selection uses one source value and executes only once.
       children[key] = other.from === 'options' ? other : current;
-    } else if (overlap)
+    } else if (overlap) {
       children[key] = overlap === 'preferProps' ? current : other;
-    else
+    } else {
       throw new LayoutConfigurationError(
         `Ambiguous reusable property "${[...path, key].join(
           '.',
         )}". Rename one result or set overlap to "preferProps" or "preferSelect".`,
       );
+    }
   }
+
   return {
     kind: 'object',
     children,
@@ -169,35 +194,37 @@ function mergePlans(
   };
 }
 
-function withoutSharedCallerValues(
-  left: ObjectPlan,
-  right: ObjectPlan,
-): ObjectPlan {
-  const children = { ...left.children };
+function withoutSharedCallerValues(left: ObjectPlan, right: ObjectPlan): ObjectPlan {
+  const children = {
+    ...left.children,
+  };
   for (const [key, other] of Object.entries(right.children)) {
     const current = children[key];
-    if (current?.kind === 'object' && other.kind === 'object')
+    if (current?.kind === 'object' && other.kind === 'object') {
       children[key] = withoutSharedCallerValues(current, other);
-    else if (
+    } else if (
       current?.kind === 'value' &&
       other.kind === 'value' &&
       sameSelection(current, other) &&
       other.from === 'options'
-    )
+    ) {
       delete children[key];
+    }
   }
-  return { ...left, children };
+
+  return {
+    ...left,
+    children,
+  };
 }
 
-function planDefinitions(
-  plan: ObjectPlan,
-  from: 'props' | 'options',
-): InPropsObject {
+function planDefinitions(plan: ObjectPlan, from: 'props' | 'options'): InPropsObject {
   const definitions: InPropsObject = {};
   for (const [key, value] of Object.entries(plan.children)) {
     if (value.kind === 'value') {
-      if (value.from === from && value.definition)
+      if (value.from === from && value.definition) {
         definitions[key] = value.definition;
+      }
     } else {
       const nested = planDefinitions(value, from);
       if (Object.keys(nested).length) {
@@ -206,22 +233,25 @@ function planDefinitions(
       }
     }
   }
+
   return definitions;
 }
 
-function sourceSelection(
-  selection: unknown,
-  callbacksOnly: boolean,
-): true | RuntimeSelection {
-  if (typeof selection === 'function') return true;
-  if (selection === true) return callbacksOnly ? {} : true;
-  const source: RuntimeSelection = {};
-  for (const [key, value] of Object.entries(
-    (selection ?? {}) as RuntimeSelection,
-  )) {
-    const nested = sourceSelection(value, callbacksOnly);
-    if (nested === true || Object.keys(nested).length) source[key] = nested;
+function sourceSelection(selection: unknown, callbacksOnly: boolean): true | RuntimeSelection {
+  if (typeof selection === 'function') {
+    return true;
   }
+  if (selection === true) {
+    return callbacksOnly ? {} : true;
+  }
+  const source: RuntimeSelection = {};
+  for (const [key, value] of Object.entries((selection ?? {}) as RuntimeSelection)) {
+    const nested = sourceSelection(value, callbacksOnly);
+    if (nested === true || Object.keys(nested).length) {
+      source[key] = nested;
+    }
+  }
+
   return source;
 }
 
@@ -229,15 +259,18 @@ function mergeSelections(
   left: true | RuntimeSelection,
   right: true | RuntimeSelection,
 ): true | RuntimeSelection {
-  if (left === true || right === true) return true;
-  const merged = { ...left };
-  for (const [key, value] of Object.entries(right))
+  if (left === true || right === true) {
+    return true;
+  }
+  const merged = {
+    ...left,
+  };
+  for (const [key, value] of Object.entries(right)) {
     merged[key] = Object.hasOwn(left, key)
-      ? mergeSelections(
-          left[key] as true | RuntimeSelection,
-          value as true | RuntimeSelection,
-        )
+      ? mergeSelections(left[key] as true | RuntimeSelection, value as true | RuntimeSelection)
       : value;
+  }
+
   return merged;
 }
 
@@ -248,12 +281,11 @@ function readLocation(
   resources: unknown,
 ) {
   let value: any =
-    location.from === 'props'
-      ? props
-      : location.from === 'options'
-      ? options
-      : resources;
-  for (const key of location.path) value = value?.[key];
+    location.from === 'props' ? props : location.from === 'options' ? options : resources;
+  for (const key of location.path) {
+    value = value?.[key];
+  }
+
   return value;
 }
 
@@ -270,44 +302,34 @@ function resolvePlan(
       if (
         node.guards.some((group) =>
           group.every(
-            (location) =>
-              readLocation(location, props, options, resources) !== undefined,
+            (location) => readLocation(location, props, options, resources) !== undefined,
           ),
         )
       ) {
-        result[key] = resolvePlan(
-          node,
-          props,
-          options,
-          resources,
-          resourceSelections,
-        );
+        result[key] = resolvePlan(node, props, options, resources, resourceSelections);
       }
     } else {
       if (
         node.guards?.some(
-          (location) =>
-            readLocation(location, props, options, resources) === undefined,
+          (location) => readLocation(location, props, options, resources) === undefined,
         )
-      )
+      ) {
         continue;
+      }
       const value = readLocation(node, props, options, resources);
       if (node.selector) {
         const selected =
-          node.source === 'resource'
-            ? resourceSelections.get(node.selector)
-            : node.selector(value);
+          node.source === 'resource' ? resourceSelections.get(node.selector) : node.selector(value);
         result[key] =
           node.source === 'resource' && isSingleResourceInput(selected)
             ? props.resources
             : selected;
-      } else if (
-        value !== undefined ||
-        node.definition?.visibility !== 'optional'
-      )
+      } else if (value !== undefined || node.definition?.visibility !== 'optional') {
         result[key] = value;
+      }
     }
   }
+
   return result;
 }
 
@@ -329,41 +351,59 @@ export function createReusableBuilder(
       return function schemaReusable(props: Record<string, unknown> = {}) {
         const selection = definition.props?.include?.options;
         const usesOptions = selection !== undefined || definition.select?.options !== undefined;
-        if (!usesOptions) return createReusableBuilder(resources, {})(definition as never)(props);
+        if (!usesOptions) {
+          return createReusableBuilder(resources, {})(definition as never)(props);
+        }
         const source = props.options ?? {};
         if (source === null || typeof source !== 'object' || Array.isArray(source)) {
           throw new LayoutConfigurationError('Reusable source options must be an object.');
         }
-        const callerKeys = selection === true
-          ? Object.keys(props).filter((key) => key !== 'options' && key !== 'resources' && !Object.hasOwn(definition.props?.custom ?? {}, key))
-          : Object.entries((typeof selection === 'object' && selection) || {}).filter(([, value]) => value === true).map(([key]) => key);
-        const input = { ...source };
-        for (const key of callerKeys) if (Object.hasOwn(props, key)) (input as Record<string, unknown>)[key] = props[key];
+        const callerKeys =
+          selection === true
+            ? Object.keys(props).filter(
+                (key) =>
+                  key !== 'options' &&
+                  key !== 'resources' &&
+                  !Object.hasOwn(definition.props?.custom ?? {}, key),
+              )
+            : Object.entries((typeof selection === 'object' && selection) || {})
+                .filter(([, value]) => value === true)
+                .map(([key]) => key);
+        const input = {
+          ...source,
+        };
+        for (const key of callerKeys) {
+          if (Object.hasOwn(props, key)) {
+            (input as Record<string, unknown>)[key] = props[key];
+          }
+        }
         const values = validateOptionSchema(options as OptionSchema, input);
         const definitions = schemaOptionDefinitions(options as OptionSchema, Object.keys(values));
         const reusable = createReusableBuilder(resources, definitions)(definition as never);
         const callerValues = Object.fromEntries(
           Object.entries(values).filter(([key]) => selection === true || callerKeys.includes(key)),
         );
-        return reusable({ ...props, ...callerValues, options: values });
+
+        return reusable({
+          ...props,
+          ...callerValues,
+          options: values,
+        });
       };
     } as unknown;
   }
-  const keys = resources.map((entry) =>
-    typeof entry === 'string' ? entry : entry.value,
-  );
+  const keys = resources.map((entry) => (typeof entry === 'string' ? entry : entry.value));
   const resource = createProp.string.enum(keys as [string, ...string[]]);
   const singleResource = createProp.string.enum(
     getResourcePaths(resources) as [string, ...string[]],
   );
-  const resourcesAccessor = Object.assign(
-    createLayoutResourcesAccessor(resources),
-    {
-      single() {
-        return { [singleResourceInput]: resources };
-      },
+  const resourcesAccessor = Object.assign(createLayoutResourcesAccessor(resources), {
+    single() {
+      return {
+        [singleResourceInput]: resources,
+      };
     },
-  );
+  });
 
   function createReusable(definition: {
     props?: PropsContract<RuntimeSelection, InPropsObject>;
@@ -382,8 +422,12 @@ export function createReusableBuilder(
     }
     const optionDefinitions = (
       typeof options === 'function'
-        ? options({ name: createProp.string.literal('Reusable'), resource })
-        : options) as InPropsObject;
+        ? options({
+            name: createProp.string.literal('Reusable'),
+            resource,
+          })
+        : options
+    ) as InPropsObject;
 
     function compile(selection: RuntimeSelection, from: 'props' | 'options') {
       let plan = objectPlan({});
@@ -395,9 +439,7 @@ export function createReusableBuilder(
             typeof value !== 'function' &&
             (!value || typeof value !== 'object' || Array.isArray(value))
           ) {
-            throw new LayoutConfigurationError(
-              'Invalid reusable options selection.',
-            );
+            throw new LayoutConfigurationError('Invalid reusable options selection.');
           }
           next =
             typeof value === 'function'
@@ -411,32 +453,24 @@ export function createReusableBuilder(
                   },
                 })
               : optionPlan(optionDefinitions, value, from);
-        } else if (
-          key === 'resources' &&
-          (value === true || typeof value === 'function')
-        ) {
+        } else if (key === 'resources' && (value === true || typeof value === 'function')) {
           next = objectPlan({
             resources: {
               kind: 'value',
               source: 'resource',
               from: value === true && from === 'props' ? 'props' : 'resources',
               path: value === true && from === 'props' ? ['resources'] : [],
-              selector:
-                typeof value === 'function'
-                  ? (value as ValuePlan['selector'])
-                  : undefined,
+              selector: typeof value === 'function' ? (value as ValuePlan['selector']) : undefined,
               definition:
-                value === true && from === 'props'
-                  ? createProp.array(resource)
-                  : undefined,
+                value === true && from === 'props' ? createProp.array(resource) : undefined,
             },
           });
-        } else
-          throw new LayoutConfigurationError(
-            `Invalid reusable source "${key}".`,
-          );
+        } else {
+          throw new LayoutConfigurationError(`Invalid reusable source "${key}".`);
+        }
         plan = mergePlans(plan, next);
       }
+
       return plan;
     }
 
@@ -471,28 +505,20 @@ export function createReusableBuilder(
     const sourceDefinitions =
       sources === true
         ? optionDefinitions
-        : planDefinitions(
-            optionPlan(optionDefinitions, sources, 'options'),
-            'options',
-          );
+        : planDefinitions(optionPlan(optionDefinitions, sources, 'options'), 'options');
     const resourceSelectors = new Set(
       [include.resources, select.resources].filter(
-        (selector): selector is ResourceSelector =>
-          typeof selector === 'function',
+        (selector): selector is ResourceSelector => typeof selector === 'function',
       ),
     );
     const needsOptions = Object.keys(sourceDefinitions).length > 0;
     if (needsOptions && Object.hasOwn(callerDefinitions, 'options')) {
-      throw new LayoutConfigurationError(
-        'Reusable prop "options" is reserved for source values.',
-      );
+      throw new LayoutConfigurationError('Reusable prop "options" is reserved for source values.');
     }
 
     return function reusable(props: Record<string, unknown> = {}) {
       // Validate configured caller props too when an explicit overlap policy discards their output.
-      const definitions = definition.overlap
-        ? callerDefinitions
-        : effectiveCallerDefinitions;
+      const definitions = definition.overlap ? callerDefinitions : effectiveCallerDefinitions;
       props = validateProps(definitions, props);
       if (
         needsOptions &&
@@ -501,9 +527,7 @@ export function createReusableBuilder(
           typeof props.options !== 'object' ||
           Array.isArray(props.options))
       ) {
-        throw new LayoutConfigurationError(
-          'Reusable source options must be an object.',
-        );
+        throw new LayoutConfigurationError('Reusable source options must be an object.');
       }
       const values = validateProps(
         sourceDefinitions,
@@ -513,14 +537,20 @@ export function createReusableBuilder(
       const resourceSelections: ResourceSelections = new Map();
       for (const selector of resourceSelectors) {
         const selected = selector(resourcesAccessor);
-        if (isSingleResourceInput(selected))
-          validateProps({ resources: singleResource }, props);
+        if (isSingleResourceInput(selected)) {
+          validateProps(
+            {
+              resources: singleResource,
+            },
+            props,
+          );
+        }
         resourceSelections.set(selector, selected);
       }
-      return definition.fn(
-        resolvePlan(plan, props, values, resourcesAccessor, resourceSelections),
-      );
+
+      return definition.fn(resolvePlan(plan, props, values, resourcesAccessor, resourceSelections));
     };
   }
+
   return createReusable as unknown;
 }

@@ -1,13 +1,6 @@
 import type { ResourceDefinition } from '../resource';
-import {
-  collectPathSubResourceKeys,
-  collectResourceSubResourceKeys,
-} from './paths';
-import type {
-  ConfigResourceKeys,
-  PathSubResourceKeys,
-  ResourceSubResourceKeys,
-} from './paths';
+import { collectPathSubResourceKeys, collectResourceSubResourceKeys } from './paths';
+import type { ConfigResourceKeys, PathSubResourceKeys, ResourceSubResourceKeys } from './paths';
 
 /** Either a path whose `$subResource` segment supplies the valid keys, or one resource. */
 export type IsSubResourceKeyOptions<
@@ -42,18 +35,13 @@ export type IsSubResourceKey<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Config,
   AllowedPath extends string,
-> = <
-  const Options extends IsSubResourceKeyOptions<Resources, Config, AllowedPath>,
->(
+> = <const Options extends IsSubResourceKeyOptions<Resources, Config, AllowedPath>>(
   key: unknown,
   options: Options,
 ) => key is IsSubResourceKeyResult<Resources, Config, Options>;
 
 export function createIsSubResourceKey(config: Record<string, unknown>) {
-  return (
-    key: unknown,
-    options: { path?: string; resource?: string },
-  ): boolean => {
+  return (key: unknown, options: { path?: string; resource?: string }): boolean => {
     if (typeof key !== 'string') {
       return false;
     }
@@ -63,9 +51,7 @@ export function createIsSubResourceKey(config: Record<string, unknown>) {
     }
 
     if (options.resource !== undefined) {
-      return collectResourceSubResourceKeys(config, options.resource).includes(
-        key,
-      );
+      return collectResourceSubResourceKeys(config, options.resource).includes(key);
     }
 
     return false;

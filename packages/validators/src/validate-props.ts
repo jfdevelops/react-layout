@@ -1,10 +1,6 @@
 import type { AnyBuiltPropDefinition } from './types';
 import { isStandardSchema, validateDefinition } from './standard-schema';
-import {
-  createMismatchedPropMessage,
-  createMissingPropMessage,
-  PropError,
-} from './prop-error';
+import { createMismatchedPropMessage, createMissingPropMessage, PropError } from './prop-error';
 
 export type PropValidationContext = {
   layoutName?: string;
@@ -23,12 +19,18 @@ export function validateProps<T extends object>(
     if (isStandardSchema(prop)) {
       try {
         const value = validateDefinition(prop, (props as Record<string, unknown>)[key]);
-        if (validatedProps === props) validatedProps = { ...props };
+        if (validatedProps === props) {
+          validatedProps = {
+            ...props,
+          };
+        }
         if (key in props || value !== undefined) {
           (validatedProps as Record<string, unknown>)[key] = value;
         }
       } catch (error) {
-        if (!(error instanceof PropError)) throw error;
+        if (!(error instanceof PropError)) {
+          throw error;
+        }
         const path = error.path === 'value' ? key : `${key}.${error.path}`;
         throw new PropError({
           layoutName: context?.layoutName,
@@ -37,7 +39,10 @@ export function validateProps<T extends object>(
           received: error.received,
           expected: error.expected,
           message: `Invalid prop "${path}": ${error.message}`,
-          issues: error.issues?.map((issue) => ({ ...issue, path: [key, ...(issue.path ?? [])] })),
+          issues: error.issues?.map((issue) => ({
+            ...issue,
+            path: [key, ...(issue.path ?? [])],
+          })),
         });
       }
       continue;
@@ -64,11 +69,7 @@ export function validateProps<T extends object>(
 
     const value = (props as Record<string, unknown>)[key];
 
-    if (
-      'type' in prop &&
-      prop.type === 'JSX.Element' &&
-      typeof value === 'function'
-    ) {
+    if ('type' in prop && prop.type === 'JSX.Element' && typeof value === 'function') {
       continue;
     }
 
@@ -77,7 +78,9 @@ export function validateProps<T extends object>(
 
       if (!Object.is(validatedValue, value)) {
         if (validatedProps === props) {
-          validatedProps = { ...props };
+          validatedProps = {
+            ...props,
+          };
         }
 
         (validatedProps as Record<string, unknown>)[key] = validatedValue;

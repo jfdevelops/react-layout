@@ -4,16 +4,20 @@ import { HelpTooltip } from '../src/components/ui/tooltip';
 
 it('keeps the tooltip visible while its trigger retains keyboard focus', () => {
   render(
-    <HelpTooltip content="Help">
+    <HelpTooltip content='Help'>
       <button>Trigger</button>
-    </HelpTooltip>
+    </HelpTooltip>,
   );
 
-  const trigger = screen.getByRole('button', { name: 'Trigger' });
+  const trigger = screen.getByRole('button', {
+    name: 'Trigger',
+  });
 
   act(() => trigger.focus());
 
-  fireEvent.pointerMove(trigger, { pointerType: 'mouse' });
+  fireEvent.pointerMove(trigger, {
+    pointerType: 'mouse',
+  });
 
   fireEvent.pointerLeave(trigger.parentElement!);
 
@@ -26,14 +30,18 @@ it('keeps the tooltip visible while its trigger retains keyboard focus', () => {
 
 it('keeps a hovered tooltip visible when keyboard focus leaves', () => {
   render(
-    <HelpTooltip content="Help">
+    <HelpTooltip content='Help'>
       <button>Trigger</button>
-    </HelpTooltip>
+    </HelpTooltip>,
   );
 
-  const trigger = screen.getByRole('button', { name: 'Trigger' });
+  const trigger = screen.getByRole('button', {
+    name: 'Trigger',
+  });
 
-  fireEvent.pointerMove(trigger, { pointerType: 'mouse' });
+  fireEvent.pointerMove(trigger, {
+    pointerType: 'mouse',
+  });
 
   fireEvent.focus(trigger);
 
@@ -48,40 +56,52 @@ it('keeps a hovered tooltip visible when keyboard focus leaves', () => {
 
 it('stays dismissed after a pointer click until the pointer leaves and re-enters', () => {
   render(
-    <HelpTooltip content="Help">
+    <HelpTooltip content='Help'>
       <button>Trigger</button>
-    </HelpTooltip>
+    </HelpTooltip>,
   );
 
-  const trigger = screen.getByRole('button', { name: 'Trigger' });
+  const trigger = screen.getByRole('button', {
+    name: 'Trigger',
+  });
 
-  fireEvent.pointerMove(trigger, { pointerType: 'mouse' });
+  fireEvent.pointerMove(trigger, {
+    pointerType: 'mouse',
+  });
   expect(screen.getByRole('tooltip')).toBeTruthy();
 
   fireEvent.pointerDown(trigger);
   act(() => trigger.focus());
   fireEvent.click(trigger);
-  fireEvent.pointerMove(trigger, { pointerType: 'mouse' });
+  fireEvent.pointerMove(trigger, {
+    pointerType: 'mouse',
+  });
 
   expect(screen.queryByRole('tooltip')).toBeNull();
 
   fireEvent.pointerLeave(trigger.parentElement!);
-  fireEvent.pointerMove(trigger, { pointerType: 'mouse' });
+  fireEvent.pointerMove(trigger, {
+    pointerType: 'mouse',
+  });
 
   expect(screen.getByRole('tooltip')).toHaveTextContent('Help');
 });
 
 it('dismisses on keyboard activation without removing focus from the trigger', () => {
   render(
-    <HelpTooltip content="Help">
+    <HelpTooltip content='Help'>
       <button>Trigger</button>
-    </HelpTooltip>
+    </HelpTooltip>,
   );
 
-  const trigger = screen.getByRole('button', { name: 'Trigger' });
+  const trigger = screen.getByRole('button', {
+    name: 'Trigger',
+  });
 
   act(() => trigger.focus());
-  fireEvent.click(trigger, { detail: 0 });
+  fireEvent.click(trigger, {
+    detail: 0,
+  });
 
   expect(screen.queryByRole('tooltip')).toBeNull();
   expect(trigger).toHaveFocus();

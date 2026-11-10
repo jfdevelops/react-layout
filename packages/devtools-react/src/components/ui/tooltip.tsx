@@ -35,23 +35,36 @@ export function HelpTooltip({
   function hover(value: boolean) {
     hovered.current = value;
 
-    if (!value) dismissed.current = false;
+    if (!value) {
+      dismissed.current = false;
+    }
 
-    if (!dismissed.current && (value || !focused.current)) setOpen(value);
+    if (!dismissed.current && (value || !focused.current)) {
+      setOpen(value);
+    }
   }
 
   function focus(value: boolean) {
     focused.current = value;
 
-    if (!value && !hovered.current) dismissed.current = false;
+    if (!value && !hovered.current) {
+      dismissed.current = false;
+    }
 
-    if (!dismissed.current && (value || !hovered.current)) setOpen(value);
+    if (!dismissed.current && (value || !hovered.current)) {
+      setOpen(value);
+    }
   }
 
-  const [position, setPosition] = useState({ left: 0, top: 0 });
+  const [position, setPosition] = useState({
+    left: 0,
+    top: 0,
+  });
 
   useLayoutEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
 
     const rect = anchor.current!.getBoundingClientRect();
     const bounds = popup.current!.getBoundingClientRect();
@@ -61,8 +74,8 @@ export function HelpTooltip({
         8,
         Math.min(
           rect.left + rect.width / 2 - bounds.width / 2,
-          window.innerWidth - bounds.width - 8
-        )
+          window.innerWidth - bounds.width - 8,
+        ),
       ),
       top:
         rect.top >= bounds.height + 14
@@ -84,7 +97,10 @@ export function HelpTooltip({
   return (
     <span
       ref={anchor}
-      style={{ display: 'inline-flex', maxWidth: '100%' }}
+      style={{
+        display: 'inline-flex',
+        maxWidth: '100%',
+      }}
       onPointerMove={() => hover(true)}
       onMouseEnter={() => hover(true)}
       onPointerLeave={() => hover(false)}
@@ -96,7 +112,9 @@ export function HelpTooltip({
       onPointerDown={dismiss}
       onClickCapture={dismiss}
       onKeyDownCapture={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') dismiss();
+        if (event.key === 'Enter' || event.key === ' ') {
+          dismiss();
+        }
 
         if (event.key === 'Escape' && open) {
           event.stopPropagation();
@@ -115,7 +133,7 @@ export function HelpTooltip({
           <div
             ref={popup}
             id={id}
-            role="tooltip"
+            role='tooltip'
             style={{
               position: 'fixed',
               ...position,
@@ -134,7 +152,7 @@ export function HelpTooltip({
           >
             {content}
           </div>,
-          document.body
+          document.body,
         )}
     </span>
   );

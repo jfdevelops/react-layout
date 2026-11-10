@@ -1,11 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { createProp } from '@jfdevelops/react-layout-validator';
-import {
-  createComposableComponent,
-  defineComposableComponent,
-  makeComposable,
-} from '../src';
+import { createComposableComponent, defineComposableComponent, makeComposable } from '../src';
 
 describe('composable helpers', () => {
   it('renders resolved out props into function children', () => {

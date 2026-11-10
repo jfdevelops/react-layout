@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createElement } from 'react';
-import {
-  createPrimitivePropBuilder,
-  createProp,
-  PropError,
-  validateProps,
-} from '../src';
+import { createPrimitivePropBuilder, createProp, PropError, validateProps } from '../src';
 
 describe('create-value', () => {
   it('validates literal and enum primitive props', () => {
@@ -52,9 +47,7 @@ describe('create-value', () => {
       subtitle: createProp.string.optional()(),
     };
 
-    expect(() => validateProps(shape, {})).toThrow(
-      'Missing required prop "title".',
-    );
+    expect(() => validateProps(shape, {})).toThrow('Missing required prop "title".');
   });
 
   it('exposes structured details without expanding the message', () => {
@@ -66,7 +59,9 @@ describe('create-value', () => {
     try {
       validateProps(
         shape,
-        { title: 'Contacts' },
+        {
+          title: 'Contacts',
+        },
         {
           layoutName: 'ContactsPage',
           resource: 'contacts',
@@ -83,8 +78,7 @@ describe('create-value', () => {
       resource: 'contacts',
       received: ['title'],
       expected: ['segments'],
-      message:
-        'Missing required prop "segments" in layout "ContactsPage" (resource: "contacts").',
+      message: 'Missing required prop "segments" in layout "ContactsPage" (resource: "contacts").',
     });
   });
 
@@ -95,8 +89,7 @@ describe('create-value', () => {
       resource: 'contacts',
       received: ['title'],
       expected: ['segments'],
-      message:
-        'Missing required prop "segments" in layout "ContactsPage" (resource: "contacts").',
+      message: 'Missing required prop "segments" in layout "ContactsPage" (resource: "contacts").',
     });
 
     expect(error.name).toBe('PropError');
@@ -114,7 +107,9 @@ describe('create-value', () => {
     try {
       validateProps(
         shape,
-        { count: 'three' },
+        {
+          count: 'three',
+        },
         {
           layoutName: 'ContactsPage',
           resource: 'contacts',
@@ -139,7 +134,9 @@ describe('create-value', () => {
 
   it('supports union props and JSX element props', () => {
     const unionProp = createProp.string().or(createProp.number());
-    const elementProp = createProp.component({ type: 'JSX.Element' });
+    const elementProp = createProp.component({
+      type: 'JSX.Element',
+    });
     const element = createElement('div', null, 'slot');
 
     expect(unionProp('users')).toBeUndefined();
@@ -155,27 +152,27 @@ describe('create-value', () => {
   });
 
   it('validates record props with literal and string keys', () => {
-    const segmentValue = createProp
-      .string()
-      .or(
-        createProp.object({
-          value: createProp.string(),
-          isActive: createProp.boolean.optional()(),
-        }),
-      );
+    const segmentValue = createProp.string().or(
+      createProp.object({
+        value: createProp.string(),
+        isActive: createProp.boolean.optional()(),
+      }),
+    );
     const segments = createProp.record({
       value: segmentValue,
-      key: createProp
-        .string()
-        .literal('contacts')
-        .or(createProp.string()),
+      key: createProp.string().literal('contacts').or(createProp.string()),
     });
 
     const props = validateProps(
-      { segments },
+      {
+        segments,
+      },
       {
         segments: {
-          contacts: { value: 'Contacts', isActive: false },
+          contacts: {
+            value: 'Contacts',
+            isActive: false,
+          },
           'single-male': 'Single Males',
         },
       },
@@ -183,7 +180,10 @@ describe('create-value', () => {
 
     expect(props).toEqual({
       segments: {
-        contacts: { value: 'Contacts', isActive: false },
+        contacts: {
+          value: 'Contacts',
+          isActive: false,
+        },
         'single-male': 'Single Males',
       },
     });
@@ -191,15 +191,10 @@ describe('create-value', () => {
       segments({
         contacts: 42,
       }),
-    ).toThrow(
-      'Invalid prop "value": expected "union", received "number".',
-    );
+    ).toThrow('Invalid prop "value": expected "union", received "number".');
     const strictSegments = createProp.record({
       value: createProp.string(),
-      key: createProp
-        .string()
-        .literal('contacts')
-        .or(createProp.string().literal('single-male')),
+      key: createProp.string().literal('contacts').or(createProp.string().literal('single-male')),
     });
 
     expect(() =>
@@ -212,18 +207,33 @@ describe('create-value', () => {
   it('supports record props with only string keys', () => {
     const labels = createProp.record(createProp.string());
 
-    expect(labels({ alpha: 'Alpha', beta: 'Beta' })).toEqual({
+    expect(
+      labels({
+        alpha: 'Alpha',
+        beta: 'Beta',
+      }),
+    ).toEqual({
       alpha: 'Alpha',
       beta: 'Beta',
     });
   });
 
   it('supports JSX element with props', () => {
-    const elementProp = createProp.component({ type: 'JSX.Element' }).props({
-      title: createProp.string(),
-    });
+    const elementProp = createProp
+      .component({
+        type: 'JSX.Element',
+      })
+      .props({
+        title: createProp.string(),
+      });
 
-    const element = createElement('div', { title: 'Users' }, 'slot');
+    const element = createElement(
+      'div',
+      {
+        title: 'Users',
+      },
+      'slot',
+    );
 
     expect(elementProp(element)).toBeUndefined();
   });

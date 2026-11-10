@@ -3,7 +3,10 @@ import { initialGraphZoom, resolveChipColors } from '../src/config';
 it('accepts named colors and CSS variables without assuming hex notation', () => {
   const palette = resolveChipColors({
     resource: 'tomato',
-    active: { color: 'var(--active)', background: 'var(--active-bg)' },
+    active: {
+      color: 'var(--active)',
+      background: 'var(--active-bg)',
+    },
   });
   expect(palette.resource).toEqual({
     color: 'tomato',

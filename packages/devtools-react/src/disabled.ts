@@ -6,15 +6,11 @@ export function ReactLayoutDevtools(_props: ReactLayoutDevtoolsProps) {
   return null;
 }
 
-export function ReactLayoutDevtoolsContent(
-  _props: ReactLayoutDevtoolsContentProps
-) {
+export function ReactLayoutDevtoolsContent(_props: ReactLayoutDevtoolsContentProps) {
   return null;
 }
 
-export function ReactLayoutDevtoolsProvider(
-  _props: ReactLayoutDevtoolsProviderProps
-) {
+export function ReactLayoutDevtoolsProvider(_props: ReactLayoutDevtoolsProviderProps) {
   return null;
 }
 
@@ -40,7 +36,7 @@ export function ReactLayoutDevtoolsWorkspace() {
 
 export function useReactLayoutDevtools(): never {
   throw new Error(
-    'Devtools state is unavailable in production. Import the /production entry to enable it.'
+    'Devtools state is unavailable in production. Import the /production entry to enable it.',
   );
 }
 

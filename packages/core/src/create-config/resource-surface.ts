@@ -2,10 +2,7 @@ import type { ComposableComponents } from '@jfdevelops/react-layout-composables'
 import type { CustomPropsObject } from '../custom-props';
 import { LayoutConfigurationError } from '../errors';
 import type { InPropsDefinition } from '../props';
-import {
-  normalizeResourceDefinitions,
-  type LayoutResourceKey,
-} from '../resource';
+import { normalizeResourceDefinitions, type LayoutResourceKey } from '../resource';
 import {
   createDefinedResourceLayout,
   type CreateDefinedResourceLayoutOptions,
@@ -33,16 +30,10 @@ export type DefineResourceSurface<Parent extends NonEmptyResources> = <
   const Options extends InPropsDefinition<Resources> = {},
   Composables extends ComposableComponents = {},
   Namespace extends boolean = false,
-  const Include extends LayoutIncludeProps<
-    Resources,
-    Options,
-    Composables
-  > = {},
+  const Include extends LayoutIncludeProps<Resources, Options, Composables> = {},
   const Custom extends CustomPropsObject = {},
-  const Naming extends
-    | LayoutNameInput<LayoutResourceKey<Resources>>
-    | undefined = undefined,
-  const Host extends SurfaceHost<Parent> | undefined = undefined
+  const Naming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = undefined,
+  const Host extends SurfaceHost<Parent> | undefined = undefined,
 >(
   configuration: CreateDefinedResourceLayoutOptions<
     Resources,
@@ -54,7 +45,7 @@ export type DefineResourceSurface<Parent extends NonEmptyResources> = <
     Naming
   > & {
     host?: Host & { surface?: never };
-  }
+  },
 ) => CreateDefinedResourceLayoutResult<
   SurfaceResources<Resources, SelectedHost<Parent, Host>>,
   Options,
@@ -67,26 +58,21 @@ export type DefineResourceSurface<Parent extends NonEmptyResources> = <
 
 /** Binds the host resource union without sharing the host's prop contract. */
 export function createResourceSurface<Parent extends NonEmptyResources>(
-  parent: Parent
+  parent: Parent,
 ): DefineResourceSurface<Parent> {
-  const available = new Set(
-    normalizeResourceDefinitions(parent).map((resource) => resource.value)
-  );
+  const available = new Set(normalizeResourceDefinitions(parent).map((resource) => resource.value));
 
   function defineSurface(
     configuration: Parameters<typeof createDefinedResourceLayout>[0] & {
       host?: SurfaceHost<Parent>;
-    }
+    },
   ) {
     const host = configuration.host;
-    const selected =
-      host?.resources === '*' ? available : new Set(host?.resources);
+    const selected = host?.resources === '*' ? available : new Set(host?.resources);
 
     for (const resource of selected) {
       if (!available.has(resource)) {
-        throw new LayoutConfigurationError(
-          `Unknown host resource "${resource}".`
-        );
+        throw new LayoutConfigurationError(`Unknown host resource "${resource}".`);
       }
     }
 
@@ -99,7 +85,7 @@ export function createResourceSurface<Parent extends NonEmptyResources>(
       if (host) {
         definition.createResourceLayout = bindHostedFactory(
           definition.createResourceLayout,
-          selected
+          selected,
         );
       }
 
@@ -123,7 +109,7 @@ export function createResourceSurface<Parent extends NonEmptyResources>(
 /** Consumes relationship fields before forwarding to the existing factories. */
 export function bindHostedFactory<Factory extends Function>(
   factory: Factory,
-  hosts: ReadonlySet<string>
+  hosts: ReadonlySet<string>,
 ): Factory {
   return new Proxy(factory, {
     apply(target, thisArgument, argumentsList: unknown[]) {
@@ -137,7 +123,7 @@ export function bindHostedFactory<Factory extends Function>(
         !hosts.has(options.hostedBy)
       ) {
         throw new LayoutConfigurationError(
-          'A valid "hostedBy" resource is required for this surface.'
+          'A valid "hostedBy" resource is required for this surface.',
         );
       }
 
@@ -149,9 +135,7 @@ export function bindHostedFactory<Factory extends Function>(
       const value: unknown = Reflect.get(target, key, receiver);
 
       if (
-        (key === 'forResource' ||
-          key === 'forResources' ||
-          key === 'makeComposable') &&
+        (key === 'forResource' || key === 'forResources' || key === 'makeComposable') &&
         typeof value === 'function'
       ) {
         return bindHostedFactory(value, hosts);

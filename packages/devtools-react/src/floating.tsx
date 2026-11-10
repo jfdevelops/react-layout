@@ -8,18 +8,11 @@ import {
   ToolbarIcon,
   CloseIcon,
 } from './icons';
-import {
-  isEditable,
-  matchesPanelShortcut,
-  panelShortcutLabel,
-} from './shortcuts';
+import { isEditable, matchesPanelShortcut, panelShortcutLabel } from './shortcuts';
 import { Button } from './components/ui/button';
 import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import {
-  ReactLayoutDevtoolsContent,
-  type ReactLayoutDevtoolsContentProps,
-} from './content';
+import { ReactLayoutDevtoolsContent, type ReactLayoutDevtoolsContentProps } from './content';
 import { control } from './theme';
 import { useDraggableFab } from './use-draggable-fab';
 import { HelpTooltip } from './components/ui/tooltip';
@@ -45,10 +38,7 @@ export function ReactLayoutDevtools({
   initialIsOpen,
   ...props
 }: ReactLayoutDevtoolsProps) {
-  const [preferences, updatePreferences] = usePanelPreferences(
-    props.config,
-    props.storageKey
-  );
+  const [preferences, updatePreferences] = usePanelPreferences(props.config, props.storageKey);
   const active = preferences.variant ?? variant;
   // Toolbar mode starts collapsed when selected from the floating panel.
   const [openAfterSwitch, setOpenAfterSwitch] = useState<boolean>();
@@ -56,21 +46,23 @@ export function ReactLayoutDevtools({
   function switchTo(next: DevtoolsVariant) {
     setOpenAfterSwitch(next === 'floating');
 
-    updatePreferences({ variant: next });
+    updatePreferences({
+      variant: next,
+    });
   }
 
   const open = openAfterSwitch ?? initialIsOpen;
 
   return active === 'toolbar' ? (
     <ToolbarDevtools
-      key="toolbar"
+      key='toolbar'
       {...props}
       initialIsOpen={open}
       onSwitchVariant={() => switchTo('floating')}
     />
   ) : (
     <FloatingDevtools
-      key="floating"
+      key='floating'
       {...props}
       initialIsOpen={open}
       onSwitchVariant={() => switchTo('toolbar')}
@@ -92,17 +84,19 @@ function FloatingDevtools({
   const hasOpened = useRef(initialIsOpen);
   const trigger = useRef<HTMLButtonElement>(null);
   const close = useRef<HTMLButtonElement>(null);
-  const [preferences, updatePreferences] = usePanelPreferences(
-    content.config,
-    content.storageKey
-  );
+  const [preferences, updatePreferences] = usePanelPreferences(content.config, content.storageKey);
   const fab = useDraggableFab(trigger, preferences.fabPosition, (fabPosition) =>
-    updatePreferences({ fabPosition })
+    updatePreferences({
+      fabPosition,
+    }),
   );
   const panel = useFloatingPanel(
     preferences.panel,
-    (value) => updatePreferences({ panel: value }),
-    position
+    (value) =>
+      updatePreferences({
+        panel: value,
+      }),
+    position,
   );
 
   const panelId = useId();
@@ -111,37 +105,52 @@ function FloatingDevtools({
 
   useEffect(() => {
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (
-        event.repeat ||
-        isEditable(event.target) ||
-        !matchesPanelShortcut(event)
-      )
+      if (event.repeat || isEditable(event.target) || !matchesPanelShortcut(event)) {
         return;
+      }
       event.preventDefault();
       hasOpened.current = true;
       setOpen((current) => !current);
     };
     window.addEventListener('keydown', onKeyDown);
+
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [setOpen]);
 
   useEffect(() => {
-    if (mounted && open) close.current?.focus();
+    if (mounted && open) {
+      close.current?.focus();
+    }
   }, [mounted, open]);
 
   useEffect(() => {
-    if (mounted && phase === 'closed' && hasOpened.current)
+    if (mounted && phase === 'closed' && hasOpened.current) {
       trigger.current?.focus();
+    }
   }, [mounted, phase]);
 
   function hide() {
     setOpen(false);
   }
 
-  if (!mounted) return null;
+  if (!mounted) {
+    return null;
+  }
 
-  const horizontal = position.endsWith('right') ? { right: 16 } : { left: 16 };
-  const vertical = position.startsWith('bottom') ? { bottom: 16 } : { top: 16 };
+  const horizontal = position.endsWith('right')
+    ? {
+        right: 16,
+      }
+    : {
+        left: 16,
+      };
+  const vertical = position.startsWith('bottom')
+    ? {
+        bottom: 16,
+      }
+    : {
+        top: 16,
+      };
   const panelControl = {
     ...control,
     padding: '5px 7px',
@@ -155,10 +164,12 @@ function FloatingDevtools({
         <div
           data-react-layout-devtools-panel
           id={panelId}
-          role="dialog"
-          aria-label="React Layout Devtools"
+          role='dialog'
+          aria-label='React Layout Devtools'
           onAnimationEnd={(event) => {
-            if (event.target !== event.currentTarget) return;
+            if (event.target !== event.currentTarget) {
+              return;
+            }
 
             transition.finish();
           }}
@@ -200,11 +211,17 @@ function FloatingDevtools({
             }}
           >
             <strong>React Layout</strong>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
               {panel.mode === 'floating' && (
-                <HelpTooltip content="Move panel · Arrow keys move; Shift moves faster">
+                <HelpTooltip content='Move panel · Arrow keys move; Shift moves faster'>
                   <Button
-                    aria-label="Move devtools panel"
+                    aria-label='Move devtools panel'
                     {...panel.move}
                     style={{
                       ...panelControl,
@@ -217,68 +234,42 @@ function FloatingDevtools({
                 </HelpTooltip>
               )}
               <HelpTooltip
-                content={
-                  panel.mode === 'expanded'
-                    ? 'Restore compact panel'
-                    : 'Expand panel'
-                }
+                content={panel.mode === 'expanded' ? 'Restore compact panel' : 'Expand panel'}
               >
                 <Button
-                  size="icon"
+                  size='icon'
                   style={panelControl}
-                  aria-label={
-                    panel.mode === 'expanded'
-                      ? 'Restore compact panel'
-                      : 'Expand panel'
-                  }
-                  onClick={() =>
-                    panel.setMode(
-                      panel.mode === 'expanded' ? 'floating' : 'expanded'
-                    )
-                  }
+                  aria-label={panel.mode === 'expanded' ? 'Restore compact panel' : 'Expand panel'}
+                  onClick={() => panel.setMode(panel.mode === 'expanded' ? 'floating' : 'expanded')}
                 >
-                  {panel.mode === 'expanded' ? (
-                    <CollapseIcon />
-                  ) : (
-                    <ExpandIcon />
-                  )}
+                  {panel.mode === 'expanded' ? <CollapseIcon /> : <ExpandIcon />}
                 </Button>
               </HelpTooltip>
-              <HelpTooltip
-                content={
-                  panel.mode === 'docked' ? 'Undock panel' : 'Dock panel'
-                }
-              >
+              <HelpTooltip content={panel.mode === 'docked' ? 'Undock panel' : 'Dock panel'}>
                 <Button
-                  size="icon"
+                  size='icon'
                   style={panelControl}
-                  aria-label={
-                    panel.mode === 'docked' ? 'Undock panel' : 'Dock panel'
-                  }
-                  onClick={() =>
-                    panel.setMode(
-                      panel.mode === 'docked' ? 'floating' : 'docked'
-                    )
-                  }
+                  aria-label={panel.mode === 'docked' ? 'Undock panel' : 'Dock panel'}
+                  onClick={() => panel.setMode(panel.mode === 'docked' ? 'floating' : 'docked')}
                 >
                   <DockIcon />
                 </Button>
               </HelpTooltip>
-              <HelpTooltip content="Switch to bottom toolbar">
+              <HelpTooltip content='Switch to bottom toolbar'>
                 <Button
-                  size="icon"
+                  size='icon'
                   style={panelControl}
-                  aria-label="Switch to bottom toolbar"
+                  aria-label='Switch to bottom toolbar'
                   onClick={onSwitchVariant}
                 >
                   <ToolbarIcon />
                 </Button>
               </HelpTooltip>
               <Button
-                size="icon"
+                size='icon'
                 ref={close}
-                type="button"
-                aria-label="Close React Layout Devtools"
+                type='button'
+                aria-label='Close React Layout Devtools'
                 aria-keyshortcuts={panelShortcutLabel}
                 onClick={hide}
                 style={panelControl}
@@ -289,8 +280,8 @@ function FloatingDevtools({
           </div>
           {panel.mode !== 'expanded' && (
             <Button
-              aria-label="Resize devtools panel"
-              title="Drag up or left to enlarge · Arrow keys resize"
+              aria-label='Resize devtools panel'
+              title='Drag up or left to enlarge · Arrow keys resize'
               {...panel.resize}
               style={{
                 position: 'absolute',
@@ -310,16 +301,24 @@ function FloatingDevtools({
               <ResizeIcon size={12} />
             </Button>
           )}
-          <div style={{ overflow: 'hidden', flex: 1, minHeight: 0 }}>
+          <div
+            style={{
+              overflow: 'hidden',
+              flex: 1,
+              minHeight: 0,
+            }}
+          >
             <ReactLayoutDevtoolsContent
               {...content}
               layout={
                 content.layout ??
-                (panel.mode === 'floating' && panel.rect.width < 760
-                  ? 'compact'
-                  : 'auto')
+                (panel.mode === 'floating' && panel.rect.width < 760 ? 'compact' : 'auto')
               }
-              style={{ border: 0, borderRadius: 0, ...content.style }}
+              style={{
+                border: 0,
+                borderRadius: 0,
+                ...content.style,
+              }}
             />
           </div>
         </div>
@@ -327,12 +326,12 @@ function FloatingDevtools({
       {phase === 'closed' && (
         <Button
           ref={trigger}
-          type="button"
-          aria-label="Open React Layout Devtools"
+          type='button'
+          aria-label='Open React Layout Devtools'
           aria-keyshortcuts={panelShortcutLabel}
           aria-expanded={false}
-          title="Drag to move · Click to open"
-          aria-description="Drag to reposition, or use Alt and arrow keys. Click or press Enter to open."
+          title='Drag to move · Click to open'
+          aria-description='Drag to reposition, or use Alt and arrow keys. Click or press Enter to open.'
           {...fab.handlers}
           onClick={(event) => {
             if (fab.consumeClick(event.detail)) {
@@ -348,8 +347,14 @@ function FloatingDevtools({
           style={{
             position: 'fixed',
             ...(fab.coordinates
-              ? { left: fab.coordinates.x, top: fab.coordinates.y }
-              : { ...horizontal, ...vertical }),
+              ? {
+                  left: fab.coordinates.x,
+                  top: fab.coordinates.y,
+                }
+              : {
+                  ...horizontal,
+                  ...vertical,
+                }),
             zIndex: 100000,
             width: 52,
             height: 52,
@@ -369,6 +374,6 @@ function FloatingDevtools({
         </Button>
       )}
     </>,
-    document.body
+    document.body,
   );
 }

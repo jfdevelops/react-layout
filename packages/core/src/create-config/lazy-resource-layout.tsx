@@ -3,16 +3,9 @@ import { LazyResourceModuleShapeError } from '../errors/lazy-resource-error';
 import { componentPropDefinitionsSymbol } from '@jfdevelops/react-layout-validator';
 import type { ResourcePath, ResourceDefinition } from '../resource';
 import { definedResourceLayoutComponentSymbol } from './render-state';
-import {
-  createLazyLoader,
-  type LazyResourceLoadHooks,
-} from '../lazy/create-lazy-loader';
+import { createLazyLoader, type LazyResourceLoadHooks } from '../lazy/create-lazy-loader';
 import { LazyBoundary } from '../lazy/lazy-boundary';
-import type {
-  LazyHandle,
-  LazyOptions,
-  LazyResourceStates,
-} from '../lazy/types';
+import type { LazyHandle, LazyOptions, LazyResourceStates } from '../lazy/types';
 export type {
   LazyResourceErrorComponent,
   LazyResourceLoadingComponent,
@@ -30,9 +23,7 @@ type UnwrapDefinedLayout<Export> = Export extends DefinedLayoutComponent
     ? Root
     : never;
 
-type DefinedLayoutFromModule<Module> = UnwrapDefinedLayout<
-  Module[keyof Module]
->;
+type DefinedLayoutFromModule<Module> = UnwrapDefinedLayout<Module[keyof Module]>;
 
 type LazyUnsupportedStatic =
   | 'makeComposable'
@@ -64,23 +55,19 @@ export type LazyResourceLayoutOptions<
   states?: LazyResourceStates<ResourcePath<Resources>>;
 };
 
-function findDefinedLayoutComponent(
-  module: Record<string, unknown>,
-  resource: string,
-) {
+function findDefinedLayoutComponent(module: Record<string, unknown>, resource: string) {
   const components = Object.values(module)
     .map((value) =>
-      typeof value === 'object' && value !== null && 'Root' in value
-        ? value.Root
-        : value,
+      typeof value === 'object' && value !== null && 'Root' in value ? value.Root : value,
     )
     .filter(
       (value): value is DefinedLayoutComponent =>
-        typeof value === 'function' &&
-        definedResourceLayoutComponentSymbol in value,
+        typeof value === 'function' && definedResourceLayoutComponentSymbol in value,
     );
-  if (components.length !== 1)
+  if (components.length !== 1) {
     throw new LazyResourceModuleShapeError(resource, components.length);
+  }
+
   return components[0];
 }
 
@@ -107,8 +94,12 @@ export function createLazyResourceLayout<
   const members = new Map<string, ComponentType<any>>();
   function createMember(member?: string) {
     function LazyMember(props: Record<string, unknown>) {
-      const states = { ...(typeof defaults === 'function' ? defaults() : defaults), ...runtime.states } as LazyResourceStates;
+      const states = {
+        ...(typeof defaults === 'function' ? defaults() : defaults),
+        ...runtime.states,
+      } as LazyResourceStates;
       const Loading = states.Loading;
+
       return (
         <LazyBoundary
           loader={loader}
@@ -129,9 +120,14 @@ export function createLazyResourceLayout<
     }
     LazyMember.displayName = `LazyResource(${resource})${member ? `.${member}` : ''}`;
     Object.defineProperties(LazyMember, {
-      preload: { value: loader.preload },
-      status: { get: () => loader.status },
+      preload: {
+        value: loader.preload,
+      },
+      status: {
+        get: () => loader.status,
+      },
     });
+
     return LazyMember;
   }
   const Component = createMember();
@@ -163,21 +159,25 @@ export function createLazyResourceLayout<
     '__esModule',
     'default',
   ]);
+
   return new Proxy(Component, {
     get(target, property, receiver) {
-      if (Reflect.has(target, property))
+      if (Reflect.has(target, property)) {
         return Reflect.get(target, property, receiver);
+      }
       if (
         typeof property !== 'string' ||
         reservedStatics.has(property) ||
         !/^[A-Z]/.test(property)
-      )
+      ) {
         return undefined;
+      }
       let component = members.get(property);
       if (!component) {
         component = createMember(property);
         members.set(property, component);
       }
+
       return component;
     },
     has: (target, property) => Reflect.has(target, property),

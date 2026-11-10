@@ -1,6 +1,13 @@
 export { ArrayProp } from './array';
 export { isStandardSchema, validateDefinition } from './standard-schema';
-export type { DefinitionVisibility, LegacyPropDefinition, InputDefinitions, ResolveInputProps, ResolvedInputShape, ResolveLayoutInputProps } from './types';
+export type {
+  DefinitionVisibility,
+  LegacyPropDefinition,
+  InputDefinitions,
+  ResolveInputProps,
+  ResolvedInputShape,
+  ResolveLayoutInputProps,
+} from './types';
 export type { StandardSchemaV1 } from '@standard-schema/spec';
 export { BaseProp, primitiveTypes } from './base';
 export { PropError, type PropErrorOptions } from './prop-error';
@@ -17,20 +24,12 @@ export {
   type RecordValueDefinition,
   type WrappedProp,
 } from './builders';
-export {
-  ComponentProp,
-  ComponentPropWithPropertiesProp,
-  RenderChildrenProp,
-} from './component';
+export { ComponentProp, ComponentPropWithPropertiesProp, RenderChildrenProp } from './component';
 export { EnumProp } from './enum';
 export { LiteralProp } from './literal';
 export { ObjectProp } from './object';
 export { RecordProp } from './record';
-export {
-  BooleanProp,
-  NumberProp,
-  StringProp,
-} from './primitive';
+export { BooleanProp, NumberProp, StringProp } from './primitive';
 export {
   type AnyBaseProp,
   type AnyBuiltPropDefinition,
@@ -61,11 +60,5 @@ export {
   createPropsFromComponent,
   type ComponentWithPropDefinitions,
 } from './component-props';
-export {
-  type PropValidationContext,
-  validateProps,
-} from './validate-props';
-export {
-  isPropDefinitionShape,
-  resolvePropDefinitionValues,
-} from './definition-utils';
+export { type PropValidationContext, validateProps } from './validate-props';
+export { isPropDefinitionShape, resolvePropDefinitionValues } from './definition-utils';

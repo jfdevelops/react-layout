@@ -24,10 +24,7 @@ import type {
   CreateResourceLayoutOptionsBase,
   SetDefaultPropForResourceFn,
 } from '../for-resource';
-import type {
-  ScopedCreateComponent,
-  ScopedCreateResourceComponents,
-} from './create-component';
+import type { ScopedCreateComponent, ScopedCreateResourceComponents } from './create-component';
 import type {
   AtLeastOneResourceLayoutNameKey,
   AtLeastOneResourceLayoutSelection,
@@ -50,7 +47,7 @@ export type ScopedCreateResourceLayoutOptions<
   Arguments extends ReadonlyArray<unknown>,
   Name extends string,
   Resource extends SelectedLayoutResources<Resources, Arguments>,
-  Props extends InPropsObject
+  Props extends InPropsObject,
 > = LayoutPropsForResource<Resources, InProps, Composables, IncludeProps> & {
   resource: Resource;
   props?: Props;
@@ -66,16 +63,12 @@ export type ScopedCreateResourceLayoutFnImpl<
   CustomProps extends CustomPropsObject,
   DefaultNamespace extends boolean = false,
   States = {},
-  DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined
+  DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
 > = <
   Resource extends SelectedLayoutResources<Resources, Arguments>,
-  Name extends string = SelectedResourceLayoutName<
-    Arguments,
-    Resource,
-    DefaultNaming
-  >,
+  Name extends string = SelectedResourceLayoutName<Arguments, Resource, DefaultNaming>,
   Props extends InPropsObject = {},
-  Namespace extends boolean = DefaultNamespace
+  Namespace extends boolean = DefaultNamespace,
 >(
   options: ScopedCreateResourceLayoutOptions<
     Resources,
@@ -86,7 +79,7 @@ export type ScopedCreateResourceLayoutFnImpl<
     Name,
     Resource,
     Props
-  > & { namespace?: Namespace }
+  > & { namespace?: Namespace },
 ) => ResourceLayoutResult<
   ResourceLayoutComponent<
     Name,
@@ -113,19 +106,12 @@ export type ScopedCreateLayoutForResource<
   CustomProps extends CustomPropsObject,
   DefaultNamespace extends boolean = false,
   States = {},
-  DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined
+  DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
 > = <
   Resource extends SelectedLayoutResources<Resources, Arguments>,
-  Name extends string = SelectedResourceLayoutName<
-    Arguments,
-    Resource,
-    DefaultNaming
-  >
+  Name extends string = SelectedResourceLayoutName<Arguments, Resource, DefaultNaming>,
 >(
-  options: Omit<
-    CreateLayoutForResourceOptions<Resources, Name, Resource>,
-    'hostedBy'
-  >
+  options: Omit<CreateLayoutForResourceOptions<Resources, Name, Resource>, 'hostedBy'>,
 ) => CreatedLayoutForResource<
   Resources,
   InProps,
@@ -157,23 +143,17 @@ export type ScopedCreateResourceLayoutMakeComposableFn<
   Composables extends ComposableComponents,
   IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
   Arguments extends ReadonlyArray<unknown>,
-  DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined
+  DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
 > = <
   Resource extends SelectedLayoutResources<Resources, Arguments>,
-  Name extends string = SelectedResourceLayoutName<
-    Arguments,
-    Resource,
-    DefaultNaming
-  >,
-  Props extends InPropsObject = {}
+  Name extends string = SelectedResourceLayoutName<Arguments, Resource, DefaultNaming>,
+  Props extends InPropsObject = {},
 >(
   options: Omit<
     CreateResourceLayoutOptionsBase<Resources, Name, Resource, Props, Name>,
     'hostedBy'
   > &
-    Partial<
-      LayoutPropsForResource<Resources, InProps, Composables, IncludeProps>
-    >
+    Partial<LayoutPropsForResource<Resources, InProps, Composables, IncludeProps>>,
 ) => ComposableResourceLayout<Composables, Name, any, any, any>;
 
 export type ScopedCreateResourceLayoutFn<
@@ -185,7 +165,7 @@ export type ScopedCreateResourceLayoutFn<
   CustomProps extends CustomPropsObject,
   DefaultNamespace extends boolean = false,
   States = {},
-  DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined
+  DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
 > = ScopedCreateResourceLayoutFnImpl<
   Resources,
   InProps,
@@ -289,17 +269,17 @@ export type ScopedCreateResourceLayoutFn<
    */
   readonly resources: SelectedLayoutResources<Resources, Arguments>;
 } & ([keyof Composables] extends [never]
-  ? {}
-  : {
-    makeComposable: ScopedCreateResourceLayoutMakeComposableFn<
-      Resources,
-      InProps,
-      Composables,
-      IncludeProps,
-      Arguments,
-      DefaultNaming
-    >;
-  });
+    ? {}
+    : {
+        makeComposable: ScopedCreateResourceLayoutMakeComposableFn<
+          Resources,
+          InProps,
+          Composables,
+          IncludeProps,
+          Arguments,
+          DefaultNaming
+        >;
+      });
 
 export type CreateResourceLayoutForResourcesFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -309,7 +289,7 @@ export type CreateResourceLayoutForResourcesFn<
   CustomProps extends CustomPropsObject = {},
   DefaultNamespace extends boolean = false,
   States = {},
-  DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined
+  DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
 > = {
   /**
    * Creates a layout factory scoped to the listed resources.
@@ -325,8 +305,8 @@ export type CreateResourceLayoutForResourcesFn<
   <
     const ResourceKeys extends readonly [
       LayoutResourceKey<Resources>,
-      ...Array<LayoutResourceKey<Resources>>
-    ]
+      ...Array<LayoutResourceKey<Resources>>,
+    ],
   >(
     ...resources: ResourceKeys & UnhostedOnly<Resources>
   ): ScopedCreateResourceLayoutFn<
@@ -354,7 +334,7 @@ export type CreateResourceLayoutForResourcesFn<
     options: {
       resources: ResourceKeys;
       name?: never;
-    } & HostedSelection<Resources>
+    } & HostedSelection<Resources>,
   ): ScopedCreateResourceLayoutFn<
     Resources,
     InProps,
@@ -388,7 +368,7 @@ export type CreateResourceLayoutForResourcesFn<
   <
     const ResourceKeys extends ReadonlyArray<LayoutResourceKey<Resources>>,
     const CallbackName extends string,
-    const Names
+    const Names,
   >(
     options: {
       resources: ResourceKeys;
@@ -408,8 +388,8 @@ export type CreateResourceLayoutForResourcesFn<
           >
         >;
     } & HostedSelection<Resources> & {
-      name: Names & Record<Exclude<keyof Names, ResourceKeys[number]>, never>;
-    }
+        name: Names & Record<Exclude<keyof Names, ResourceKeys[number]>, never>;
+      },
   ): ScopedCreateResourceLayoutFn<
     Resources,
     InProps,
@@ -438,12 +418,12 @@ export type CreateResourceLayoutForResourcesFn<
    */
   <
     const ResourceKeys extends ReadonlyArray<LayoutResourceKey<Resources>>,
-    const Name extends string
+    const Name extends string,
   >(
     options: {
       resources: ReadonlyArray<LayoutResourceKey<Resources>>;
       name: (resource: CapitalizedResource<ResourceKeys[number]>) => Name;
-    } & { resources: ResourceKeys } & HostedSelection<Resources>
+    } & { resources: ResourceKeys } & HostedSelection<Resources>,
   ): ScopedCreateResourceLayoutFn<
     Resources,
     InProps,
@@ -471,15 +451,13 @@ export type CreateResourceLayoutForResourcesFn<
    */
   <
     const CallbackName extends string,
-    const Selection extends ResourceLayoutSelection<Resources, CallbackName>
+    const Selection extends ResourceLayoutSelection<Resources, CallbackName>,
   >(
     options: Selection &
       UnhostedOnly<Resources> &
       AtLeastOneResourceLayoutSelection<Resources, CallbackName> &
-      Partial<
-        Record<Exclude<'resources', LayoutResourceKey<Resources>>, never>
-      > &
-      Record<Exclude<keyof Selection, LayoutResourceKey<Resources>>, never>
+      Partial<Record<Exclude<'resources', LayoutResourceKey<Resources>>, never>> &
+      Record<Exclude<keyof Selection, LayoutResourceKey<Resources>>, never>,
   ): ScopedCreateResourceLayoutFn<
     Resources,
     InProps,

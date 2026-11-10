@@ -1,7 +1,6 @@
 {
   "name": "view-map-workspace",
   "private": true,
-  "packageManager": "pnpm@10.28.1",
   "scripts": {
     "dev": "pnpm --filter ./packages/core dev",
     "dev:basic-example": "pnpm --filter basic-example dev",
@@ -18,13 +17,22 @@
     "version-packages": "changeset version",
     "release": "changeset publish",
     "prepare": "husky",
-    "preview": "pnpm --filter ./packages/core preview"
+    "preview": "pnpm --filter ./packages/core preview",
+    "lint": "oxlint --deny-warnings",
+    "lint:fix": "oxlint --fix --deny-warnings",
+    "format": "oxfmt . && oxlint --fix --deny-warnings && oxfmt .",
+    "format:check": "oxfmt --check ."
   },
   "devDependencies": {
     "@changesets/cli": "2.31.0",
     "@jfdevelops/cli": "0.8.0",
     "@jfdevelops/skills": "0.1.0",
+    "@stylistic/eslint-plugin": "5.10.0",
     "husky": "9.1.7",
-    "portless": "^0.15.9"
-  }
+    "oxfmt": "0.78.0",
+    "oxlint": "1.93.0",
+    "portless": "^0.15.9",
+    "typescript": "7.0.2"
+  },
+  "packageManager": "pnpm@10.28.1"
 }

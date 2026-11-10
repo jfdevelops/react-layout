@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  type PointerEvent,
-  type KeyboardEvent,
-} from 'react';
+import { useEffect, useRef, useState, type PointerEvent, type KeyboardEvent } from 'react';
 
 export interface PanelPreferences {
   x: number;
@@ -30,14 +24,8 @@ function clamp(rect: Rect, viewport: Viewport): Rect {
   const gap = Math.min(16, viewport.width / 4, viewport.height / 4);
   const maxWidth = Math.max(1, viewport.width - gap * 2);
   const maxHeight = Math.max(1, viewport.height - gap * 2);
-  const width = Math.max(
-    Math.min(340, maxWidth),
-    Math.min(maxWidth, rect.width)
-  );
-  const height = Math.max(
-    Math.min(260, maxHeight),
-    Math.min(maxHeight, rect.height)
-  );
+  const width = Math.max(Math.min(340, maxWidth), Math.min(maxWidth, rect.width));
+  const height = Math.max(Math.min(260, maxHeight), Math.min(maxHeight, rect.height));
 
   return {
     width,
@@ -50,7 +38,7 @@ function clamp(rect: Rect, viewport: Viewport): Rect {
 export function useFloatingPanel(
   saved: PanelPreferences | undefined,
   save: (value: PanelPreferences) => void,
-  position: string
+  position: string,
 ) {
   const [viewport, setViewport] = useState<Viewport>(() => ({
     width: typeof window === 'undefined' ? 1024 : window.innerWidth,
@@ -70,7 +58,7 @@ export function useFloatingPanel(
         x: position.endsWith('right') ? viewport.width - width - 16 : 16,
         y: position.startsWith('bottom') ? viewport.height - height - 16 : 16,
       },
-    viewport
+    viewport,
   );
   const rect =
     mode === 'expanded'
@@ -81,20 +69,23 @@ export function useFloatingPanel(
             width: viewport.width - 32,
             height: viewport.height - 32,
           },
-          viewport
+          viewport,
         )
       : mode === 'docked'
-      ? {
-          ...floating,
-          x: 16,
-          y: viewport.height - floating.height - 16,
-          width: Math.max(1, viewport.width - 32),
-        }
-      : floating;
+        ? {
+            ...floating,
+            x: 16,
+            y: viewport.height - floating.height - 16,
+            width: Math.max(1, viewport.width - 32),
+          }
+        : floating;
 
   useEffect(() => {
     const resize = () =>
-      setViewport({ width: window.innerWidth, height: window.innerHeight });
+      setViewport({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
 
     window.addEventListener('resize', resize);
 
@@ -102,7 +93,10 @@ export function useFloatingPanel(
   }, []);
 
   function setMode(next: PanelPreferences['mode']) {
-    save({ ...floating, mode: next });
+    save({
+      ...floating,
+      mode: next,
+    });
   }
 
   function updateDraft(value: Rect) {
@@ -121,8 +115,9 @@ export function useFloatingPanel(
           event.isPrimary === false ||
           mode === 'expanded' ||
           (kind === 'move' && mode !== 'floating')
-        )
+        ) {
           return;
+        }
 
         event.preventDefault();
 
@@ -140,29 +135,39 @@ export function useFloatingPanel(
       onPointerMove(event: PointerEvent<HTMLButtonElement>) {
         const active = gesture.current;
 
-        if (!active || active.pointer !== event.pointerId) return;
+        if (!active || active.pointer !== event.pointerId) {
+          return;
+        }
 
         const dx = event.clientX - active.x;
         const dy = event.clientY - active.y;
 
         updateDraft(
           active.kind === 'move'
-            ? { ...active.rect, x: active.rect.x + dx, y: active.rect.y + dy }
+            ? {
+                ...active.rect,
+                x: active.rect.x + dx,
+                y: active.rect.y + dy,
+              }
             : {
                 ...active.rect,
                 x: active.rect.x + (mode === 'docked' ? 0 : dx),
                 y: active.rect.y + dy,
                 width: active.rect.width - (mode === 'docked' ? 0 : dx),
                 height: active.rect.height - dy,
-              }
+              },
         );
       },
 
       onPointerUp(event: PointerEvent<HTMLButtonElement>) {
-        if (!gesture.current || gesture.current.pointer !== event.pointerId)
+        if (!gesture.current || gesture.current.pointer !== event.pointerId) {
           return;
+        }
 
-        save({ ...(draftRef.current ?? floating), mode });
+        save({
+          ...(draftRef.current ?? floating),
+          mode,
+        });
 
         gesture.current = undefined;
 
@@ -170,8 +175,9 @@ export function useFloatingPanel(
 
         setDraft(undefined);
 
-        if (event.currentTarget.hasPointerCapture?.(event.pointerId))
+        if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
           event.currentTarget.releasePointerCapture(event.pointerId);
+        }
       },
 
       onPointerCancel() {
@@ -183,7 +189,9 @@ export function useFloatingPanel(
       },
 
       onLostPointerCapture() {
-        if (!gesture.current) return;
+        if (!gesture.current) {
+          return;
+        }
 
         gesture.current = undefined;
 
@@ -194,34 +202,27 @@ export function useFloatingPanel(
 
       onKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
         if (
-          !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(
-            event.key
-          ) ||
+          !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key) ||
           mode === 'expanded' ||
           (kind === 'move' && mode !== 'floating')
-        )
+        ) {
           return;
+        }
 
         event.preventDefault();
 
         event.stopPropagation();
 
         const step = event.shiftKey ? 40 : 10;
-        const dx =
-          event.key === 'ArrowLeft'
-            ? -step
-            : event.key === 'ArrowRight'
-            ? step
-            : 0;
-        const dy =
-          event.key === 'ArrowUp'
-            ? -step
-            : event.key === 'ArrowDown'
-            ? step
-            : 0;
+        const dx = event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0;
+        const dy = event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0;
         const next =
           kind === 'move'
-            ? { ...floating, x: floating.x + dx, y: floating.y + dy }
+            ? {
+                ...floating,
+                x: floating.x + dx,
+                y: floating.y + dy,
+              }
             : {
                 ...floating,
                 x: floating.x + (mode === 'docked' ? 0 : dx),
@@ -230,7 +231,10 @@ export function useFloatingPanel(
                 height: floating.height - dy,
               };
 
-        save({ ...clamp(next, viewport), mode });
+        save({
+          ...clamp(next, viewport),
+          mode,
+        });
       },
     };
   }

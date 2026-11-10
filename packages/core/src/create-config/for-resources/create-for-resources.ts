@@ -9,27 +9,15 @@ import {
 } from '../../lazy/scoped-content';
 import { withLazyHandle } from '../../lazy/inspection';
 import type { LazyHandle } from '../../lazy/types';
-import {
-  createContext,
-  createElement,
-  type ComponentType,
-  type JSX,
-  useContext,
-} from 'react';
+import { createContext, createElement, type ComponentType, type JSX, useContext } from 'react';
 import type { ComposableComponents } from '@jfdevelops/react-layout-composables';
-import {
-  type AnyBuiltPropDefinition,
-  validateProps,
-} from '@jfdevelops/react-layout-validator';
+import { type AnyBuiltPropDefinition, validateProps } from '@jfdevelops/react-layout-validator';
 import type { InPropsDefinition } from '../../props';
 import type { LayoutResourceKey, ResourceDefinition } from '../../resource';
 import { capitalize } from '../../utils/capitalize';
 import { LayoutConfigurationError } from '../../errors';
 import type { LayoutIncludeProps } from '../define-layout';
-import type {
-  CapitalizedResource,
-  ResourcesLayoutName,
-} from './resource-selection';
+import type { CapitalizedResource, ResourcesLayoutName } from './resource-selection';
 import type { CreateResourceLayoutForResourcesFn } from './scoped-layout';
 import {
   isRenderableComponentType,
@@ -41,18 +29,14 @@ import {
 
 const rawSchemaInputs = Symbol('rawSchemaInputs');
 
-type CreateForResourcesOptions<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-> = {
+type CreateForResourcesOptions<Resources extends ReadonlyArray<ResourceDefinition>> = {
   lazyEnvironment?: LazyEnvironment;
   optionSchema?: OptionSchema;
   createLayoutForResource: (
     defaultName: string | undefined,
     resource: LayoutResourceKey<Resources>,
   ) => unknown;
-  createMakeComposableLayout?: () => (
-    options: Record<string, unknown>,
-  ) => unknown;
+  createMakeComposableLayout?: () => (options: Record<string, unknown>) => unknown;
   createResourceLayout: (options: Record<string, unknown>) => unknown;
   getComponentPropDefinitions: (
     resource: LayoutResourceKey<Resources>,
@@ -77,11 +61,7 @@ export function createForResources<
     const firstArgument = resourcesOrOptions[0];
     let resourceOptions: Array<{
       resource: LayoutResourceKey<Resources>;
-      name?:
-        | string
-        | ((
-            resource: CapitalizedResource<LayoutResourceKey<Resources>>,
-          ) => string);
+      name?: string | ((resource: CapitalizedResource<LayoutResourceKey<Resources>>) => string);
     }>;
 
     if (typeof firstArgument === 'string') {
@@ -103,29 +83,19 @@ export function createForResources<
         resource,
       }));
     } else {
-      resourceOptions = Object.entries(firstArgument ?? {}).map(
-        ([resource, options]) => ({
-          ...(options as {
-            name?:
-              | string
-              | ((
-                  resource: CapitalizedResource<LayoutResourceKey<Resources>>,
-                ) => string);
-          }),
-          resource: resource as LayoutResourceKey<Resources>,
+      resourceOptions = Object.entries(firstArgument ?? {}).map(([resource, options]) => ({
+        ...(options as {
+          name?: string | ((resource: CapitalizedResource<LayoutResourceKey<Resources>>) => string);
         }),
-      );
+        resource: resource as LayoutResourceKey<Resources>,
+      }));
     }
 
     const defaultNames = new Map(
       resourceOptions.map(({ name, resource }) => [
         resource,
         typeof name === 'function'
-          ? name(
-              capitalize(resource) as CapitalizedResource<
-                LayoutResourceKey<Resources>
-              >,
-            )
+          ? name(capitalize(resource) as CapitalizedResource<LayoutResourceKey<Resources>>)
           : name,
       ]),
     );
@@ -139,10 +109,7 @@ export function createForResources<
       });
     }
 
-    function scopedForResource(options: {
-      name?: string;
-      resource: LayoutResourceKey<Resources>;
-    }) {
+    function scopedForResource(options: { name?: string; resource: LayoutResourceKey<Resources> }) {
       return createLayoutForResource(
         options.name ?? defaultNames.get(options.resource),
         options.resource,
@@ -189,20 +156,22 @@ export function createForResources<
       render: ScopedComponentRenderFn;
       [scopedLazySymbol]?: LazyHandle;
     } {
-      if (definition.lazy !== undefined && definition.render !== undefined)
+      if (definition.lazy !== undefined && definition.render !== undefined) {
         throw new LayoutConfigurationError(
           `Scoped content "${label}" must define render or lazy, never both`,
         );
-      if (definition[scopedLazySymbol])
+      }
+      if (definition[scopedLazySymbol]) {
         return definition as T & {
           render: ScopedComponentRenderFn;
           [scopedLazySymbol]?: LazyHandle;
         };
+      }
       if (definition.lazy === undefined) {
-        if (typeof definition.render !== 'function')
-          throw new LayoutConfigurationError(
-            `Scoped content "${label}" requires render or lazy`,
-          );
+        if (typeof definition.render !== 'function') {
+          throw new LayoutConfigurationError(`Scoped content "${label}" requires render or lazy`);
+        }
+
         return definition as T & {
           render: ScopedComponentRenderFn;
           [scopedLazySymbol]?: LazyHandle;
@@ -220,9 +189,14 @@ export function createForResources<
         render: (
           callProps: Record<string, unknown>,
           context: Record<string, (props?: never) => JSX.Element>,
-        ) => createElement(Content, { callProps, context }),
+        ) =>
+          createElement(Content, {
+            callProps,
+            context,
+          }),
         [scopedLazySymbol]: Content,
       };
+
       return withLazyHandle(result, Content) as T & {
         render: ScopedComponentRenderFn;
         [scopedLazySymbol]?: LazyHandle;
@@ -232,25 +206,28 @@ export function createForResources<
     function aggregateHandle(handles: LazyHandle[]): LazyHandle {
       let imports: Promise<void>[] = [];
       let pending: Promise<void> | undefined;
+
       return {
         preload() {
           const next = handles.map((handle) => handle.preload());
-          if (
-            !pending ||
-            next.some((promise, index) => promise !== imports[index])
-          ) {
+          if (!pending || next.some((promise, index) => promise !== imports[index])) {
             imports = next;
             pending = Promise.all(next).then(() => undefined);
           }
+
           return pending;
         },
         get status() {
-          if (handles.some((handle) => handle.status === 'error'))
+          if (handles.some((handle) => handle.status === 'error')) {
             return 'error';
-          if (handles.some((handle) => handle.status === 'loading'))
+          }
+          if (handles.some((handle) => handle.status === 'loading')) {
             return 'loading';
-          if (handles.some((handle) => handle.status === 'unresolved'))
+          }
+          if (handles.some((handle) => handle.status === 'unresolved')) {
             return 'unresolved';
+          }
+
           return 'resolved';
         },
       };
@@ -271,7 +248,10 @@ export function createForResources<
         }
       }
 
-      return { include, custom };
+      return {
+        include,
+        custom,
+      };
     }
 
     function createComponent(componentOptions: {
@@ -286,32 +266,21 @@ export function createForResources<
     }) {
       const mergedProps = mergeCreateComponentProps(
         componentOptions.props,
-        ...Object.values(componentOptions.resources ?? {}).map(
-          (entry) => entry.props,
-        ),
+        ...Object.values(componentOptions.resources ?? {}).map((entry) => entry.props),
       );
       const include = mergedProps.include ?? {};
       const custom = normalizeCustomProps(mergedProps.custom ?? {});
-      const selectedResources = new Set(
-        resourceOptions.map(({ resource }) => resource),
-      );
+      const selectedResources = new Set(resourceOptions.map(({ resource }) => resource));
       const topLevelContent = new Map(
         [...selectedResources].map((resource) => [
           resource,
           normalizeContent(componentOptions, resource, `${resource}:content`),
         ]),
       );
-      const componentPropsContext = createContext<
-        Record<string, unknown> | undefined
-      >(undefined);
-      const definedEntries = new Map<
-        LayoutResourceKey<Resources>,
-        ScopedComponentEntry
-      >();
+      const componentPropsContext = createContext<Record<string, unknown> | undefined>(undefined);
+      const definedEntries = new Map<LayoutResourceKey<Resources>, ScopedComponentEntry>();
 
-      for (const [key, entry] of Object.entries(
-        componentOptions.resources ?? {},
-      )) {
+      for (const [key, entry] of Object.entries(componentOptions.resources ?? {})) {
         const resource = key as LayoutResourceKey<Resources>;
 
         if (!selectedResources.has(resource)) {
@@ -336,192 +305,192 @@ export function createForResources<
         Record<string, (props?: never) => JSX.Element>
       >();
       const contextResources = new Map<string, LayoutResourceKey<Resources>>();
-      const renderContext: Record<string, (props: never) => JSX.Element> =
-        Object.fromEntries(
-          [...definedEntries].map(([resource, entry]) => {
-            const contextKey = capitalize(resource);
+      const renderContext: Record<string, (props: never) => JSX.Element> = Object.fromEntries(
+        [...definedEntries].map(([resource, entry]) => {
+          const contextKey = capitalize(resource);
 
-            if (contextKey === 'Root') {
+          if (contextKey === 'Root') {
+            throw new LayoutConfigurationError(
+              `Resource "${resource}" maps to the reserved render context key "Root"`,
+            );
+          }
+
+          const existingResource = contextResources.get(contextKey);
+
+          if (existingResource !== undefined) {
+            throw new LayoutConfigurationError(
+              `Resources "${existingResource}" and "${resource}" both map to render context key "${contextKey}"`,
+            );
+          }
+
+          contextResources.set(contextKey, resource);
+
+          /**
+           * Built once per resource so every scoped component keeps a stable
+           * identity, and shared by the resource render, the render context,
+           * and any component bound through `asHOF()`.
+           */
+          const scopedComponents: Record<string, (props?: never) => JSX.Element> = {};
+
+          for (const [name, definition] of Object.entries(entry.components ?? {})) {
+            if (reservedScopedComponentNames.has(name)) {
               throw new LayoutConfigurationError(
-                `Resource "${resource}" maps to the reserved render context key "Root"`,
+                `Scoped component "${name}" for resource "${resource}" uses a reserved name`,
               );
             }
 
-            const existingResource = contextResources.get(contextKey);
+            const ownPropDefinitions = normalizeCustomProps(definition.props ?? {});
+            // Last call-site own-props / returned component for this scoped
+            // entry. Compound statics re-run `render` with these so
+            // `<DataTable variant="b" />` then `<DataTable.Loading />` sees "b".
+            let cachedOwnProps: Record<string, unknown> = {};
+            let cachedState: string | undefined;
+            let cachedReturnedComponent: ComponentType<Record<string, unknown>> | undefined;
 
-            if (existingResource !== undefined) {
-              throw new LayoutConfigurationError(
-                `Resources "${existingResource}" and "${resource}" both map to render context key "${contextKey}"`,
-              );
-            }
-
-            contextResources.set(contextKey, resource);
-
-            /**
-             * Built once per resource so every scoped component keeps a stable
-             * identity, and shared by the resource render, the render context,
-             * and any component bound through `asHOF()`.
-             */
-            const scopedComponents: Record<
-              string,
-              (props?: never) => JSX.Element
-            > = {};
-
-            for (const [name, definition] of Object.entries(
-              entry.components ?? {},
-            )) {
-              if (reservedScopedComponentNames.has(name)) {
-                throw new LayoutConfigurationError(
-                  `Scoped component "${name}" for resource "${resource}" uses a reserved name`,
-                );
-              }
-
-              const ownPropDefinitions = normalizeCustomProps(definition.props ?? {});
-              // Last call-site own-props / returned component for this scoped
-              // entry. Compound statics re-run `render` with these so
-              // `<DataTable variant="b" />` then `<DataTable.Loading />` sees "b".
-              let cachedOwnProps: Record<string, unknown> = {};
-              let cachedState: string | undefined;
-              let cachedReturnedComponent:
-                | ComponentType<Record<string, unknown>>
-                | undefined;
-
-              function ScopedComponent(ownProps?: Record<string, unknown>) {
-                const state = useContext(RenderStateNameContext);
-                const componentProps = useContext(componentPropsContext);
-
-                if (componentProps === undefined) {
-                  throw new LayoutConfigurationError(
-                    `Scoped component "${name}" must be rendered inside its scoped component`,
-                  );
-                }
-
-                let resolvedOwnProps = ownProps ?? {};
-
-                resolvedOwnProps = validateProps(ownPropDefinitions, resolvedOwnProps, {
-                  layoutName:
-                    entry.name ??
-                    defaultNames.get(resource) ??
-                    capitalize(resource),
-                  resource,
-                });
-                cachedOwnProps = resolvedOwnProps;
-
-                // Mount a returned component type with call-site props; pass
-                // nodes (elements, portals, null) through unchanged.
-                const result = definition.render!(
-                  { ...componentProps, ...resolvedOwnProps, resource },
-                  { ...scopedComponents, state } as unknown as typeof scopedComponents,
-                );
-
-                if (isRenderableComponentType(result)) {
-                  cachedState = state;
-                  cachedReturnedComponent = result as ComponentType<
-                    Record<string, unknown>
-                  >;
-                }
-
-                return resolveScopedRenderResult(result, resolvedOwnProps);
-              }
-
-              // Types expose compound statics from the returned component
-              // (`DataTable.Loading`); attach matching runtime wrappers.
-              if (definition[scopedLazySymbol])
-                withLazyHandle(ScopedComponent, definition[scopedLazySymbol]);
-              scopedComponents[name] = withScopedCompoundStatics(
-                ScopedComponent,
-                (staticName) => {
-                  function CompoundStatic(ownProps?: Record<string, unknown>) {
-                    const state = useContext(RenderStateNameContext);
-                    const componentProps = useContext(componentPropsContext);
-
-                    if (componentProps === undefined) {
-                      throw new LayoutConfigurationError(
-                        `Scoped component "${name}.${staticName}" must be rendered inside its scoped component`,
-                      );
-                    }
-
-                    // Prefer the component from the last parent call (same
-                    // closure as that call's own-props). Fall back to re-running
-                    // render with cached parent props when needed.
-                    let result: unknown = cachedState === state ? cachedReturnedComponent : undefined;
-
-                    if (!isRenderableComponentType(result)) {
-                      result = definition.render!(
-                        {
-                          ...componentProps,
-                          ...cachedOwnProps,
-                          resource,
-                        },
-                        { ...scopedComponents, state } as unknown as typeof scopedComponents,
-                      );
-                    }
-
-                    if (!isRenderableComponentType(result)) {
-                      throw new LayoutConfigurationError(
-                        `Scoped component "${name}" must return a component type to use static "${staticName}"`,
-                      );
-                    }
-
-                    const staticComponent = (
-                      result as ComponentType<Record<string, unknown>> &
-                        Record<string, unknown>
-                    )[staticName];
-
-                    if (!isRenderableComponentType(staticComponent)) {
-                      throw new LayoutConfigurationError(
-                        `Scoped component "${name}" has no component static "${staticName}"`,
-                      );
-                    }
-
-                    // Loading's props — those mount the static itself.
-                    return createElement(staticComponent, ownProps ?? {});
-                  }
-
-                  CompoundStatic.displayName = `${name}.${staticName}`;
-                  return CompoundStatic;
-                },
-              ) as (props?: never) => JSX.Element;
-            }
-
-            resourceScopedComponents.set(resource, scopedComponents);
-
-            function ResourceRender(ownProps?: Record<string, unknown>) {
+            function ScopedComponent(ownProps?: Record<string, unknown>) {
               const state = useContext(RenderStateNameContext);
               const componentProps = useContext(componentPropsContext);
 
               if (componentProps === undefined) {
                 throw new LayoutConfigurationError(
-                  `Render context component "${contextKey}" must be rendered inside its scoped component`,
+                  `Scoped component "${name}" must be rendered inside its scoped component`,
                 );
               }
 
-              // Call-site props on `context.Users({ title, heading })` merge into
-              // the resource render props and mount a returned component type.
-              const callProps = { ...componentProps, ...ownProps, resource };
-              return resolveScopedRenderResult(
-                entry.render(callProps, { ...scopedComponents, state } as unknown as typeof scopedComponents),
-                ownProps,
+              let resolvedOwnProps = ownProps ?? {};
+
+              resolvedOwnProps = validateProps(ownPropDefinitions, resolvedOwnProps, {
+                layoutName: entry.name ?? defaultNames.get(resource) ?? capitalize(resource),
+                resource,
+              });
+              cachedOwnProps = resolvedOwnProps;
+
+              // Mount a returned component type with call-site props; pass
+              // nodes (elements, portals, null) through unchanged.
+              const result = definition.render!(
+                {
+                  ...componentProps,
+                  ...resolvedOwnProps,
+                  resource,
+                },
+                {
+                  ...scopedComponents,
+                  state,
+                } as unknown as typeof scopedComponents,
+              );
+
+              if (isRenderableComponentType(result)) {
+                cachedState = state;
+                cachedReturnedComponent = result as ComponentType<Record<string, unknown>>;
+              }
+
+              return resolveScopedRenderResult(result, resolvedOwnProps);
+            }
+
+            // Types expose compound statics from the returned component
+            // (`DataTable.Loading`); attach matching runtime wrappers.
+            if (definition[scopedLazySymbol]) {
+              withLazyHandle(ScopedComponent, definition[scopedLazySymbol]);
+            }
+            scopedComponents[name] = withScopedCompoundStatics(ScopedComponent, (staticName) => {
+              function CompoundStatic(ownProps?: Record<string, unknown>) {
+                const state = useContext(RenderStateNameContext);
+                const componentProps = useContext(componentPropsContext);
+
+                if (componentProps === undefined) {
+                  throw new LayoutConfigurationError(
+                    `Scoped component "${name}.${staticName}" must be rendered inside its scoped component`,
+                  );
+                }
+
+                // Prefer the component from the last parent call (same
+                // closure as that call's own-props). Fall back to re-running
+                // render with cached parent props when needed.
+                let result: unknown = cachedState === state ? cachedReturnedComponent : undefined;
+
+                if (!isRenderableComponentType(result)) {
+                  result = definition.render!(
+                    {
+                      ...componentProps,
+                      ...cachedOwnProps,
+                      resource,
+                    },
+                    {
+                      ...scopedComponents,
+                      state,
+                    } as unknown as typeof scopedComponents,
+                  );
+                }
+
+                if (!isRenderableComponentType(result)) {
+                  throw new LayoutConfigurationError(
+                    `Scoped component "${name}" must return a component type to use static "${staticName}"`,
+                  );
+                }
+
+                const staticComponent = (
+                  result as ComponentType<Record<string, unknown>> & Record<string, unknown>
+                )[staticName];
+
+                if (!isRenderableComponentType(staticComponent)) {
+                  throw new LayoutConfigurationError(
+                    `Scoped component "${name}" has no component static "${staticName}"`,
+                  );
+                }
+
+                // Loading's props — those mount the static itself.
+                return createElement(staticComponent, ownProps ?? {});
+              }
+
+              CompoundStatic.displayName = `${name}.${staticName}`;
+
+              return CompoundStatic;
+            }) as (props?: never) => JSX.Element;
+          }
+
+          resourceScopedComponents.set(resource, scopedComponents);
+
+          function ResourceRender(ownProps?: Record<string, unknown>) {
+            const state = useContext(RenderStateNameContext);
+            const componentProps = useContext(componentPropsContext);
+
+            if (componentProps === undefined) {
+              throw new LayoutConfigurationError(
+                `Render context component "${contextKey}" must be rendered inside its scoped component`,
               );
             }
 
-            return [
-              contextKey,
-              withLazyHandle(
-                Object.assign(ResourceRender, scopedComponents),
-                aggregateHandle([
-                  ...(entry[scopedLazySymbol] ? [entry[scopedLazySymbol]] : []),
-                  ...Object.values(entry.components ?? {}).flatMap(
-                    (definition) =>
-                      definition[scopedLazySymbol]
-                        ? [definition[scopedLazySymbol]]
-                        : [],
-                  ),
-                ]),
-              ),
-            ];
-          }),
-        );
+            // Call-site props on `context.Users({ title, heading })` merge into
+            // the resource render props and mount a returned component type.
+            const callProps = {
+              ...componentProps,
+              ...ownProps,
+              resource,
+            };
+
+            return resolveScopedRenderResult(
+              entry.render(callProps, {
+                ...scopedComponents,
+                state,
+              } as unknown as typeof scopedComponents),
+              ownProps,
+            );
+          }
+
+          return [
+            contextKey,
+            withLazyHandle(
+              Object.assign(ResourceRender, scopedComponents),
+              aggregateHandle([
+                ...(entry[scopedLazySymbol] ? [entry[scopedLazySymbol]] : []),
+                ...Object.values(entry.components ?? {}).flatMap((definition) =>
+                  definition[scopedLazySymbol] ? [definition[scopedLazySymbol]] : [],
+                ),
+              ]),
+            ),
+          ];
+        }),
+      );
 
       /**
        * Layouts are created once per resource and cached. Creating one during
@@ -535,7 +504,10 @@ export function createForResources<
 
       function Root(rootProps: Record<string, unknown>) {
         const contextProps = useContext(componentPropsContext);
-        const componentProps = contextProps && ((contextProps as Record<symbol, Record<string, unknown>>)[rawSchemaInputs] ?? contextProps);
+        const componentProps =
+          contextProps &&
+          ((contextProps as Record<symbol, Record<string, unknown>>)[rawSchemaInputs] ??
+            contextProps);
 
         if (componentProps === undefined) {
           throw new LayoutConfigurationError(
@@ -543,8 +515,7 @@ export function createForResources<
           );
         }
 
-        const resource =
-          componentProps.resource as LayoutResourceKey<Resources>;
+        const resource = componentProps.resource as LayoutResourceKey<Resources>;
         let root = roots.get(resource);
 
         if (root === undefined) {
@@ -562,7 +533,11 @@ export function createForResources<
           const layoutOptions: Record<string, unknown> = {};
           const defined = entry.props?.defined ?? {};
 
-          for (const key of (optionSchema ? Object.keys(componentProps).filter((key) => key !== 'resource' && key !== 'children' && !Object.hasOwn(custom, key)) : Object.keys(availableDefinitions))) {
+          for (const key of optionSchema
+            ? Object.keys(componentProps).filter(
+                (key) => key !== 'resource' && key !== 'children' && !Object.hasOwn(custom, key),
+              )
+            : Object.keys(availableDefinitions)) {
             if (key in defined) {
               layoutOptions[key] = defined[key];
             }
@@ -584,8 +559,7 @@ export function createForResources<
           root = scopedCreateResourceLayout({
             ...layoutOptions,
             namespace: false,
-            name:
-              entry.name ?? defaultNames.get(resource) ?? capitalize(resource),
+            name: entry.name ?? defaultNames.get(resource) ?? capitalize(resource),
             resource,
           }) as (props: Record<string, unknown>) => JSX.Element;
           roots.set(resource, root);
@@ -595,7 +569,11 @@ export function createForResources<
         const definedCustom: Record<string, unknown> = {};
         const forwardedRootProps: Record<string, unknown> = {};
 
-        for (const key of (optionSchema ? Object.keys(componentProps).filter((key) => key !== 'resource' && key !== 'children' && !Object.hasOwn(custom, key)) : Object.keys(getComponentPropDefinitions(resource)))) {
+        for (const key of optionSchema
+          ? Object.keys(componentProps).filter(
+              (key) => key !== 'resource' && key !== 'children' && !Object.hasOwn(custom, key),
+            )
+          : Object.keys(getComponentPropDefinitions(resource))) {
           if (key in componentProps) {
             forwardedRootProps[key] = componentProps[key];
           }
@@ -606,9 +584,7 @@ export function createForResources<
           }
         }
 
-        for (const [key, value] of Object.entries(
-          entry?.props?.defined ?? {},
-        )) {
+        for (const [key, value] of Object.entries(entry?.props?.defined ?? {})) {
           if (key in custom) {
             definedCustom[key] = value;
           }
@@ -625,8 +601,7 @@ export function createForResources<
 
       function Component(componentProps: Record<string, unknown>) {
         const state = useContext(RenderStateNameContext);
-        const componentResource =
-          componentProps.resource as LayoutResourceKey<Resources>;
+        const componentResource = componentProps.resource as LayoutResourceKey<Resources>;
 
         if (!selectedResources.has(componentResource)) {
           throw new LayoutConfigurationError(
@@ -634,20 +609,29 @@ export function createForResources<
           );
         }
 
-        const defined =
-          definedEntries.get(componentResource)?.props?.defined ?? {};
-        const rawComponentProps = { ...defined, ...componentProps };
-        let resolvedComponentProps = { ...rawComponentProps };
+        const defined = definedEntries.get(componentResource)?.props?.defined ?? {};
+        const rawComponentProps = {
+          ...defined,
+          ...componentProps,
+        };
+        let resolvedComponentProps = {
+          ...rawComponentProps,
+        };
         if (optionSchema) {
-          const inputs = Object.fromEntries(Object.entries(rawComponentProps).filter(([key]) =>
-            key !== 'resource' && key !== 'children' && !Object.hasOwn(custom, key),
-          ));
-          Object.assign(resolvedComponentProps, validateOptionSchema(optionSchema, inputs, { resource: componentResource }));
+          const inputs = Object.fromEntries(
+            Object.entries(rawComponentProps).filter(
+              ([key]) => key !== 'resource' && key !== 'children' && !Object.hasOwn(custom, key),
+            ),
+          );
+          Object.assign(
+            resolvedComponentProps,
+            validateOptionSchema(optionSchema, inputs, {
+              resource: componentResource,
+            }),
+          );
         }
-        const availableDefinitions =
-          getComponentPropDefinitions(componentResource);
-        const definitionsToValidate: Record<string, AnyBuiltPropDefinition> =
-          {};
+        const availableDefinitions = getComponentPropDefinitions(componentResource);
+        const definitionsToValidate: Record<string, AnyBuiltPropDefinition> = {};
 
         for (const [key, inclusion] of Object.entries(include)) {
           const definition = availableDefinitions[key];
@@ -678,20 +662,22 @@ export function createForResources<
           resource: componentResource,
         });
 
-        Object.defineProperty(resolvedComponentProps, rawSchemaInputs, { value: rawComponentProps });
+        Object.defineProperty(resolvedComponentProps, rawSchemaInputs, {
+          value: rawComponentProps,
+        });
 
         // Top-level render may return a component type; mount it with the full
         // component props (include/custom + inferred return-type props).
         return createElement(
           componentPropsContext.Provider,
-          { value: resolvedComponentProps },
+          {
+            value: resolvedComponentProps,
+          },
           resolveScopedRenderResult(
-            topLevelContent
-              .get(componentResource)!
-              .render(
-                resolvedComponentProps,
-                { ...renderContext, state } as unknown as Record<string, (props?: never) => JSX.Element>,
-              ),
+            topLevelContent.get(componentResource)!.render(resolvedComponentProps, {
+              ...renderContext,
+              state,
+            } as unknown as Record<string, (props?: never) => JSX.Element>),
             resolvedComponentProps,
           ),
         );
@@ -719,7 +705,10 @@ export function createForResources<
         if (boundComponent === undefined) {
           boundComponent = Object.assign(
             (boundProps: Record<string, unknown>) =>
-              createElement(Component, { ...boundProps, resource }),
+              createElement(Component, {
+                ...boundProps,
+                resource,
+              }),
             {
               displayName: `ScopedResourceComponent(${resource})`,
               props: undefined,
@@ -730,12 +719,13 @@ export function createForResources<
           if (createMakeComposableLayout) {
             Object.assign(boundComponent, {
               makeComposable: (options: Record<string, unknown> = {}) =>
-                scopedExtras.makeComposable?.({ ...options, resource }),
+                scopedExtras.makeComposable?.({
+                  ...options,
+                  resource,
+                }),
             });
           }
-          const renderResource = renderContext[
-            capitalize(resource)
-          ] as unknown as LazyHandle;
+          const renderResource = renderContext[capitalize(resource)] as unknown as LazyHandle;
           const ownContent = topLevelContent.get(resource)?.[scopedLazySymbol];
           withLazyHandle(
             boundComponent,
@@ -765,6 +755,7 @@ export function createForResources<
           ),
         ]),
       );
+
       return Object.assign(Component, {
         asHOF,
         displayName: 'ScopedResourceComponent',
@@ -803,11 +794,7 @@ export function createForResources<
     }) {
       const { resource, props, ...entry } = options;
 
-      if (
-        !resourceOptions.some(
-          (resourceOption) => resourceOption.resource === resource,
-        )
-      ) {
+      if (!resourceOptions.some((resourceOption) => resourceOption.resource === resource)) {
         throw new LayoutConfigurationError(
           `Resource "${resource}" is not available in this scoped component`,
         );
@@ -815,20 +802,21 @@ export function createForResources<
 
       const normalized = normalizeContent(entry, resource, String(resource));
       const components = Object.fromEntries(
-        Object.entries(normalized.components ?? {}).map(
-          ([name, definition]) => [
-            name,
-            normalizeContent(definition, resource, `${resource}.${name}`),
-          ],
-        ),
+        Object.entries(normalized.components ?? {}).map(([name, definition]) => [
+          name,
+          normalizeContent(definition, resource, `${resource}.${name}`),
+        ]),
       );
-      const result = { ...normalized, components, props: props ?? {} };
+      const result = {
+        ...normalized,
+        components,
+        props: props ?? {},
+      };
+
       return withLazyHandle(
         result,
         aggregateHandle([
-          ...(normalized[scopedLazySymbol]
-            ? [normalized[scopedLazySymbol]]
-            : []),
+          ...(normalized[scopedLazySymbol] ? [normalized[scopedLazySymbol]] : []),
           ...Object.values(components).flatMap((definition) =>
             definition[scopedLazySymbol] ? [definition[scopedLazySymbol]] : [],
           ),

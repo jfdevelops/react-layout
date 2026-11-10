@@ -1,6 +1,8 @@
 import { createDefinedResourceLayout } from '../../../src';
 
-const factory = createDefinedResourceLayout({ resources: ['appointments'] });
+const factory = createDefinedResourceLayout({
+  resources: ['appointments'],
+});
 const { createResourceLayout } = factory.defineResourceLayout({
   render: () => <section />,
 });
@@ -10,7 +12,9 @@ const entry = scope.createResourceComponents({
   lazy: () => import('./lazy-scoped-content'),
 });
 const Shell = scope.createComponent({
-  resources: { appointments: entry },
+  resources: {
+    appointments: entry,
+  },
   render: (_, ctx) => <ctx.Appointments />,
 });
 export const Appointments = Shell.asHOF()('appointments');

@@ -1,10 +1,4 @@
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { createInspectionStore } from '@jfdevelops/react-layout-devtools-core';
 import { ReactLayoutDevtools, ReactLayoutDevtoolsContent } from '../src';
@@ -17,10 +11,26 @@ afterEach(() => {
 });
 function app() {
   const store = createInspectionStore();
-  store.node({ id: 'resource', kind: 'resource', label: 'users' });
-  store.node({ id: 'layout', kind: 'layout', label: 'UsersLayout' });
-  store.node({ id: 'state', kind: 'state', label: 'default' });
-  store.node({ id: 'header', kind: 'composable', label: 'Header' });
+  store.node({
+    id: 'resource',
+    kind: 'resource',
+    label: 'users',
+  });
+  store.node({
+    id: 'layout',
+    kind: 'layout',
+    label: 'UsersLayout',
+  });
+  store.node({
+    id: 'state',
+    kind: 'state',
+    label: 'default',
+  });
+  store.node({
+    id: 'header',
+    kind: 'composable',
+    label: 'Header',
+  });
   store.edge('resource', 'layout', 'renders');
   store.edge('layout', 'state', 'defines');
   store.edge('state', 'header', 'declares');
@@ -32,8 +42,15 @@ function app() {
   fixtures.push(element);
   let top = 20;
   vi.spyOn(element, 'getBoundingClientRect').mockImplementation(
-    () => ({ left: 10, top, width: 200, height: 80 }) as DOMRect
+    () =>
+      ({
+        left: 10,
+        top,
+        width: 200,
+        height: 80,
+      }) as DOMRect,
   );
+
   return {
     store,
     element,
@@ -48,8 +65,10 @@ it('highlights the toolbar current layout on hover and focus with global outline
   const { store, element } = app();
   const click = vi.fn();
   element.onclick = click;
-  render(<ReactLayoutDevtools source={store} variant="toolbar" />);
-  const current = screen.getByRole('button', { name: 'Current layout' });
+  render(<ReactLayoutDevtools source={store} variant='toolbar' />);
+  const current = screen.getByRole('button', {
+    name: 'Current layout',
+  });
   expect(boxes()).toHaveLength(0);
   fireEvent.pointerEnter(current);
   await waitFor(() => expect(boxes()).toHaveLength(1));
@@ -72,7 +91,9 @@ it('toggles a selected item highlight, follows scroll and DOM removal, and clear
   const { store, element, move } = app();
   const view = render(<ReactLayoutDevtoolsContent source={store} />);
   fireEvent.click(
-    screen.getByRole('button', { name: /^layout.*UsersLayout$/i })
+    screen.getByRole('button', {
+      name: /^layout.*UsersLayout$/i,
+    }),
   );
   const highlight = screen.getByRole('button', {
     name: 'Highlight UsersLayout on page',
@@ -82,15 +103,25 @@ it('toggles a selected item highlight, follows scroll and DOM removal, and clear
   expect(highlight).toHaveAttribute('aria-pressed', 'true');
   move();
   fireEvent.scroll(window);
-  await waitFor(() => expect(boxes()[0]).toHaveStyle({ top: '120px' }));
+  await waitFor(() =>
+    expect(boxes()[0]).toHaveStyle({
+      top: '120px',
+    }),
+  );
   fireEvent.click(highlight);
   expect(boxes()).toHaveLength(0);
   fireEvent.click(highlight);
   await waitFor(() => expect(boxes()).toHaveLength(1));
-  fireEvent.click(screen.getByRole('button', { name: /^state.*default$/i }));
+  fireEvent.click(
+    screen.getByRole('button', {
+      name: /^state.*default$/i,
+    }),
+  );
   expect(boxes()).toHaveLength(0);
   fireEvent.click(
-    screen.getByRole('button', { name: 'Highlight default on page' })
+    screen.getByRole('button', {
+      name: 'Highlight default on page',
+    }),
   );
   await waitFor(() => expect(boxes()).toHaveLength(1));
   element.remove();
@@ -103,7 +134,11 @@ it('falls back to owned composables, excluding references and graph cycles', asy
   const { store, element } = app();
   delete element.dataset.rlOwners;
   element.dataset.rlNode = 'header';
-  store.node({ id: 'unrelated', kind: 'composable', label: 'Shared' });
+  store.node({
+    id: 'unrelated',
+    kind: 'composable',
+    label: 'Shared',
+  });
   store.edge('header', 'unrelated', 'references');
   store.edge('header', 'layout', 'declares');
   const other = element.cloneNode() as HTMLElement;
@@ -116,12 +151,16 @@ it('falls back to owned composables, excluding references and graph cycles', asy
     width: 100,
     height: 80,
   } as DOMRect);
-  render(<ReactLayoutDevtools source={store} variant="toolbar" />);
+  render(<ReactLayoutDevtools source={store} variant='toolbar' />);
   fireEvent.pointerEnter(
-    screen.getByRole('button', { name: 'Current layout' })
+    screen.getByRole('button', {
+      name: 'Current layout',
+    }),
   );
   await waitFor(() => expect(boxes()).toHaveLength(1));
-  expect(boxes()[0]).toHaveStyle({ left: '10px' });
+  expect(boxes()[0]).toHaveStyle({
+    left: '10px',
+  });
 });
 
 it('measures visible children of display:contents roots and all mounted instances', async () => {
@@ -150,11 +189,18 @@ it('measures visible children of display:contents roots and all mounted instance
     width: 100,
     height: 80,
   } as DOMRect);
-  render(<ReactLayoutDevtools source={store} variant="toolbar" />);
+  render(<ReactLayoutDevtools source={store} variant='toolbar' />);
   fireEvent.pointerEnter(
-    screen.getByRole('button', { name: 'Current layout' })
+    screen.getByRole('button', {
+      name: 'Current layout',
+    }),
   );
   await waitFor(() => expect(boxes()).toHaveLength(2));
-  expect(boxes()[0]).toHaveStyle({ left: '15px', width: '120px' });
-  expect(boxes()[1]).toHaveStyle({ left: '400px' });
+  expect(boxes()[0]).toHaveStyle({
+    left: '15px',
+    width: '120px',
+  });
+  expect(boxes()[1]).toHaveStyle({
+    left: '400px',
+  });
 });

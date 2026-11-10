@@ -53,7 +53,7 @@ it('creates hosted layouts through direct, single and multiple resource factorie
       <Direct />
       <Bound />
       <Multiple />
-    </>
+    </>,
   );
   expect(screen.getByText('Direct')).toBeTruthy();
   expect(screen.getByText('Bound')).toBeTruthy();
@@ -121,7 +121,7 @@ it('validates host selections at runtime', () => {
         resource: 'create',
         title: 'Missing',
       },
-    ])
+    ]),
   ).toThrow('hostedBy');
   expect(() =>
     Reflect.apply(layout.createResourceLayout.forResource, undefined, [
@@ -129,7 +129,7 @@ it('validates host selections at runtime', () => {
         resource: 'create',
         hostedBy: 'teams',
       },
-    ])
+    ]),
   ).toThrow('hostedBy');
   expect(() =>
     Reflect.apply(root.defineResourceSurface, undefined, [
@@ -139,7 +139,7 @@ it('validates host selections at runtime', () => {
           resources: ['missing'],
         },
       },
-    ])
+    ]),
   ).toThrow('Unknown host');
 });
 
@@ -169,7 +169,7 @@ it('creates and registers a bag of surfaces', () => {
     defineResourceSurfaces({
       page: bag.page,
       pane: bag.pane,
-    }).pane
+    }).pane,
   ).toBe(bag.pane);
 });
 
@@ -255,7 +255,7 @@ it('uses the existing persistent shell implementation', () => {
   render(
     <shellBag.page.Shell>
       <Page />
-    </shellBag.page.Shell>
+    </shellBag.page.Shell>,
   );
   expect(screen.getByText('Shell page').closest('main')).toBeTruthy();
 });
@@ -356,7 +356,7 @@ it('retains composables and render-state maps in bag entries', () => {
   render(
     <Page>
       <Pane />
-    </Page>
+    </Page>,
   );
   expect(screen.getByText('Composed')).toBeTruthy();
   expect(screen.getByText('Default pane')).toBeTruthy();

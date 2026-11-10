@@ -1,11 +1,5 @@
 import { useLayoutEffect, useState } from 'react';
-import {
-  act,
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-} from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { createDefinedResourceLayout } from '../../src';
 
@@ -20,29 +14,41 @@ it('does not commit a second module fallback when a route swaps Loading for the 
     useLayoutEffect(() => {
       commits.push(label);
     }, [label]);
+
     return <p>{label}</p>;
   }
-  const factory = createDefinedResourceLayout({ resources: ['users'] });
+  const factory = createDefinedResourceLayout({
+    resources: ['users'],
+  });
   factory.defineLazyDefaults({
-    Loading: () => <Content label="Module loading" />,
+    Loading: () => <Content label='Module loading' />,
   });
   const Users = factory
     .defineResourceLayout({
       render: {
-        default: () => <Content label="Page" />,
-        Loading: () => <Content label="Resource loading" />,
+        default: () => <Content label='Page' />,
+        Loading: () => <Content label='Resource loading' />,
       },
     })
-    .createResourceLayout({ resource: 'users', name: 'Users' });
+    .createResourceLayout({
+      resource: 'users',
+      name: 'Users',
+    });
   let finish!: () => void;
   const gate = new Promise<void>((resolve) => {
     finish = resolve;
   });
   const load = vi.fn(async () => {
     await gate;
-    return { Users };
+
+    return {
+      Users,
+    };
   });
-  const Page = factory.defineResourceLayout.lazy({ resource: 'users', load });
+  const Page = factory.defineResourceLayout.lazy({
+    resource: 'users',
+    load,
+  });
   const pending = render(<Page.Loading />);
   expect(screen.getByText('Module loading')).toBeInTheDocument();
   await act(async () => {
@@ -61,8 +67,12 @@ it.each(['default', 'Loading', 'Error', 'NotFound'] as const)(
   'renders a new %s member synchronously after preload',
   async (member) => {
     const fallback = vi.fn(() => <p>Module loading</p>);
-    const factory = createDefinedResourceLayout({ resources: ['users'] });
-    factory.defineLazyDefaults({ Loading: fallback });
+    const factory = createDefinedResourceLayout({
+      resources: ['users'],
+    });
+    factory.defineLazyDefaults({
+      Loading: fallback,
+    });
     const Users = factory
       .defineResourceLayout({
         render: {
@@ -72,10 +82,15 @@ it.each(['default', 'Loading', 'Error', 'NotFound'] as const)(
           NotFound: () => <p>Resource missing</p>,
         },
       })
-      .createResourceLayout({ resource: 'users', name: 'Users' });
+      .createResourceLayout({
+        resource: 'users',
+        name: 'Users',
+      });
     const Page = factory.defineResourceLayout.lazy({
       resource: 'users',
-      load: async () => ({ Users }),
+      load: async () => ({
+        Users,
+      }),
     });
     await Page.preload();
     const View = member === 'default' ? Page : Page[member];
@@ -86,28 +101,50 @@ it.each(['default', 'Loading', 'Error', 'NotFound'] as const)(
         Loading: 'Resource loading',
         Error: 'Resource error',
         NotFound: 'Resource missing',
-      }[member]
+      }[member],
     );
     expect(fallback).not.toHaveBeenCalled();
-  }
+  },
 );
 
 it('preserves loaded child state when its lazy boundary rerenders', async () => {
   function Counter() {
     const [count, setCount] = useState(0);
+
     return <button onClick={() => setCount(count + 1)}>Count {count}</button>;
   }
-  const factory = createDefinedResourceLayout({ resources: ['users'] });
+  const factory = createDefinedResourceLayout({
+    resources: ['users'],
+  });
   const Users = factory
-    .defineResourceLayout({ render: () => <Counter /> })
-    .createResourceLayout({ resource: 'users', name: 'Users' });
+    .defineResourceLayout({
+      render: () => <Counter />,
+    })
+    .createResourceLayout({
+      resource: 'users',
+      name: 'Users',
+    });
   const Page = factory.defineResourceLayout.lazy({
     resource: 'users',
-    load: async () => ({ Users }),
+    load: async () => ({
+      Users,
+    }),
   });
   const view = render(<Page />);
-  fireEvent.click(await screen.findByRole('button', { name: 'Count 0' }));
-  expect(screen.getByRole('button', { name: 'Count 1' })).toBeInTheDocument();
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: 'Count 0',
+    }),
+  );
+  expect(
+    screen.getByRole('button', {
+      name: 'Count 1',
+    }),
+  ).toBeInTheDocument();
   view.rerender(<Page />);
-  expect(screen.getByRole('button', { name: 'Count 1' })).toBeInTheDocument();
+  expect(
+    screen.getByRole('button', {
+      name: 'Count 1',
+    }),
+  ).toBeInTheDocument();
 });

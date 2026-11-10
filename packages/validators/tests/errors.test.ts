@@ -14,8 +14,6 @@ describe('validator errors', () => {
   });
 
   it('keeps invalid record keys identifiable as type errors', () => {
-    expect(new InvalidRecordKeyError('Invalid record key')).toBeInstanceOf(
-      TypeError,
-    );
+    expect(new InvalidRecordKeyError('Invalid record key')).toBeInstanceOf(TypeError);
   });
 });

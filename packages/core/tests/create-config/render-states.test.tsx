@@ -14,17 +14,26 @@ describe('resource layout render states', () => {
 
   it('allows states reusing required children props to render without children', () => {
     const { createRenderState, defineResourceLayout: defineBoundLayout } =
-      createDefinedResourceLayout({ resources: ['users'] });
+      createDefinedResourceLayout({
+        resources: ['users'],
+      });
     const Layout = createRenderState({
       state: 'Layout',
-      props: { custom: { children: createProp.component({ type: 'ReactNode' }) } },
+      props: {
+        custom: {
+          children: createProp.component({
+            type: 'ReactNode',
+          }),
+        },
+      },
       render: ({ children }) => <main>{children}</main>,
     });
-    const state = (name: 'Loading' | 'Error' | 'NotFound') => createRenderState({
-      state: name,
-      props: Layout.Layout.props,
-      render: ({ children }) => <p>{children ?? name}</p>,
-    });
+    const state = (name: 'Loading' | 'Error' | 'NotFound') =>
+      createRenderState({
+        state: name,
+        props: Layout.Layout.props,
+        render: ({ children }) => <p>{children ?? name}</p>,
+      });
     const { createResourceLayout } = defineBoundLayout({
       render: {
         default: () => <></>,
@@ -33,9 +42,14 @@ describe('resource layout render states', () => {
         ...state('NotFound'),
       },
     });
-    const Users = createResourceLayout({ resource: 'users', name: 'Users' });
+    const Users = createResourceLayout({
+      resource: 'users',
+      name: 'Users',
+    });
     for (const State of [Users.Loading, Users.Error, Users.NotFound]) {
-      expectTypeOf<React.ComponentProps<typeof State>>().toMatchTypeOf<{ children?: React.ReactNode }>();
+      expectTypeOf<React.ComponentProps<typeof State>>().toMatchTypeOf<{
+        children?: React.ReactNode;
+      }>();
       const view = render(<State />);
       expect(view.container.textContent).toMatch(/Loading|Error|NotFound/);
       view.unmount();
@@ -45,36 +59,74 @@ describe('resource layout render states', () => {
   });
 
   it('allows lazy route states and library fallbacks to omit inherited children', async () => {
-    const factory = createDefinedResourceLayout({ resources: ['users'] });
-    const props = { custom: { children: createProp.component({ type: 'ReactNode' }) } };
+    const factory = createDefinedResourceLayout({
+      resources: ['users'],
+    });
+    const props = {
+      custom: {
+        children: createProp.component({
+          type: 'ReactNode',
+        }),
+      },
+    };
     const { createResourceLayout } = factory.defineResourceLayout({
       render: {
         default: () => <p>Ready</p>,
-        ...factory.createRenderState({ state: 'Loading', props, render: () => <p>Pending</p> }),
-        ...factory.createRenderState({ state: 'Error', props, render: () => <p>Failed</p> }),
-        ...factory.createRenderState({ state: 'NotFound', props, render: () => <p>Missing</p> }),
+        ...factory.createRenderState({
+          state: 'Loading',
+          props,
+          render: () => <p>Pending</p>,
+        }),
+        ...factory.createRenderState({
+          state: 'Error',
+          props,
+          render: () => <p>Failed</p>,
+        }),
+        ...factory.createRenderState({
+          state: 'NotFound',
+          props,
+          render: () => <p>Missing</p>,
+        }),
       },
     });
-    const Users = createResourceLayout({ resource: 'users', name: 'Users' });
-    const Page = factory.defineResourceLayout.lazy({ resource: 'users', load: async () => ({ Users }) });
+    const Users = createResourceLayout({
+      resource: 'users',
+      name: 'Users',
+    });
+    const Page = factory.defineResourceLayout.lazy({
+      resource: 'users',
+      load: async () => ({
+        Users,
+      }),
+    });
     await Page.preload();
     for (const State of [Page.Loading, Page.Error, Page.NotFound]) {
       const view = render(<State />);
       expect(await screen.findByText(/Pending|Failed|Missing/)).toBeInTheDocument();
       view.unmount();
     }
-    const fallbacks = (Users as unknown as { [lazyStatesSymbol]: import('../../src/lazy/types').LazyResourceStates })[lazyStatesSymbol];
+    const fallbacks = (
+      Users as unknown as { [lazyStatesSymbol]: import('../../src/lazy/types').LazyResourceStates }
+    )[lazyStatesSymbol];
     const Loading = fallbacks.Loading!;
-    const view = render(<Loading resource="users" />);
+    const view = render(<Loading resource='users' />);
     expect(screen.getByText('Pending')).toBeInTheDocument();
     view.unmount();
     const ErrorFallback = fallbacks.Error!;
-    render(<ErrorFallback resource="users" error={new ResourceModuleLoadError('users', 'offline')} retry={() => {}} />);
+    render(
+      <ErrorFallback
+        resource='users'
+        error={new ResourceModuleLoadError('users', 'offline')}
+        retry={() => {}}
+      />,
+    );
     expect(screen.getByText('Failed')).toBeInTheDocument();
   });
 
   it('types omitted children as optional in derived state render callbacks', () => {
-    const factory = createDefinedResourceLayout({ resources: ['users'] });
+    const factory = createDefinedResourceLayout({
+      resources: ['users'],
+    });
     const Source = factory.createRenderState({
       state: 'Layout',
       render: () => <></>,
@@ -82,15 +134,28 @@ describe('resource layout render states', () => {
     const ErrorState = factory.createRenderState.fromState({
       ref: Source,
       state: 'Error',
-      props: { custom: { children: createProp.string() } },
+      props: {
+        custom: {
+          children: createProp.string(),
+        },
+      },
       render: ({ children }) => {
         expectTypeOf(children).toEqualTypeOf<string | undefined>();
+
         return <p>{children ?? 'No derived children'}</p>;
       },
     });
-    const Users = factory.defineResourceLayout({
-      render: { default: () => <></>, ...ErrorState },
-    }).createResourceLayout({ resource: 'users', name: 'Users' });
+    const Users = factory
+      .defineResourceLayout({
+        render: {
+          default: () => <></>,
+          ...ErrorState,
+        },
+      })
+      .createResourceLayout({
+        resource: 'users',
+        name: 'Users',
+      });
     render(<Users.Error />);
     expect(screen.getByText('No derived children')).toBeInTheDocument();
   });
@@ -98,42 +163,90 @@ describe('resource layout render states', () => {
   it.each([true, false])('preserves config-only children when required is %s', (required) => {
     const factory = createDefinedResourceLayout({
       resources: ['users'],
-      options: { children: createProp.component({ type: 'ReactNode' }).optional() },
+      options: {
+        children: createProp
+          .component({
+            type: 'ReactNode',
+          })
+          .optional(),
+      },
     });
     const Loading = factory.createRenderState({
       state: 'Loading',
-      props: { include: { children: { required, suppliedVia: 'config' } } },
+      props: {
+        include: {
+          children: {
+            required,
+            suppliedVia: 'config',
+          },
+        },
+      },
       render: ({ children }) => <p>{children ?? 'No configured children'}</p>,
     });
-    const layout = factory.defineResourceLayout({ render: { default: () => <></>, ...Loading } });
-    const Users = layout.createResourceLayout({ resource: 'users', name: 'Users', children: 'Configured children' });
-    const callProps = { children: 'Component override' };
+    const layout = factory.defineResourceLayout({
+      render: {
+        default: () => <></>,
+        ...Loading,
+      },
+    });
+    const Users = layout.createResourceLayout({
+      resource: 'users',
+      name: 'Users',
+      children: 'Configured children',
+    });
+    const callProps = {
+      children: 'Component override',
+    };
     const view = render(<Users.Loading {...callProps} />);
     expect(screen.getByText('Configured children')).toBeInTheDocument();
     expect(screen.queryByText('Component override')).not.toBeInTheDocument();
     view.unmount();
-    const Empty = layout.createResourceLayout({ resource: 'users', name: 'Empty' });
+    const Empty = layout.createResourceLayout({
+      resource: 'users',
+      name: 'Empty',
+    });
     render(<Empty.Loading />);
     expect(screen.getByText('No configured children')).toBeInTheDocument();
     () => {
       // The built-in slot accepts children; config-only includes still own its value.
-      <Users.Loading children="Unexpected" />;
+      <Users.Loading children='Unexpected' />;
     };
   });
 
   it('keeps component-supplied children available after optionalizing includes', () => {
     const factory = createDefinedResourceLayout({
       resources: ['users'],
-      options: { children: createProp.component({ type: 'ReactNode' }).optional() },
+      options: {
+        children: createProp
+          .component({
+            type: 'ReactNode',
+          })
+          .optional(),
+      },
     });
     const Loading = factory.createRenderState({
       state: 'Loading',
-      props: { include: { children: { required: true, suppliedVia: 'component' } } },
+      props: {
+        include: {
+          children: {
+            required: true,
+            suppliedVia: 'component',
+          },
+        },
+      },
       render: ({ children }) => <p>{children ?? 'No component children'}</p>,
     });
-    const Users = factory.defineResourceLayout({
-      render: { default: () => <></>, ...Loading },
-    }).createResourceLayout({ resource: 'users', name: 'Users' });
+    const Users = factory
+      .defineResourceLayout({
+        render: {
+          default: () => <></>,
+          ...Loading,
+        },
+      })
+      .createResourceLayout({
+        resource: 'users',
+        name: 'Users',
+      });
     const view = render(<Users.Loading />);
     expect(screen.getByText('No component children')).toBeInTheDocument();
     view.rerender(<Users.Loading>Component children</Users.Loading>);
@@ -143,16 +256,38 @@ describe('resource layout render states', () => {
   it('preserves config-only children declared with shorthand includes', () => {
     const factory = createDefinedResourceLayout({
       resources: ['users'],
-      options: { children: createProp.component({ type: 'ReactNode' }).optional() },
+      options: {
+        children: createProp
+          .component({
+            type: 'ReactNode',
+          })
+          .optional(),
+      },
     });
     const Loading = factory.createRenderState({
       state: 'Loading',
-      props: { include: { children: true } },
+      props: {
+        include: {
+          children: true,
+        },
+      },
       render: ({ children }) => <p>{children}</p>,
     });
-    const Users = factory.defineResourceLayout({ render: { default: () => <></>, ...Loading } })
-      .createResourceLayout({ resource: 'users', name: 'Users', children: 'Configured shorthand' });
-    const callProps = { children: 'Unexpected override' };
+    const Users = factory
+      .defineResourceLayout({
+        render: {
+          default: () => <></>,
+          ...Loading,
+        },
+      })
+      .createResourceLayout({
+        resource: 'users',
+        name: 'Users',
+        children: 'Configured shorthand',
+      });
+    const callProps = {
+      children: 'Unexpected override',
+    };
     render(<Users.Loading {...callProps} />);
     expect(screen.getByText('Configured shorthand')).toBeInTheDocument();
   });
@@ -161,23 +296,38 @@ describe('resource layout render states', () => {
     const { resources } = createDefinedResourceLayout({
       resources: [
         'users',
-        { value: 'posts', subResources: ['comments'] },
+        {
+          value: 'posts',
+          subResources: ['comments'],
+        },
       ],
     });
 
     expect(resources()).toEqual([
-      { value: 'users' },
+      {
+        value: 'users',
+      },
       {
         value: 'posts',
-        subResources: [{ value: 'comments' }],
+        subResources: [
+          {
+            value: 'comments',
+          },
+        ],
       },
     ]);
     expect(resources.raw()).toEqual([
       'users',
-      { value: 'posts', subResources: ['comments'] },
+      {
+        value: 'posts',
+        subResources: ['comments'],
+      },
     ]);
     expect(resources.pick('posts')()).toEqual([
-      { value: 'posts', subResources: ['comments'] },
+      {
+        value: 'posts',
+        subResources: ['comments'],
+      },
     ]);
   });
 
@@ -185,11 +335,17 @@ describe('resource layout render states', () => {
     const { createRenderState, defineResourceLayout: defineBoundLayout } =
       createDefinedResourceLayout({
         resources: ['users'],
-        options: { message: createProp.string() },
+        options: {
+          message: createProp.string(),
+        },
       });
     const Loading = createRenderState({
       state: 'Loading',
-      props: { include: { message: true } },
+      props: {
+        include: {
+          message: true,
+        },
+      },
       render: ({ message }) => <p>{message}</p>,
     });
     const { createResourceLayout } = defineBoundLayout({
@@ -214,8 +370,12 @@ describe('resource layout render states', () => {
       createDefinedResourceLayout({
         resources: ['users'],
         composables: (create) => ({
-          Layout: create({ name: 'Layout' }),
-          Content: create({ name: 'Content' }),
+          Layout: create({
+            name: 'Layout',
+          }),
+          Content: create({
+            name: 'Content',
+          }),
         }),
       });
     const Loading = createRenderState({
@@ -233,9 +393,15 @@ describe('resource layout render states', () => {
       },
     });
     const { createResourceLayout } = defineBoundLayout({
-      render: { default: () => <></>, ...Loading },
+      render: {
+        default: () => <></>,
+        ...Loading,
+      },
     });
-    const Users = createResourceLayout({ resource: 'users', name: 'Users' });
+    const Users = createResourceLayout({
+      resource: 'users',
+      name: 'Users',
+    });
 
     render(<Users.Loading />);
 
@@ -252,11 +418,19 @@ describe('resource layout render states', () => {
       layout: {
         render: {
           default: {
-            props: { include: { title: true } },
+            props: {
+              include: {
+                title: true,
+              },
+            },
             render: ({ title }) => <h1>{title}</h1>,
           },
           Loading: {
-            props: { include: { message: true } },
+            props: {
+              include: {
+                message: true,
+              },
+            },
             render: ({ message }) => <p>{message}</p>,
           },
           NotFound: () => <p>Missing</p>,
@@ -278,7 +452,11 @@ describe('resource layout render states', () => {
       </>,
     );
 
-    expect(screen.getByRole('heading', { name: 'Users' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', {
+        name: 'Users',
+      }),
+    ).toBeInTheDocument();
     expect(screen.getByText('Loading users')).toBeInTheDocument();
     expect(screen.getByText('Missing')).toBeInTheDocument();
   });
@@ -311,7 +489,9 @@ describe('resource layout render states', () => {
 
   it('creates reusable and deferred state fragments', async () => {
     const { createRenderState, defineResourceLayout: defineBoundLayout } =
-      createDefinedResourceLayout({ resources: ['users'] });
+      createDefinedResourceLayout({
+        resources: ['users'],
+      });
     const Loading = createRenderState.defer({
       state: 'Loading',
       render: () => <p>Deferred loading</p>,
@@ -322,7 +502,10 @@ describe('resource layout render states', () => {
         ...Loading,
       },
     });
-    const Users = createResourceLayout({ resource: 'users', name: 'Users' });
+    const Users = createResourceLayout({
+      resource: 'users',
+      name: 'Users',
+    });
 
     render(<Users.Loading />);
 
@@ -331,7 +514,9 @@ describe('resource layout render states', () => {
 
   it('renders deferred and lazy created states as the default component', async () => {
     const { createRenderState, defineResourceLayout: defineBoundLayout } =
-      createDefinedResourceLayout({ resources: ['users'] });
+      createDefinedResourceLayout({
+        resources: ['users'],
+      });
     const deferredDefinition = defineBoundLayout({
       render: {
         ...createRenderState.defer(() => <p>Deferred default</p>),
@@ -344,7 +529,9 @@ describe('resource layout render states', () => {
     const lazyDefault = createRenderState(() => <p>Lazy default</p>);
     const lazyDefinition = defineBoundLayout({
       render: {
-        default: createRenderState.lazy(async () => ({ lazyDefault })),
+        default: createRenderState.lazy(async () => ({
+          lazyDefault,
+        })),
         Loading: () => <p>Loading default</p>,
       },
     });
@@ -385,7 +572,9 @@ describe('resource layout render states', () => {
     const second = defineResourceLayout({
       resources: ['users'],
       layout: {
-        props: { custom: lifted },
+        props: {
+          custom: lifted,
+        },
         render: ({ title }) => <p>{title}</p>,
       },
     });
@@ -414,11 +603,15 @@ describe('resource layout render states', () => {
       name: 'Source',
     });
     const { createRenderState, defineResourceLayout: defineTargetLayout } =
-      createDefinedResourceLayout({ resources: ['users'] });
+      createDefinedResourceLayout({
+        resources: ['users'],
+      });
     const Preview = createRenderState({
       state: 'Preview',
       composables: () => ({
-        Layout: createComposableComponent({ name: 'TargetLayout' }),
+        Layout: createComposableComponent({
+          name: 'TargetLayout',
+        }),
         Loading: Source.Loading,
       }),
       render: (_props, { composables }) => (
@@ -464,7 +657,9 @@ describe('resource layout render states', () => {
 
   it('loads a separately chunked render state from its named module export', async () => {
     const { createRenderState, defineResourceLayout: defineBoundLayout } =
-      createDefinedResourceLayout({ resources: ['users'] });
+      createDefinedResourceLayout({
+        resources: ['users'],
+      });
     const auditState = createRenderState({
       state: 'Audit',
       props: {
@@ -482,7 +677,10 @@ describe('resource layout render states', () => {
         })),
       },
     });
-    const Users = createResourceLayout({ resource: 'users', name: 'Users' });
+    const Users = createResourceLayout({
+      resource: 'users',
+      name: 'Users',
+    });
 
     render(<Users.Audit label='Audit log' />);
 
@@ -491,17 +689,17 @@ describe('resource layout render states', () => {
 
   it('uses configured Loading while an imported state is suspended', async () => {
     const { createRenderState, defineResourceLayout: defineBoundLayout } =
-      createDefinedResourceLayout({ resources: ['users'] });
+      createDefinedResourceLayout({
+        resources: ['users'],
+      });
     const auditState = createRenderState({
       state: 'Audit',
       render: () => <p>Audit loaded</p>,
     });
     let resolveStateModule!: (module: { auditState: typeof auditState }) => void;
-    const stateModule = new Promise<{ auditState: typeof auditState }>(
-      (resolve) => {
-        resolveStateModule = resolve;
-      },
-    );
+    const stateModule = new Promise<{ auditState: typeof auditState }>((resolve) => {
+      resolveStateModule = resolve;
+    });
     const { createResourceLayout } = defineBoundLayout({
       render: {
         default: () => <h1>Users</h1>,
@@ -509,23 +707,32 @@ describe('resource layout render states', () => {
         Audit: createRenderState.lazy(() => stateModule),
       },
     });
-    const Users = createResourceLayout({ resource: 'users', name: 'Users' });
+    const Users = createResourceLayout({
+      resource: 'users',
+      name: 'Users',
+    });
 
     render(<Users.Audit />);
     expect(screen.getByText('Loading audit')).toBeInTheDocument();
 
-    resolveStateModule({ auditState });
+    resolveStateModule({
+      auditState,
+    });
     expect(await screen.findByText('Audit loaded')).toBeInTheDocument();
   });
 
   it('exposes retry in an automatic Error state context', async () => {
     const { createRenderState, defineResourceLayout: defineBoundLayout } =
-      createDefinedResourceLayout({ resources: ['users'] });
+      createDefinedResourceLayout({
+        resources: ['users'],
+      });
     const ErrorState = createRenderState({
       state: 'Error',
       props: {
         custom: {
-          error: createProp.object({ message: createProp.string() }),
+          error: createProp.object({
+            message: createProp.string(),
+          }),
         },
       },
       render: (_props, { retry }) => (
@@ -550,11 +757,16 @@ describe('resource layout render states', () => {
             throw new Error('audit download failed');
           }
 
-          return { auditState };
+          return {
+            auditState,
+          };
         }),
       },
     });
-    const Users = createResourceLayout({ resource: 'users', name: 'Users' });
+    const Users = createResourceLayout({
+      resource: 'users',
+      name: 'Users',
+    });
 
     render(<Users.Audit />);
     fireEvent.click(await screen.findByText('Retry audit'));
@@ -564,9 +776,7 @@ describe('resource layout render states', () => {
   });
 
   it('renders the configured Error state for default render failures', () => {
-    const consoleError = vi
-      .spyOn(console, 'error')
-      .mockImplementation(() => undefined);
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const definition = defineResourceLayout({
       resources: ['users'],
       layout: {
@@ -582,9 +792,7 @@ describe('resource layout render states', () => {
                 }),
               },
             },
-            render: ({ error }) => (
-              <p>{((error as Error).cause as Error).message}</p>
-            ),
+            render: ({ error }) => <p>{((error as Error).cause as Error).message}</p>,
           },
         },
       },
@@ -614,7 +822,9 @@ describe('resource layout render states', () => {
       resource: 'users',
       name: 'LoadedUsers',
     });
-    const suite = createDefinedResourceLayout({ resources: ['users'] });
+    const suite = createDefinedResourceLayout({
+      resources: ['users'],
+    });
     suite.defineLazyDefaults({
       Loading: () => <p>Loading resource code</p>,
     });
@@ -623,7 +833,10 @@ describe('resource layout render states', () => {
       resource: 'users',
       load: async () => {
         loadCount += 1;
-        return { LoadedUsers };
+
+        return {
+          LoadedUsers,
+        };
       },
     });
 
@@ -643,50 +856,88 @@ describe('resource layout render states', () => {
     expect(loadCount).toBe(1);
   });
 
-  it.each(['default', 'named'] as const)('lazy loads a namespace from a %s module export', async (exportName) => {
-    const suite = createDefinedResourceLayout({ resources: ['users'], namespace: true });
-    const definition = suite.defineResourceLayout({
-      render: {
-        default: {
-          props: { custom: { title: createProp.string() } },
-          render: ({ title }) => <h1>{title}</h1>,
+  it.each(['default', 'named'] as const)(
+    'lazy loads a namespace from a %s module export',
+    async (exportName) => {
+      const suite = createDefinedResourceLayout({
+        resources: ['users'],
+        namespace: true,
+      });
+      const definition = suite.defineResourceLayout({
+        render: {
+          default: {
+            props: {
+              custom: {
+                title: createProp.string(),
+              },
+            },
+            render: ({ title }) => <h1>{title}</h1>,
+          },
+          Detail: {
+            props: {
+              custom: {
+                count: createProp.number(),
+              },
+            },
+            render: ({ count }) => <p>Detail {count}</p>,
+          },
         },
-        Detail: {
-          props: { custom: { count: createProp.number() } },
-          render: ({ count }) => <p>Detail {count}</p>,
+      });
+      const LoadedUsers = definition.createResourceLayout({
+        resource: 'users',
+        name: 'LoadedUsers',
+      });
+      const load = vi.fn(async () => ({
+        [exportName]: LoadedUsers,
+        unrelated: {
+          Root: () => null,
         },
-      },
-    });
-    const LoadedUsers = definition.createResourceLayout({ resource: 'users', name: 'LoadedUsers' });
-    const load = vi.fn(async () => ({ [exportName]: LoadedUsers, unrelated: { Root: () => null } }));
-    const Users = suite.defineResourceLayout.lazy({ resource: 'users', load });
+      }));
+      const Users = suite.defineResourceLayout.lazy({
+        resource: 'users',
+        load,
+      });
 
-    expectTypeOf(Users).toBeCallableWith({ title: 'Namespace users' });
-    expectTypeOf(Users.Detail).toBeCallableWith({ count: 2 });
-    () => {
-      // @ts-expect-error lazy namespace roots retain required props
-      <Users />;
-      // @ts-expect-error lazy namespace states retain required props
-      <Users.Detail />;
-      // @ts-expect-error only declared states are exposed
-      Users.Unknown;
-    };
-    render(<><Users title='Namespace users' /><Users.Detail count={2} /></>);
-    expect(await screen.findByText('Namespace users')).toBeInTheDocument();
-    expect(await screen.findByText('Detail 2')).toBeInTheDocument();
-    expect(load).toHaveBeenCalledTimes(1);
-  });
+      expectTypeOf(Users).toBeCallableWith({
+        title: 'Namespace users',
+      });
+      expectTypeOf(Users.Detail).toBeCallableWith({
+        count: 2,
+      });
+      () => {
+        // @ts-expect-error lazy namespace roots retain required props
+        <Users />;
+        // @ts-expect-error lazy namespace states retain required props
+        <Users.Detail />;
+        // @ts-expect-error only declared states are exposed
+        Users.Unknown;
+      };
+      render(
+        <>
+          <Users title='Namespace users' />
+          <Users.Detail count={2} />
+        </>,
+      );
+      expect(await screen.findByText('Namespace users')).toBeInTheDocument();
+      expect(await screen.findByText('Detail 2')).toBeInTheDocument();
+      expect(load).toHaveBeenCalledTimes(1);
+    },
+  );
 
   it('retries a failed lazy resource import with the configured error state', async () => {
     const created = defineResourceLayout({
       resources: ['users'],
-      layout: { render: () => <h1>Recovered users</h1> },
+      layout: {
+        render: () => <h1>Recovered users</h1>,
+      },
     });
     const LoadedUsers = created.createResourceLayout({
       resource: 'users',
       name: 'LoadedUsers',
     });
-    const suite = createDefinedResourceLayout({ resources: ['users'] });
+    const suite = createDefinedResourceLayout({
+      resources: ['users'],
+    });
     suite.defineLazyDefaults({
       Error: ({ retry }) => (
         <button type='button' onClick={retry}>
@@ -704,7 +955,9 @@ describe('resource layout render states', () => {
           throw new Error('download failed');
         }
 
-        return { LoadedUsers };
+        return {
+          LoadedUsers,
+        };
       },
     });
 

@@ -47,9 +47,7 @@ export interface PathValueComponentGetter<Value> {
  * the element itself. The slot reader is attached once to the whole node union so it
  * stays callable when several resources remain possible.
  */
-export type ResolvedPathValue<Value> = [Extract<Value, JSX.Element>] extends [
-  never,
-]
+export type ResolvedPathValue<Value> = [Extract<Value, JSX.Element>] extends [never]
   ? [Extract<Value, object>] extends [never]
     ? Value
     : Extract<Value, object> & PathValueComponentGetter<Extract<Value, object>>
@@ -78,9 +76,7 @@ export type PathVariableGuards<
 > = {
   [Name in ExtractPathVariables<Path>]: {
     /** Narrows a value to what this variable accepts for this path. */
-    isVariable: (
-      key: unknown,
-    ) => key is PathVariableDomain<Resources, Config, Path, Name>;
+    isVariable: (key: unknown) => key is PathVariableDomain<Resources, Config, Path, Name>;
   };
 };
 
@@ -94,22 +90,12 @@ export interface GetComponentForPathApi<
   /** Variable names this path leaves open, in order of appearance. */
   readonly variables: ReadonlyArray<ExtractPathVariables<Path>>;
   /** Resources this path can target. */
-  readonly resources: ReadonlyArray<
-    PathResourceCandidates<Resources, Config, Path>
-  >;
-  isResource: (
-    key: unknown,
-  ) => key is PathResourceCandidates<Resources, Config, Path>;
-  isSubResource: (
-    key: unknown,
-  ) => key is PathSubResourceKeys<Resources, Config, Path>;
-  isComponent: (
-    key: unknown,
-  ) => key is PathComponentKeys<Resources, Config, Path>;
+  readonly resources: ReadonlyArray<PathResourceCandidates<Resources, Config, Path>>;
+  isResource: (key: unknown) => key is PathResourceCandidates<Resources, Config, Path>;
+  isSubResource: (key: unknown) => key is PathSubResourceKeys<Resources, Config, Path>;
+  isComponent: (key: unknown) => key is PathComponentKeys<Resources, Config, Path>;
   /** Narrows a sub-resource against one specific resource rather than the whole path. */
-  isValidSubResource: <
-    Resource extends PathResourceCandidates<Resources, Config, Path>,
-  >(
+  isValidSubResource: <Resource extends PathResourceCandidates<Resources, Config, Path>>(
     resource: Resource,
     subResource: unknown,
   ) => subResource is ResourceSubResourceKeys<Config, Resource>;
@@ -131,9 +117,7 @@ type GetComponentForPathCallable<
           PathVariables<Resources, Config, Path>
         >
       >
-    : () => ResolvedPathValue<
-        ResolveParameterizedPathValue<Resources, Config, Path, {}>
-      >;
+    : () => ResolvedPathValue<ResolveParameterizedPathValue<Resources, Config, Path, {}>>;
 
 /**
  * Reusable getter bound to one path. Call it with the variables the path left open.
@@ -157,9 +141,7 @@ export type CreateGetComponentForPath<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Config,
   AllowedPath extends string,
-> = <const Path extends AllowedPath>(
-  path: Path,
-) => GetComponentForPath<Resources, Config, Path>;
+> = <const Path extends AllowedPath>(path: Path) => GetComponentForPath<Resources, Config, Path>;
 
 const componentGetters = new WeakMap<object, object>();
 
@@ -201,17 +183,12 @@ export function createGetComponentForPath<
   const componentKeys = collectPathComponentKeys(config, path);
 
   function getComponentForPath(variables?: PathVariableValues) {
-    return attachComponentGetter(
-      resolveParameterizedPath(config, path, variables ?? {}),
-    );
+    return attachComponentGetter(resolveParameterizedPath(config, path, variables ?? {}));
   }
 
-  const isResource = (key: unknown) =>
-    typeof key === 'string' && resources.includes(key);
-  const isSubResource = (key: unknown) =>
-    typeof key === 'string' && subResourceKeys.includes(key);
-  const isComponent = (key: unknown) =>
-    typeof key === 'string' && componentKeys.includes(key);
+  const isResource = (key: unknown) => typeof key === 'string' && resources.includes(key);
+  const isSubResource = (key: unknown) => typeof key === 'string' && subResourceKeys.includes(key);
+  const isComponent = (key: unknown) => typeof key === 'string' && componentKeys.includes(key);
 
   const guardForVariable = (name: string) => {
     if (name === 'resource') {
@@ -226,7 +203,12 @@ export function createGetComponentForPath<
   };
 
   const variableGuards = Object.fromEntries(
-    variableNames.map((name) => [name, { isVariable: guardForVariable(name) }]),
+    variableNames.map((name) => [
+      name,
+      {
+        isVariable: guardForVariable(name),
+      },
+    ]),
   );
 
   return Object.assign(

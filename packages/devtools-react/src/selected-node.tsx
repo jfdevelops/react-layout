@@ -19,27 +19,32 @@ import { loadChip } from './load-status';
 import { LoadErrorDetails } from './load-error-details';
 
 function ancestry(graph: GraphSnapshot, id: string): GraphNode[] {
-  function find(
-    branch: InspectionTreeNode,
-    parents: GraphNode[]
-  ): GraphNode[] | undefined {
-    if (branch.reference) return;
+  function find(branch: InspectionTreeNode, parents: GraphNode[]): GraphNode[] | undefined {
+    if (branch.reference) {
+      return;
+    }
 
     const path = [...parents, branch.node];
 
-    if (branch.node.id === id) return path;
+    if (branch.node.id === id) {
+      return path;
+    }
 
     for (const child of branch.children) {
       const result = find(child, path);
 
-      if (result) return result;
+      if (result) {
+        return result;
+      }
     }
   }
 
   for (const root of buildInspectionTree(graph)) {
     const result = find(root, []);
 
-    if (result) return result;
+    if (result) {
+      return result;
+    }
   }
 
   return graph.nodes.filter((node) => node.id === id);
@@ -63,15 +68,19 @@ export function SelectedNode({
   onSelect: (id: string) => void;
 }) {
   const path = useMemo(() => ancestry(graph, node.id), [graph, node.id]);
-  const related = graph.edges.filter(
-    (edge) => edge.source === node.id || edge.target === node.id
-  );
+  const related = graph.edges.filter((edge) => edge.source === node.id || edge.target === node.id);
   const status = node.active > 0 ? palette.active : palette.inactive;
   const loadStatus = loadChip(node);
 
   return (
-    <article style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <nav aria-label="Selected node path">
+    <article
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 20,
+      }}
+    >
+      <nav aria-label='Selected node path'>
         <ol
           style={{
             display: 'flex',
@@ -94,7 +103,12 @@ export function SelectedNode({
               }}
             >
               {index > 0 && (
-                <span aria-hidden="true" style={{ color: '#64748b' }}>
+                <span
+                  aria-hidden='true'
+                  style={{
+                    color: '#64748b',
+                  }}
+                >
                   ›
                 </span>
               )}
@@ -112,15 +126,19 @@ export function SelectedNode({
                   textAlign: 'left',
                 }}
               >
-                {part.kind === 'resource'
-                  ? part.label.split('.').at(-1)
-                  : part.label}
+                {part.kind === 'resource' ? part.label.split('.').at(-1) : part.label}
               </Button>
             </li>
           ))}
         </ol>
       </nav>
-      <header style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <header
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+        }}
+      >
         <div
           style={{
             display: 'flex',
@@ -151,13 +169,9 @@ export function SelectedNode({
             )}
             {node.label}
           </h3>
-          <HelpTooltip
-            content={
-              highlighted ? 'Stop highlighting on page' : 'Highlight on page'
-            }
-          >
+          <HelpTooltip content={highlighted ? 'Stop highlighting on page' : 'Highlight on page'}>
             <Button
-              size="icon"
+              size='icon'
               aria-label={`Highlight ${node.label} on page`}
               aria-pressed={highlighted}
               disabled={!onHighlight}
@@ -183,13 +197,14 @@ export function SelectedNode({
           >
             <Badge
               tabIndex={0}
-              aria-label={`${node.active} mounted instance${
-                node.active === 1 ? '' : 's'
-              }`}
-              style={{ ...status, gap: 6 }}
+              aria-label={`${node.active} mounted instance${node.active === 1 ? '' : 's'}`}
+              style={{
+                ...status,
+                gap: 6,
+              }}
             >
               <span
-                aria-hidden="true"
+                aria-hidden='true'
                 style={{
                   width: 6,
                   height: 6,
@@ -225,18 +240,28 @@ export function SelectedNode({
         inspector={inspector}
         palette={palette}
       />
-      <InspectionDetails
-        key={node.id}
-        details={node.details ?? {}}
-        palette={palette}
-      />
+      <InspectionDetails key={node.id} details={node.details ?? {}} palette={palette} />
       <section
-        aria-label="Relationships"
-        style={{ borderTop: '1px solid #243044', paddingTop: 16 }}
+        aria-label='Relationships'
+        style={{
+          borderTop: '1px solid #243044',
+          paddingTop: 16,
+        }}
       >
-        <h4 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 600 }}>
+        <h4
+          style={{
+            margin: '0 0 10px',
+            fontSize: 13,
+            fontWeight: 600,
+          }}
+        >
           Relationships{' '}
-          <span style={{ color: '#94a3b8', fontWeight: 400 }}>
+          <span
+            style={{
+              color: '#94a3b8',
+              fontWeight: 400,
+            }}
+          >
             {related.length}
           </span>
         </h4>

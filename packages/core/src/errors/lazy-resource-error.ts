@@ -35,15 +35,10 @@ export type LazyResourceError =
   | LazyResourceStateNotFoundError;
 
 export type LazyResourceErrorMap = {
-  [Code in LazyResourceError['code']]: Extract<
-    LazyResourceError,
-    { code: Code }
-  >;
+  [Code in LazyResourceError['code']]: Extract<LazyResourceError, { code: Code }>;
 };
 
-export function isLazyResourceError(
-  error: unknown,
-): error is LazyResourceError {
+export function isLazyResourceError(error: unknown): error is LazyResourceError {
   return (
     error instanceof ResourceModuleLoadError ||
     error instanceof LazyResourceModuleShapeError ||

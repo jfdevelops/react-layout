@@ -5,7 +5,7 @@ const context = type({
   part: 'string',
   expectedType: "'string' | 'number'",
   receivedType: 'string',
-  scope: "'namingPart'"
+  scope: "'namingPart'",
 });
 
 export type InvalidPartTypeContext = typeof context.infer;
@@ -15,12 +15,12 @@ export type InvalidPartTypeContext = typeof context.infer;
  */
 export class InvalidPartTypeError extends createReactLayoutError({
   code: 'invalidPartType',
-  scope: 'namingPart'
+  scope: 'namingPart',
 })
   .defineContext(context)
   .implement(
     ({ context, scope }) =>
       `[${scope}]: Naming part ${JSON.stringify(context.part)} must be a ${
         context.expectedType
-      }; received ${context.receivedType}.`
+      }; received ${context.receivedType}.`,
   ) {}

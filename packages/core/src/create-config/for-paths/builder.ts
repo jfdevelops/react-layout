@@ -16,20 +16,13 @@ import {
   flattenSubResourceParam,
   generateResourceConfigPaths,
 } from '../paths';
-import type {
-  PathComponentKeys,
-  PathVariables,
-  SubResourceParamValue,
-} from '../paths';
+import type { PathComponentKeys, PathVariables, SubResourceParamValue } from '../paths';
 import {
   createGetComponentForPath,
   type CreateGetComponentForPath,
 } from './get-component-for-path';
 
-type UnwrapTargetPaths<Paths> = Paths extends readonly [
-  infer First,
-  ...infer Rest,
-]
+type UnwrapTargetPaths<Paths> = Paths extends readonly [infer First, ...infer Rest]
   ? (First & string) | UnwrapTargetPaths<Rest>
   : Paths extends readonly (infer Path)[]
     ? Path & string
@@ -70,11 +63,7 @@ export type ForPathsRenderContext<
   /** Declared params merged with the props the component was called with. */
   params: Params;
   /** Creates a getter for any of the paths this component was built for. */
-  getComponentForPath: CreateGetComponentForPath<
-    Resources,
-    Config,
-    UnwrapTargetPaths<Paths>
-  >;
+  getComponentForPath: CreateGetComponentForPath<Resources, Config, UnwrapTargetPaths<Paths>>;
 };
 
 type HOFArgSelection<Params> = {
@@ -92,17 +81,12 @@ type HOFClosureValue<Params, Args> = [keyof Args] extends [never]
     : Show<Pick<Params, keyof Args & keyof Params>>;
 
 export interface RenderedPathComponentHOF<Params, Args> {
-  (closure: HOFClosureValue<Params, Args>): RenderedPathComponent<
-    Show<Omit<Params, keyof Args>>
-  >;
+  (closure: HOFClosureValue<Params, Args>): RenderedPathComponent<Show<Omit<Params, keyof Args>>>;
   /** Type-only view of the value this HOF closes over. At runtime this is `undefined`. */
   _args: HOFClosureValue<Params, Args>;
 }
 
-export interface RenderedPathComponent<
-  Params,
-  DisplayName extends string = string,
-> {
+export interface RenderedPathComponent<Params, DisplayName extends string = string> {
   (props: WithChildren<Params>): JSX.Element;
   displayName: DisplayName;
   /** Type-only view of the props this component accepts. */
@@ -126,10 +110,7 @@ type WithComponentKeyParam<
   ? { componentKey?: ComponentKeysForPaths<Resources, Config, Paths> }
   : { componentKey: ComponentKeysForPaths<Resources, Config, Paths> };
 
-type PickedPathParams<
-  Variables,
-  Picked,
-> = [keyof Picked] extends [never]
+type PickedPathParams<Variables, Picked> = [keyof Picked] extends [never]
   ? Variables
   : Pick<Variables, keyof Picked & keyof Variables>;
 
@@ -138,22 +119,14 @@ export type TargetPathBuilder<
   Config,
   Paths extends ReadonlyArray<string>,
   Params extends Record<string, unknown> = {},
-  Used extends
-    | 'addComponentKeyParams'
-    | 'addPathParams'
-    | 'addParams' = never,
+  Used extends 'addComponentKeyParams' | 'addPathParams' | 'addParams' = never,
 > = {
   render: (
-    renderer: (
-      context: ForPathsRenderContext<Resources, Config, Paths, Params>,
-    ) => JSX.Element,
+    renderer: (context: ForPathsRenderContext<Resources, Config, Paths, Params>) => JSX.Element,
   ) => RenderedPathComponent<Params> & {
     /** Names the component, either statically or from the render context. */
     setDisplayName<Name extends string>(
-      name: ValueOrFunction<
-        Name,
-        ForPathsRenderContext<Resources, Config, Paths, Params>
-      >,
+      name: ValueOrFunction<Name, ForPathsRenderContext<Resources, Config, Paths, Params>>,
     ): RenderedPathComponent<Params, Name>;
   };
 } & ('addComponentKeyParams' extends Used
@@ -170,9 +143,7 @@ export type TargetPathBuilder<
         Resources,
         Config,
         Paths,
-        Show<
-          Params & WithComponentKeyParam<Resources, Config, Paths, Optional>
-        >,
+        Show<Params & WithComponentKeyParam<Resources, Config, Paths, Optional>>,
         Used | 'addComponentKeyParams'
       >;
     }) &
@@ -296,10 +267,7 @@ function validateParams(
     }
   }
 
-  if (
-    state.declaredPathParams.includes('subResource') &&
-    subResource !== undefined
-  ) {
+  if (state.declaredPathParams.includes('subResource') && subResource !== undefined) {
     const slugs = flattenSubResourceParam(subResource as SubResourceParamValue);
 
     for (const slug of slugs) {
@@ -313,10 +281,7 @@ function validateParams(
     }
   }
 
-  if (
-    state.declaredPathParams.includes('component') &&
-    component !== undefined
-  ) {
+  if (state.declaredPathParams.includes('component') && component !== undefined) {
     if (typeof component !== 'string' || !sets.components.includes(component)) {
       throw new InvalidComponentError({
         component,
@@ -341,10 +306,7 @@ function validateParams(
     return;
   }
 
-  if (
-    typeof componentKey !== 'string' ||
-    !sets.components.includes(componentKey)
-  ) {
+  if (typeof componentKey !== 'string' || !sets.components.includes(componentKey)) {
     throw new InvalidComponentError({
       component: componentKey,
       validComponents: [...sets.components],
@@ -352,10 +314,7 @@ function validateParams(
   }
 }
 
-function readClosureProps(
-  selected: string[],
-  closure: unknown,
-): Record<string, unknown> {
+function readClosureProps(selected: string[], closure: unknown): Record<string, unknown> {
   if (selected.length === 0) {
     return {};
   }
@@ -363,15 +322,15 @@ function readClosureProps(
   const [only] = selected;
 
   if (selected.length === 1 && only !== undefined) {
-    return { [only]: closure };
+    return {
+      [only]: closure,
+    };
   }
 
-  if (
-    typeof closure === 'object' &&
-    closure !== null &&
-    !Array.isArray(closure)
-  ) {
-    return { ...(closure as Record<string, unknown>) };
+  if (typeof closure === 'object' && closure !== null && !Array.isArray(closure)) {
+    return {
+      ...(closure as Record<string, unknown>),
+    };
   }
 
   return {};
@@ -384,7 +343,10 @@ function createRenderedComponent(
   boundProps: Record<string, unknown> = {},
 ) {
   function RenderedPathView(props: Record<string, unknown>): JSX.Element {
-    const merged = { ...boundProps, ...props };
+    const merged = {
+      ...boundProps,
+      ...props,
+    };
 
     if (resolveDisplayName) {
       RenderedPathView.displayName = resolveDisplayName(merged);
@@ -401,19 +363,19 @@ function createRenderedComponent(
       .map(([key]) => key);
 
     function hof(closure: unknown) {
-      const bound = createRenderedComponent(
-        runRenderer,
-        undefined,
-        resolveDisplayName,
-        { ...boundProps, ...readClosureProps(selected, closure) },
-      );
+      const bound = createRenderedComponent(runRenderer, undefined, resolveDisplayName, {
+        ...boundProps,
+        ...readClosureProps(selected, closure),
+      });
 
       bound.displayName = RenderedPathView.displayName;
 
       return bound;
     }
 
-    return Object.assign(hof, { _args: undefined as never });
+    return Object.assign(hof, {
+      _args: undefined as never,
+    });
   }
 
   return Object.assign(RenderedPathView, {
@@ -456,9 +418,7 @@ export function createTargetPathBuilder<
           .filter(([, enabled]) => enabled === true)
           .map(([key]) => key);
         const declared =
-          picked.length === 0
-            ? [...available]
-            : picked.filter((name) => available.has(name));
+          picked.length === 0 ? [...available] : picked.filter((name) => available.has(name));
 
         return makeBuilder({
           ...state,
@@ -473,7 +433,10 @@ export function createTargetPathBuilder<
         makeBuilder({
           ...state,
           usedParams: true,
-          paramDefaults: { ...state.paramDefaults, ...params },
+          paramDefaults: {
+            ...state.paramDefaults,
+            ...params,
+          },
         });
     }
 
@@ -484,7 +447,10 @@ export function createTargetPathBuilder<
       }) => JSX.Element,
     ) => {
       const buildContext = (props: Record<string, unknown>) => {
-        const params = { ...state.paramDefaults, ...props };
+        const params = {
+          ...state.paramDefaults,
+          ...props,
+        };
 
         validateParams(params, state, validationSets);
 
@@ -505,8 +471,7 @@ export function createTargetPathBuilder<
         };
       };
 
-      const runRenderer = (props: Record<string, unknown>) =>
-        renderer(buildContext(props));
+      const runRenderer = (props: Record<string, unknown>) => renderer(buildContext(props));
 
       const component = createRenderedComponent(runRenderer, {
         ...state.paramDefaults,
@@ -533,7 +498,9 @@ export function createTargetPathBuilder<
 
           return createRenderedComponent(
             runRenderer,
-            { ...state.paramDefaults },
+            {
+              ...state.paramDefaults,
+            },
             (props) => name(buildContext(props)),
           );
         },
@@ -572,7 +539,10 @@ export function createForPaths<
 
     for (const path of paths) {
       if (!validPaths.includes(path)) {
-        throw new InvalidPathError({ path, validPaths });
+        throw new InvalidPathError({
+          path,
+          validPaths,
+        });
       }
     }
 

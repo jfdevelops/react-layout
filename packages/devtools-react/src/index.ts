@@ -27,39 +27,25 @@ export const ReactLayoutDevtoolsContent =
     : EnabledContent;
 
 export const ReactLayoutDevtoolsProvider =
-  process.env.NODE_ENV === 'production'
-    ? disabled.ReactLayoutDevtoolsProvider
-    : EnabledProvider;
+  process.env.NODE_ENV === 'production' ? disabled.ReactLayoutDevtoolsProvider : EnabledProvider;
 
 export const ReactLayoutDevtoolsToolbar =
-  process.env.NODE_ENV === 'production'
-    ? disabled.ReactLayoutDevtoolsToolbar
-    : EnabledToolbar;
+  process.env.NODE_ENV === 'production' ? disabled.ReactLayoutDevtoolsToolbar : EnabledToolbar;
 
 export const ReactLayoutDevtoolsExplorer =
-  process.env.NODE_ENV === 'production'
-    ? disabled.ReactLayoutDevtoolsExplorer
-    : EnabledExplorer;
+  process.env.NODE_ENV === 'production' ? disabled.ReactLayoutDevtoolsExplorer : EnabledExplorer;
 
 export const ReactLayoutDevtoolsInspector =
-  process.env.NODE_ENV === 'production'
-    ? disabled.ReactLayoutDevtoolsInspector
-    : EnabledInspector;
+  process.env.NODE_ENV === 'production' ? disabled.ReactLayoutDevtoolsInspector : EnabledInspector;
 
 export const ReactLayoutDevtoolsFooter =
-  process.env.NODE_ENV === 'production'
-    ? disabled.ReactLayoutDevtoolsFooter
-    : EnabledFooter;
+  process.env.NODE_ENV === 'production' ? disabled.ReactLayoutDevtoolsFooter : EnabledFooter;
 
 export const ReactLayoutDevtoolsWorkspace =
-  process.env.NODE_ENV === 'production'
-    ? disabled.ReactLayoutDevtoolsWorkspace
-    : EnabledWorkspace;
+  process.env.NODE_ENV === 'production' ? disabled.ReactLayoutDevtoolsWorkspace : EnabledWorkspace;
 
 export const useReactLayoutDevtools =
-  process.env.NODE_ENV === 'production'
-    ? disabled.useReactLayoutDevtools
-    : useEnabledDevtools;
+  process.env.NODE_ENV === 'production' ? disabled.useReactLayoutDevtools : useEnabledDevtools;
 
 export type { ReactLayoutDevtoolsProviderProps } from './content';
 
@@ -73,8 +59,4 @@ export type {
   GraphSnapshot,
   InspectionSource,
 } from '@jfdevelops/react-layout-devtools-core';
-export type {
-  ReactLayoutDevtoolsConfig,
-  DevtoolsChipColor,
-  DevtoolsChipKind,
-} from './config';
+export type { ReactLayoutDevtoolsConfig, DevtoolsChipColor, DevtoolsChipKind } from './config';

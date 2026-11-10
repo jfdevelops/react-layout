@@ -14,7 +14,7 @@ export function isEditable(target: EventTarget | null) {
     target instanceof HTMLElement &&
     (target.isContentEditable ||
       !!target.closest(
-        'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]'
+        'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]',
       ))
   );
 }

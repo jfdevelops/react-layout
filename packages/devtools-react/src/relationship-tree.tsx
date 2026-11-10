@@ -1,10 +1,6 @@
 import { ChevronDownIcon, ChevronRightIcon } from './icons';
 import { useId, useState } from 'react';
-import type {
-  GraphEdge,
-  GraphNode,
-  GraphSnapshot,
-} from '@jfdevelops/react-layout-devtools-core';
+import type { GraphEdge, GraphNode, GraphSnapshot } from '@jfdevelops/react-layout-devtools-core';
 import type { ChipPalette } from './config';
 import { Button } from './components/ui/button';
 import { Badge } from './components/ui/badge';
@@ -33,10 +29,11 @@ function Branch({
 }) {
   const [expanded, setExpanded] = useState(true);
   const groupId = useId();
+
   return (
-    <li role="none">
+    <li role='none'>
       <Button
-        role="treeitem"
+        role='treeitem'
         aria-expanded={expanded}
         aria-owns={expanded ? groupId : undefined}
         aria-label={label}
@@ -60,44 +57,56 @@ function Branch({
           gap: 6,
         }}
       >
-        <span aria-hidden="true" style={{ width: 12 }}>
-          {expanded ? (
-            <ChevronDownIcon size={12} />
-          ) : (
-            <ChevronRightIcon size={12} />
-          )}
+        <span
+          aria-hidden='true'
+          style={{
+            width: 12,
+          }}
+        >
+          {expanded ? <ChevronDownIcon size={12} /> : <ChevronRightIcon size={12} />}
         </span>
         {label}
-        <span style={{ color: '#64748b' }}>{edges.length}</span>
+        <span
+          style={{
+            color: '#64748b',
+          }}
+        >
+          {edges.length}
+        </span>
       </Button>
       {expanded && (
         <ul
           id={groupId}
-          role="group"
+          role='group'
           aria-label={label}
-          style={{ listStyle: 'none', padding: '0 0 4px 18px', margin: 0 }}
+          style={{
+            listStyle: 'none',
+            padding: '0 0 4px 18px',
+            margin: 0,
+          }}
         >
           {edges.map((edge) => {
             const other = graph.nodes.find(
-              (candidate) =>
-                candidate.id ===
-                (edge.source === node.id ? edge.target : edge.source)
+              (candidate) => candidate.id === (edge.source === node.id ? edge.target : edge.source),
             );
-            if (!other) return null;
+            if (!other) {
+              return null;
+            }
+
             return (
-              <li role="none" key={edge.id}>
+              <li role='none' key={edge.id}>
                 <Button
-                  role="treeitem"
+                  role='treeitem'
                   aria-label={`${edge.relationship}: ${other.label}`}
                   onClick={() => onSelect(other.id)}
                   onKeyDown={(event) => {
                     if (event.key === 'ArrowLeft') {
                       event.preventDefault();
                       const parent =
-                        event.currentTarget.closest(
-                          '[role="group"]'
-                        )?.previousElementSibling;
-                      if (parent instanceof HTMLElement) parent.focus();
+                        event.currentTarget.closest('[role="group"]')?.previousElementSibling;
+                      if (parent instanceof HTMLElement) {
+                        parent.focus();
+                      }
                     }
                   }}
                   style={{
@@ -112,7 +121,11 @@ function Branch({
                     maxWidth: '100%',
                   }}
                 >
-                  <span style={{ overflowWrap: 'anywhere' }}>
+                  <span
+                    style={{
+                      overflowWrap: 'anywhere',
+                    }}
+                  >
                     {other.label}
                   </span>
                   <Badge style={palette[other.kind]}>{other.kind}</Badge>
@@ -137,9 +150,7 @@ export function RelationshipTree({
   palette: ChipPalette;
   onSelect: (id: string) => void;
 }) {
-  const related = graph.edges.filter(
-    (edge) => edge.source === node.id || edge.target === node.id
-  );
+  const related = graph.edges.filter((edge) => edge.source === node.id || edge.target === node.id);
   const groups = new Map<string, GraphEdge[]>();
   for (const edge of related) {
     const label =
@@ -148,18 +159,18 @@ export function RelationshipTree({
         : incomingLabels[edge.relationship];
     groups.set(label, [...(groups.get(label) ?? []), edge]);
   }
+
   return related.length ? (
     <ul
-      role="tree"
-      aria-label="Node relationships"
+      role='tree'
+      aria-label='Node relationships'
       onKeyDown={(event) => {
-        if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key))
+        if (!['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) {
           return;
+        }
         event.preventDefault();
         const rows = Array.from(
-          event.currentTarget.querySelectorAll<HTMLButtonElement>(
-            '[role="treeitem"]'
-          )
+          event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="treeitem"]'),
         );
         const index = rows.indexOf(event.target as HTMLButtonElement);
         const next =
@@ -169,14 +180,15 @@ export function RelationshipTree({
               ? rows.length - 1
               : Math.max(
                   0,
-                  Math.min(
-                    rows.length - 1,
-                    index + (event.key === 'ArrowDown' ? 1 : -1)
-                  )
+                  Math.min(rows.length - 1, index + (event.key === 'ArrowDown' ? 1 : -1)),
                 );
         rows[next]?.focus();
       }}
-      style={{ padding: 0, margin: 0, listStyle: 'none' }}
+      style={{
+        padding: 0,
+        margin: 0,
+        listStyle: 'none',
+      }}
     >
       {[...groups].map(([label, edges]) => (
         <Branch
@@ -191,7 +203,13 @@ export function RelationshipTree({
       ))}
     </ul>
   ) : (
-    <p style={{ fontSize: 12, color: '#94a3b8', margin: 0 }}>
+    <p
+      style={{
+        fontSize: 12,
+        color: '#94a3b8',
+        margin: 0,
+      }}
+    >
       No relationships declared.
     </p>
   );

@@ -1,10 +1,7 @@
 import type { WithChildren } from '@jfdevelops/react-layout-composables';
 import type { CustomPropsObject, ResolveRenderProps } from './custom-props';
 import { LayoutConfigurationError } from './errors';
-import type {
-  ComposableComponents,
-  MergePresetProps,
-} from '@jfdevelops/react-layout-composables';
+import type { ComposableComponents, MergePresetProps } from '@jfdevelops/react-layout-composables';
 import type { InPropsObject } from '@jfdevelops/react-layout-composables';
 import {
   EnumWrappedProp,
@@ -64,19 +61,23 @@ export type InPropsOptions<
   name: LiteralWrappedProp<Name, 'string', 'required'>;
   resource: EnumWrappedProp<ResourceEnum<Resources>, 'string', 'required'>;
 };
-export type InPropsFunction<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-> = <Name extends string>(
+export type InPropsFunction<Resources extends ReadonlyArray<ResourceDefinition>> = <
+  Name extends string,
+>(
   props: Show<InPropsOptions<Resources, Name>>,
 ) => InPropsObject;
-export type InPropsDefinition<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-> = InPropsObject | OptionSchema | InPropsFunction<Resources>;
+export type InPropsDefinition<Resources extends ReadonlyArray<ResourceDefinition>> =
+  | InPropsObject
+  | OptionSchema
+  | InPropsFunction<Resources>;
 export type InferredInProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
-> = Options extends OptionSchema ? SchemaOptionDefinitions<Options>
-  : Options extends InPropsFunction<Resources> ? ReturnType<Options> : Options;
+> = Options extends OptionSchema
+  ? SchemaOptionDefinitions<Options>
+  : Options extends InPropsFunction<Resources>
+    ? ReturnType<Options>
+    : Options;
 export type MergedLayoutInProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
@@ -153,9 +154,7 @@ type GetPropsKey<
   Visibility extends InternalPropsType,
   Passthrough extends IncludedPropSource | 'render' = 'render',
 > = {
-  [Key in keyof IncludeProps]: IncludedPropVisibility<
-    IncludeProps[Key]
-  > extends Visibility
+  [Key in keyof IncludeProps]: IncludedPropVisibility<IncludeProps[Key]> extends Visibility
     ? Passthrough extends 'render'
       ? Key
       : Passthrough extends IncludedPropPassthrough<IncludeProps[Key]>
@@ -168,10 +167,7 @@ type SelectedIncludedProps<
   IncludeProps extends IncludedProps<Props>,
   Visibility extends InternalPropsType,
   Passthrough extends IncludedPropSource | 'render' = 'render',
-> = Pick<
-  Props,
-  PropsKeys<Props, GetPropsKey<IncludeProps, Visibility, Passthrough>>
->;
+> = Pick<Props, PropsKeys<Props, GetPropsKey<IncludeProps, Visibility, Passthrough>>>;
 
 type OptionalPropDefinition<Definition> = Definition extends {
   optional(): infer OptionalDefinition;
@@ -184,12 +180,9 @@ export type IncludedComponentPropDefinitions<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,
 > = SelectedIncludedProps<Props, IncludeProps, 'required', 'component'> & {
-  [Key in keyof SelectedIncludedProps<
-    Props,
-    IncludeProps,
-    'optional',
-    'component'
-  >]: OptionalPropDefinition<
+  [
+    Key in keyof SelectedIncludedProps<Props, IncludeProps, 'optional', 'component'>
+  ]: OptionalPropDefinition<
     SelectedIncludedProps<Props, IncludeProps, 'optional', 'component'>[Key]
   >;
 };
@@ -198,32 +191,22 @@ export type ResolvedIncludedProps<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,
 > = ResolveLayoutProps<SelectedIncludedProps<Props, IncludeProps, 'required'>> &
-  Partial<
-    ResolveLayoutProps<SelectedIncludedProps<Props, IncludeProps, 'optional'>>
-  >;
+  Partial<ResolveLayoutProps<SelectedIncludedProps<Props, IncludeProps, 'optional'>>>;
 
 export type ResolvedIncludedConfigProps<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,
-> = ResolveLayoutInputProps<
-  SelectedIncludedProps<Props, IncludeProps, 'required', 'config'>
-> &
+> = ResolveLayoutInputProps<SelectedIncludedProps<Props, IncludeProps, 'required', 'config'>> &
   Partial<
-    ResolveLayoutInputProps<
-      SelectedIncludedProps<Props, IncludeProps, 'optional', 'config'>
-    >
+    ResolveLayoutInputProps<SelectedIncludedProps<Props, IncludeProps, 'optional', 'config'>>
   >;
 
 export type ResolvedIncludedComponentProps<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,
-> = ResolveLayoutInputProps<
-  SelectedIncludedProps<Props, IncludeProps, 'required', 'component'>
-> &
+> = ResolveLayoutInputProps<SelectedIncludedProps<Props, IncludeProps, 'required', 'component'>> &
   Partial<
-    ResolveLayoutInputProps<
-      SelectedIncludedProps<Props, IncludeProps, 'optional', 'component'>
-    >
+    ResolveLayoutInputProps<SelectedIncludedProps<Props, IncludeProps, 'optional', 'component'>>
   >;
 
 /**
@@ -233,28 +216,17 @@ export type ResolvedIncludedComponentProps<
 export type ResolvedIncludedPropsAsDefined<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,
-> = ResolveLayoutPropsAsDefined<
-  SelectedIncludedProps<Props, IncludeProps, 'required'>
-> &
-  Partial<
-    ResolveLayoutPropsAsDefined<
-      SelectedIncludedProps<Props, IncludeProps, 'optional'>
-    >
-  >;
+> = ResolveLayoutPropsAsDefined<SelectedIncludedProps<Props, IncludeProps, 'required'>> &
+  Partial<ResolveLayoutPropsAsDefined<SelectedIncludedProps<Props, IncludeProps, 'optional'>>>;
 export type LayoutRenderProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents = {},
-  IncludeProps extends IncludedProps<
-    MergedLayoutInProps<Resources, Options, Composables>
-  > = {},
+  IncludeProps extends IncludedProps<MergedLayoutInProps<Resources, Options, Composables>> = {},
   CustomProps extends CustomPropsObject = {},
 > = Show<
   ResolveRenderProps<CustomProps> &
-    ResolvedIncludedProps<
-      MergedLayoutInProps<Resources, Options, Composables>,
-      IncludeProps
-    >
+    ResolvedIncludedProps<MergedLayoutInProps<Resources, Options, Composables>, IncludeProps>
 >;
 
 export function getIncludedPropBehavior(value: unknown): {
@@ -272,15 +244,10 @@ export function getIncludedPropBehavior(value: unknown): {
   }
 
   const required =
-    'required' in value && typeof value.required === 'boolean'
-      ? value.required
-      : undefined;
+    'required' in value && typeof value.required === 'boolean' ? value.required : undefined;
   const suppliedVia = 'suppliedVia' in value ? value.suppliedVia : undefined;
 
-  if (
-    required === undefined ||
-    (suppliedVia !== 'component' && suppliedVia !== 'config')
-  ) {
+  if (required === undefined || (suppliedVia !== 'component' && suppliedVia !== 'config')) {
     return null;
   }
 

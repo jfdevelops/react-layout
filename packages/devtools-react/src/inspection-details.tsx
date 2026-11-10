@@ -1,8 +1,5 @@
 import { useState } from 'react';
-import {
-  inspectPropValidator,
-  mapInspectionDetails,
-} from '@jfdevelops/react-layout-devtools-core';
+import { inspectPropValidator, mapInspectionDetails } from '@jfdevelops/react-layout-devtools-core';
 import type { ChipPalette, DevtoolsChipKind } from './config';
 import { Badge } from './components/ui/badge';
 import { HelpTooltip } from './components/ui/tooltip';
@@ -12,9 +9,7 @@ import { control } from './theme';
 type Bag = Record<string, unknown>;
 
 const bag = (value: unknown): Bag =>
-  value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Bag)
-    : {};
+  value && typeof value === 'object' && !Array.isArray(value) ? (value as Bag) : {};
 
 const explanations = {
   included:
@@ -45,19 +40,15 @@ function propsFor(details: Bag): PropRow[] {
     ...Object.entries(bag(props.include)).map(([name, behavior]): PropRow => {
       const settings = bag(behavior);
       const visibility =
-        behavior === 'optional' || settings.required === false
-          ? 'optional'
-          : 'required';
-      const location =
-        settings.suppliedVia === 'component' ? 'component' : 'config';
+        behavior === 'optional' || settings.required === false ? 'optional' : 'required';
+      const location = settings.suppliedVia === 'component' ? 'component' : 'config';
 
       return {
         name,
         kind: 'included',
         visibility,
         type: inspectPropValidator(schemas[name])?.type,
-        locations:
-          visibility === 'optional' ? ['config', 'component'] : [location],
+        locations: visibility === 'optional' ? ['config', 'component'] : [location],
       };
     }),
     ...Object.entries(bag(props.custom)).map(([name, validator]): PropRow => {
@@ -74,13 +65,7 @@ function propsFor(details: Bag): PropRow[] {
   ];
 }
 
-export function InspectionDetails({
-  details,
-  palette,
-}: {
-  details: object;
-  palette: ChipPalette;
-}) {
+export function InspectionDetails({ details, palette }: { details: object; palette: ChipPalette }) {
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState('all');
   const [visibility, setVisibility] = useState('all');
@@ -94,9 +79,7 @@ export function InspectionDetails({
       (propType === '' || (row.type ?? 'Unknown') === propType) &&
       (kind === 'all' || row.kind === kind) &&
       (visibility === 'all' || row.visibility === visibility) &&
-      `${row.name} ${row.type ?? ''}`
-        .toLowerCase()
-        .includes(query.toLowerCase())
+      `${row.name} ${row.type ?? ''}`.toLowerCase().includes(query.toLowerCase()),
   );
 
   function chip(label: string, color: DevtoolsChipKind, help: string) {
@@ -111,22 +94,27 @@ export function InspectionDetails({
 
   const other = Object.fromEntries(
     Object.entries(info).filter(
-      ([key]) => key !== 'props' && key !== 'propSchemas' && key !== 'path'
-    )
+      ([key]) => key !== 'props' && key !== 'propSchemas' && key !== 'path',
+    ),
   );
   const safe = bag(mapInspectionDetails(other, (prop) => prop.type));
 
   function valueText(value: unknown): string {
-    if (value == null) return 'Not specified';
+    if (value == null) {
+      return 'Not specified';
+    }
 
-    if (Array.isArray(value)) return value.map(valueText).join(', ') || 'None';
+    if (Array.isArray(value)) {
+      return value.map(valueText).join(', ') || 'None';
+    }
 
-    if (typeof value === 'object')
+    if (typeof value === 'object') {
       return (
         Object.entries(value)
           .map(([key, child]) => `${key}: ${valueText(child)}`)
           .join(' · ') || 'None'
       );
+    }
 
     return String(value);
   }
@@ -148,19 +136,38 @@ export function InspectionDetails({
           }}
         >
           {Object.entries(safe).map(([key, value]) => (
-            <div key={key} style={{ display: 'contents' }}>
-              <dt style={{ color: '#94a3b8', textTransform: 'capitalize' }}>
+            <div
+              key={key}
+              style={{
+                display: 'contents',
+              }}
+            >
+              <dt
+                style={{
+                  color: '#94a3b8',
+                  textTransform: 'capitalize',
+                }}
+              >
                 {key.replace(/([A-Z])/g, ' $1')}
               </dt>
-              <dd style={{ margin: 0 }}>{valueText(value)}</dd>
+              <dd
+                style={{
+                  margin: 0,
+                }}
+              >
+                {valueText(value)}
+              </dd>
             </div>
           ))}
         </dl>
       )}
       {'props' in info && (
         <section
-          aria-label="Props"
-          style={{ borderTop: '1px solid #243044', paddingTop: 16 }}
+          aria-label='Props'
+          style={{
+            borderTop: '1px solid #243044',
+            paddingTop: 16,
+          }}
         >
           <h4
             style={{
@@ -173,7 +180,13 @@ export function InspectionDetails({
             }}
           >
             Props{' '}
-            <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 400 }}>
+            <span
+              style={{
+                color: '#94a3b8',
+                fontSize: 12,
+                fontWeight: 400,
+              }}
+            >
               {rows.length}
             </span>
           </h4>
@@ -185,9 +198,8 @@ export function InspectionDetails({
               margin: '0 0 12px',
             }}
           >
-            Included props reuse existing options or composable props. Custom
-            props define additional inputs. Hover or focus a chip to learn what
-            its setting means.
+            Included props reuse existing options or composable props. Custom props define
+            additional inputs. Hover or focus a chip to learn what its setting means.
           </p>
           {rows.length > 0 && (
             <div
@@ -199,14 +211,18 @@ export function InspectionDetails({
               }}
             >
               <Input
-                aria-label="Filter props"
-                placeholder="Find a prop or type…"
+                aria-label='Filter props'
+                placeholder='Find a prop or type…'
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                style={{ flex: '1 1 0', minWidth: 0, fontSize: 12 }}
+                style={{
+                  flex: '1 1 0',
+                  minWidth: 0,
+                  fontSize: 12,
+                }}
               />
               <select
-                aria-label="Filter prop type"
+                aria-label='Filter prop type'
                 value={propType}
                 onChange={(event) => setPropType(event.target.value)}
                 style={{
@@ -216,7 +232,7 @@ export function InspectionDetails({
                   fontSize: 12,
                 }}
               >
-                <option value="">All types</option>
+                <option value=''>All types</option>
                 {types.map((type) => (
                   <option key={type} value={type}>
                     {type}
@@ -224,7 +240,7 @@ export function InspectionDetails({
                 ))}
               </select>
               <select
-                aria-label="Filter prop kind"
+                aria-label='Filter prop kind'
                 value={kind}
                 onChange={(event) => setKind(event.target.value)}
                 style={{
@@ -234,12 +250,12 @@ export function InspectionDetails({
                   fontSize: 12,
                 }}
               >
-                <option value="all">All props</option>
-                <option value="included">Included</option>
-                <option value="custom">Custom</option>
+                <option value='all'>All props</option>
+                <option value='included'>Included</option>
+                <option value='custom'>Custom</option>
               </select>
               <select
-                aria-label="Filter prop requirement"
+                aria-label='Filter prop requirement'
                 value={visibility}
                 onChange={(event) => setVisibility(event.target.value)}
                 style={{
@@ -249,20 +265,30 @@ export function InspectionDetails({
                   fontSize: 12,
                 }}
               >
-                <option value="all">Any requirement</option>
-                <option value="required">Required</option>
-                <option value="optional">Optional</option>
+                <option value='all'>Any requirement</option>
+                <option value='required'>Required</option>
+                <option value='optional'>Optional</option>
               </select>
             </div>
           )}
           {rows.length > 0 && (
-            <p aria-live="polite" style={{ color: '#94a3b8', fontSize: 11 }}>
+            <p
+              aria-live='polite'
+              style={{
+                color: '#94a3b8',
+                fontSize: 11,
+              }}
+            >
               {filtered.length} of {rows.length} props
             </p>
           )}
           <ul
-            aria-label="Prop list"
-            style={{ padding: 0, margin: 0, listStyle: 'none' }}
+            aria-label='Prop list'
+            style={{
+              padding: 0,
+              margin: 0,
+              listStyle: 'none',
+            }}
           >
             {filtered.map((row) => (
               <li
@@ -294,26 +320,23 @@ export function InspectionDetails({
                     row.visibility ?? 'optional',
                     `${
                       row.visibility === 'required' ? 'Required' : 'Optional'
-                    } prop. Type: ${row.type}`
+                    } prop. Type: ${row.type}`,
                   )}
                 {row.visibility &&
-                  chip(
-                    row.visibility,
-                    row.visibility,
-                    explanations[row.visibility]
-                  )}
+                  chip(row.visibility, row.visibility, explanations[row.visibility])}
                 {chip(row.kind, row.kind, explanations[row.kind])}
-                {row.locations.map((location) =>
-                  chip(location, location, explanations[location])
-                )}
+                {row.locations.map((location) => chip(location, location, explanations[location]))}
               </li>
             ))}
           </ul>
           {filtered.length === 0 && (
-            <p style={{ color: '#94a3b8', fontSize: 12 }}>
-              {rows.length
-                ? 'No props match these filters.'
-                : 'No props declared for this node.'}
+            <p
+              style={{
+                color: '#94a3b8',
+                fontSize: 12,
+              }}
+            >
+              {rows.length ? 'No props match these filters.' : 'No props declared for this node.'}
             </p>
           )}
         </section>

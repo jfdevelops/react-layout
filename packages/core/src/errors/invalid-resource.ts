@@ -17,8 +17,7 @@ export class InvalidResourceError extends createReactLayoutError({
 })
   .defineContext(context)
   .implement(({ context, scope }) => {
-    const quotedResource =
-      JSON.stringify(context.resource) ?? `"${String(context.resource)}"`;
+    const quotedResource = JSON.stringify(context.resource) ?? `"${String(context.resource)}"`;
     const reasonMessage = context.reason ? ` ${context.reason}` : '';
     const validResourcesMessage =
       context.validResources && context.validResources.length > 0

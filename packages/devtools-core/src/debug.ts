@@ -1,8 +1,6 @@
 /** Optional metadata injected by development adapters. No framework or build-tool dependency. */
 export const layoutDebug = Symbol.for('@jfdevelops/react-layout/debug');
-export const layoutPreviewFixtures = Symbol.for(
-  '@jfdevelops/react-layout/preview-fixtures'
-);
+export const layoutPreviewFixtures = Symbol.for('@jfdevelops/react-layout/preview-fixtures');
 
 export interface SourceLocation {
   readonly file: string;
@@ -17,18 +15,11 @@ export interface LayoutDebugMetadata {
   readonly preview?: boolean;
 }
 
-export function getLayoutDebug(
-  value: unknown
-): LayoutDebugMetadata | undefined {
-  return value !== null &&
-    (typeof value === 'object' || typeof value === 'function')
-    ? (
-        globalThis as unknown as Record<
-          symbol,
-          WeakMap<object, LayoutDebugMetadata>
-        >
-      )[Symbol.for('@jfdevelops/react-layout/debug-registry')]?.get(value) ??
-        (value as Record<symbol, LayoutDebugMetadata>)[layoutDebug]
+export function getLayoutDebug(value: unknown): LayoutDebugMetadata | undefined {
+  return value !== null && (typeof value === 'object' || typeof value === 'function')
+    ? ((globalThis as unknown as Record<symbol, WeakMap<object, LayoutDebugMetadata>>)[
+        Symbol.for('@jfdevelops/react-layout/debug-registry')
+      ]?.get(value) ?? (value as Record<symbol, LayoutDebugMetadata>)[layoutDebug])
     : undefined;
 }
 

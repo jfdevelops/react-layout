@@ -1,10 +1,4 @@
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { createInspectionStore } from '@jfdevelops/react-layout-devtools-core';
 import { ReactLayoutDevtoolsContent } from '../src';
@@ -13,15 +7,21 @@ afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
   window.localStorage.clear();
-  document
-    .querySelectorAll('[data-app-fixture]')
-    .forEach((node) => node.remove());
+  document.querySelectorAll('[data-app-fixture]').forEach((node) => node.remove());
 });
 
 it('persists and resets outlines, labels their owners, selects and highlights nodes without blocking the app', async () => {
   const store = createInspectionStore();
-  store.node({ id: 'layout', kind: 'layout', label: 'AppointmentsLayout' });
-  store.node({ id: 'header', kind: 'composable', label: 'Header' });
+  store.node({
+    id: 'layout',
+    kind: 'layout',
+    label: 'AppointmentsLayout',
+  });
+  store.node({
+    id: 'header',
+    kind: 'composable',
+    label: 'Header',
+  });
   store.edge('layout', 'header', 'declares');
   const app = document.createElement('button');
   app.dataset.appFixture = '';
@@ -41,9 +41,7 @@ it('persists and resets outlines, labels their owners, selects and highlights no
         height: 50,
       }) as DOMRect,
   );
-  const view = render(
-    <ReactLayoutDevtoolsContent source={store} storageKey="outlines-test" />,
-  );
+  const view = render(<ReactLayoutDevtoolsContent source={store} storageKey='outlines-test' />);
   expect(document.querySelector('[data-rl-outline-layer]')).toBeNull();
   fireEvent.click(screen.getByLabelText('Show composable outlines'));
   const label = await screen.findByRole('button', {
@@ -51,21 +49,22 @@ it('persists and resets outlines, labels their owners, selects and highlights no
   });
   expect(label.textContent).toBe('Header · AppointmentsLayout');
   expect(
-    (document.querySelector('[data-rl-outline-layer]') as HTMLElement).style
-      .pointerEvents,
+    (document.querySelector('[data-rl-outline-layer]') as HTMLElement).style.pointerEvents,
   ).toBe('none');
   fireEvent.click(app);
   expect(click).toHaveBeenCalledOnce();
   fireEvent.pointerOver(label);
   expect(document.querySelector('[data-hovered-node="true"]')).toBeTruthy();
   fireEvent.click(label);
-  expect(screen.getByRole('heading', { name: 'Header' })).toBeTruthy();
+  expect(
+    screen.getByRole('heading', {
+      name: 'Header',
+    }),
+  ).toBeTruthy();
   top = 80;
   fireEvent.scroll(window);
   await waitFor(() =>
-    expect(
-      (document.querySelector('[data-rl-outline]') as HTMLElement).style.top,
-    ).toBe('80px'),
+    expect((document.querySelector('[data-rl-outline]') as HTMLElement).style.top).toBe('80px'),
   );
   app.remove();
   await waitFor(() =>
@@ -76,14 +75,10 @@ it('persists and resets outlines, labels their owners, selects and highlights no
     ).toBeNull(),
   );
   view.unmount();
-  render(
-    <ReactLayoutDevtoolsContent source={store} storageKey="outlines-test" />,
+  render(<ReactLayoutDevtoolsContent source={store} storageKey='outlines-test' />);
+  expect(screen.getByLabelText('Hide composable outlines').getAttribute('aria-pressed')).toBe(
+    'true',
   );
-  expect(
-    screen
-      .getByLabelText('Hide composable outlines')
-      .getAttribute('aria-pressed'),
-  ).toBe('true');
   fireEvent.click(screen.getByLabelText('Reset preferences'));
   expect(document.querySelector('[data-rl-outline-layer]')).toBeNull();
 });

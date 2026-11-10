@@ -12,6 +12,7 @@ it('exposes resource accessors in callback, object, deferred, and lazy builder s
     expectTypeOf(resources.current).toEqualTypeOf<'users' | 'posts'>();
     expectTypeOf(resources.raw()).toEqualTypeOf<readonly ['users', 'posts']>();
     expect(resources.pick('posts')()).toEqual(['posts']);
+
     return <p>default {resources.current}</p>;
   });
   const Detail = createRenderState({
@@ -26,12 +27,28 @@ it('exposes resource accessors in callback, object, deferred, and lazy builder s
     state: 'Imported',
     render: (_props, { resources }) => <p>imported {resources.current}</p>,
   });
-  const definition = defineResourceLayout({ render: {
-    ...Default, ...Detail, ...Pending,
-    Imported: createRenderState.lazy(async () => ({ Imported })),
-  } });
-  const Users = definition.createResourceLayout({ resource: 'users', name: 'Users' });
-  render(<><Users /><Users.Detail /><Users.Pending /><Users.Imported /></>);
+  const definition = defineResourceLayout({
+    render: {
+      ...Default,
+      ...Detail,
+      ...Pending,
+      Imported: createRenderState.lazy(async () => ({
+        Imported,
+      })),
+    },
+  });
+  const Users = definition.createResourceLayout({
+    resource: 'users',
+    name: 'Users',
+  });
+  render(
+    <>
+      <Users />
+      <Users.Detail />
+      <Users.Pending />
+      <Users.Imported />
+    </>,
+  );
   expect(screen.getByText('default users')).toBeInTheDocument();
   expect(screen.getByText('detail users')).toBeInTheDocument();
   expect(await screen.findByText('pending users')).toBeInTheDocument();

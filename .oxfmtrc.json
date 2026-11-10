@@ -1,0 +1,15 @@
+{
+  "singleQuote": true,
+  "jsxSingleQuote": true,
+  "objectWrap": "preserve",
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/coverage/**",
+    "**/node_modules/**",
+    "**/routeTree.gen.ts",
+    "pnpm-lock.yaml",
+    ".agents/**",
+    "docs/**",
+    "**/*.md"
+  ]
+}

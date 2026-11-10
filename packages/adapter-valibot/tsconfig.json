@@ -2,16 +2,10 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,
-    "types": [
-      "react"
-    ],
+    "types": ["react"],
     "paths": {
-      "@jfdevelops/react-layout-adapters": [
-        "../adapters/src/index.ts"
-      ]
+      "@jfdevelops/react-layout-adapters": ["../adapters/src/index.ts"]
     }
   },
-  "include": [
-    "src"
-  ]
+  "include": ["src"]
 }

@@ -16,10 +16,7 @@ import type { ScopedLazyContent } from '../../lazy/scoped-content';
 export type { ScopedComponentRenderFn } from '../../lazy/scoped-content';
 
 import type { ComponentType, JSX, ReactNode } from 'react';
-import type {
-  ComposableComponents,
-  MakeComposable,
-} from '@jfdevelops/react-layout-composables';
+import type { ComposableComponents, MakeComposable } from '@jfdevelops/react-layout-composables';
 import type { ResolvedBuiltPropShape, SafeKeyOf } from '@jfdevelops/react-layout-validator';
 import type {
   IncludedProps,
@@ -43,8 +40,7 @@ export type ScopedComponentAvailableProps<
   InProps extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
   LayoutCustomProps extends CustomPropsObject,
-> = MergedLayoutInProps<Resources, InProps, Composables> &
-  NormalizedCustomProps<LayoutCustomProps>;
+> = MergedLayoutInProps<Resources, InProps, Composables> & NormalizedCustomProps<LayoutCustomProps>;
 
 type ResourceComponentResolvedAvailableProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -55,12 +51,7 @@ type ResourceComponentResolvedAvailableProps<
   EntryCustomProps extends CustomPropsObject,
 > = ResolvedBuiltPropShape<
   NormalizedCustomProps<
-    ScopedComponentAvailableProps<
-      Resources,
-      InProps,
-      Composables,
-      LayoutCustomProps
-    > &
+    ScopedComponentAvailableProps<Resources, InProps, Composables, LayoutCustomProps> &
       ComponentCustomProps &
       EntryCustomProps
   >
@@ -147,25 +138,18 @@ type ResourceEntryDefined<EntryOrProps> =
       : {}
     : {};
 
-type WithDefinedIncluded<Include, Defined extends object> = Omit<
-  Include,
-  SafeKeyOf<Defined>
-> & {
+type WithDefinedIncluded<Include, Defined extends object> = Omit<Include, SafeKeyOf<Defined>> & {
   [Key in SafeKeyOf<Defined>]: true;
 };
 
 type WithDefinedOptional<Props, Defined extends object> = Show<
-  Omit<Props, SafeKeyOf<Defined>> &
-    Partial<Pick<Props, SafeKeyOf<Defined> & keyof Props>>
+  Omit<Props, SafeKeyOf<Defined>> & Partial<Pick<Props, SafeKeyOf<Defined> & keyof Props>>
 >;
 
 type MergedResourceEntryInclude<PropsByResource> = UnionToIntersection<
   PropsByResource[keyof PropsByResource] extends infer Props
     ? Props extends unknown
-      ? WithDefinedIncluded<
-          ResourceEntryInclude<Props>,
-          ResourceEntryDefined<Props>
-        >
+      ? WithDefinedIncluded<ResourceEntryInclude<Props>, ResourceEntryDefined<Props>>
       : never
     : never
 >;
@@ -184,12 +168,7 @@ export type ScopedResourceComponentProps<
   Composables extends ComposableComponents,
   LayoutCustomProps extends CustomPropsObject,
   ComponentIncludeProps extends IncludedProps<
-    ScopedComponentAvailableProps<
-      Resources,
-      InProps,
-      Composables,
-      LayoutCustomProps
-    >
+    ScopedComponentAvailableProps<Resources, InProps, Composables, LayoutCustomProps>
   >,
   ComponentCustomProps extends CustomPropsObject,
   Resource extends string,
@@ -197,17 +176,16 @@ export type ScopedResourceComponentProps<
 > = Show<
   Omit<
     ResolvedIncludedPropsAsDefined<
-      Input extends true ? InputDefinitions<ScopedComponentAvailableProps<
-        Resources, InProps, Composables, LayoutCustomProps
-      >> : ScopedComponentAvailableProps<
-        Resources,
-        InProps,
-        Composables,
-        LayoutCustomProps
-      >,
+      Input extends true
+        ? InputDefinitions<
+            ScopedComponentAvailableProps<Resources, InProps, Composables, LayoutCustomProps>
+          >
+        : ScopedComponentAvailableProps<Resources, InProps, Composables, LayoutCustomProps>,
       ComponentIncludeProps
     > &
-      (Input extends true ? ResolveCallPropsAsDefined<ComponentCustomProps> : ResolveRenderPropsAsDefined<ComponentCustomProps>),
+      (Input extends true
+        ? ResolveCallPropsAsDefined<ComponentCustomProps>
+        : ResolveRenderPropsAsDefined<ComponentCustomProps>),
     'resource'
   > & {
     children?: ReactNode;
@@ -235,12 +213,7 @@ export type ScopedResourceComponentCallProps<
   Composables extends ComposableComponents,
   LayoutCustomProps extends CustomPropsObject,
   ComponentIncludeProps extends IncludedProps<
-    ScopedComponentAvailableProps<
-      Resources,
-      InProps,
-      Composables,
-      LayoutCustomProps
-    >
+    ScopedComponentAvailableProps<Resources, InProps, Composables, LayoutCustomProps>
   >,
   ComponentCustomProps extends CustomPropsObject,
   Resource extends string,
@@ -249,16 +222,16 @@ export type ScopedResourceComponentCallProps<
 > = WithDefinedOptional<
   Show<
     (InProps extends OptionSchema ? StandardSchemaV1.InferInput<InProps> : {}) &
-    ScopedResourceComponentProps<
-      Resources,
-      InProps,
-      Composables,
-      LayoutCustomProps,
-      ComponentIncludeProps,
-      ComponentCustomProps,
-      Resource,
-      true
-    > &
+      ScopedResourceComponentProps<
+        Resources,
+        InProps,
+        Composables,
+        LayoutCustomProps,
+        ComponentIncludeProps,
+        ComponentCustomProps,
+        Resource,
+        true
+      > &
       Omit<PropsFromRenderResult<RenderResult>, 'children' | 'resource'>
   >,
   DefinedProps
@@ -297,12 +270,11 @@ export type JustScopedComponent<T> = {
  * Resources with no `components` reverse-infer as `unknown`. Treat that as an
  * empty map so sibling/context access stays closed.
  */
-export type NormalizeScopedComponentsMap<Components> =
-  unknown extends Components
-    ? {}
-    : Components extends Record<string, unknown>
-      ? Components
-      : {};
+export type NormalizeScopedComponentsMap<Components> = unknown extends Components
+  ? {}
+  : Components extends Record<string, unknown>
+    ? Components
+    : {};
 
 declare const scopedReusableResourceEntryBrand: unique symbol;
 
@@ -371,8 +343,7 @@ export type PropsFromScopedRender<Definition> = Definition extends {
  * component type returned from `render`.
  */
 export type ScopedComponentCallProps<Definition> = Show<
-  ResolveCallPropsAsDefined<ScopedComponentOwnProps<Definition>> &
-    PropsFromScopedRender<Definition>
+  ResolveCallPropsAsDefined<ScopedComponentOwnProps<Definition>> & PropsFromScopedRender<Definition>
 >;
 
 /**
@@ -402,14 +373,16 @@ export type ScopedComponentCompoundStatics<Result> = [Result] extends [never]
   ? {}
   : IsScopedRenderableComponentType<Result> extends true
     ? {
-        [Key in keyof Result as Key extends import('./scoped-render').ScopedCompoundName
-          ? Key extends ScopedComponentCompoundStaticKey
-            ? never
-            : // eslint-disable-next-line @typescript-eslint/no-explicit-any -- open args
-              Result[Key] extends (...args: any) => any
-              ? Key & string
-              : never
-          : never]: Result[Key] extends (props: infer Props) => any
+        [
+          Key in keyof Result as Key extends import('./scoped-render').ScopedCompoundName
+            ? Key extends ScopedComponentCompoundStaticKey
+              ? never
+              : // eslint-disable-next-line @typescript-eslint/no-explicit-any -- open args
+                Result[Key] extends (...args: any) => any
+                ? Key & string
+                : never
+            : never
+        ]: Result[Key] extends (props: infer Props) => any
           ? ScopedComponentSignature<Props extends object ? Props : {}>
           : never;
       }
@@ -462,12 +435,7 @@ export type ScopedResourceContextCallProps<
   Composables extends ComposableComponents,
   LayoutCustomProps extends CustomPropsObject,
   ComponentIncludeProps extends IncludedProps<
-    ScopedComponentAvailableProps<
-      ResourceDefinitions,
-      InProps,
-      Composables,
-      LayoutCustomProps
-    >
+    ScopedComponentAvailableProps<ResourceDefinitions, InProps, Composables, LayoutCustomProps>
   >,
   ComponentCustomProps extends CustomPropsObject,
   Resource extends string,
@@ -496,12 +464,7 @@ export type ScopedResourceComponentRenderContext<
   Composables extends ComposableComponents,
   LayoutCustomProps extends CustomPropsObject,
   ComponentIncludeProps extends IncludedProps<
-    ScopedComponentAvailableProps<
-      ResourceDefinitions,
-      InProps,
-      Composables,
-      LayoutCustomProps
-    >
+    ScopedComponentAvailableProps<ResourceDefinitions, InProps, Composables, LayoutCustomProps>
   >,
   ComponentCustomProps extends CustomPropsObject,
   ComponentsByResource,
@@ -516,9 +479,9 @@ export type ScopedResourceComponentRenderContext<
   Root: (props: Show<ResolveCallProps<LayoutCustomProps>>) => JSX.Element;
   state: StateNames;
 } & {
-  [Resource in keyof ComponentsByResource as Capitalize<
-    Resource & string
-  >]-?: ScopedComponentSignature<
+  [
+    Resource in keyof ComponentsByResource as Capitalize<Resource & string>
+  ]-?: ScopedComponentSignature<
     ScopedResourceContextCallProps<
       ResourceDefinitions,
       InProps,
@@ -527,9 +490,7 @@ export type ScopedResourceComponentRenderContext<
       ComponentIncludeProps,
       ComponentCustomProps,
       Resource & string,
-      ResourceEntryDefined<
-        Resource extends keyof PropsByResource ? PropsByResource[Resource] : {}
-      >
+      ResourceEntryDefined<Resource extends keyof PropsByResource ? PropsByResource[Resource] : {}>
     >
   > &
     LazyHandle &
@@ -563,12 +524,7 @@ export type ScopedComponentResourceEntry<
   Composables extends ComposableComponents,
   LayoutCustomProps extends CustomPropsObject,
   ComponentIncludeProps extends IncludedProps<
-    ScopedComponentAvailableProps<
-      ResourceDefinitions,
-      InProps,
-      Composables,
-      LayoutCustomProps
-    >
+    ScopedComponentAvailableProps<ResourceDefinitions, InProps, Composables, LayoutCustomProps>
   >,
   ComponentCustomProps extends CustomPropsObject,
   Resource extends string,
@@ -613,9 +569,7 @@ export type ScopedComponentResourceEntry<
           ComponentCustomProps & ResourceEntryCustom<EntryProps>,
           Resource
         > &
-          Show<
-            ResolveRenderPropsAsDefined<ScopedComponentOwnProps<Components[Name]>>
-          >,
+          Show<ResolveRenderPropsAsDefined<ScopedComponentOwnProps<Components[Name]>>>,
         ScopedRenderResult,
         Omit<ScopedComponentRenderContext<Components, StateNames>, Name>
       > &
@@ -648,12 +602,7 @@ export type ScopedComponentResourceEntries<
   Arguments extends ReadonlyArray<unknown>,
   LayoutCustomProps extends CustomPropsObject,
   ComponentIncludeProps extends IncludedProps<
-    ScopedComponentAvailableProps<
-      ResourceDefinitions,
-      InProps,
-      Composables,
-      LayoutCustomProps
-    >
+    ScopedComponentAvailableProps<ResourceDefinitions, InProps, Composables, LayoutCustomProps>
   >,
   ComponentCustomProps extends CustomPropsObject,
   PropsByResource,
@@ -668,9 +617,7 @@ export type ScopedComponentResourceEntries<
     ComponentIncludeProps,
     ComponentCustomProps,
     Resource & string,
-    Resource extends keyof PropsByResource
-      ? PropsByResource[Resource] & object
-      : {},
+    Resource extends keyof PropsByResource ? PropsByResource[Resource] & object : {},
     ComponentsByResource[Resource],
     StateNames
   > & {
@@ -689,10 +636,7 @@ export type ScopedComponentResourceEntries<
       : unknown;
   };
 } & Record<
-  Exclude<
-    keyof ComponentsByResource,
-    SelectedLayoutResources<ResourceDefinitions, Arguments>
-  >,
+  Exclude<keyof ComponentsByResource, SelectedLayoutResources<ResourceDefinitions, Arguments>>,
   never
 >;
 
@@ -706,12 +650,7 @@ export type ScopedBoundResourceComponentProps<
   Composables extends ComposableComponents,
   LayoutCustomProps extends CustomPropsObject,
   ComponentIncludeProps extends IncludedProps<
-    ScopedComponentAvailableProps<
-      ResourceDefinitions,
-      InProps,
-      Composables,
-      LayoutCustomProps
-    >
+    ScopedComponentAvailableProps<ResourceDefinitions, InProps, Composables, LayoutCustomProps>
   >,
   ComponentCustomProps extends CustomPropsObject,
   Resource extends string,
@@ -762,12 +701,7 @@ export type ScopedResourceComponent<
   Arguments extends ReadonlyArray<unknown>,
   LayoutCustomProps extends CustomPropsObject,
   ComponentIncludeProps extends IncludedProps<
-    ScopedComponentAvailableProps<
-      ResourceDefinitions,
-      InProps,
-      Composables,
-      LayoutCustomProps
-    >
+    ScopedComponentAvailableProps<ResourceDefinitions, InProps, Composables, LayoutCustomProps>
   >,
   ComponentCustomProps extends CustomPropsObject,
   ComponentsByResource,
@@ -792,12 +726,7 @@ export type ScopedResourceComponent<
      * The `resource` prop drives the generic, so it is inferred from the call
      * site. Explicit type arguments are never needed.
      */
-    <
-      const Resource extends SelectedLayoutResources<
-        ResourceDefinitions,
-        Arguments
-      >,
-    >(
+    <const Resource extends SelectedLayoutResources<ResourceDefinitions, Arguments>>(
       props: ScopedResourceComponentCallProps<
         ResourceDefinitions,
         InProps,
@@ -808,9 +737,7 @@ export type ScopedResourceComponent<
         Resource,
         RenderResult,
         ResourceEntryDefined<
-          Resource extends keyof PropsByResource
-            ? PropsByResource[Resource]
-            : {}
+          Resource extends keyof PropsByResource ? PropsByResource[Resource] : {}
         >
       >,
     ): JSX.Element;
@@ -829,12 +756,7 @@ export type ScopedResourceComponent<
      *
      * @returns A factory producing a component bound to the given resource.
      */
-    asHOF(): <
-      const Resource extends SelectedLayoutResources<
-        ResourceDefinitions,
-        Arguments
-      >,
-    >(
+    asHOF(): <const Resource extends SelectedLayoutResources<ResourceDefinitions, Arguments>>(
       resource: Resource,
     ) => Show<
       ScopedBoundResourceComponent<
@@ -848,15 +770,11 @@ export type ScopedResourceComponent<
           Resource,
           RenderResult,
           ResourceEntryDefined<
-            Resource extends keyof PropsByResource
-              ? PropsByResource[Resource]
-              : {}
+            Resource extends keyof PropsByResource ? PropsByResource[Resource] : {}
           >
         >,
         Resource,
-        Resource extends keyof ComponentsByResource
-          ? ComponentsByResource[Resource]
-          : {},
+        Resource extends keyof ComponentsByResource ? ComponentsByResource[Resource] : {},
         Composables
       >
     >;
@@ -870,25 +788,18 @@ export type ScopedComponentExtraProps<
   ResourceDefinitions extends ReadonlyArray<ResourceDefinition>,
   InProps extends InPropsDefinition<ResourceDefinitions>,
   Composables extends ComposableComponents,
-  BaseInclude extends LayoutIncludeProps<
-    ResourceDefinitions,
-    InProps,
-    Composables
-  >,
+  BaseInclude extends LayoutIncludeProps<ResourceDefinitions, InProps, Composables>,
   BaseCustom extends CustomPropsObject,
-  ExtraInclude extends LayoutIncludeProps<
-    ResourceDefinitions,
-    InProps,
-    Composables
-  > = {},
+  ExtraInclude extends LayoutIncludeProps<ResourceDefinitions, InProps, Composables> = {},
   ExtraCustom extends CustomPropsObject = {},
 > = {
   include?: ExtraInclude & {
     [Key in keyof BaseInclude & string]?: never;
   };
-  custom?: ExtraCustom & CustomPropsInput<ExtraCustom> & {
-    [Key in keyof BaseCustom & string]?: never;
-  };
+  custom?: ExtraCustom &
+    CustomPropsInput<ExtraCustom> & {
+      [Key in keyof BaseCustom & string]?: never;
+    };
 };
 
 /**
@@ -906,18 +817,11 @@ export type ScopedCreateResourceComponents<
   Composables extends ComposableComponents,
   Arguments extends ReadonlyArray<unknown>,
   LayoutCustomProps extends CustomPropsObject,
-  BaseInclude extends LayoutIncludeProps<
-    ResourceDefinitions,
-    InProps,
-    Composables
-  >,
+  BaseInclude extends LayoutIncludeProps<ResourceDefinitions, InProps, Composables>,
   BaseCustom extends CustomPropsObject,
   StateNames extends string = BuiltinRenderStateName,
 > = <
-  const Resource extends SelectedLayoutResources<
-    ResourceDefinitions,
-    Arguments
-  >,
+  const Resource extends SelectedLayoutResources<ResourceDefinitions, Arguments>,
   // No default: same contextual-typing hazard as ComponentsByResource. Must
   // precede ExtraInclude/ExtraCustom (those have defaults). When `components`
   // is omitted, NormalizeScopedComponentsMap turns `unknown` into `{}`.
@@ -961,9 +865,7 @@ export type ScopedCreateResourceComponents<
             BaseCustom & ResourceEntryCustom<Props>,
             Resource
           > &
-            Show<
-              ResolveRenderPropsAsDefined<ScopedComponentOwnProps<Components[Name]>>
-            >,
+            Show<ResolveRenderPropsAsDefined<ScopedComponentOwnProps<Components[Name]>>>,
           ScopedRenderResult,
           Omit<ScopedComponentRenderContext<Components, StateNames>, Name>
         > &
@@ -976,17 +878,11 @@ export type ScopedCreateResourceComponents<
         InProps,
         Composables,
         LayoutCustomProps,
-        WithDefinedIncluded<
-          BaseInclude & ResourceEntryInclude<Props>,
-          ResourceEntryDefined<Props>
-        >,
+        WithDefinedIncluded<BaseInclude & ResourceEntryInclude<Props>, ResourceEntryDefined<Props>>,
         BaseCustom & ResourceEntryCustom<Props>,
         Resource
       >,
-      ScopedComponentRenderContext<
-        NormalizeScopedComponentsMap<Components>,
-        StateNames
-      >,
+      ScopedComponentRenderContext<NormalizeScopedComponentsMap<Components>, StateNames>,
       ScopedRenderResult
     >
   >,
@@ -1029,11 +925,7 @@ export type ScopedCreateComponentOptions<
   Composables extends ComposableComponents,
   Arguments extends ReadonlyArray<unknown>,
   LayoutCustomProps extends CustomPropsObject,
-  ComponentIncludeProps extends LayoutIncludeProps<
-    ResourceDefinitions,
-    InProps,
-    Composables
-  >,
+  ComponentIncludeProps extends LayoutIncludeProps<ResourceDefinitions, InProps, Composables>,
   ComponentCustomProps extends CustomPropsObject,
   PropsByResource,
   ComponentsByResource,
@@ -1099,17 +991,9 @@ export type ScopedCreateComponentWithPropsOptions<
   Composables extends ComposableComponents,
   Arguments extends ReadonlyArray<unknown>,
   LayoutCustomProps extends CustomPropsObject,
-  BaseInclude extends LayoutIncludeProps<
-    ResourceDefinitions,
-    InProps,
-    Composables
-  >,
+  BaseInclude extends LayoutIncludeProps<ResourceDefinitions, InProps, Composables>,
   BaseCustom extends CustomPropsObject,
-  ExtraInclude extends LayoutIncludeProps<
-    ResourceDefinitions,
-    InProps,
-    Composables
-  >,
+  ExtraInclude extends LayoutIncludeProps<ResourceDefinitions, InProps, Composables>,
   ExtraCustom extends CustomPropsObject,
   PropsByResource,
   ComponentsByResource,
@@ -1183,9 +1067,7 @@ export type ScopedCreateComponentFn<
     StateNames
   > & {
     resources?: {
-      [Resource in keyof NoInfer<ComponentsByResource>]:
-        | { lazy?: never }
-        | { props?: never };
+      [Resource in keyof NoInfer<ComponentsByResource>]: { lazy?: never } | { props?: never };
     };
   },
 ) => ScopedResourceComponent<
@@ -1233,21 +1115,13 @@ type ScopedCreateComponentWithCreatedEntriesFn<
   Composables extends ComposableComponents,
   Arguments extends ReadonlyArray<unknown>,
   LayoutCustomProps extends CustomPropsObject,
-  BaseInclude extends LayoutIncludeProps<
-    ResourceDefinitions,
-    InProps,
-    Composables
-  > = {},
+  BaseInclude extends LayoutIncludeProps<ResourceDefinitions, InProps, Composables> = {},
   BaseCustom extends CustomPropsObject = {},
   StateNames extends string = BuiltinRenderStateName,
 > = <
   const EntriesByResource,
   const RenderResult extends ScopedRenderResult,
-  const ExtraInclude extends LayoutIncludeProps<
-    ResourceDefinitions,
-    InProps,
-    Composables
-  > = {},
+  const ExtraInclude extends LayoutIncludeProps<ResourceDefinitions, InProps, Composables> = {},
   ExtraCustom extends CustomPropsObject = {},
 >(
   options: Omit<
@@ -1279,14 +1153,10 @@ type ScopedCreateComponentWithCreatedEntriesFn<
   LayoutCustomProps,
   BaseInclude &
     ExtraInclude &
-    MergedResourceEntryInclude<
-      PropsFromCreatedResourceEntries<EntriesByResource>
-    >,
+    MergedResourceEntryInclude<PropsFromCreatedResourceEntries<EntriesByResource>>,
   BaseCustom &
     ExtraCustom &
-    MergedResourceEntryCustom<
-      PropsFromCreatedResourceEntries<EntriesByResource>
-    >,
+    MergedResourceEntryCustom<PropsFromCreatedResourceEntries<EntriesByResource>>,
   ComponentsFromCreatedResourceEntries<EntriesByResource>,
   PropsFromCreatedResourceEntries<EntriesByResource>,
   RenderResult
@@ -1299,22 +1169,14 @@ export type ScopedCreateComponentWithResourcePropsFn<
   Composables extends ComposableComponents,
   Arguments extends ReadonlyArray<unknown>,
   LayoutCustomProps extends CustomPropsObject,
-  BaseInclude extends LayoutIncludeProps<
-    ResourceDefinitions,
-    InProps,
-    Composables
-  > = {},
+  BaseInclude extends LayoutIncludeProps<ResourceDefinitions, InProps, Composables> = {},
   BaseCustom extends CustomPropsObject = {},
   StateNames extends string = BuiltinRenderStateName,
 > = <
   const PropsByResource,
   const ComponentsByResource,
   const RenderResult extends ScopedRenderResult,
-  const ExtraInclude extends LayoutIncludeProps<
-    ResourceDefinitions,
-    InProps,
-    Composables
-  > = {},
+  const ExtraInclude extends LayoutIncludeProps<ResourceDefinitions, InProps, Composables> = {},
   ExtraCustom extends CustomPropsObject = {},
 >(
   options: Omit<
@@ -1339,15 +1201,11 @@ export type ScopedCreateComponentWithResourcePropsFn<
         InProps,
         Composables,
         LayoutCustomProps,
-        BaseInclude &
-          ExtraInclude &
-          MergedResourceEntryInclude<PropsByResource>,
+        BaseInclude & ExtraInclude & MergedResourceEntryInclude<PropsByResource>,
         BaseCustom & ExtraCustom & MergedResourceEntryCustom<PropsByResource>,
         Resource & string,
         PropsByResource[Resource] & object,
-        Resource extends keyof ComponentsByResource
-          ? ComponentsByResource[Resource]
-          : unknown,
+        Resource extends keyof ComponentsByResource ? ComponentsByResource[Resource] : unknown,
         StateNames
       > & {
         props: PropsByResource[Resource] &
@@ -1356,9 +1214,7 @@ export type ScopedCreateComponentWithResourcePropsFn<
             InProps,
             Composables,
             LayoutCustomProps,
-            BaseCustom &
-              ExtraCustom &
-              MergedResourceEntryCustom<PropsByResource>,
+            BaseCustom & ExtraCustom & MergedResourceEntryCustom<PropsByResource>,
             NoInfer<PropsByResource[Resource] & object>
           >;
         components?: Resource extends keyof ComponentsByResource
@@ -1366,10 +1222,7 @@ export type ScopedCreateComponentWithResourcePropsFn<
           : unknown;
       };
     } & Record<
-      Exclude<
-        keyof PropsByResource,
-        SelectedLayoutResources<ResourceDefinitions, Arguments>
-      >,
+      Exclude<keyof PropsByResource, SelectedLayoutResources<ResourceDefinitions, Arguments>>,
       never
     >;
   },
@@ -1400,11 +1253,7 @@ export type ScopedCreateComponentWithProps<
   Composables extends ComposableComponents,
   Arguments extends ReadonlyArray<unknown>,
   LayoutCustomProps extends CustomPropsObject,
-  BaseInclude extends LayoutIncludeProps<
-    ResourceDefinitions,
-    InProps,
-    Composables
-  >,
+  BaseInclude extends LayoutIncludeProps<ResourceDefinitions, InProps, Composables>,
   BaseCustom extends CustomPropsObject,
   StateNames extends string = BuiltinRenderStateName,
 > = ScopedCreateComponentWithCreatedEntriesFn<
@@ -1431,11 +1280,7 @@ export type ScopedCreateComponentWithProps<
       const ComponentsByResource,
       const PropsByResource,
       const RenderResult extends ScopedRenderResult,
-      const ExtraInclude extends LayoutIncludeProps<
-        ResourceDefinitions,
-        InProps,
-        Composables
-      > = {},
+      const ExtraInclude extends LayoutIncludeProps<ResourceDefinitions, InProps, Composables> = {},
       ExtraCustom extends CustomPropsObject = {},
     >(
       options: ScopedCreateComponentWithPropsOptions<
@@ -1485,20 +1330,10 @@ export type ScopedCreateComponentSetProps<
   LayoutCustomProps extends CustomPropsObject,
   StateNames extends string = BuiltinRenderStateName,
 > = <
-  const BaseInclude extends LayoutIncludeProps<
-    ResourceDefinitions,
-    InProps,
-    Composables
-  > = {},
+  const BaseInclude extends LayoutIncludeProps<ResourceDefinitions, InProps, Composables> = {},
   BaseCustom extends CustomPropsObject = {},
 >(
-  props: LayoutProps<
-    ResourceDefinitions,
-    InProps,
-    Composables,
-    BaseInclude,
-    BaseCustom
-  >,
+  props: LayoutProps<ResourceDefinitions, InProps, Composables, BaseInclude, BaseCustom>,
 ) => ScopedCreateComponentWithProps<
   ResourceDefinitions,
   InProps,

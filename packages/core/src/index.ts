@@ -30,10 +30,7 @@ export type {
   RequiredPresetRenderProps,
   ResolveLayoutComposables,
 } from '@jfdevelops/react-layout-composables';
-export {
-  createDefinedResourceLayout,
-  defineResourceLayout,
-} from './create-config';
+export { createDefinedResourceLayout, defineResourceLayout } from './create-config';
 export type {
   ComponentTypes,
   CreateResourceConfigForResource,
@@ -195,12 +192,7 @@ export type {
   ResourceTree,
 } from './resource';
 export { pick } from './utils';
-export type {
-  BaseComponent,
-  MergeIntersection,
-  Show,
-  UnionToIntersection,
-} from './utils';
+export type { BaseComponent, MergeIntersection, Show, UnionToIntersection } from './utils';
 
 export { defineLayoutName } from './create-config/layout-name';
 export type {
@@ -224,10 +216,7 @@ export {
   LazyResourceStateNotFoundError,
   isLazyResourceError,
 } from './errors/lazy-resource-error';
-export type {
-  LazyResourceError,
-  LazyResourceErrorMap,
-} from './errors/lazy-resource-error';
+export type { LazyResourceError, LazyResourceErrorMap } from './errors/lazy-resource-error';
 export type {
   LazyOptions,
   LazyHandle,
@@ -239,10 +228,7 @@ export type {
 
 export type { ScopedComponentRenderFn } from './lazy/scoped-content';
 
-export type {
-  CreateLazyRenderState,
-  LazyDefaultState,
-} from './lazy/create-render-state';
+export type { CreateLazyRenderState, LazyDefaultState } from './lazy/create-render-state';
 
 export type { BuiltinRenderStateName } from './create-config/render-state';
 
@@ -264,7 +250,4 @@ export type {
 export type { ChildrenRequirement, CustomPropsObject } from './custom-props';
 
 export { defineResourceSurfaces } from './create-config/resource-surfaces';
-export type {
-  DefineResourceSurface,
-  SurfaceHost,
-} from './create-config/resource-surface';
+export type { DefineResourceSurface, SurfaceHost } from './create-config/resource-surface';

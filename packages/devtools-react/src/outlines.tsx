@@ -6,13 +6,10 @@ import { useDevtoolsContext } from './context';
 import { Button } from './components/ui/button';
 import { HelpTooltip } from './components/ui/tooltip';
 
-export function OutlineToggle({
-  size = 'icon',
-}: { size?: 'icon' | 'icon-sm' } = {}) {
+export function OutlineToggle({ size = 'icon' }: { size?: 'icon' | 'icon-sm' } = {}) {
   const { config, updatePreferences } = useDevtoolsContext();
-  const label = config.showOutlines
-    ? 'Hide composable outlines'
-    : 'Show composable outlines';
+  const label = config.showOutlines ? 'Hide composable outlines' : 'Show composable outlines';
+
   return (
     <HelpTooltip content={label}>
       <Button
@@ -56,43 +53,48 @@ function layoutName(graph: GraphSnapshot, id: string) {
   const queue = [id];
   for (let index = 0; index < queue.length; index++) {
     const current = queue[index]!;
-    if (seen.has(current)) continue;
+    if (seen.has(current)) {
+      continue;
+    }
     seen.add(current);
     const node = nodes.get(current);
-    if (node?.kind === 'layout') return node.label;
-    for (const edge of graph.edges)
-      if (edge.target === current) queue.push(edge.source);
+    if (node?.kind === 'layout') {
+      return node.label;
+    }
+    for (const edge of graph.edges) {
+      if (edge.target === current) {
+        queue.push(edge.source);
+      }
+    }
   }
+
   return 'Layout';
 }
 
 /** A single non-interactive overlay layer; only the name labels accept input. */
 export function ComposableOutlines() {
-  const { config, graph, palette, setSelected, hovered, setHovered } =
-    useDevtoolsContext();
+  const { config, graph, palette, setSelected, hovered, setHovered } = useDevtoolsContext();
   const [targets, setTargets] = useState<Target[]>([]);
   const enabled = config.showOutlines && process.env.NODE_ENV !== 'production';
   useEffect(() => {
     if (!enabled) {
       setTargets([]);
       setHovered(undefined);
+
       return;
     }
     let frame: number | undefined;
     const observed = new Set<Element>();
     const schedule = () => {
-      if (frame === undefined) frame = requestAnimationFrame(scan);
+      if (frame === undefined) {
+        frame = requestAnimationFrame(scan);
+      }
     };
-    const resize =
-      typeof ResizeObserver === 'undefined'
-        ? undefined
-        : new ResizeObserver(schedule);
+    const resize = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(schedule);
     const scan = () => {
       frame = undefined;
       const nodes = new Map(
-        graph.nodes
-          .filter((node) => node.kind === 'composable')
-          .map((node) => [node.id, node])
+        graph.nodes.filter((node) => node.kind === 'composable').map((node) => [node.id, node]),
       );
       const next: Target[] = [];
       const present = new Set<Element>();
@@ -101,21 +103,24 @@ export function ComposableOutlines() {
         .forEach((element) => {
           const id = element.dataset.rlNode!;
           const node = nodes.get(id);
-          if (!node) return;
+          if (!node) {
+            return;
+          }
           present.add(element);
           if (!observed.has(element)) {
             resize?.observe(element);
             observed.add(element);
           }
           const rect = element.getBoundingClientRect();
-          if (!rect.width || !rect.height) return;
+          if (!rect.width || !rect.height) {
+            return;
+          }
           let depth = 0;
-          for (
-            let parent = element.parentElement;
-            parent;
-            parent = parent.parentElement
-          )
-            if (parent.hasAttribute('data-rl-composable')) depth++;
+          for (let parent = element.parentElement; parent; parent = parent.parentElement) {
+            if (parent.hasAttribute('data-rl-composable')) {
+              depth++;
+            }
+          }
           next.push({
             element,
             id,
@@ -128,15 +133,17 @@ export function ComposableOutlines() {
             height: rect.height,
           });
         });
-      for (const element of observed)
+      for (const element of observed) {
         if (!present.has(element)) {
           resize?.unobserve(element);
           observed.delete(element);
         }
+      }
       setTargets((current) =>
         current.length === next.length &&
         current.every((value, i) => {
           const other = next[i]!;
+
           return (
             value.element === other.element &&
             value.id === other.id &&
@@ -150,7 +157,7 @@ export function ComposableOutlines() {
           );
         })
           ? current
-          : next
+          : next,
       );
     };
     scan();
@@ -158,40 +165,38 @@ export function ComposableOutlines() {
       if (
         records.some(
           (record) =>
-            !(
-              record.target instanceof Element &&
-              record.target.closest('[data-rl-outline-layer]')
-            )
+            !(record.target instanceof Element && record.target.closest('[data-rl-outline-layer]')),
         )
-      )
+      ) {
         schedule();
+      }
     });
-    mutation.observe(document.body, { childList: true, subtree: true });
+    mutation.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
     window.addEventListener('scroll', schedule, true);
     window.addEventListener('resize', schedule);
     // Passive listeners highlight the overlay without stealing app interactions.
     const hover = (event: Event) => {
-      if (
-        event.target instanceof Element &&
-        event.target.closest('[data-rl-outline-layer]')
-      )
+      if (event.target instanceof Element && event.target.closest('[data-rl-outline-layer]')) {
         return;
+      }
       const element =
         event.target instanceof Element
-          ? event.target.closest<HTMLElement>(
-              '[data-rl-node][data-rl-composable]'
-            )
+          ? event.target.closest<HTMLElement>('[data-rl-node][data-rl-composable]')
           : null;
       setHovered(
-        element && nodesForHover.has(element.dataset.rlNode!)
-          ? element.dataset.rlNode
-          : undefined
+        element && nodesForHover.has(element.dataset.rlNode!) ? element.dataset.rlNode : undefined,
       );
     };
     const nodesForHover = new Set(graph.nodes.map((node) => node.id));
     document.addEventListener('pointerover', hover);
+
     return () => {
-      if (frame !== undefined) cancelAnimationFrame(frame);
+      if (frame !== undefined) {
+        cancelAnimationFrame(frame);
+      }
       mutation.disconnect();
       resize?.disconnect();
       window.removeEventListener('scroll', schedule, true);
@@ -199,7 +204,9 @@ export function ComposableOutlines() {
       document.removeEventListener('pointerover', hover);
     };
   }, [enabled, graph]);
-  if (!enabled || typeof document === 'undefined') return null;
+  if (!enabled || typeof document === 'undefined') {
+    return null;
+  }
   const colors = [
     palette.composable.color,
     palette.layout.color,
@@ -207,6 +214,7 @@ export function ComposableOutlines() {
     palette.resource.color,
     palette.state.color,
   ];
+
   return createPortal(
     <div
       data-rl-outline-layer
@@ -218,11 +226,9 @@ export function ComposableOutlines() {
       }}
     >
       {targets.map((target, index) => {
-        const hash = [...target.name].reduce(
-          (value, char) => value + char.charCodeAt(0),
-          0
-        );
+        const hash = [...target.name].reduce((value, char) => value + char.charCodeAt(0), 0);
         const color = colors[hash % colors.length]!;
+
         return (
           <div
             key={index}
@@ -238,7 +244,7 @@ export function ComposableOutlines() {
             }}
           >
             <button
-              type="button"
+              type='button'
               aria-label={`Inspect ${target.name} in ${target.layout}`}
               onPointerEnter={() => setHovered(target.id)}
               onPointerLeave={() => setHovered(undefined)}
@@ -264,6 +270,6 @@ export function ComposableOutlines() {
         );
       })}
     </div>,
-    document.body
+    document.body,
   );
 }

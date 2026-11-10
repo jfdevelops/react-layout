@@ -23,9 +23,7 @@ function isReactNode(value: unknown): boolean {
     return value.every(isReactNode);
   }
 
-  return (
-    typeof value === 'object' && value !== null && '$$typeof' in value
-  );
+  return typeof value === 'object' && value !== null && '$$typeof' in value;
 }
 
 export class ComponentProp<
@@ -33,7 +31,10 @@ export class ComponentProp<
   Visibility extends PropVisibility,
 > extends BaseProp<Type, Visibility, ComponentPropTypeMap[Type]> {
   constructor(type: Type, visibility: Visibility) {
-    super({ type, visibility });
+    super({
+      type,
+      visibility,
+    });
   }
 
   optional(this: ComponentProp<Type, 'required'>) {
@@ -42,11 +43,7 @@ export class ComponentProp<
 
   validate(value: unknown) {
     if (this.type === 'JSX.Element') {
-      if (
-        value === null ||
-        typeof value !== 'object' ||
-        !('$$typeof' in value)
-      ) {
+      if (value === null || typeof value !== 'object' || !('$$typeof' in value)) {
         throw this.createError(value);
       }
 
@@ -75,25 +72,20 @@ export class ComponentPropWithPropertiesProp<
   readonly properties: Shape;
 
   constructor(type: Type, properties: Shape, visibility: Visibility) {
-    super({ type, visibility });
+    super({
+      type,
+      visibility,
+    });
     this.properties = properties;
   }
 
   optional(this: ComponentPropWithPropertiesProp<Type, Shape, 'required'>) {
-    return new ComponentPropWithPropertiesProp(
-      this.type,
-      this.properties,
-      'optional',
-    );
+    return new ComponentPropWithPropertiesProp(this.type, this.properties, 'optional');
   }
 
   validate(value: unknown) {
     if (this.type === 'JSX.Element') {
-      if (
-        value === null ||
-        typeof value !== 'object' ||
-        !('$$typeof' in value)
-      ) {
+      if (value === null || typeof value !== 'object' || !('$$typeof' in value)) {
         throw this.createError(value);
       }
 
@@ -121,29 +113,22 @@ export class RenderChildrenProp<
 > extends BaseProp<
   'function',
   Visibility,
-  (
-    renderProps: ResolvedBuiltPropShape<Shape>,
-  ) => ComponentPropTypeMap[ChildrenType]
+  (renderProps: ResolvedBuiltPropShape<Shape>) => ComponentPropTypeMap[ChildrenType]
 > {
   readonly renderProps: Shape;
   readonly childrenType: ChildrenType;
 
-  constructor(
-    renderProps: Shape,
-    childrenType: ChildrenType,
-    visibility: Visibility,
-  ) {
-    super({ type: 'function', visibility });
+  constructor(renderProps: Shape, childrenType: ChildrenType, visibility: Visibility) {
+    super({
+      type: 'function',
+      visibility,
+    });
     this.renderProps = renderProps;
     this.childrenType = childrenType;
   }
 
   optional(this: RenderChildrenProp<Shape, ChildrenType, 'required'>) {
-    return new RenderChildrenProp(
-      this.renderProps,
-      this.childrenType,
-      'optional',
-    );
+    return new RenderChildrenProp(this.renderProps, this.childrenType, 'optional');
   }
 
   validate(value: unknown) {
@@ -158,9 +143,7 @@ export class RenderChildrenProp<
 
   allows(
     value: unknown,
-  ): value is (
-    renderProps: ResolvedBuiltPropShape<Shape>,
-  ) => ComponentPropTypeMap[ChildrenType] {
+  ): value is (renderProps: ResolvedBuiltPropShape<Shape>) => ComponentPropTypeMap[ChildrenType] {
     return typeof value === 'function';
   }
 }

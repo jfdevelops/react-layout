@@ -7,10 +7,10 @@
     "url": "https://github.com/jfdevelops/react-layout.git",
     "directory": "packages/adapter-arktype"
   },
-  "type": "module",
   "files": [
     "dist"
   ],
+  "type": "module",
   "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -23,29 +23,28 @@
     },
     "./package.json": "./package.json"
   },
-  "engines": {
-    "node": "^20.19.0 || >=22.12.0"
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "@jfdevelops/react-layout-adapters": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.28",
+    "arktype": "2.2.8",
+    "react": "18.3.1",
+    "tsdown": "0.22.1"
+  },
   "peerDependencies": {
     "arktype": "^2.2.8",
     "react": ">=18"
   },
-  "devDependencies": {
-    "arktype": "2.2.8",
-    "react": "18.3.1",
-    "@types/react": "18.3.28",
-    "tsdown": "0.22.1",
-    "typescript": "6.0.3"
-  },
-  "publishConfig": {
-    "access": "public",
-    "provenance": true
-  },
-  "dependencies": {
-    "@jfdevelops/react-layout-adapters": "workspace:*"
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
   }
 }

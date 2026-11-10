@@ -1,10 +1,4 @@
-import {
-  createElement,
-  isValidElement,
-  type ComponentType,
-  type JSX,
-  type ReactNode,
-} from 'react';
+import { createElement, isValidElement, type ComponentType, type JSX, type ReactNode } from 'react';
 
 /**
  * Names a scoped component cannot use. Scoped components are attached to
@@ -83,11 +77,7 @@ export function isRenderableComponentType(
 
   const typeTag = (value as { $$typeof: unknown }).$$typeof;
 
-  return (
-    typeTag === reactForwardRefType ||
-    typeTag === reactMemoType ||
-    typeTag === reactLazyType
-  );
+  return typeTag === reactForwardRefType || typeTag === reactMemoType || typeTag === reactLazyType;
 }
 
 /**
@@ -133,19 +123,41 @@ export const reservedScopedCompoundStaticKeys = [
 const reservedCompoundKeys = new Set<PropertyKey>(reservedScopedCompoundStaticKeys);
 
 const compoundInitials = [
-  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-  'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+  'A',
+  'B',
+  'C',
+  'D',
+  'E',
+  'F',
+  'G',
+  'H',
+  'I',
+  'J',
+  'K',
+  'L',
+  'M',
+  'N',
+  'O',
+  'P',
+  'Q',
+  'R',
+  'S',
+  'T',
+  'U',
+  'V',
+  'W',
+  'X',
+  'Y',
+  'Z',
 ] as const;
 
-export type ScopedCompoundName = `${typeof compoundInitials[number]}${string}`;
+export type ScopedCompoundName = `${(typeof compoundInitials)[number]}${string}`;
 
 function isCompoundName(key: string): key is ScopedCompoundName {
   return compoundInitials.some((initial) => key.startsWith(initial));
 }
 
-type ScopedComponentWrapper = ((
-  props?: Record<string, unknown>,
-) => JSX.Element) &
+type ScopedComponentWrapper = ((props?: Record<string, unknown>) => JSX.Element) &
   Record<string, unknown>;
 
 /**
@@ -160,9 +172,7 @@ type ScopedComponentWrapper = ((
  */
 export function withScopedCompoundStatics(
   wrapper: (props?: Record<string, unknown>) => JSX.Element,
-  createCompoundStatic: (
-    staticName: string,
-  ) => (ownProps?: Record<string, unknown>) => JSX.Element,
+  createCompoundStatic: (staticName: string) => (ownProps?: Record<string, unknown>) => JSX.Element,
 ): ScopedComponentWrapper {
   return new Proxy(wrapper as ScopedComponentWrapper, {
     get(target, property, receiver) {
@@ -178,6 +188,7 @@ export function withScopedCompoundStatics(
       // Cache on the target so repeated `.Loading` access keeps one identity.
       const CompoundStatic = createCompoundStatic(property);
       target[property] = CompoundStatic;
+
       return CompoundStatic;
     },
   });

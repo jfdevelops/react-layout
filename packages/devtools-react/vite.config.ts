@@ -7,15 +7,12 @@ export default defineConfig({
     alias: {
       '@jfdevelops/react-layout-devtools-core': path.resolve(
         __dirname,
-        '../devtools-core/src/index.ts'
+        '../devtools-core/src/index.ts',
       ),
-      '@jfdevelops/react-layout-validator': path.resolve(
-        __dirname,
-        '../validators/src/index.ts'
-      ),
+      '@jfdevelops/react-layout-validator': path.resolve(__dirname, '../validators/src/index.ts'),
       '@jfdevelops/react-layout-composables': path.resolve(
         __dirname,
-        '../composables/src/index.ts'
+        '../composables/src/index.ts',
       ),
     },
   },

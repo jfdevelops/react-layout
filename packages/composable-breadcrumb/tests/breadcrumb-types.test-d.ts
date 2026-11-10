@@ -10,12 +10,20 @@ const { Breadcrumb } = createBreadcrumbComposable({
   render: ({ segments, separator }) => {
     expectTypeOf(segments).toEqualTypeOf<string[]>();
     expectTypeOf(separator).toEqualTypeOf<string | undefined>();
+
     return segments.join(separator);
   },
 });
 
-Breadcrumb({ segments: ['Home'], separator: undefined });
-// @ts-expect-error The replacement segments definition requires an array.
-Breadcrumb({ segments: { home: 'Home' } });
+Breadcrumb({
+  segments: ['Home'],
+  separator: undefined,
+});
+Breadcrumb({
+  segments: {
+    // @ts-expect-error The replacement segments definition requires an array.
+    home: 'Home',
+  },
+});
 // @ts-expect-error Segments remain required after replacing their definition.
 Breadcrumb({});
