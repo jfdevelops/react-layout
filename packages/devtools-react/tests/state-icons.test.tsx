@@ -21,10 +21,18 @@ const states = {
 function storeWithStates() {
   const store = createInspectionStore();
 
-  store.node({ id: 'layout', kind: 'layout', label: 'Users' });
+  store.node({
+    id: 'layout',
+    kind: 'layout',
+    label: 'Users',
+  });
 
   for (const [id, label] of Object.entries(states)) {
-    store.node({ id, kind: 'state', label });
+    store.node({
+      id,
+      kind: 'state',
+      label,
+    });
 
     store.edge('layout', id, 'defines');
   }
@@ -32,8 +40,7 @@ function storeWithStates() {
   return store;
 }
 
-const icon = (element: HTMLElement) =>
-  element.querySelector<SVGElement>('[data-state-icon]');
+const icon = (element: HTMLElement) => element.querySelector<SVGElement>('[data-state-icon]');
 
 it('shows built-in state icons, and a generic one for custom states, in the graph and tree', () => {
   render(<ReactLayoutDevtoolsContent source={storeWithStates()} />);
@@ -56,13 +63,21 @@ it('shows built-in state icons, and a generic one for custom states, in the grap
     expect(icon(card)).toHaveAttribute('aria-hidden', 'true');
   }
 
-  expect(cards.getByRole('button', { name: /^layout Users$/i })).not.toContainHTML(
-    'data-state-icon'
+  expect(
+    cards.getByRole('button', {
+      name: /^layout Users$/i,
+    }),
+  ).not.toContainHTML('data-state-icon');
+
+  fireEvent.click(
+    screen.getByRole('tab', {
+      name: 'Tree',
+    }),
   );
 
-  fireEvent.click(screen.getByRole('tab', { name: 'Tree' }));
-
-  const row = screen.getByRole('treeitem', { name: 'state NotFound' });
+  const row = screen.getByRole('treeitem', {
+    name: 'state NotFound',
+  });
 
   expect(icon(row)?.dataset.stateIcon).toBe('NotFound');
 });
@@ -77,14 +92,20 @@ it('spins the Loading icon only while that state is forced, and never with reduc
       state: 'default',
       states: ['default', 'loading'],
     },
-    vi.fn()
+    vi.fn(),
   );
 
   render(<ReactLayoutDevtoolsContent source={store} />);
 
-  fireEvent.click(screen.getByRole('button', { name: /LAYOUT.*Users/i }));
+  fireEvent.click(
+    screen.getByRole('button', {
+      name: /LAYOUT.*Users/i,
+    }),
+  );
 
-  const loading = screen.getByRole('button', { name: 'Loading' });
+  const loading = screen.getByRole('button', {
+    name: 'Loading',
+  });
 
   expect(icon(loading)?.dataset.stateIcon).toBe('Loading');
 
@@ -95,20 +116,31 @@ it('spins the Loading icon only while that state is forced, and never with reduc
   await screen.findByText('Forced: Loading');
 
   expect(
-    icon(screen.getByRole('button', { name: 'Loading' }))
+    icon(
+      screen.getByRole('button', {
+        name: 'Loading',
+      }),
+    ),
   ).toHaveAttribute('data-spinning');
 
   expect(css).toMatch(
-    /prefers-reduced-motion: reduce\)\s*{\s*\[data-state-icon\]\[data-spinning\]\s*{\s*animation: none/
+    /prefers-reduced-motion: reduce\)\s*{\s*\[data-state-icon\]\[data-spinning\]\s*{\s*animation: none/,
   );
 });
 
 it('shows the state icon in node details', () => {
   render(<ReactLayoutDevtoolsContent source={storeWithStates()} />);
 
-  fireEvent.click(screen.getByRole('button', { name: /^state Error$/i }));
+  fireEvent.click(
+    screen.getByRole('button', {
+      name: /^state Error$/i,
+    }),
+  );
 
-  const heading = screen.getByRole('heading', { level: 3, name: 'Error' });
+  const heading = screen.getByRole('heading', {
+    level: 3,
+    name: 'Error',
+  });
 
   expect(icon(heading)?.dataset.stateIcon).toBe('Error');
 

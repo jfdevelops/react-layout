@@ -15,7 +15,10 @@ function Frame({ children, label }: { children?: ReactNode; label: string }) {
 describe('defined composable factory overloads', () => {
   const createLabel = defineComposableComponent({
     name: 'Label',
-    props: { value: createProp.string(), suffix: createProp.string() },
+    props: {
+      value: createProp.string(),
+      suffix: createProp.string(),
+    },
     wrapWith: Frame,
   });
 
@@ -26,8 +29,8 @@ describe('defined composable factory overloads', () => {
     });
     render(
       <>
-        <legacy.Label value="Legacy" suffix="!" label="Legacy frame" />
-        <object.Label value="Object" suffix="!" label="Object frame" />
+        <legacy.Label value='Legacy' suffix='!' label='Legacy frame' />
+        <object.Label value='Object' suffix='!' label='Object frame' />
       </>,
     );
     expect(screen.getByLabelText('Legacy frame')).toHaveTextContent('Legacy!');
@@ -37,7 +40,10 @@ describe('defined composable factory overloads', () => {
   it('merges replacement and extra props while retaining unmodified definitions', () => {
     const { Count } = createLabel({
       name: 'Count',
-      props: { value: createProp.number(), prefix: createProp.string() },
+      props: {
+        value: createProp.number(),
+        prefix: createProp.string(),
+      },
       render: ({ value, prefix, suffix }) => `${prefix}${value}${suffix}`,
     });
     const definitions = Count[composablePresetMetaKey].props;
@@ -46,7 +52,7 @@ describe('defined composable factory overloads', () => {
     expect(createLabel.props.value.type).toBe('string');
     expect(Count.displayName).toBe('Count');
     expect(Count[composablePresetMetaKey].key).toBe('Count');
-    render(<Count value={2} prefix="#" suffix="!" label="Count frame" />);
+    render(<Count value={2} prefix='#' suffix='!' label='Count frame' />);
     expect(screen.getByLabelText('Count frame')).toHaveTextContent('#2!');
     expect(() =>
       Count({
@@ -70,7 +76,12 @@ describe('defined composable factory overloads', () => {
     });
     render(
       <LayoutComposablePresetProvider
-        value={{ Count: { value: 3, suffix: '!' } }}
+        value={{
+          Count: {
+            value: 3,
+            suffix: '!',
+          },
+        }}
       >
         <Count value={undefined as never} suffix={undefined as never} />
       </LayoutComposablePresetProvider>,

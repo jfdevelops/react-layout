@@ -4,13 +4,17 @@ export type IconProps = SVGProps<SVGSVGElement> & { size?: number };
 export function Icon({ size = 18, style, children, ...props }: IconProps) {
   return (
     <svg
-      aria-hidden="true"
-      focusable="false"
+      aria-hidden='true'
+      focusable='false'
       width={size}
       height={size}
-      fill="currentColor"
+      fill='currentColor'
       {...props}
-      style={{ display: 'block', flexShrink: 0, ...style }}
+      style={{
+        display: 'block',
+        flexShrink: 0,
+        ...style,
+      }}
     >
       {children}
     </svg>

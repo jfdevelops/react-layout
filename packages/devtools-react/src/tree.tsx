@@ -41,9 +41,7 @@ export function InspectionTree({
   const roots = useMemo(() => buildInspectionTree(graph), [graph]);
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
-  const [allExpanded, setAllExpanded] = useState(
-    config?.initialExpanded ?? true
-  );
+  const [allExpanded, setAllExpanded] = useState(config?.initialExpanded ?? true);
 
   useEffect(() => {
     setAllExpanded(config?.initialExpanded ?? true);
@@ -58,67 +56,60 @@ export function InspectionTree({
   const [revealing, setRevealing] = useState(false);
 
   useEffect(() => {
-    if (
-      !active ||
-      !locateRequest ||
-      !selected ||
-      handledRequest.current === locateRequest
-    )
+    if (!active || !locateRequest || !selected || handledRequest.current === locateRequest) {
       return;
+    }
 
     handledRequest.current = locateRequest;
 
-    function path(
-      entries: readonly InspectionTreeNode[],
-      parents: string[]
-    ): string[] | undefined {
+    function path(entries: readonly InspectionTreeNode[], parents: string[]): string[] | undefined {
       for (const entry of entries) {
-        if (entry.node.id === selected) return parents;
+        if (entry.node.id === selected) {
+          return parents;
+        }
 
         const found = path(entry.children, [...parents, entry.node.id]);
 
-        if (found) return found;
+        if (found) {
+          return found;
+        }
       }
     }
 
     const ancestors = path(roots, []);
 
-    if (!ancestors) return;
+    if (!ancestors) {
+      return;
+    }
 
     setExpanded((current) => new Set([...current, ...ancestors]));
 
-    setCollapsed(
-      (current) => new Set([...current].filter((id) => !ancestors.includes(id)))
-    );
+    setCollapsed((current) => new Set([...current].filter((id) => !ancestors.includes(id))));
 
     setRevealing(true);
   }, [active, locateRequest, selected, roots]);
 
   const [scrollTop, setScrollTop] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(600);
-  const isExpanded = (id: string) =>
-    !collapsed.has(id) && (allExpanded || expanded.has(id));
+  const isExpanded = (id: string) => !collapsed.has(id) && (allExpanded || expanded.has(id));
 
   // Visible rows in document order, used to window large trees.
   const flattened = useMemo(() => {
-    const rows: { entry: InspectionTreeNode; key: string; depth: number }[] =
-      [];
+    const rows: { entry: InspectionTreeNode; key: string; depth: number }[] = [];
 
-    function visit(
-      entries: readonly InspectionTreeNode[],
-      prefix: string,
-      depth: number
-    ) {
+    function visit(entries: readonly InspectionTreeNode[], prefix: string, depth: number) {
       entries.forEach((entry, index) => {
         const key = prefix ? `${prefix}/${index}` : String(index);
 
-        rows.push({ entry, key, depth });
+        rows.push({
+          entry,
+          key,
+          depth,
+        });
 
-        if (
-          !collapsed.has(entry.node.id) &&
-          (allExpanded || expanded.has(entry.node.id))
-        )
+        if (!collapsed.has(entry.node.id) && (allExpanded || expanded.has(entry.node.id))) {
           visit(entry.children, key, depth + 1);
+        }
       });
     }
 
@@ -130,25 +121,23 @@ export function InspectionTree({
   const start = virtual
     ? Math.max(
         0,
-        Math.min(
-          flattened.length - 1,
-          Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN_ROWS
-        )
+        Math.min(flattened.length - 1, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN_ROWS),
       )
     : 0;
   const end = virtual
-    ? Math.min(
-        flattened.length,
-        start + Math.ceil(viewportHeight / ROW_HEIGHT) + OVERSCAN_ROWS * 2
-      )
+    ? Math.min(flattened.length, start + Math.ceil(viewportHeight / ROW_HEIGHT) + OVERSCAN_ROWS * 2)
     : flattened.length;
 
   useEffect(() => {
-    if (!virtual) return;
+    if (!virtual) {
+      return;
+    }
 
     const pane = tree.current?.closest<HTMLElement>('[role="region"]');
 
-    if (!pane) return;
+    if (!pane) {
+      return;
+    }
 
     const update = () => {
       setScrollTop(pane.scrollTop);
@@ -158,12 +147,11 @@ export function InspectionTree({
 
     update();
 
-    pane.addEventListener('scroll', update, { passive: true });
+    pane.addEventListener('scroll', update, {
+      passive: true,
+    });
 
-    const observer =
-      typeof ResizeObserver === 'undefined'
-        ? undefined
-        : new ResizeObserver(update);
+    const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(update);
 
     observer?.observe(pane);
 
@@ -175,11 +163,11 @@ export function InspectionTree({
   }, [virtual]);
 
   useEffect(() => {
-    if (!revealing) return;
+    if (!revealing) {
+      return;
+    }
 
-    const element = tree.current?.querySelector<HTMLElement>(
-      '[aria-selected="true"]'
-    );
+    const element = tree.current?.querySelector<HTMLElement>('[aria-selected="true"]');
 
     if (element) {
       onLocate?.(element);
@@ -226,17 +214,20 @@ export function InspectionTree({
     const hasChildren = entry.children.length > 0;
     const node = entry.node;
     const label =
-      node.kind === 'resource'
-        ? (node.label.split('.').at(-1) ?? node.label)
-        : node.label;
+      node.kind === 'resource' ? (node.label.split('.').at(-1) ?? node.label) : node.label;
     const status = loadChip(node);
 
     return (
       <li
-        role="none"
+        role='none'
         key={key}
         style={
-          virtual ? { marginLeft: depth * 14, height: ROW_HEIGHT } : undefined
+          virtual
+            ? {
+                marginLeft: depth * 14,
+                height: ROW_HEIGHT,
+              }
+            : undefined
         }
       >
         <div
@@ -246,10 +237,7 @@ export function InspectionTree({
             gap: 2,
             height: 26,
             boxSizing: 'border-box',
-            ...(!virtual &&
-            hasChildren &&
-            expanded &&
-            config?.stickyScopes !== false
+            ...(!virtual && hasChildren && expanded && config?.stickyScopes !== false
               ? {
                   position: 'sticky' as const,
                   top: depth * 26,
@@ -261,7 +249,7 @@ export function InspectionTree({
         >
           {hasChildren ? (
             <Button
-              type="button"
+              type='button'
               aria-label={`${expanded ? 'Collapse' : 'Expand'} ${node.label}`}
               onClick={() => toggle(node.id)}
               style={{
@@ -275,18 +263,20 @@ export function InspectionTree({
                 cursor: 'pointer',
               }}
             >
-              {expanded ? (
-                <ChevronDownIcon size={12} />
-              ) : (
-                <ChevronRightIcon size={12} />
-              )}
+              {expanded ? <ChevronDownIcon size={12} /> : <ChevronRightIcon size={12} />}
             </Button>
           ) : (
-            <span aria-hidden="true" style={{ width: 18, flexShrink: 0 }} />
+            <span
+              aria-hidden='true'
+              style={{
+                width: 18,
+                flexShrink: 0,
+              }}
+            />
           )}
           <Button
-            type="button"
-            role="treeitem"
+            type='button'
+            role='treeitem'
             aria-level={virtual ? depth + 1 : undefined}
             data-tree-node
             data-hovered-node={hovered === node.id}
@@ -315,7 +305,7 @@ export function InspectionTree({
                 const rows = Array.from(
                   event.currentTarget
                     .closest('[role="tree"]')!
-                    .querySelectorAll<HTMLButtonElement>('[data-tree-node]')
+                    .querySelectorAll<HTMLButtonElement>('[data-tree-node]'),
                 );
                 const index = rows.indexOf(event.currentTarget);
 
@@ -332,28 +322,31 @@ export function InspectionTree({
               borderRadius: 4,
               padding: '2px 4px',
               color: '#cbd5e1',
-              background:
-                selected === node.id || hovered === node.id
-                  ? '#253247'
-                  : 'transparent',
+              background: selected === node.id || hovered === node.id ? '#253247' : 'transparent',
               font: 'inherit',
               cursor: 'pointer',
               textAlign: 'left',
             }}
           >
             {node.kind === 'state' && (
-              <StateIcon
-                state={node.label}
-                palette={palette}
-                spinning={node.active > 0}
-              />
+              <StateIcon state={node.label} palette={palette} spinning={node.active > 0} />
             )}
             <span>
               {JSON.stringify(label)}
-              <span style={{ color: '#64748b' }}>:</span>
+              <span
+                style={{
+                  color: '#64748b',
+                }}
+              >
+                :
+              </span>
             </span>
             {hasChildren && (
-              <span style={{ color: '#64748b' }}>
+              <span
+                style={{
+                  color: '#64748b',
+                }}
+              >
                 {expanded ? '{' : '{ … }'}
               </span>
             )}
@@ -363,8 +356,7 @@ export function InspectionTree({
                 padding: '0 6px',
                 borderRadius: 4,
                 color: palette[entry.reference ? 'reference' : node.kind].color,
-                background:
-                  palette[entry.reference ? 'reference' : node.kind].background,
+                background: palette[entry.reference ? 'reference' : node.kind].background,
               }}
             >
               {entry.reference ? '↗ reference' : node.kind}
@@ -405,20 +397,22 @@ export function InspectionTree({
         {!virtual && hasChildren && expanded && (
           <>
             <ul
-              role="group"
+              role='group'
               style={{
                 margin: 0,
                 paddingLeft: 20,
                 listStyle: 'none',
               }}
             >
-              {entry.children.map((child, index) =>
-                row(child, `${key}/${index}`, depth + 1)
-              )}
+              {entry.children.map((child, index) => row(child, `${key}/${index}`, depth + 1))}
             </ul>
             <div
-              aria-hidden="true"
-              style={{ paddingLeft: 22, color: '#64748b', lineHeight: '26px' }}
+              aria-hidden='true'
+              style={{
+                paddingLeft: 22,
+                color: '#64748b',
+                lineHeight: '26px',
+              }}
             >
               {'},'}
             </div>
@@ -435,9 +429,15 @@ export function InspectionTree({
         font: '12px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace',
       }}
     >
-      <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
+      <div
+        style={{
+          display: 'flex',
+          gap: 12,
+          marginBottom: 10,
+        }}
+      >
         <Button
-          type="button"
+          type='button'
           style={{
             border: 0,
             background: 'transparent',
@@ -457,7 +457,7 @@ export function InspectionTree({
           Expand all
         </Button>
         <Button
-          type="button"
+          type='button'
           style={{
             border: 0,
             background: 'transparent',
@@ -479,30 +479,36 @@ export function InspectionTree({
           Collapse all
         </Button>
       </div>
-      <div aria-hidden="true" style={{ color: '#64748b' }}>
+      <div
+        aria-hidden='true'
+        style={{
+          color: '#64748b',
+        }}
+      >
         {'{'}
       </div>
       <ul
         ref={tree}
-        role="tree"
-        aria-label="Layout hierarchy"
+        role='tree'
+        aria-label='Layout hierarchy'
         style={{
           padding: virtual
-            ? `${start * ROW_HEIGHT}px 0 ${
-                (flattened.length - end) * ROW_HEIGHT
-              }px 10px`
+            ? `${start * ROW_HEIGHT}px 0 ${(flattened.length - end) * ROW_HEIGHT}px 10px`
             : '0 0 0 10px',
           margin: 0,
           listStyle: 'none',
         }}
       >
         {virtual
-          ? flattened
-              .slice(start, end)
-              .map(({ entry, key, depth }) => row(entry, key, depth))
+          ? flattened.slice(start, end).map(({ entry, key, depth }) => row(entry, key, depth))
           : roots.map((entry, index) => row(entry, String(index)))}
       </ul>
-      <div aria-hidden="true" style={{ color: '#64748b' }}>
+      <div
+        aria-hidden='true'
+        style={{
+          color: '#64748b',
+        }}
+      >
         {'}'}
       </div>
     </div>

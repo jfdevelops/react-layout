@@ -16,29 +16,41 @@ it('shows source locations and opens the adapter editor endpoint', async () => {
       column: 2,
       editorUrl: '/__open-in-editor?file=page.tsx%3A4%3A2',
     },
-    registrationSource: { file: 'base.ts', line: 1, column: 1 },
+    registrationSource: {
+      file: 'base.ts',
+      line: 1,
+      column: 1,
+    },
   });
 
-  const fetch = vi.fn().mockResolvedValue({ ok: true });
+  const fetch = vi.fn().mockResolvedValue({
+    ok: true,
+  });
 
   vi.stubGlobal('fetch', fetch);
 
   try {
     render(<ReactLayoutDevtoolsContent source={store} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /LAYOUT.*Users/i }));
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: /LAYOUT.*Users/i,
+      }),
+    );
 
     expect(screen.getByText('page.tsx:4:2')).toBeTruthy();
 
     expect(screen.getByText('base.ts:1:1')).toBeTruthy();
 
     await act(async () =>
-      fireEvent.click(screen.getByRole('button', { name: 'page.tsx:4:2' }))
+      fireEvent.click(
+        screen.getByRole('button', {
+          name: 'page.tsx:4:2',
+        }),
+      ),
     );
 
-    expect(fetch).toHaveBeenCalledWith(
-      '/__open-in-editor?file=page.tsx%3A4%3A2'
-    );
+    expect(fetch).toHaveBeenCalledWith('/__open-in-editor?file=page.tsx%3A4%3A2');
   } finally {
     vi.unstubAllGlobals();
   }
@@ -47,11 +59,23 @@ it('shows source locations and opens the adapter editor endpoint', async () => {
 it('targets selected instances and clears a forced render state on inspector disconnect', async () => {
   const store = createInspectionStore();
 
-  store.node({ id: 'layout', kind: 'layout', label: 'Users' });
+  store.node({
+    id: 'layout',
+    kind: 'layout',
+    label: 'Users',
+  });
 
-  store.node({ id: 'default', kind: 'state', label: 'default' });
+  store.node({
+    id: 'default',
+    kind: 'state',
+    label: 'default',
+  });
 
-  store.node({ id: 'loading', kind: 'state', label: 'Loading' });
+  store.node({
+    id: 'loading',
+    kind: 'state',
+    label: 'Loading',
+  });
 
   store.edge('layout', 'default', 'defines');
 
@@ -67,7 +91,7 @@ it('targets selected instances and clears a forced render state on inspector dis
       state: 'default',
       states: ['default', 'loading'],
     },
-    first
+    first,
   );
 
   store.registerPreview(
@@ -77,18 +101,28 @@ it('targets selected instances and clears a forced render state on inspector dis
       state: 'loading',
       states: ['default', 'loading'],
     },
-    second
+    second,
   );
 
   const view = render(<ReactLayoutDevtoolsContent source={store} />);
 
-  fireEvent.click(screen.getByRole('button', { name: /LAYOUT.*Users/i }));
+  fireEvent.click(
+    screen.getByRole('button', {
+      name: /LAYOUT.*Users/i,
+    }),
+  );
 
   fireEvent.change(screen.getByLabelText('Preview instance'), {
-    target: { value: 'second' },
+    target: {
+      value: 'second',
+    },
   });
 
-  fireEvent.click(screen.getByRole('button', { name: 'Loading' }));
+  fireEvent.click(
+    screen.getByRole('button', {
+      name: 'Loading',
+    }),
+  );
 
   expect(first).not.toHaveBeenCalled();
 

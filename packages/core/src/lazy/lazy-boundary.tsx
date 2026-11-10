@@ -1,11 +1,5 @@
 import { RenderStateFallback } from '../create-config/render-state-context';
-import {
-  Component,
-  Suspense,
-  useEffect,
-  useReducer,
-  type ReactNode,
-} from 'react';
+import { Component, Suspense, useEffect, useReducer, type ReactNode } from 'react';
 import { isLazyResourceError } from '../errors/lazy-resource-error';
 import type { LazyResourceErrorComponent } from './types';
 import type { LazyLoader } from './create-lazy-loader';
@@ -17,30 +11,36 @@ type BoundaryProps = {
   onRetry: () => void;
 };
 
-class LazyErrorBoundary extends Component<
-  BoundaryProps,
-  { failed: boolean; error?: unknown }
-> {
-  state = { failed: false, error: undefined as unknown };
+class LazyErrorBoundary extends Component<BoundaryProps, { failed: boolean; error?: unknown }> {
+  state = {
+    failed: false,
+    error: undefined as unknown,
+  };
   static getDerivedStateFromError(error: unknown) {
-    return { failed: true, error };
+    return {
+      failed: true,
+      error,
+    };
   }
   retry = () => {
     this.props.onRetry();
-    this.setState({ failed: false, error: undefined });
+    this.setState({
+      failed: false,
+      error: undefined,
+    });
   };
   render() {
-    if (!this.state.failed) return this.props.children;
+    if (!this.state.failed) {
+      return this.props.children;
+    }
     const { ErrorComponent, resource } = this.props;
-    if (!isLazyResourceError(this.state.error) || !ErrorComponent)
+    if (!isLazyResourceError(this.state.error) || !ErrorComponent) {
       throw this.state.error;
+    }
+
     return (
-      <RenderStateFallback state="Error">
-        <ErrorComponent
-          error={this.state.error}
-          retry={this.retry}
-          resource={resource}
-        />
+      <RenderStateFallback state='Error'>
+        <ErrorComponent error={this.state.error} retry={this.retry} resource={resource} />
       </RenderStateFallback>
     );
   }
@@ -69,6 +69,7 @@ export function LazyBoundary({
   const [, rerender] = useReducer((value) => value + 1, 0);
   useEffect(() => onMount?.(), [onMount]);
   const Current = loader.component(member, map);
+
   return (
     <LazyErrorBoundary
       resource={resource}
@@ -78,9 +79,7 @@ export function LazyBoundary({
         rerender();
       }}
     >
-      <Suspense fallback={
-        <RenderStateFallback state="Loading">{fallback}</RenderStateFallback>
-      }>
+      <Suspense fallback={<RenderStateFallback state='Loading'>{fallback}</RenderStateFallback>}>
         <Current {...componentProps} />
       </Suspense>
     </LazyErrorBoundary>

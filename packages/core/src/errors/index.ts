@@ -1,6 +1,4 @@
-export {
-  ReactLayoutError,
-} from './react-layout-error';
+export { ReactLayoutError } from './react-layout-error';
 
 export { InvalidConfigError } from './invalid-config';
 export type { InvalidConfigContext } from './invalid-config';
@@ -37,5 +35,9 @@ export {
   type ResourceStateError,
 } from './resource-state-error';
 
-export { LazyResourceModuleShapeError, LazyResourceStateNotFoundError, isLazyResourceError } from './lazy-resource-error';
+export {
+  LazyResourceModuleShapeError,
+  LazyResourceStateNotFoundError,
+  isLazyResourceError,
+} from './lazy-resource-error';
 export type { LazyResourceError, LazyResourceErrorMap } from './lazy-resource-error';

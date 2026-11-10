@@ -7,15 +7,11 @@ export type CapitalizedResource<Resource extends string> = Resource extends Reso
     } & Capitalize<Resource>
   : never;
 
-export type ResourceLayoutName<
-  Resource extends string,
-  Name extends string = string,
-> = Name | ((resource: CapitalizedResource<Resource>) => Name);
+export type ResourceLayoutName<Resource extends string, Name extends string = string> =
+  | Name
+  | ((resource: CapitalizedResource<Resource>) => Name);
 
-export type ResourceLayoutNames<
-  Resource extends string,
-  CallbackName extends string = string,
-> = {
+export type ResourceLayoutNames<Resource extends string, CallbackName extends string = string> = {
   [TargetResource in Resource]?:
     | string
     | ((resource: CapitalizedResource<TargetResource>) => CallbackName);
@@ -31,11 +27,9 @@ export type SelectedResourceLayoutNames<
   SelectedResource extends Resource,
   CallbackName extends string,
 > = {
-  [TargetResource in Resource as TargetResource extends SelectedResource
-    ? TargetResource
-    : never]?:
-    | string
-    | ((resource: CapitalizedResource<TargetResource>) => CallbackName);
+  [
+    TargetResource in Resource as TargetResource extends SelectedResource ? TargetResource : never
+  ]?: string | ((resource: CapitalizedResource<TargetResource>) => CallbackName);
 };
 
 export type ResourcesLayoutName<Resource extends string> =
@@ -73,9 +67,7 @@ export type SelectedLayoutResources<
       ? Resource & LayoutResourceKey<Resources>
       : keyof Arguments[0] & LayoutResourceKey<Resources>;
 
-export type ResolveResourceLayoutName<Name> = Name extends (
-  ...args: never[]
-) => infer Result
+export type ResolveResourceLayoutName<Name> = Name extends (...args: never[]) => infer Result
   ? Result & string
   : Name extends string
     ? Name
@@ -105,9 +97,10 @@ export type SelectedResourceLayoutName<
   Arguments,
   Resource extends string,
   DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
-> = HasResourceLayoutName<Arguments, Resource> extends true
-  ? ConfiguredResourceLayoutName<Arguments, Resource>
-  : ResolvedLayoutName<DefaultNaming, Resource>;
+> =
+  HasResourceLayoutName<Arguments, Resource> extends true
+    ? ConfiguredResourceLayoutName<Arguments, Resource>
+    : ResolvedLayoutName<DefaultNaming, Resource>;
 
 type ConfiguredResourceLayoutName<Arguments, Resource extends string> =
   Arguments extends ReadonlyArray<string>
@@ -130,9 +123,7 @@ type ConfiguredResourceLayoutName<Arguments, Resource extends string> =
       : string;
 
 export type NormalizeResourceLayoutNames<Names, CallbackName extends string> = {
-  [Resource in keyof Names]: Names[Resource] extends (
-    ...args: never[]
-  ) => unknown
+  [Resource in keyof Names]: Names[Resource] extends (...args: never[]) => unknown
     ? (
         resource: CapitalizedResource<Resource & string>,
       ) => NormalizeCapitalizedResourceName<CallbackName, Resource & string>

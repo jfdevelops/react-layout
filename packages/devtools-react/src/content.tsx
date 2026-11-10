@@ -84,49 +84,50 @@ export function ReactLayoutDevtoolsToolbar() {
             padding: '12px 16px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {compact &&
-              pane === 'inspector' &&
-              selection &&
-              config.showDetails && (
-                <HelpTooltip content="Back to explorer">
-                  <Button
-                    size="icon"
-                    aria-label="Back to explorer"
-                    onClick={backToExplorer}
-                  >
-                    <BackIcon />
-                  </Button>
-                </HelpTooltip>
-              )}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+            }}
+          >
+            {compact && pane === 'inspector' && selection && config.showDetails && (
+              <HelpTooltip content='Back to explorer'>
+                <Button size='icon' aria-label='Back to explorer' onClick={backToExplorer}>
+                  <BackIcon />
+                </Button>
+              </HelpTooltip>
+            )}
             <div>
-              <strong style={{ fontSize: 15 }}>Layouts</strong>
-              <div style={{ color: '#94a3b8', fontSize: 12, marginTop: 2 }}>
-                {graph.nodes.filter((n) => n.kind === 'layout').length} layouts
-                ·{' '}
-                {
-                  graph.nodes.filter((n) => n.kind === 'state' && n.active > 0)
-                    .length
-                }{' '}
-                active states
+              <strong
+                style={{
+                  fontSize: 15,
+                }}
+              >
+                Layouts
+              </strong>
+              <div
+                style={{
+                  color: '#94a3b8',
+                  fontSize: 12,
+                  marginTop: 2,
+                }}
+              >
+                {graph.nodes.filter((n) => n.kind === 'layout').length} layouts ·{' '}
+                {graph.nodes.filter((n) => n.kind === 'state' && n.active > 0).length} active states
                 {graph.nodes.some((node) => node.kind === 'lazy') && (
                   <>
                     {' '}
-                    ·{' '}
-                    {
-                      graph.nodes.filter((node) => node.kind === 'lazy').length
-                    }{' '}
-                    lazy declarations
+                    · {graph.nodes.filter((node) => node.kind === 'lazy').length} lazy declarations
                     {graph.nodes.some(
-                      (node) => node.kind === 'lazy' && node.status === 'error'
+                      (node) => node.kind === 'lazy' && node.status === 'error',
                     ) && (
                       <>
                         {' '}
                         ·{' '}
                         {
                           graph.nodes.filter(
-                            (node) =>
-                              node.kind === 'lazy' && node.status === 'error'
+                            (node) => node.kind === 'lazy' && node.status === 'error',
                           ).length
                         }{' '}
                         failed
@@ -137,13 +138,19 @@ export function ReactLayoutDevtoolsToolbar() {
               </div>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <HelpTooltip content="Locate selection">
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            <HelpTooltip content='Locate selection'>
               <Button
-                size="icon"
-                type="button"
-                aria-label="Locate selection"
-                title="Locate selection"
+                size='icon'
+                type='button'
+                aria-label='Locate selection'
+                title='Locate selection'
                 disabled={!selection}
                 onClick={locateSelection}
                 style={control}
@@ -152,12 +159,12 @@ export function ReactLayoutDevtoolsToolbar() {
               </Button>
             </HelpTooltip>
             <OutlineToggle />
-            <HelpTooltip content="Reset preferences">
+            <HelpTooltip content='Reset preferences'>
               <Button
-                size="icon"
-                type="button"
-                aria-label="Reset preferences"
-                title="Reset preferences"
+                size='icon'
+                type='button'
+                aria-label='Reset preferences'
+                title='Reset preferences'
                 onClick={resetPreferences}
                 style={control}
               >
@@ -178,11 +185,15 @@ export function ReactLayoutDevtoolsToolbar() {
             }}
           >
             <Input
-              aria-label="Search graph"
-              placeholder="Search resources, states…"
+              aria-label='Search graph'
+              placeholder='Search resources, states…'
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              style={{ ...control, flex: '1 1 200px', minWidth: 0 }}
+              style={{
+                ...control,
+                flex: '1 1 200px',
+                minWidth: 0,
+              }}
             />
             <div
               style={{
@@ -202,7 +213,7 @@ export function ReactLayoutDevtoolsToolbar() {
                 }}
               >
                 <input
-                  type="checkbox"
+                  type='checkbox'
                   checked={showComposables}
                   onChange={(e) => setShowComposables(e.target.checked)}
                 />{' '}
@@ -218,37 +229,43 @@ export function ReactLayoutDevtoolsToolbar() {
                 }}
               >
                 <input
-                  type="checkbox"
+                  type='checkbox'
                   checked={activeOnly}
                   onChange={(e) => setActiveOnly(e.target.checked)}
                 />{' '}
                 Active only
               </label>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
               {view === 'graph' && (
                 <>
                   <Button
-                    size="icon"
-                    type="button"
-                    aria-label="Zoom out"
+                    size='icon'
+                    type='button'
+                    aria-label='Zoom out'
                     onClick={() => setZoom((z) => Math.max(0.25, z - 0.25))}
                     style={control}
                   >
                     <MinusIcon />
                   </Button>
                   <Button
-                    type="button"
-                    aria-label="Reset zoom"
+                    type='button'
+                    aria-label='Reset zoom'
                     onClick={() => setZoom(1)}
                     style={control}
                   >
                     {Math.round(zoom * 100)}%
                   </Button>
                   <Button
-                    size="icon"
-                    type="button"
-                    aria-label="Zoom in"
+                    size='icon'
+                    type='button'
+                    aria-label='Zoom in'
                     onClick={() => setZoom((z) => Math.min(2, z + 0.25))}
                     style={control}
                   >
@@ -286,7 +303,7 @@ const GraphCard = memo(function GraphCard({
     <g transform={`translate(${x},${y})`}>
       <foreignObject width={228} height={74}>
         <Button
-          type="button"
+          type='button'
           data-selected-node={selected}
           data-hovered-node={hovered}
           aria-pressed={selected}
@@ -343,11 +360,7 @@ const GraphCard = memo(function GraphCard({
             title={node.label}
           >
             {node.kind === 'state' && (
-              <StateIcon
-                state={node.label}
-                palette={palette}
-                spinning={node.active > 0}
-              />
+              <StateIcon state={node.label} palette={palette} spinning={node.active > 0} />
             )}
             <span
               style={{
@@ -394,7 +407,9 @@ export function ReactLayoutDevtoolsExplorer() {
   // Large graphs only mount cards near the viewport and draw edges as two paths.
   const virtual = positioned.length > VIRTUALIZE_AFTER;
   const visibleNodes = useMemo(() => {
-    if (!virtual) return positioned;
+    if (!virtual) {
+      return positioned;
+    }
 
     const left = viewport.left / zoom - OVERSCAN;
     const right = (viewport.left + viewport.width) / zoom + OVERSCAN;
@@ -404,27 +419,31 @@ export function ReactLayoutDevtoolsExplorer() {
     // The selected card always mounts so focus restore and locate can find it.
     return positioned.filter(
       ({ node, x, y }) =>
-        node.id === selected ||
-        (x + 228 >= left && x <= right && y + 74 >= top && y <= bottom)
+        node.id === selected || (x + 228 >= left && x <= right && y + 74 >= top && y <= bottom),
     );
   }, [virtual, positioned, viewport, zoom, selected]);
   const edgePaths = useMemo(() => {
-    if (!virtual) return undefined;
+    if (!virtual) {
+      return undefined;
+    }
 
-    const paths = { hierarchy: [] as string[], references: [] as string[] };
+    const paths = {
+      hierarchy: [] as string[],
+      references: [] as string[],
+    };
 
     for (const edge of displayGraph.edges) {
       const a = positions.get(edge.source),
         b = positions.get(edge.target);
 
-      if (!a || !b) continue;
+      if (!a || !b) {
+        continue;
+      }
 
-      paths[
-        edge.relationship === 'references' ? 'references' : 'hierarchy'
-      ].push(
+      paths[edge.relationship === 'references' ? 'references' : 'hierarchy'].push(
         `M${a.x + 224},${a.y + 32} C${a.x + 256},${a.y + 32} ${b.x - 32},${
           b.y + 32
-        } ${b.x},${b.y + 32}`
+        } ${b.x},${b.y + 32}`,
       );
     }
 
@@ -434,7 +453,9 @@ export function ReactLayoutDevtoolsExplorer() {
   useLayoutEffect(() => {
     const element = graphPane.current;
 
-    if (!element) return;
+    if (!element) {
+      return;
+    }
 
     element.scrollLeft = explorerScroll.current.left;
 
@@ -453,8 +474,8 @@ export function ReactLayoutDevtoolsExplorer() {
       <div
         ref={graphPane}
         tabIndex={0}
-        role="region"
-        aria-label="Scrollable relationship graph"
+        role='region'
+        aria-label='Scrollable relationship graph'
         style={{
           overflow: 'auto',
           flex: '3 1 0%',
@@ -464,7 +485,11 @@ export function ReactLayoutDevtoolsExplorer() {
         }}
       >
         {displayGraph.nodes.length === 0 ? (
-          <p style={{ padding: 24 }}>
+          <p
+            style={{
+              padding: 24,
+            }}
+          >
             {graph.nodes.length
               ? 'No nodes match these filters.'
               : 'No definitions registered yet. Import a layout module to see it here.'}
@@ -472,7 +497,7 @@ export function ReactLayoutDevtoolsExplorer() {
         ) : (
           <>
             {/* Both views stay mounted so switching is a visibility toggle. */}
-            <div data-view="tree" hidden={view !== 'tree'}>
+            <div data-view='tree' hidden={view !== 'tree'}>
               <InspectionTree
                 key={treeRevision}
                 active={view === 'tree'}
@@ -482,7 +507,10 @@ export function ReactLayoutDevtoolsExplorer() {
                 config={config?.tree}
                 onExpandedChange={(initialExpanded) =>
                   updatePreferences({
-                    tree: { ...config.tree, initialExpanded },
+                    tree: {
+                      ...config.tree,
+                      initialExpanded,
+                    },
                   })
                 }
                 graph={displayGraph}
@@ -491,24 +519,26 @@ export function ReactLayoutDevtoolsExplorer() {
                 onSelect={setSelected}
               />
             </div>
-            <div data-view="graph" hidden={view !== 'graph'}>
+            <div data-view='graph' hidden={view !== 'graph'}>
               <svg
-                aria-label="Layout relationships"
+                aria-label='Layout relationships'
                 width={width * zoom}
                 height={height * zoom}
-                style={{ display: 'block' }}
+                style={{
+                  display: 'block',
+                }}
               >
                 <defs>
                   <marker
                     id={arrowId}
-                    viewBox="0 0 10 10"
-                    refX="9"
-                    refY="5"
-                    markerWidth="6"
-                    markerHeight="6"
-                    orient="auto-start-reverse"
+                    viewBox='0 0 10 10'
+                    refX='9'
+                    refY='5'
+                    markerWidth='6'
+                    markerHeight='6'
+                    orient='auto-start-reverse'
                   >
-                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b" />
+                    <path d='M 0 0 L 10 5 L 0 10 z' fill='#64748b' />
                   </marker>
                 </defs>
                 <g transform={`scale(${zoom})`}>
@@ -517,11 +547,9 @@ export function ReactLayoutDevtoolsExplorer() {
                       <path
                         key={kind}
                         d={edgePaths[kind].join(' ')}
-                        fill="none"
-                        stroke="#64748b"
-                        strokeDasharray={
-                          kind === 'references' ? '5 4' : undefined
-                        }
+                        fill='none'
+                        stroke='#64748b'
+                        strokeDasharray={kind === 'references' ? '5 4' : undefined}
                         markerEnd={`url(#${arrowId})`}
                       />
                     ))}
@@ -530,7 +558,9 @@ export function ReactLayoutDevtoolsExplorer() {
                       const a = positions.get(edge.source),
                         b = positions.get(edge.target);
 
-                      if (!a || !b) return null;
+                      if (!a || !b) {
+                        return null;
+                      }
 
                       const x = a.x + 224,
                         y = a.y + 32,
@@ -542,13 +572,9 @@ export function ReactLayoutDevtoolsExplorer() {
                             d={`M${x},${y} C${x + 32},${y} ${b.x - 32},${targetY} ${
                               b.x
                             },${targetY}`}
-                            fill="none"
-                            stroke="#64748b"
-                            strokeDasharray={
-                              edge.relationship === 'references'
-                                ? '5 4'
-                                : undefined
-                            }
+                            fill='none'
+                            stroke='#64748b'
+                            strokeDasharray={edge.relationship === 'references' ? '5 4' : undefined}
                             markerEnd={`url(#${arrowId})`}
                           />
                           <title>
@@ -600,11 +626,10 @@ export function ReactLayoutDevtoolsInspector() {
           ref={detailsPane}
           tabIndex={-1}
           data-react-layout-details
-          aria-label="Node details"
+          aria-label='Node details'
           style={{
             flex: '2 1 0%',
-            animation:
-              'react-layout-details-enter 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both',
+            animation: 'react-layout-details-enter 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both',
             minHeight: 0,
             boxSizing: 'border-box',
             overscrollBehavior: 'contain',
@@ -617,9 +642,7 @@ export function ReactLayoutDevtoolsInspector() {
           <SelectedNode
             highlighted={highlighted === selection.id}
             onHighlight={() =>
-              setHighlighted((current) =>
-                current === selection.id ? undefined : selection.id
-              )
+              setHighlighted((current) => (current === selection.id ? undefined : selection.id))
             }
             inspector={inspector}
             key={selection.id}
@@ -657,15 +680,19 @@ export function ReactLayoutDevtoolsFooter() {
 
 export function ReactLayoutDevtoolsWorkspace() {
   const { compact, pane, selection, config } = useDevtoolsContext();
-  const details =
-    compact && pane === 'inspector' && selection && config.showDetails;
+  const details = compact && pane === 'inspector' && selection && config.showDetails;
 
   return (
     <>
       <ReactLayoutDevtoolsToolbar />
 
       <div
-        style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}
+        style={{
+          display: 'flex',
+          flex: 1,
+          minHeight: 0,
+          overflow: 'hidden',
+        }}
       >
         <div
           hidden={Boolean(details)}
@@ -702,16 +729,11 @@ export function ReactLayoutDevtoolsContent({
   const [narrow, setNarrow] = useState(false);
 
   useEffect(() => {
-    if (
-      layout !== 'auto' ||
-      !container ||
-      typeof ResizeObserver === 'undefined'
-    )
+    if (layout !== 'auto' || !container || typeof ResizeObserver === 'undefined') {
       return;
+    }
 
-    const observer = new ResizeObserver(([entry]) =>
-      setNarrow(entry.contentRect.width < 760)
-    );
+    const observer = new ResizeObserver(([entry]) => setNarrow(entry.contentRect.width < 760));
 
     observer.observe(container);
 
@@ -729,7 +751,7 @@ export function ReactLayoutDevtoolsContent({
     >
       <section
         ref={setContainer}
-        aria-label="Layout devtools"
+        aria-label='Layout devtools'
         className={className}
         style={{
           background: '#0b1220',

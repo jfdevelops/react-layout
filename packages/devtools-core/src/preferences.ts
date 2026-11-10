@@ -24,19 +24,21 @@ export interface DevtoolsSessionState {
   selectedNode?: string;
 }
 
-export const defaultDevtoolsPreferences: Readonly<DevtoolsPreferences> =
-  Object.freeze({
-    chipColors: Object.freeze({}),
-    initialView: 'graph',
-    initialZoom: 1,
-    initialFilters: Object.freeze({
-      activeOnly: false,
-      showComposables: false,
-    }),
-    tree: Object.freeze({ stickyScopes: true, initialExpanded: true }),
-    showDetails: true,
-    showOutlines: false,
-  });
+export const defaultDevtoolsPreferences: Readonly<DevtoolsPreferences> = Object.freeze({
+  chipColors: Object.freeze({}),
+  initialView: 'graph',
+  initialZoom: 1,
+  initialFilters: Object.freeze({
+    activeOnly: false,
+    showComposables: false,
+  }),
+  tree: Object.freeze({
+    stickyScopes: true,
+    initialExpanded: true,
+  }),
+  showDetails: true,
+  showOutlines: false,
+});
 
 const chipKinds = new Set<string>([
   ...Object.keys(defaultNodeColors),
@@ -68,7 +70,9 @@ function colors(value: unknown): DevtoolsPreferences['chipColors'] {
   const result: DevtoolsPreferences['chipColors'] = {};
 
   for (const [kind, color] of Object.entries(record(value))) {
-    if (!chipKinds.has(kind)) continue;
+    if (!chipKinds.has(kind)) {
+      continue;
+    }
 
     const entry = record(color);
 
@@ -82,7 +86,9 @@ function colors(value: unknown): DevtoolsPreferences['chipColors'] {
       result[kind as DevtoolsChipKind] = {
         color: entry.color,
         ...(typeof entry.background === 'string'
-          ? { background: entry.background }
+          ? {
+              background: entry.background,
+            }
           : {}),
       };
     }
@@ -91,41 +97,31 @@ function colors(value: unknown): DevtoolsPreferences['chipColors'] {
   return result;
 }
 
-function resolve(
-  value: unknown,
-  fallback: Readonly<DevtoolsPreferences>
-): DevtoolsPreferences {
+function resolve(value: unknown, fallback: Readonly<DevtoolsPreferences>): DevtoolsPreferences {
   const saved = record(value);
   const filters = record(saved.initialFilters);
   const tree = record(saved.tree);
 
   return {
-    chipColors: { ...fallback.chipColors, ...colors(saved.chipColors) },
+    chipColors: {
+      ...fallback.chipColors,
+      ...colors(saved.chipColors),
+    },
     initialView:
       saved.initialView === 'graph' || saved.initialView === 'tree'
         ? saved.initialView
         : fallback.initialView,
     initialZoom:
-      typeof saved.initialZoom === 'number' &&
-      Number.isFinite(saved.initialZoom)
+      typeof saved.initialZoom === 'number' && Number.isFinite(saved.initialZoom)
         ? initialGraphZoom(saved.initialZoom)
         : fallback.initialZoom,
     initialFilters: {
-      activeOnly: boolean(
-        filters.activeOnly,
-        fallback.initialFilters.activeOnly
-      ),
-      showComposables: boolean(
-        filters.showComposables,
-        fallback.initialFilters.showComposables
-      ),
+      activeOnly: boolean(filters.activeOnly, fallback.initialFilters.activeOnly),
+      showComposables: boolean(filters.showComposables, fallback.initialFilters.showComposables),
     },
     tree: {
       stickyScopes: boolean(tree.stickyScopes, fallback.tree.stickyScopes),
-      initialExpanded: boolean(
-        tree.initialExpanded,
-        fallback.tree.initialExpanded
-      ),
+      initialExpanded: boolean(tree.initialExpanded, fallback.tree.initialExpanded),
     },
     showDetails: boolean(saved.showDetails, fallback.showDetails),
     showOutlines: boolean(saved.showOutlines, fallback.showOutlines),
@@ -135,14 +131,14 @@ function resolve(
 /** Validate stored values, with caller configuration used for missing or invalid fields. */
 export function resolveDevtoolsPreferences(
   value: unknown,
-  defaults?: DevtoolsConfig
+  defaults?: DevtoolsConfig,
 ): DevtoolsPreferences {
   return resolve(value, resolve(defaults, defaultDevtoolsPreferences));
 }
 
 export function parseDevtoolsPreferences(
   raw: string | null,
-  defaults?: DevtoolsConfig
+  defaults?: DevtoolsConfig,
 ): DevtoolsPreferences {
   try {
     return resolveDevtoolsPreferences(JSON.parse(raw ?? '{}'), defaults);
@@ -154,14 +150,12 @@ export function parseDevtoolsPreferences(
 /** Merge nested settings by key; invalid patch fields retain their previous values. */
 export function mergeDevtoolsPreferences(
   current: DevtoolsPreferences,
-  patch: DevtoolsConfig
+  patch: DevtoolsConfig,
 ): DevtoolsPreferences {
   return resolveDevtoolsPreferences(patch, current);
 }
 
 /** Serialize only the shared schema, excluding session state and adapter-specific values. */
-export function serializeDevtoolsPreferences(
-  preferences: DevtoolsPreferences
-): string {
+export function serializeDevtoolsPreferences(preferences: DevtoolsPreferences): string {
   return JSON.stringify(resolveDevtoolsPreferences(preferences));
 }

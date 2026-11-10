@@ -13,10 +13,7 @@ import { createContext, useContext } from 'react';
  *   own definition — a page or pane produced by a *different* definition shares
  *   this context but its resource is unrelated, so the shell ignores it.
  */
-export type ResourceLayoutShellPublisher = (
-  resource: string | undefined,
-  ownerId?: symbol,
-) => void;
+export type ResourceLayoutShellPublisher = (resource: string | undefined, ownerId?: symbol) => void;
 
 /**
  * Bridge between a `Shell` and the per-resource components rendered inside its

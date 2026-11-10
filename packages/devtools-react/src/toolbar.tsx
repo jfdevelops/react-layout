@@ -1,10 +1,6 @@
 import { usePanelTransition } from './use-panel-transition';
 import { GraphIcon, ChevronUpIcon, FloatingIcon, CloseIcon } from './icons';
-import {
-  isEditable,
-  matchesPanelShortcut,
-  panelShortcutLabel,
-} from './shortcuts';
+import { isEditable, matchesPanelShortcut, panelShortcutLabel } from './shortcuts';
 import {
   useEffect,
   useId,
@@ -37,15 +33,23 @@ const minDrawerHeight = 160;
 
 /** Shortcuts use `event.code` so they work with any keyboard layout. */
 export const toolbarShortcuts = {
-  toggle: { code: 'KeyJ', label: panelShortcutLabel },
-  hide: { code: 'KeyH', label: 'Alt+Shift+H' },
+  toggle: {
+    code: 'KeyJ',
+    label: panelShortcutLabel,
+  },
+  hide: {
+    code: 'KeyH',
+    label: 'Alt+Shift+H',
+  },
 } as const;
 
 function matches(
   event: globalThis.KeyboardEvent,
-  shortcut: (typeof toolbarShortcuts)[keyof typeof toolbarShortcuts]
+  shortcut: (typeof toolbarShortcuts)[keyof typeof toolbarShortcuts],
 ) {
-  if (shortcut === toolbarShortcuts.toggle) return matchesPanelShortcut(event);
+  if (shortcut === toolbarShortcuts.toggle) {
+    return matchesPanelShortcut(event);
+  }
 
   return (
     event.altKey &&
@@ -59,9 +63,7 @@ function matches(
 function clampHeight(height: number) {
   const max = Math.max(
     minDrawerHeight,
-    (typeof window === 'undefined' ? 768 : window.innerHeight) -
-      toolbarBarHeight -
-      48
+    (typeof window === 'undefined' ? 768 : window.innerHeight) - toolbarBarHeight - 48,
   );
 
   return Math.round(Math.max(minDrawerHeight, Math.min(max, height)));
@@ -82,13 +84,10 @@ export function ToolbarDevtools({
   const transition = usePanelTransition(initialIsOpen);
   const { open: expanded, setOpen: setExpanded } = transition;
   const [hidden, setHidden] = useState(false);
-  const [preferences, updatePreferences] = usePanelPreferences(
-    content.config,
-    content.storageKey
-  );
+  const [preferences, updatePreferences] = usePanelPreferences(content.config, content.storageKey);
   const [draftHeight, setDraftHeight] = useState<number>();
   const drawerHeight = clampHeight(
-    draftHeight ?? preferences.toolbar?.height ?? defaultDrawerHeight
+    draftHeight ?? preferences.toolbar?.height ?? defaultDrawerHeight,
   );
   const [narrow, setNarrow] = useState(false);
 
@@ -106,7 +105,9 @@ export function ToolbarDevtools({
 
   useEffect(() => {
     function onKeyDown(event: globalThis.KeyboardEvent) {
-      if (event.repeat || isEditable(event.target)) return;
+      if (event.repeat || isEditable(event.target)) {
+        return;
+      }
 
       if (matches(event, toolbarShortcuts.hide)) {
         event.preventDefault();
@@ -127,12 +128,12 @@ export function ToolbarDevtools({
   }, []);
 
   // Reserve space so the bar and drawer never cover the end of the page.
-  const reserved = hidden
-    ? 0
-    : toolbarBarHeight + (transition.present ? drawerHeight : 0);
+  const reserved = hidden ? 0 : toolbarBarHeight + (transition.present ? drawerHeight : 0);
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     const body = document.body;
     const inline = body.style.paddingBottom;
@@ -149,20 +150,24 @@ export function ToolbarDevtools({
   }, [mounted]);
 
   useEffect(() => {
-    if (mounted)
-      document.documentElement.style.setProperty(
-        toolbarHeightVariable,
-        `${reserved}px`
-      );
+    if (mounted) {
+      document.documentElement.style.setProperty(toolbarHeightVariable, `${reserved}px`);
+    }
   }, [mounted, reserved]);
 
   function saveHeight(height: number) {
     setDraftHeight(undefined);
 
-    updatePreferences({ toolbar: { height: clampHeight(height) } });
+    updatePreferences({
+      toolbar: {
+        height: clampHeight(height),
+      },
+    });
   }
 
-  if (!mounted || hidden) return null;
+  if (!mounted || hidden) {
+    return null;
+  }
 
   return createPortal(
     <ReactLayoutDevtoolsProvider
@@ -172,9 +177,7 @@ export function ToolbarDevtools({
       config={content.config}
       storageKey={content.storageKey}
       layout={
-        content.layout === 'compact' || (content.layout !== 'split' && narrow)
-          ? 'compact'
-          : 'split'
+        content.layout === 'compact' || (content.layout !== 'split' && narrow) ? 'compact' : 'split'
       }
     >
       <ToolbarShell
@@ -190,7 +193,7 @@ export function ToolbarDevtools({
         style={content.style}
       />
     </ReactLayoutDevtoolsProvider>,
-    document.body
+    document.body,
   );
 }
 
@@ -217,18 +220,12 @@ function ToolbarShell({
   className?: string;
   style?: CSSProperties;
 }) {
-  const {
-    graph,
-    inspector,
-    palette,
-    setHoverHighlight,
-    highlighted,
-    setHighlighted,
-  } = useDevtoolsContext();
+  const { graph, inspector, palette, setHoverHighlight, highlighted, setHighlighted } =
+    useDevtoolsContext();
   const summary = useMemo(() => summarizeGraph(graph), [graph]);
   useEffect(
     () => () => setHoverHighlight(undefined),
-    [summary.current?.layoutId, setHoverHighlight]
+    [summary.current?.layoutId, setHoverHighlight],
   );
   const drawerId = useId();
   const drag = useRef<{ pointer: number; y: number; height: number }>();
@@ -242,15 +239,15 @@ function ToolbarShell({
     fontSize: 12,
   };
   const instance = summary.current?.instance;
-  const stateLabel = (id: string) =>
-    graph.nodes.find((node) => node.id === id)?.label ?? id;
+  const stateLabel = (id: string) => graph.nodes.find((node) => node.id === id)?.label ?? id;
 
   function onResizeKey(event: KeyboardEvent<HTMLButtonElement>) {
     const step = event.shiftKey ? 64 : 16;
-    const delta =
-      event.key === 'ArrowUp' ? step : event.key === 'ArrowDown' ? -step : 0;
+    const delta = event.key === 'ArrowUp' ? step : event.key === 'ArrowDown' ? -step : 0;
 
-    if (!delta) return;
+    if (!delta) {
+      return;
+    }
 
     event.preventDefault();
 
@@ -284,14 +281,20 @@ function ToolbarShell({
           data-react-layout-devtools-panel
           aria-hidden={!expanded || undefined}
           ref={(element) => {
-            if (element) element.inert = !expanded;
+            if (element) {
+              element.inert = !expanded;
+            }
           }}
           onAnimationEnd={(event) => {
-            if (event.target === event.currentTarget) transition.finish();
+            if (event.target === event.currentTarget) {
+              transition.finish();
+            }
           }}
-          aria-label="Layout devtools"
+          aria-label='Layout devtools'
           onKeyDown={(event) => {
-            if (event.key !== 'Escape' || event.defaultPrevented) return;
+            if (event.key !== 'Escape' || event.defaultPrevented) {
+              return;
+            }
 
             event.stopPropagation();
 
@@ -312,10 +315,12 @@ function ToolbarShell({
           }}
         >
           <Button
-            aria-label="Resize devtools drawer"
-            title="Drag to resize · Arrow keys resize; Shift resizes faster"
+            aria-label='Resize devtools drawer'
+            title='Drag to resize · Arrow keys resize; Shift resizes faster'
             onPointerDown={(event: PointerEvent<HTMLButtonElement>) => {
-              if (event.button !== 0 || event.isPrimary === false) return;
+              if (event.button !== 0 || event.isPrimary === false) {
+                return;
+              }
 
               event.preventDefault();
 
@@ -332,16 +337,18 @@ function ToolbarShell({
             onPointerMove={(event) => {
               const active = drag.current;
 
-              if (!active || active.pointer !== event.pointerId) return;
+              if (!active || active.pointer !== event.pointerId) {
+                return;
+              }
 
-              dragHeight.current = clampHeight(
-                active.height + active.y - event.clientY
-              );
+              dragHeight.current = clampHeight(active.height + active.y - event.clientY);
 
               previewHeight(dragHeight.current);
             }}
             onPointerUp={(event) => {
-              if (drag.current?.pointer !== event.pointerId) return;
+              if (drag.current?.pointer !== event.pointerId) {
+                return;
+              }
 
               drag.current = undefined;
 
@@ -373,8 +380,8 @@ function ToolbarShell({
       )}
       {!transition.present && <ComposableOutlines />}
       <div
-        role="region"
-        aria-label="React Layout Devtools toolbar"
+        role='region'
+        aria-label='React Layout Devtools toolbar'
         style={{
           position: 'relative',
           zIndex: 3,
@@ -401,9 +408,13 @@ function ToolbarShell({
           React Layout
         </strong>
         <span
-          role="group"
-          aria-label="Layout status"
-          style={{ display: 'flex', gap: 10, color: '#94a3b8' }}
+          role='group'
+          aria-label='Layout status'
+          style={{
+            display: 'flex',
+            gap: 10,
+            color: '#94a3b8',
+          }}
         >
           <span>{summary.activeLayouts} active</span>
           <span>{summary.loading} loading</span>
@@ -419,20 +430,18 @@ function ToolbarShell({
         </span>
         {summary.current && (
           <Button
-            aria-label="Current layout"
+            aria-label='Current layout'
             aria-pressed={highlighted === summary.current.layoutId}
             onClick={() =>
               setHighlighted((current) =>
-                current === summary.current!.layoutId
-                  ? undefined
-                  : summary.current!.layoutId
+                current === summary.current!.layoutId ? undefined : summary.current!.layoutId,
               )
             }
             onPointerEnter={() => setHoverHighlight(summary.current!.layoutId)}
             onPointerLeave={() => setHoverHighlight(undefined)}
             onFocus={() => setHoverHighlight(summary.current!.layoutId)}
             onBlur={() => setHoverHighlight(undefined)}
-            title="Most recently mounted layout"
+            title='Most recently mounted layout'
             style={{
               ...barControl,
               overflow: 'hidden',
@@ -446,17 +455,22 @@ function ToolbarShell({
             {summary.current.state && ` · ${summary.current.state}`}
           </Button>
         )}
-        <span style={{ flex: 1 }} />
+        <span
+          style={{
+            flex: 1,
+          }}
+        />
         {instance && inspector.preview && instance.states.length > 0 && (
           <select
-            aria-label="Override state"
+            aria-label='Override state'
             value={instance.forcedState ?? ''}
-            onChange={(event) =>
-              inspector.preview?.(instance.id, event.target.value || undefined)
-            }
-            style={{ ...barControl, padding: '0 4px' }}
+            onChange={(event) => inspector.preview?.(instance.id, event.target.value || undefined)}
+            style={{
+              ...barControl,
+              padding: '0 4px',
+            }}
           >
-            <option value="">Auto</option>
+            <option value=''>Auto</option>
             {instance.states.map((id) => (
               <option key={id} value={id}>
                 {stateLabel(id)}
@@ -464,12 +478,12 @@ function ToolbarShell({
             ))}
           </select>
         )}
-        <OutlineToggle size="icon-sm" />
+        <OutlineToggle size='icon-sm' />
         {onSwitchVariant && (
-          <HelpTooltip content="Switch to floating panel">
+          <HelpTooltip content='Switch to floating panel'>
             <Button
-              size="icon-sm"
-              aria-label="Switch to floating panel"
+              size='icon-sm'
+              aria-label='Switch to floating panel'
               onClick={onSwitchVariant}
               style={barControl}
             >
@@ -477,12 +491,10 @@ function ToolbarShell({
             </Button>
           </HelpTooltip>
         )}
-        <HelpTooltip
-          content={`Hide toolbar · ${toolbarShortcuts.hide.label} shows it again`}
-        >
+        <HelpTooltip content={`Hide toolbar · ${toolbarShortcuts.hide.label} shows it again`}>
           <Button
-            size="icon-sm"
-            aria-label="Hide toolbar"
+            size='icon-sm'
+            aria-label='Hide toolbar'
             aria-keyshortcuts={toolbarShortcuts.hide.label}
             onClick={hide}
             style={barControl}
@@ -490,11 +502,9 @@ function ToolbarShell({
             <CloseIcon />
           </Button>
         </HelpTooltip>
-        <HelpTooltip
-          content={`${expanded ? 'Collapse' : 'Expand'} devtools · Ctrl/Cmd+J`}
-        >
+        <HelpTooltip content={`${expanded ? 'Collapse' : 'Expand'} devtools · Ctrl/Cmd+J`}>
           <Button
-            size="icon-sm"
+            size='icon-sm'
             ref={toggle}
             aria-label={expanded ? 'Collapse devtools' : 'Expand devtools'}
             aria-expanded={expanded}
@@ -504,7 +514,9 @@ function ToolbarShell({
             style={barControl}
           >
             <ChevronUpIcon
-              style={{ transform: expanded ? 'rotate(180deg)' : undefined }}
+              style={{
+                transform: expanded ? 'rotate(180deg)' : undefined,
+              }}
             />
           </Button>
         </HelpTooltip>

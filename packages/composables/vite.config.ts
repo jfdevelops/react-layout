@@ -5,10 +5,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   resolve: {
     alias: {
-      '@jfdevelops/react-layout-validator': path.resolve(
-        __dirname,
-        '../validators/src/index.ts',
-      ),
+      '@jfdevelops/react-layout-validator': path.resolve(__dirname, '../validators/src/index.ts'),
     },
   },
   plugins: [react()],

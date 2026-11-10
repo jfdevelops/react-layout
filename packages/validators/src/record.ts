@@ -1,16 +1,9 @@
 import { validateDefinition } from './standard-schema';
-import type {
-  AnyBuiltPropDefinition,
-  ExtractDefinitionValue,
-  PropVisibility,
-} from './types';
+import type { AnyBuiltPropDefinition, ExtractDefinitionValue, PropVisibility } from './types';
 import { BaseProp } from './base';
 import { InvalidRecordKeyError } from './errors';
 
-function assertAllowedRecordKey(
-  key: string,
-  keyProp: AnyBuiltPropDefinition | undefined,
-) {
+function assertAllowedRecordKey(key: string, keyProp: AnyBuiltPropDefinition | undefined) {
   if (!keyProp) {
     return;
   }
@@ -26,20 +19,15 @@ export class RecordProp<
   ValueProp extends AnyBuiltPropDefinition,
   KeyProp extends AnyBuiltPropDefinition | undefined = undefined,
   Visibility extends PropVisibility = 'required',
-> extends BaseProp<
-  'record',
-  Visibility,
-  Record<string, ExtractDefinitionValue<ValueProp>>
-> {
+> extends BaseProp<'record', Visibility, Record<string, ExtractDefinitionValue<ValueProp>>> {
   readonly valueProp: ValueProp;
   readonly keyProp: KeyProp;
 
-  constructor(
-    valueProp: ValueProp,
-    keyProp: KeyProp,
-    visibility: Visibility,
-  ) {
-    super({ type: 'record', visibility });
+  constructor(valueProp: ValueProp, keyProp: KeyProp, visibility: Visibility) {
+    super({
+      type: 'record',
+      visibility,
+    });
     this.valueProp = valueProp;
     this.keyProp = keyProp;
   }
@@ -54,10 +42,7 @@ export class RecordProp<
     }
 
     const recordValue = value as Record<string, unknown>;
-    const validatedRecord = {} as Record<
-      string,
-      ExtractDefinitionValue<ValueProp>
-    >;
+    const validatedRecord = {} as Record<string, ExtractDefinitionValue<ValueProp>>;
 
     for (const key of Object.keys(recordValue)) {
       assertAllowedRecordKey(key, this.keyProp);
@@ -70,9 +55,7 @@ export class RecordProp<
     return validatedRecord;
   }
 
-  allows(
-    value: unknown,
-  ): value is Record<string, ExtractDefinitionValue<ValueProp>> {
+  allows(value: unknown): value is Record<string, ExtractDefinitionValue<ValueProp>> {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) {
       return false;
     }

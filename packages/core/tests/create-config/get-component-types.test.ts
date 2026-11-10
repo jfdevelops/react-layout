@@ -42,21 +42,16 @@ type GroupsOptions = GetComponentOptionsForResource<TestResources, 'groups'>;
 type AllOptions = GetComponentOptions<TestResources>;
 
 type AssertRolesResource = 'roles' extends AllOptions['resource'] ? true : false;
-type AssertUsersHasSubResource = 'subResource' extends keyof UsersOptions
-  ? true
-  : false;
-type AssertGroupsNoSubResource = 'subResource' extends keyof GroupsOptions
-  ? false
-  : true;
-type AssertFlatSlug = 'managers' extends NonNullable<UsersOptions['subResource']>
-  ? true
-  : false;
-type AssertNestedSubResource = {
-  value: 'managers';
-  subResource: 'male';
-} extends NonNullable<UsersOptions['subResource']>
-  ? true
-  : false;
+type AssertUsersHasSubResource = 'subResource' extends keyof UsersOptions ? true : false;
+type AssertGroupsNoSubResource = 'subResource' extends keyof GroupsOptions ? false : true;
+type AssertFlatSlug = 'managers' extends NonNullable<UsersOptions['subResource']> ? true : false;
+type AssertNestedSubResource =
+  {
+    value: 'managers';
+    subResource: 'male';
+  } extends NonNullable<UsersOptions['subResource']>
+    ? true
+    : false;
 type AssertComponentAllowsError = 'errorComponent' extends ResourceConfigComponentKey
   ? true
   : false;
@@ -64,17 +59,10 @@ type AssertComponentAllowsPending = 'pendingComponent' extends ResourceConfigCom
   ? true
   : false;
 type AssertComponentAllowsNew = 'new' extends ResourceConfigComponentKey ? true : false;
-type AssertComponentAllowsDetail = 'detail' extends ResourceConfigComponentKey
-  ? true
-  : false;
-type AssertUsersComponentKey = NonNullable<
-  UsersOptions['component']
-> extends ResourceConfigComponentKey
-  ? true
-  : false;
-type AssertDefaultComponentOptional = undefined extends UsersOptions['component']
-  ? true
-  : false;
+type AssertComponentAllowsDetail = 'detail' extends ResourceConfigComponentKey ? true : false;
+type AssertUsersComponentKey =
+  NonNullable<UsersOptions['component']> extends ResourceConfigComponentKey ? true : false;
+type AssertDefaultComponentOptional = undefined extends UsersOptions['component'] ? true : false;
 
 type ForResourceResult<
   Bound extends {
@@ -82,13 +70,8 @@ type ForResourceResult<
   },
 > = GetComponentAtBound<
   TestResources,
-  ResourceFromGetComponentBound<
-    TestResources,
-    ValidateForResourceBound<TestResources, Bound>
-  >,
-  SubResourceFromGetComponentBound<
-    ValidateForResourceBound<TestResources, Bound>
-  >
+  ResourceFromGetComponentBound<TestResources, ValidateForResourceBound<TestResources, Bound>>,
+  SubResourceFromGetComponentBound<ValidateForResourceBound<TestResources, Bound>>
 >;
 
 type InvalidGroupsSubResourceBound = ValidateForResourceBound<
@@ -98,9 +81,7 @@ type InvalidGroupsSubResourceBound = ValidateForResourceBound<
     subResource: { value: 'managers'; subResource: 'female' };
   }
 >;
-type AssertGroupsSubResourceRejected = [
-  InvalidGroupsSubResourceBound,
-] extends [never]
+type AssertGroupsSubResourceRejected = [InvalidGroupsSubResourceBound] extends [never]
   ? true
   : false;
 
@@ -109,19 +90,15 @@ type BoundFemale = GetComponentAtBound<
   'users',
   { value: 'managers'; subResource: 'female' }
 >;
-type AssertBoundFemaleNoResource = 'resource' extends Parameters<BoundFemale>[0]
-  ? false
-  : true;
-type AssertBoundFemaleComponent = NonNullable<
-  Parameters<BoundFemale>[0]
->['component'] extends ResourceConfigComponentKey | undefined
+type AssertBoundFemaleNoResource = 'resource' extends Parameters<BoundFemale>[0] ? false : true;
+type AssertBoundFemaleComponent = NonNullable<Parameters<BoundFemale>[0]>['component'] extends
+  | ResourceConfigComponentKey
+  | undefined
   ? true
   : false;
 
 type BoundUsers = GetComponentAtBound<TestResources, 'users'>;
-type AssertBoundUsersNoSubResource = 'subResource' extends Parameters<BoundUsers>[0]
-  ? false
-  : true;
+type AssertBoundUsersNoSubResource = 'subResource' extends Parameters<BoundUsers>[0] ? false : true;
 
 describe('getComponent options types', () => {
   it('allows every layout resource on resource, not only configured keys', () => {
@@ -171,10 +148,7 @@ describe('getComponent options types', () => {
                 readonly subResources: readonly [
                   {
                     readonly value: 'wfh';
-                    readonly subResources: readonly [
-                      'domestic',
-                      'international',
-                    ];
+                    readonly subResources: readonly ['domestic', 'international'];
                   },
                   'onsite',
                 ];
@@ -184,31 +158,27 @@ describe('getComponent options types', () => {
         ];
       },
     ];
-    type DeepUsersOptions = GetComponentOptionsForResource<
-      DeepResources,
-      'users'
-    >;
-    type AssertFourDeep = {
-      value: 'managers';
-      subResource: {
-        value: 'male';
+    type DeepUsersOptions = GetComponentOptionsForResource<DeepResources, 'users'>;
+    type AssertFourDeep =
+      {
+        value: 'managers';
         subResource: {
-          value: 'wfh';
-          subResource: 'domestic';
+          value: 'male';
+          subResource: {
+            value: 'wfh';
+            subResource: 'domestic';
+          };
         };
-      };
-    } extends NonNullable<DeepUsersOptions['subResource']>
-      ? true
-      : false;
+      } extends NonNullable<DeepUsersOptions['subResource']>
+        ? true
+        : false;
     const fourDeep: AssertFourDeep = true;
     expect(fourDeep).toBe(true);
   });
 
   it('matches full-tree subResource param for a resource', () => {
     type Full = SubResourceParamForResource<TestResources, 'users'>;
-    type AssertNested = { value: 'managers'; subResource: 'male' } extends Full
-      ? true
-      : false;
+    type AssertNested = { value: 'managers'; subResource: 'male' } extends Full ? true : false;
     const nested: AssertNested = true;
     expect(nested).toBe(true);
   });
@@ -228,16 +198,17 @@ describe('getComponent options types', () => {
   });
 
   it('infers forResource binding from the bound argument', () => {
-    type AssertInferred = ForResourceResult<{
-      resource: 'users';
-      subResource: { value: 'managers'; subResource: 'female' };
-    }> extends GetComponentAtBound<
-      TestResources,
-      'users',
-      { value: 'managers'; subResource: 'female' }
-    >
-      ? true
-      : false;
+    type AssertInferred =
+      ForResourceResult<{
+        resource: 'users';
+        subResource: { value: 'managers'; subResource: 'female' };
+      }> extends GetComponentAtBound<
+        TestResources,
+        'users',
+        { value: 'managers'; subResource: 'female' }
+      >
+        ? true
+        : false;
     const inferred: AssertInferred = true;
     expect(inferred).toBe(true);
   });
@@ -278,7 +249,9 @@ describe('getComponent types for resource-specific sub-resources', () => {
   const config = createResourceConfig({
     templates: {
       component: null as never,
-      detail: { component: null as never },
+      detail: {
+        component: null as never,
+      },
       deleted: {
         component: null as never,
         errorComponent: null as never,
@@ -296,7 +269,9 @@ describe('getComponent types for resource-specific sub-resources', () => {
   it('types independently spread resource config fragments', () => {
     const templates = createResourceConfig.forResource('templates', {
       component: null as never,
-      deleted: { component: null as never },
+      deleted: {
+        component: null as never,
+      },
     });
     const appointments = createResourceConfig.forResource('appointments', {
       component: null as never,
@@ -329,28 +304,23 @@ describe('getComponent types for resource-specific sub-resources', () => {
         component: null as never,
         deleted: {
           component: null as never,
-          expired: { component: null as never },
+          expired: {
+            component: null as never,
+          },
         },
       },
     });
 
-    type TemplatesEntry = NonNullable<
-      ResourceConfigMap<TemplateResources>['templates']
-    >;
+    type TemplatesEntry = NonNullable<ResourceConfigMap<TemplateResources>['templates']>;
     type DeletedEntry = NonNullable<TemplatesEntry['deleted']>;
-    type AppointmentsEntry = NonNullable<
-      ResourceConfigMap<TemplateResources>['appointments']
-    >;
+    type AppointmentsEntry = NonNullable<ResourceConfigMap<TemplateResources>['appointments']>;
 
-    type AssertSubResourceIsDirectKey = 'deleted' extends keyof TemplatesEntry
-      ? true
-      : false;
-    type AssertNoSubResourcesWrapper =
-      'subResources' extends keyof TemplatesEntry ? false : true;
-    type AssertNestedSubResourceIsDirectKey =
-      'expired' extends keyof DeletedEntry ? true : false;
-    type AssertSubResourceKeysAreResourceSpecific =
-      'deleted' extends keyof AppointmentsEntry ? false : true;
+    type AssertSubResourceIsDirectKey = 'deleted' extends keyof TemplatesEntry ? true : false;
+    type AssertNoSubResourcesWrapper = 'subResources' extends keyof TemplatesEntry ? false : true;
+    type AssertNestedSubResourceIsDirectKey = 'expired' extends keyof DeletedEntry ? true : false;
+    type AssertSubResourceKeysAreResourceSpecific = 'deleted' extends keyof AppointmentsEntry
+      ? false
+      : true;
 
     const directKey: AssertSubResourceIsDirectKey = true;
     const noWrapper: AssertNoSubResourcesWrapper = true;
@@ -415,30 +385,20 @@ describe('getComponent types for resource-specific sub-resources', () => {
   });
 
   it('omits subResource for resources without declared sub-resources', () => {
-    type AppointmentsOptions = GetComponentOptionsForResource<
-      TemplateResources,
-      'appointments'
-    >;
-    type AssertNoSubResourceOption =
-      'subResource' extends keyof AppointmentsOptions ? false : true;
+    type AppointmentsOptions = GetComponentOptionsForResource<TemplateResources, 'appointments'>;
+    type AssertNoSubResourceOption = 'subResource' extends keyof AppointmentsOptions ? false : true;
 
     const noSubResourceOption: AssertNoSubResourceOption = true;
     expect(noSubResourceOption).toBe(true);
   });
 
   it('supports deeply typed config paths', () => {
-    expectTypeOf(config.getComponent).toBeCallableWith(
-      'templates.deleted.expired',
-    );
-    expectTypeOf(config.getComponent).toBeCallableWith(
-      'templates.deleted.expired.component',
-    );
+    expectTypeOf(config.getComponent).toBeCallableWith('templates.deleted.expired');
+    expectTypeOf(config.getComponent).toBeCallableWith('templates.deleted.expired.component');
     expectTypeOf(config.getComponent).toBeCallableWith(
       'templates.deleted.expired.pendingComponent',
     );
-    expectTypeOf(config.getComponent).toBeCallableWith(
-      'appointments.component',
-    );
+    expectTypeOf(config.getComponent).toBeCallableWith('appointments.component');
 
     () => {
       // @ts-expect-error deleted is not configured under appointments
@@ -465,12 +425,16 @@ describe('getComponent types for resource-specific sub-resources', () => {
     });
 
     () => {
-      // @ts-expect-error resource is already bound
-      getExpired({ resource: 'templates' });
+      getExpired({
+        // @ts-expect-error resource is already bound
+        resource: 'templates',
+      });
     };
     () => {
-      // @ts-expect-error subResource is already bound
-      getExpired({ subResource: 'expired' });
+      getExpired({
+        // @ts-expect-error subResource is already bound
+        subResource: 'expired',
+      });
     };
   });
 });

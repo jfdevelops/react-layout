@@ -12,14 +12,27 @@ afterEach(() => {
 it('moves the active style to the forced state override', async () => {
   const store = createInspectionStore();
 
-  store.node({ id: 'layout', kind: 'layout', label: 'Users' });
+  store.node({
+    id: 'layout',
+    kind: 'layout',
+    label: 'Users',
+  });
 
   for (const [id, label] of [
     ['default', 'default'],
     ['loading', 'Loading'],
     ['error', 'Error'],
-  ])
-    store.edge('layout', store.node({ id, kind: 'state', label }), 'defines');
+  ]) {
+    store.edge(
+      'layout',
+      store.node({
+        id,
+        kind: 'state',
+        label,
+      }),
+      'defines',
+    );
+  }
 
   store.registerPreview(
     {
@@ -28,16 +41,22 @@ it('moves the active style to the forced state override', async () => {
       state: 'default',
       states: ['default', 'loading', 'error'],
     },
-    vi.fn()
+    vi.fn(),
   );
 
   render(<ReactLayoutDevtoolsContent source={store} />);
 
-  fireEvent.click(screen.getByRole('button', { name: /LAYOUT.*Users/i }));
+  fireEvent.click(
+    screen.getByRole('button', {
+      name: /LAYOUT.*Users/i,
+    }),
+  );
 
   const overrides = () =>
     ['Auto', 'default', 'Loading', 'Error'].map((name) =>
-      screen.getByRole('button', { name })
+      screen.getByRole('button', {
+        name,
+      }),
     );
   const active = () =>
     overrides()
@@ -46,17 +65,27 @@ it('moves the active style to the forced state override', async () => {
 
   expect(active()).toEqual(['Auto']);
 
-  fireEvent.click(screen.getByRole('button', { name: 'Loading' }));
+  fireEvent.click(
+    screen.getByRole('button', {
+      name: 'Loading',
+    }),
+  );
 
   await screen.findByText('Forced: Loading');
 
   expect(active()).toEqual(['Loading']);
 
-  expect(
-    overrides().filter((button) => button.getAttribute('aria-pressed') === 'true')
-  ).toEqual([screen.getByRole('button', { name: 'Loading' })]);
+  expect(overrides().filter((button) => button.getAttribute('aria-pressed') === 'true')).toEqual([
+    screen.getByRole('button', {
+      name: 'Loading',
+    }),
+  ]);
 
-  fireEvent.click(screen.getByRole('button', { name: 'Auto' }));
+  fireEvent.click(
+    screen.getByRole('button', {
+      name: 'Auto',
+    }),
+  );
 
   await vi.waitFor(() => expect(active()).toEqual(['Auto']));
 });
@@ -64,24 +93,43 @@ it('moves the active style to the forced state override', async () => {
 it('marks "Preview this state" active when its state is forced', async () => {
   const store = createInspectionStore();
 
-  store.node({ id: 'layout', kind: 'layout', label: 'Users' });
+  store.node({
+    id: 'layout',
+    kind: 'layout',
+    label: 'Users',
+  });
 
   store.edge(
     'layout',
-    store.node({ id: 'loading', kind: 'state', label: 'Loading' }),
-    'defines'
+    store.node({
+      id: 'loading',
+      kind: 'state',
+      label: 'Loading',
+    }),
+    'defines',
   );
 
   store.registerPreview(
-    { id: 'instance', layout: 'layout', state: 'loading', states: ['loading'] },
-    vi.fn()
+    {
+      id: 'instance',
+      layout: 'layout',
+      state: 'loading',
+      states: ['loading'],
+    },
+    vi.fn(),
   );
 
   render(<ReactLayoutDevtoolsContent source={store} />);
 
-  fireEvent.click(screen.getByRole('button', { name: /^state Loading$/i }));
+  fireEvent.click(
+    screen.getByRole('button', {
+      name: /^state Loading$/i,
+    }),
+  );
 
-  const preview = screen.getByRole('button', { name: 'Preview this state' });
+  const preview = screen.getByRole('button', {
+    name: 'Preview this state',
+  });
 
   expect(preview).toHaveAttribute('aria-pressed', 'false');
 
@@ -90,6 +138,8 @@ it('marks "Preview this state" active when its state is forced', async () => {
   await screen.findByText('Forced: Loading');
 
   expect(
-    screen.getByRole('button', { name: 'Preview this state' })
+    screen.getByRole('button', {
+      name: 'Preview this state',
+    }),
   ).toHaveAttribute('aria-pressed', 'true');
 });

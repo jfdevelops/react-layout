@@ -6,10 +6,15 @@ export class ResourceModuleLoadError extends Error {
     readonly resource: string,
     override readonly cause: unknown,
   ) {
-    const detail = cause instanceof Error
-      ? `${cause.name}: ${cause.message}`
-      : typeof cause === 'string' ? cause : undefined;
-    super(`Unable to load resource module "${resource}"${detail ? `: ${detail}` : ''}`, { cause });
+    const detail =
+      cause instanceof Error
+        ? `${cause.name}: ${cause.message}`
+        : typeof cause === 'string'
+          ? cause
+          : undefined;
+    super(`Unable to load resource module "${resource}"${detail ? `: ${detail}` : ''}`, {
+      cause,
+    });
     this.name = 'ResourceModuleLoadError';
   }
 }
@@ -31,6 +36,4 @@ export class ResourceRenderError extends Error {
 }
 
 /** Library errors that can trigger a configured resource `Error` state. */
-export type ResourceStateError =
-  | ResourceModuleLoadError
-  | ResourceRenderError;
+export type ResourceStateError = ResourceModuleLoadError | ResourceRenderError;

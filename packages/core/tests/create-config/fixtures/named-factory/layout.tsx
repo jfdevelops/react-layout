@@ -5,7 +5,14 @@ import { layoutState } from './layout-state';
 
 const errorState = createRenderState({
   state: 'Error',
-  props: { include: { title: true }, custom: { error: createProp.string() } },
+  props: {
+    include: {
+      title: true,
+    },
+    custom: {
+      error: createProp.string(),
+    },
+  },
   render: ({ title, error }) => (
     <p>
       {title}: {error}
@@ -20,5 +27,9 @@ export const {
   useResource,
   ResourceProvider,
 } = defineResourceLayout({
-  render: { ...layoutState, ...defaultState, ...errorState },
+  render: {
+    ...layoutState,
+    ...defaultState,
+    ...errorState,
+  },
 });

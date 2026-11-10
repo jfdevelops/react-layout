@@ -6,17 +6,11 @@ type View = 'graph' | 'tree';
 
 const views: readonly View[] = ['graph', 'tree'];
 
-export function ViewSwitcher({
-  value,
-  onChange,
-}: {
-  value: View;
-  onChange: (view: View) => void;
-}) {
+export function ViewSwitcher({ value, onChange }: { value: View; onChange: (view: View) => void }) {
   return (
     <div
-      role="tablist"
-      aria-label="Relationship view"
+      role='tablist'
+      aria-label='Relationship view'
       style={{
         display: 'flex',
         gap: 2,
@@ -32,20 +26,17 @@ export function ViewSwitcher({
         return (
           <HelpTooltip key={view} content={`${label} view`}>
             <Button
-              size="icon"
-              type="button"
-              role="tab"
+              size='icon'
+              type='button'
+              role='tab'
               aria-label={label}
               aria-selected={value === view}
               tabIndex={value === view ? 0 : -1}
               onClick={() => onChange(view)}
               onKeyDown={(event) => {
-                if (
-                  !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(
-                    event.key
-                  )
-                )
+                if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
                   return;
+                }
 
                 event.preventDefault();
 
@@ -63,7 +54,7 @@ export function ViewSwitcher({
                 event.currentTarget
                   .closest('[role="tablist"]')
                   ?.querySelector<HTMLButtonElement>(
-                    `[aria-label="${next === 'graph' ? 'Graph' : 'Tree'}"]`
+                    `[aria-label="${next === 'graph' ? 'Graph' : 'Tree'}"]`,
                   )
                   ?.focus();
               }}

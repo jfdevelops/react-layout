@@ -481,6 +481,30 @@ pnpm build            # build the library
 pnpm test             # run tests
 ```
 
+## Workspace tooling
+
+Run `pnpm lint` for Oxlint checks, `pnpm lint:fix` for fixes, `pnpm format` for
+Oxfmt followed by lint fixes and a final formatting pass, and `pnpm format:check`
+for a formatting check. CI runs lint and formatting checks before compilation.
+
+The workspace root pins TypeScript 7.0.2 (the latest stable npm release when
+configured). Package scripts use the root compiler. The Vite devtools runtime
+retains TypeScript 6.0.3 because its instrumentation uses the legacy compiler
+API. Autocomplete compatibility tests explicitly use the `typescript-5-9` and
+`typescript-6` aliases; workspace compilation checks the current compiler.
+
+Oxlint enables its built-in TypeScript, React, React Hooks, JSX accessibility,
+import, Vitest, and Oxc plugins. These require no separate plugin packages.
+`@stylistic/eslint-plugin` enforces expanded nonempty object literals and blank
+lines before returns. `tools/oxlint-plugin.mjs` wraps its property newline rule
+to check runtime object literals only, leaving type literal formatting to Oxfmt.
+Empty objects stay compact. Generated files and build outputs are excluded.
+
+The file-scoped overrides in `.oxlintrc.json` baseline existing semantic lint
+findings, including React effect patterns and compile-only test assertions.
+They do not exempt object formatting. Remove each exception when its underlying
+code is addressed; new files receive the enabled correctness checks by default.
+
 ## Install
 
 ```bash

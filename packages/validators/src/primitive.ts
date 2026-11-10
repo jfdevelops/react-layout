@@ -1,7 +1,4 @@
-import type {
-  NonEmptyReadonlyArray,
-  PropVisibility,
-} from './types';
+import type { NonEmptyReadonlyArray, PropVisibility } from './types';
 import { BaseProp } from './base';
 import { EnumProp } from './enum';
 import { LiteralProp } from './literal';
@@ -12,7 +9,10 @@ export class StringProp<Visibility extends PropVisibility> extends BaseProp<
   string
 > {
   constructor(visibility: Visibility) {
-    super({ type: 'string', visibility });
+    super({
+      type: 'string',
+      visibility,
+    });
   }
 
   optional(this: StringProp<'required'>) {
@@ -44,7 +44,10 @@ export class NumberProp<Visibility extends PropVisibility> extends BaseProp<
   number
 > {
   constructor(visibility: Visibility) {
-    super({ type: 'number', visibility });
+    super({
+      type: 'number',
+      visibility,
+    });
   }
 
   optional(this: NumberProp<'required'>) {
@@ -76,7 +79,10 @@ export class BooleanProp<Visibility extends PropVisibility> extends BaseProp<
   boolean
 > {
   constructor(visibility: Visibility) {
-    super({ type: 'boolean', visibility });
+    super({
+      type: 'boolean',
+      visibility,
+    });
   }
 
   optional(this: BooleanProp<'required'>) {

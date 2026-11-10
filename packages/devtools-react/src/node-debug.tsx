@@ -11,13 +11,7 @@ import { control } from './theme';
 import { StateIcon } from './state-icon';
 import type { ChipPalette } from './config';
 
-function SourceLink({
-  label,
-  location,
-}: {
-  label: string;
-  location: SourceLocation;
-}) {
+function SourceLink({ label, location }: { label: string; location: SourceLocation }) {
   const [error, setError] = useState<string>();
   const url = location.editorUrl;
   const path = `${location.file}:${location.line}:${location.column}`;
@@ -34,11 +28,17 @@ function SourceLink({
         gap: 8,
       }}
     >
-      <span style={{ color: '#94a3b8' }}>{label}</span>
+      <span
+        style={{
+          color: '#94a3b8',
+        }}
+      >
+        {label}
+      </span>
       {canOpen ? (
         <Button
-          type="button"
-          title="Open in editor"
+          type='button'
+          title='Open in editor'
           style={{
             background: 'transparent',
             border: 0,
@@ -55,12 +55,14 @@ function SourceLink({
             try {
               const response = await fetch(url!);
 
-              if (!response.ok) throw new Error('Editor request failed');
+              if (!response.ok) {
+                throw new Error('Editor request failed');
+              }
 
               setError(undefined);
             } catch {
               setError(
-                'Could not open your editor. Check the Vite server and editor configuration.'
+                'Could not open your editor. Check the Vite server and editor configuration.',
               );
             }
           }}
@@ -77,25 +79,38 @@ function SourceLink({
           {path}
         </span>
       )}
-      {error && <span role="alert">{error}</span>}
+      {error && <span role='alert'>{error}</span>}
     </div>
   );
 }
 
 export function NodeSource({ node }: { node: GraphNode }) {
-  if (!node.source && !node.registrationSource) return null;
+  if (!node.source && !node.registrationSource) {
+    return null;
+  }
 
   const separate =
     node.registrationSource &&
     JSON.stringify(node.registrationSource) !== JSON.stringify(node.source);
 
   return (
-    <section aria-label="Source" style={{ display: 'grid', gap: 8 }}>
-      <h4 style={{ margin: 0, fontSize: 13 }}>Source</h4>
-      {node.source && <SourceLink label="Declaration" location={node.source} />}
-      {separate && (
-        <SourceLink label="Registration" location={node.registrationSource!} />
-      )}
+    <section
+      aria-label='Source'
+      style={{
+        display: 'grid',
+        gap: 8,
+      }}
+    >
+      <h4
+        style={{
+          margin: 0,
+          fontSize: 13,
+        }}
+      >
+        Source
+      </h4>
+      {node.source && <SourceLink label='Declaration' location={node.source} />}
+      {separate && <SourceLink label='Registration' location={node.registrationSource!} />}
     </section>
   );
 }
@@ -123,62 +138,77 @@ export function StatePreview({
   palette: ChipPalette;
 }) {
   const [chosen, setChosen] = useState<string>();
-  const instances = (graph.instances ?? []).filter(
-    (instance) => instance.layout === layout
-  );
+  const instances = (graph.instances ?? []).filter((instance) => instance.layout === layout);
   const instance =
     instances.find((entry) => entry.id === chosen) ??
     instances.find((entry) => (entry.forcedState ?? entry.state) === state) ??
     instances[0];
 
-  if (!instance || !inspector?.preview) return null;
+  if (!instance || !inspector?.preview) {
+    return null;
+  }
 
   const byId = new Map(graph.nodes.map((node) => [node.id, node]));
 
   return (
     <section
-      aria-label="State preview"
+      aria-label='State preview'
       style={
         {
           display: 'grid',
           gap: 10,
           '--react-layout-devtools-active-color': palette.active.color,
-          '--react-layout-devtools-active-background':
-            palette.active.background,
+          '--react-layout-devtools-active-background': palette.active.background,
         } as CSSProperties
       }
     >
-      <h4 style={{ margin: 0, fontSize: 13 }}>State preview</h4>
-      <p style={{ margin: 0, color: '#94a3b8', fontSize: 12 }}>
-        Preview declared render states using current props and typed preview
-        fixtures. This changes rendering only; application data and requests
-        continue normally.
+      <h4
+        style={{
+          margin: 0,
+          fontSize: 13,
+        }}
+      >
+        State preview
+      </h4>
+      <p
+        style={{
+          margin: 0,
+          color: '#94a3b8',
+          fontSize: 12,
+        }}
+      >
+        Preview declared render states using current props and typed preview fixtures. This changes
+        rendering only; application data and requests continue normally.
       </p>
       <label>
         Mounted instance{' '}
         <select
-          aria-label="Preview instance"
+          aria-label='Preview instance'
           value={instance.id}
           onChange={(event) => setChosen(event.target.value)}
           style={control}
         >
           {instances.map((entry, index) => (
             <option key={entry.id} value={entry.id}>
-              Instance {index + 1} ·{' '}
-              {byId.get(entry.state)?.label ?? entry.state}
+              Instance {index + 1} · {byId.get(entry.state)?.label ?? entry.state}
             </option>
           ))}
         </select>
       </label>
       {instance.forcedState && (
         <Badge style={palette.active}>
-          Forced:{' '}
-          {byId.get(instance.forcedState)?.label ?? instance.forcedState}
+          Forced: {byId.get(instance.forcedState)?.label ?? instance.forcedState}
         </Badge>
       )}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 6,
+        }}
+      >
         <Button
-          type="button"
+          type='button'
           data-state-override
           aria-pressed={!instance.forcedState}
           style={overrideButton}
@@ -192,7 +222,7 @@ export function StatePreview({
           return (
             <Button
               key={id}
-              type="button"
+              type='button'
               data-state-override
               aria-pressed={instance.forcedState === id}
               style={overrideButton}
@@ -210,7 +240,7 @@ export function StatePreview({
         })}
         {state && instance.states.includes(state) && (
           <Button
-            type="button"
+            type='button'
             data-state-override
             aria-pressed={instance.forcedState === state}
             style={overrideButton}
@@ -221,9 +251,14 @@ export function StatePreview({
         )}
       </div>
       {instance.error && (
-        <p role="alert" style={{ margin: 0, color: '#fca5a5' }}>
-          {instance.error} Supply the required props with defineLayoutPreview,
-          or select Auto.
+        <p
+          role='alert'
+          style={{
+            margin: 0,
+            color: '#fca5a5',
+          }}
+        >
+          {instance.error} Supply the required props with defineLayoutPreview, or select Auto.
         </p>
       )}
     </section>

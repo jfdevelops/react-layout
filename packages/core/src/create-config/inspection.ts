@@ -18,7 +18,7 @@ import type { ResourceDefinition } from '../resource';
 
 export function inspectDefinition(
   resources: readonly ResourceDefinition[],
-  source?: SourceLocation
+  source?: SourceLocation,
 ) {
   const store = createInspectionStore();
   const definition = store.node({
@@ -29,11 +29,7 @@ export function inspectDefinition(
   });
   const resourceIds = new Map<string, string>();
 
-  function visit(
-    items: readonly ResourceDefinition[],
-    parent: string,
-    prefix = ''
-  ) {
+  function visit(items: readonly ResourceDefinition[], parent: string, prefix = '') {
     for (const item of items) {
       const slug = typeof item === 'string' ? item : item.value;
       const path = prefix ? `${prefix}.${slug}` : slug;
@@ -42,20 +38,28 @@ export function inspectDefinition(
         kind: 'resource',
         label: path,
         source,
-        details: { path },
+        details: {
+          path,
+        },
       });
 
       resourceIds.set(path, id);
 
       store.edge(parent, id, 'contains');
 
-      if (typeof item !== 'string') visit(item.subResources, id, path);
+      if (typeof item !== 'string') {
+        visit(item.subResources, id, path);
+      }
     }
   }
 
   visit(resources, definition);
 
-  return { store, definition, resourceIds };
+  return {
+    store,
+    definition,
+    resourceIds,
+  };
 }
 
 export interface ActiveInspection {
@@ -68,19 +72,16 @@ export interface ActiveInspection {
 const inspectedComposables = new WeakSet<object>();
 
 /** Mark existing roots only; never add wrappers or forward props to user components. */
-export function markInspectionRoots(
-  children: ReactNode,
-  owners: readonly string[]
-): ReactNode {
-  if (process.env.NODE_ENV === 'production') return children;
-  if (Array.isArray(children))
-    return children.map((child) => markInspectionRoots(child, owners));
-  if (
-    !isValidElement<{ children?: ReactNode; 'data-rl-owners'?: string }>(
-      children
-    )
-  )
+export function markInspectionRoots(children: ReactNode, owners: readonly string[]): ReactNode {
+  if (process.env.NODE_ENV === 'production') {
     return children;
+  }
+  if (Array.isArray(children)) {
+    return children.map((child) => markInspectionRoots(child, owners));
+  }
+  if (!isValidElement<{ children?: ReactNode; 'data-rl-owners'?: string }>(children)) {
+    return children;
+  }
   if (children.type === Fragment) {
     return cloneElement(children, {
       children: markInspectionRoots(children.props.children, owners),
@@ -88,18 +89,18 @@ export function markInspectionRoots(
   }
   if (
     typeof children.type !== 'string' &&
-    (typeof children.type !== 'object' ||
-      !inspectedComposables.has(children.type))
-  )
+    (typeof children.type !== 'object' || !inspectedComposables.has(children.type))
+  ) {
     return children;
+  }
   let previous: string[] = [];
   try {
-    const parsed: unknown = JSON.parse(
-      children.props['data-rl-owners'] ?? '[]'
-    );
-    if (Array.isArray(parsed))
+    const parsed: unknown = JSON.parse(children.props['data-rl-owners'] ?? '[]');
+    if (Array.isArray(parsed)) {
       previous = parsed.filter((id): id is string => typeof id === 'string');
+    }
   } catch {}
+
   return cloneElement(children, {
     'data-rl-owners': JSON.stringify([...new Set([...previous, ...owners])]),
   });
@@ -109,7 +110,7 @@ export function markInspectionRoots(
 export function trackComposable<T extends object>(
   component: T,
   store: InspectionStore,
-  id: string
+  id: string,
 ): T {
   const Tracked = forwardRef<unknown, Record<string, unknown>>(
     function InspectedComposable(props, ref) {
@@ -122,14 +123,19 @@ export function trackComposable<T extends object>(
               ...props,
               'data-rl-node': id,
               'data-rl-composable':
-                (component as { displayName?: string }).displayName ??
-                'Composable',
+                (component as { displayName?: string }).displayName ?? 'Composable',
             };
+
       return createElement(
         component as ComponentType<Record<string, unknown>>,
-        ref == null ? inspectedProps : { ...inspectedProps, ref }
+        ref == null
+          ? inspectedProps
+          : {
+              ...inspectedProps,
+              ref,
+            },
       );
-    }
+    },
   );
 
   inspectedComposables.add(Tracked);
@@ -148,12 +154,15 @@ export function trackComposable<T extends object>(
         'compare',
         'type',
       ].includes(key)
-    )
+    ) {
       continue;
+    }
 
     const descriptor = Object.getOwnPropertyDescriptor(component, key);
 
-    if (descriptor) Object.defineProperty(Tracked, key, descriptor);
+    if (descriptor) {
+      Object.defineProperty(Tracked, key, descriptor);
+    }
   }
 
   return Tracked as unknown as T;

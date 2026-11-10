@@ -13,12 +13,15 @@ export default defineConfig({
       name: 'devtools-inline-stylesheet',
 
       resolveId(id, importer) {
-        if (importer && id.endsWith('.css?inline'))
+        if (importer && id.endsWith('.css?inline')) {
           return resolve(dirname(importer), id);
+        }
       },
 
       load(id) {
-        if (!id.endsWith('.css?inline')) return;
+        if (!id.endsWith('.css?inline')) {
+          return;
+        }
 
         const css = readFileSync(id.slice(0, -'?inline'.length), 'utf8');
 
@@ -26,7 +29,9 @@ export default defineConfig({
       },
     },
   ],
-  deps: { alwaysBundle: ['@jfdevelops/react-layout-devtools-core'] },
+  deps: {
+    alwaysBundle: ['@jfdevelops/react-layout-devtools-core'],
+  },
   sourcemap: true,
   minify: false,
   exports: false,

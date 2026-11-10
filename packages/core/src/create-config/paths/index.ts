@@ -1,7 +1,4 @@
-export {
-  generateResourceConfigPaths,
-  MAX_PATH_DEPTH,
-} from './generate';
+export { generateResourceConfigPaths, MAX_PATH_DEPTH } from './generate';
 export {
   collectAllSubResourceKeys,
   collectConfigResources,

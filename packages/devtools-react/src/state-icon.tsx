@@ -1,10 +1,4 @@
-import {
-  CheckIcon,
-  LoadingIcon,
-  ErrorIcon,
-  NotFoundIcon,
-  CustomStateIcon,
-} from './icons';
+import { CheckIcon, LoadingIcon, ErrorIcon, NotFoundIcon, CustomStateIcon } from './icons';
 import type { ChipPalette } from './config';
 
 const icons = {
@@ -19,20 +13,23 @@ type StateIconKind = keyof typeof icons;
 
 /** Built-in render states get their own icon; any other state is `custom`. */
 export function stateIconKind(state: string): StateIconKind {
-  return state === 'default' ||
-    state === 'Loading' ||
-    state === 'Error' ||
-    state === 'NotFound'
+  return state === 'default' || state === 'Loading' || state === 'Error' || state === 'NotFound'
     ? state
     : 'custom';
 }
 
 function iconColor(kind: StateIconKind, palette: ChipPalette) {
-  if (kind === 'Loading') return palette.loading.color;
+  if (kind === 'Loading') {
+    return palette.loading.color;
+  }
 
-  if (kind === 'Error') return palette.error.color;
+  if (kind === 'Error') {
+    return palette.error.color;
+  }
 
-  if (kind === 'NotFound') return '#fbbf24';
+  if (kind === 'NotFound') {
+    return '#fbbf24';
+  }
 
   return palette.inactive.color;
 }
@@ -59,7 +56,9 @@ export function StateIcon({
       data-state-icon={kind}
       data-spinning={kind === 'Loading' && spinning ? true : undefined}
       size={size}
-      style={{ color: iconColor(kind, palette) }}
+      style={{
+        color: iconColor(kind, palette),
+      }}
     />
   );
 }

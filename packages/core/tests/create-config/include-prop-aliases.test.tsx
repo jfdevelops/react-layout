@@ -1,25 +1,36 @@
 import { getIncludedPropBehavior } from '../../src/props';
 import { render, screen } from '@testing-library/react';
 import { expect, expectTypeOf, it } from 'vitest';
-import {
-  createDefinedResourceLayout,
-  createProp,
-  type IncludedPropBehavior,
-} from '../../src';
+import { createDefinedResourceLayout, createProp, type IncludedPropBehavior } from '../../src';
 
 it('supports canonical include requirements and supply sources', () => {
-  const component = { required: false, suppliedVia: 'component' } as const;
-  const config = { required: true, suppliedVia: 'config' } as const;
+  const component = {
+    required: false,
+    suppliedVia: 'component',
+  } as const;
+  const config = {
+    required: true,
+    suppliedVia: 'config',
+  } as const;
   const factory = createDefinedResourceLayout({
     resources: ['users'],
-    options: { label: createProp.string(), title: createProp.string() },
-    props: { include: { label: component, title: config } },
+    options: {
+      label: createProp.string(),
+      title: createProp.string(),
+    },
+    props: {
+      include: {
+        label: component,
+        title: config,
+      },
+    },
   });
   const definition = factory.defineResourceLayout({
     render: {
       default: ({ label, title }) => {
         expectTypeOf(label).toEqualTypeOf<string | undefined>();
         expectTypeOf(title).toEqualTypeOf<string>();
+
         return (
           <p>
             {title}: {label}
@@ -27,10 +38,16 @@ it('supports canonical include requirements and supply sources', () => {
         );
       },
       Preview: {
-        props: { include: { label: component, title: config } },
+        props: {
+          include: {
+            label: component,
+            title: config,
+          },
+        },
         render: ({ label, title }) => {
           expectTypeOf(label).toEqualTypeOf<string | undefined>();
           expectTypeOf(title).toEqualTypeOf<string>();
+
           return (
             <p>
               Preview {title}: {label}
@@ -49,27 +66,32 @@ it('supports canonical include requirements and supply sources', () => {
   expectTypeOf(Users).toBeCallableWith({});
   const view = render(<Users />);
   expect(screen.getByText('Configured: Default')).toBeInTheDocument();
-  view.rerender(<Users label="Component" />);
+  view.rerender(<Users label='Component' />);
   expect(screen.getByText('Configured: Component')).toBeInTheDocument();
-  view.rerender(<Users.Preview label="Preview component" />);
-  expect(
-    screen.getByText('Preview Configured: Preview component'),
-  ).toBeInTheDocument();
+  view.rerender(<Users.Preview label='Preview component' />);
+  expect(screen.getByText('Preview Configured: Preview component')).toBeInTheDocument();
   view.unmount();
   () => {
-    // @ts-expect-error required config props must be supplied during creation
-    definition.createResourceLayout({
+    const invalidOptions1 = {
       resource: 'users',
       name: 'MissingTitle',
+    } as const;
+
+    // @ts-expect-error required config props must be supplied during creation
+    definition.createResourceLayout(invalidOptions1);
+    Users({
+      // @ts-expect-error config props are not accepted as component props
+      title: 'Wrong source',
     });
-    // @ts-expect-error config props are not accepted as component props
-    Users({ title: 'Wrong source' });
   };
 });
 
 it('rejects removed include aliases at runtime and in public types', () => {
   expect(() =>
-    getIncludedPropBehavior({ visibility: 'required', passthrough: 'config' }),
+    getIncludedPropBehavior({
+      visibility: 'required',
+      passthrough: 'config',
+    }),
   ).toThrow('removed');
   expect(() =>
     getIncludedPropBehavior({
@@ -91,12 +113,15 @@ it('rejects removed include aliases at runtime and in public types', () => {
       // @ts-expect-error passthrough was removed in version 2
       passthrough: 'component',
     };
+
     return [oldRequirement, oldSupply];
   };
 });
 
 it('removes the deprecated resource context field while preserving the resource accessor', () => {
-  const factory = createDefinedResourceLayout({ resources: ['users'] });
+  const factory = createDefinedResourceLayout({
+    resources: ['users'],
+  });
   const definition = factory.defineResourceLayout({
     render: (_, context) => {
       expect(Object.hasOwn(context, 'resource')).toBe(false);
@@ -105,6 +130,7 @@ it('removes the deprecated resource context field while preserving the resource 
         // @ts-expect-error use resources.current in render contexts
         context.resource;
       };
+
       return <p>{context.resources.current}</p>;
     },
   });

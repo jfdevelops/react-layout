@@ -5,12 +5,9 @@ import type { ChipPalette } from './config';
 function causeChain(error: InspectionError): InspectionError[] {
   const chain: InspectionError[] = [];
 
-  for (
-    let current: InspectionError | undefined = error;
-    current;
-    current = current.cause
-  )
+  for (let current: InspectionError | undefined = error; current; current = current.cause) {
     chain.push(current);
+  }
 
   return chain;
 }
@@ -24,8 +21,20 @@ export function LoadErrorDetails({
   palette: ChipPalette;
 }) {
   return (
-    <section aria-label="Load error" style={{ display: 'grid', gap: 8 }}>
-      <h4 style={{ margin: 0, fontSize: 13, color: palette.error.color }}>
+    <section
+      aria-label='Load error'
+      style={{
+        display: 'grid',
+        gap: 8,
+      }}
+    >
+      <h4
+        style={{
+          margin: 0,
+          fontSize: 13,
+          color: palette.error.color,
+        }}
+      >
         Load error
       </h4>
       {causeChain(error).map((entry, index) => (
@@ -49,7 +58,14 @@ export function LoadErrorDetails({
             }}
           >
             {index > 0 && (
-              <span style={{ color: '#94a3b8', fontSize: 11 }}>Caused by</span>
+              <span
+                style={{
+                  color: '#94a3b8',
+                  fontSize: 11,
+                }}
+              >
+                Caused by
+              </span>
             )}
             <Badge style={palette.error}>{entry.name}</Badge>
             {entry.code && <Badge>{entry.code}</Badge>}
@@ -67,7 +83,11 @@ export function LoadErrorDetails({
           {entry.stack && (
             <details>
               <summary
-                style={{ cursor: 'pointer', fontSize: 11, color: '#94a3b8' }}
+                style={{
+                  cursor: 'pointer',
+                  fontSize: 11,
+                  color: '#94a3b8',
+                }}
               >
                 Stack trace
               </summary>

@@ -14,10 +14,7 @@ export type BaseResourceConfigComponents = {
 };
 
 /** Optional component slots that map to their own path segment (not {@link BaseResourceConfigComponents.component}). */
-export type ResourceComponentPathKey = Exclude<
-  keyof BaseResourceConfigComponents,
-  'component'
->;
+export type ResourceComponentPathKey = Exclude<keyof BaseResourceConfigComponents, 'component'>;
 
 export type SharedResourceConfigOptions = {
   /**
@@ -30,8 +27,7 @@ export type SharedResourceConfigOptions = {
   detail?: BaseResourceConfigComponents;
 };
 
-export type ResourceConfigComponents = BaseResourceConfigComponents &
-  SharedResourceConfigOptions;
+export type ResourceConfigComponents = BaseResourceConfigComponents & SharedResourceConfigOptions;
 
 export type ResourceConfigComponentKey = keyof ResourceConfigComponents;
 
@@ -61,9 +57,7 @@ type AssertUnreservedSubResourceDefinition<Resource> = Resource extends string
         value: UnreservedResourceSlug<Value>;
         subResources: Subs extends ReadonlyArray<unknown>
           ? {
-              [Index in keyof Subs]: AssertUnreservedSubResourceDefinition<
-                Subs[Index]
-              >;
+              [Index in keyof Subs]: AssertUnreservedSubResourceDefinition<Subs[Index]>;
             }
           : Subs;
       }
@@ -77,20 +71,14 @@ type AssertUnreservedResourceDefinition<Resource> = Resource extends string
     ? Omit<Resource, 'subResources'> & {
         subResources: Subs extends ReadonlyArray<unknown>
           ? {
-              [Index in keyof Subs]: AssertUnreservedSubResourceDefinition<
-                Subs[Index]
-              >;
+              [Index in keyof Subs]: AssertUnreservedSubResourceDefinition<Subs[Index]>;
             }
           : Subs;
       }
     : Resource;
 
-export type AssertUnreservedResources<
-  Resources extends ReadonlyArray<unknown>,
-> = {
-  [Index in keyof Resources]: AssertUnreservedResourceDefinition<
-    Resources[Index]
-  >;
+export type AssertUnreservedResources<Resources extends ReadonlyArray<unknown>> = {
+  [Index in keyof Resources]: AssertUnreservedResourceDefinition<Resources[Index]>;
 };
 
 /**
@@ -118,20 +106,15 @@ export type SubResourceConfig<
 > = [SubResourceDefinitionsFor<Resources, Resource>] extends [readonly []]
   ? {}
   : {
-      [K in LayoutResourceKey<
-        SubResourceDefinitionsFor<Resources, Resource>
-      >]?: SubResourceConfigComponentsFor<
+      [
+        K in LayoutResourceKey<SubResourceDefinitionsFor<Resources, Resource>>
+      ]?: SubResourceConfigComponentsFor<
         Resources,
-        ResourceDefinitionForKey<
-          SubResourceDefinitionsFor<Resources, Resource>,
-          K
-        >
+        ResourceDefinitionForKey<SubResourceDefinitionsFor<Resources, Resource>, K>
       >;
     };
 
-export type ResourceConfig<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-> = {
+export type ResourceConfig<Resources extends ReadonlyArray<ResourceDefinition>> = {
   [resource in LayoutResourceKey<Resources>]: ResourceConfigComponents &
     SubResourceConfig<Resources, resource>;
 };
@@ -146,9 +129,9 @@ export type ResourceConfigInput<
   Config extends Partial<ResourceConfig<Resources>>,
 > = Partial<ResourceConfig<Resources>> & Config;
 
-export type ResourceConfigMap<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-> = Partial<ResourceConfig<Resources>>;
+export type ResourceConfigMap<Resources extends ReadonlyArray<ResourceDefinition>> = Partial<
+  ResourceConfig<Resources>
+>;
 
 /** Runtime view of a config node: component slots plus arbitrary sub-resource keys. */
 export type ResourceConfigEntry = ResourceConfigComponents & {

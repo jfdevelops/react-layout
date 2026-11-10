@@ -7,10 +7,10 @@
     "url": "https://github.com/jfdevelops/react-layout.git",
     "directory": "packages/adapter-valibot"
   },
-  "type": "module",
   "files": [
     "dist"
   ],
+  "type": "module",
   "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -23,29 +23,28 @@
     },
     "./package.json": "./package.json"
   },
-  "engines": {
-    "node": "^20.19.0 || >=22.12.0"
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "scripts": {
     "build": "tsdown",
     "typecheck": "tsc --noEmit"
   },
-  "peerDependencies": {
-    "valibot": "^1.0.0",
-    "react": ">=18"
-  },
-  "devDependencies": {
-    "valibot": "^1.5.0",
-    "react": "18.3.1",
-    "@types/react": "18.3.28",
-    "tsdown": "0.22.1",
-    "typescript": "6.0.3"
-  },
-  "publishConfig": {
-    "access": "public",
-    "provenance": true
-  },
   "dependencies": {
     "@jfdevelops/react-layout-adapters": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.28",
+    "react": "18.3.1",
+    "tsdown": "0.22.1",
+    "valibot": "^1.5.0"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "valibot": "^1.0.0"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
   }
 }

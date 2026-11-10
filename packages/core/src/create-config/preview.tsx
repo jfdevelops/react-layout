@@ -12,22 +12,22 @@ import {
   type InspectionStore,
 } from '@jfdevelops/react-layout-devtools-core';
 
-type PropsOf<T> = T extends (props: infer P, ...rest: never[]) => unknown
-  ? Partial<P>
-  : never;
+type PropsOf<T> = T extends (props: infer P, ...rest: never[]) => unknown ? Partial<P> : never;
 
 export type LayoutPreviewProps<T> = {
-  [K in keyof T as K extends 'Root' | 'makeComposable'
-    ? never
-    : T[K] extends (...args: never[]) => unknown
-    ? K
-    : never]?: PropsOf<T[K]>;
+  [
+    K in keyof T as K extends 'Root' | 'makeComposable'
+      ? never
+      : T[K] extends (...args: never[]) => unknown
+        ? K
+        : never
+  ]?: PropsOf<T[K]>;
 } & { default?: PropsOf<T extends { Root: infer R } ? R : T> };
 
 /** Typed, partial props used only while an opted-in development preview is forced. */
 export function defineLayoutPreview<T extends object>(
   layout: T,
-  fixtures: LayoutPreviewProps<T>
+  fixtures: LayoutPreviewProps<T>,
 ): T {
   const root = 'Root' in layout ? layout.Root : layout;
 
@@ -46,7 +46,9 @@ class PreviewBoundary extends Component<
   state: { error?: string } = {};
 
   static getDerivedStateFromError(error: unknown) {
-    return { error: error instanceof Error ? error.message : String(error) };
+    return {
+      error: error instanceof Error ? error.message : String(error),
+    };
   }
 
   componentDidCatch(error: Error) {
@@ -55,9 +57,9 @@ class PreviewBoundary extends Component<
 
   render() {
     return this.state.error ? (
-      <div role="alert">
-        Unable to preview this render state: {this.state.error}. Supply preview
-        props or return to Auto in React Layout Devtools.
+      <div role='alert'>
+        Unable to preview this render state: {this.state.error}. Supply preview props or return to
+        Auto in React Layout Devtools.
       </div>
     ) : (
       this.props.children
@@ -74,7 +76,7 @@ export function createPreviewComponent(
     states: ReadonlyMap<string, string>;
     components: Record<string, ComponentType<Record<string, unknown>>>;
     fixtures: () => Record<string, Record<string, unknown>> | undefined;
-  }
+  },
 ) {
   function PreviewableLayout(props: Record<string, unknown>) {
     const [id] = useState(() => inspectionId('instance'));
@@ -89,24 +91,28 @@ export function createPreviewComponent(
             state: options.state,
             states: [...options.states.values()],
           },
-          setForced
+          setForced,
         ),
-      [id]
+      [id],
     );
 
-    if (!forced) return createElement(automatic, props);
+    if (!forced) {
+      return createElement(automatic, props);
+    }
 
     const name = [...options.states].find(([, state]) => state === forced)?.[0];
     const target = name && options.components[name];
 
-    if (!target) return createElement(automatic, props);
+    if (!target) {
+      return createElement(automatic, props);
+    }
 
     return (
-      <PreviewBoundary
-        key={forced}
-        onError={(message) => options.store.previewError(id, message)}
-      >
-        {createElement(target, { ...props, ...options.fixtures()?.[name] })}
+      <PreviewBoundary key={forced} onError={(message) => options.store.previewError(id, message)}>
+        {createElement(target, {
+          ...props,
+          ...options.fixtures()?.[name],
+        })}
       </PreviewBoundary>
     );
   }

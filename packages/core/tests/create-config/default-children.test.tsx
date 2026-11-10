@@ -1,22 +1,21 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, expectTypeOf, it } from 'vitest';
 import { createElement, type ReactNode } from 'react';
-import {
-  createDefinedResourceLayout,
-  createProp,
-  defineResourceLayout,
-} from '../../src';
+import { createDefinedResourceLayout, createProp, defineResourceLayout } from '../../src';
 import { renderCapturingError } from './helpers';
 
 afterEach(cleanup);
 
 describe('default render children', () => {
   it('passes children to plain layouts and inline and reusable render states', () => {
-    const factory = createDefinedResourceLayout({ resources: ['users'] });
+    const factory = createDefinedResourceLayout({
+      resources: ['users'],
+    });
     const Preview = factory.createRenderState({
       state: 'Preview',
       render: ({ children }) => {
         expectTypeOf(children).toEqualTypeOf<ReactNode>();
+
         return <aside>{children ?? 'Empty preview'}</aside>;
       },
     });
@@ -27,13 +26,17 @@ describe('default render children', () => {
           Loading: {
             render: ({ children }) => {
               expectTypeOf(children).toEqualTypeOf<ReactNode>();
+
               return <div>{children ?? 'Loading'}</div>;
             },
           },
           ...Preview,
         },
       })
-      .createResourceLayout({ resource: 'users', name: 'Users' });
+      .createResourceLayout({
+        resource: 'users',
+        name: 'Users',
+      });
     const view = render(
       <Users>
         <span>Page content</span>
@@ -49,29 +52,40 @@ describe('default render children', () => {
   });
 
   it('requires shorthand children on layouts and explicit states, with runtime validation', () => {
-    const factory = createDefinedResourceLayout({ resources: ['users'] });
+    const factory = createDefinedResourceLayout({
+      resources: ['users'],
+    });
     const Preview = factory.createRenderState({
       state: 'Preview',
-      props: { custom: { children: 'required' } },
+      props: {
+        custom: {
+          children: 'required',
+        },
+      },
       render: ({ children }) => <aside>{children}</aside>,
     });
     const Users = factory
       .defineResourceLayout({
-        props: { custom: { children: 'required' } },
+        props: {
+          custom: {
+            children: 'required',
+          },
+        },
         render: {
           default: ({ children }) => <main>{children}</main>,
           ...Preview,
         },
       })
-      .createResourceLayout({ resource: 'users', name: 'Users' });
+      .createResourceLayout({
+        resource: 'users',
+        name: 'Users',
+      });
     const view = render(<Users>Required content</Users>);
     expect(screen.getByText('Required content')).toBeInTheDocument();
     view.unmount();
     const missing = renderCapturingError(createElement(Users, {} as never));
     expect(missing?.message).toContain('children');
-    const missingState = renderCapturingError(
-      createElement(Users.Preview, {} as never),
-    );
+    const missingState = renderCapturingError(createElement(Users.Preview, {} as never));
     expect(missingState?.message).toContain('children');
   });
 
@@ -96,16 +110,18 @@ describe('default render children', () => {
     const { Shell } = defineResourceLayout.withLayout({
       resources: ['users'],
       shell: {
-        props: { custom: { children: 'required' } },
+        props: {
+          custom: {
+            children: 'required',
+          },
+        },
         render: ({ children }) => <main>{children}</main>,
       },
     });
     const view = render(<Shell>Required shell content</Shell>);
     expect(screen.getByText('Required shell content')).toBeInTheDocument();
     view.unmount();
-    expect(
-      renderCapturingError(createElement(Shell, {} as never))?.message,
-    ).toContain('children');
+    expect(renderCapturingError(createElement(Shell, {} as never))?.message).toContain('children');
   });
 
   it.each([false, true])(
@@ -115,20 +131,27 @@ describe('default render children', () => {
         resources: ['users'],
         shell: {
           props: required
-            ? { custom: { children: 'required' as const } }
+            ? {
+                custom: {
+                  children: 'required' as const,
+                },
+              }
             : undefined,
           render: ({ children }, { resources }) => (
             <main>
-              <span data-testid="current-resource">
-                {resources.current ?? 'none'}
-              </span>
+              <span data-testid='current-resource'>{resources.current ?? 'none'}</span>
               {children}
             </main>
           ),
         },
-        layout: { render: () => <p>Page</p> },
+        layout: {
+          render: () => <p>Page</p>,
+        },
       });
-      const Users = createResourceLayout({ resource: 'users', name: 'Users' });
+      const Users = createResourceLayout({
+        resource: 'users',
+        name: 'Users',
+      });
       render(
         <Shell>
           <Users />
@@ -142,9 +165,14 @@ describe('default render children', () => {
     const { Shell } = defineResourceLayout.withLayout({
       resources: ['users'],
       shell: {
-        props: { custom: { children: createProp.string() } },
+        props: {
+          custom: {
+            children: createProp.string(),
+          },
+        },
         render: ({ children }) => {
           expectTypeOf(children).toEqualTypeOf<string>();
+
           return <header>{children.toUpperCase()}</header>;
         },
       },
@@ -157,10 +185,12 @@ describe('default render children', () => {
     const { Shell } = defineResourceLayout.withLayout({
       resources: ['users'],
       shell: {
-        props: { custom: { children: createProp.string().optional() } },
-        render: ({ children }) => (
-          <header>{children?.toUpperCase() ?? 'Empty'}</header>
-        ),
+        props: {
+          custom: {
+            children: createProp.string().optional(),
+          },
+        },
+        render: ({ children }) => <header>{children?.toUpperCase() ?? 'Empty'}</header>,
       },
     });
     const view = render(<Shell>Title</Shell>);
@@ -170,18 +200,22 @@ describe('default render children', () => {
   });
 
   it('preserves children through derived states and deferred renders', async () => {
-    const factory = createDefinedResourceLayout({ resources: ['users'] });
+    const factory = createDefinedResourceLayout({
+      resources: ['users'],
+    });
     const Source = factory.createRenderState({
       state: 'Source',
-      props: { custom: { children: 'required' } },
+      props: {
+        custom: {
+          children: 'required',
+        },
+      },
       render: ({ children }) => <aside>{children}</aside>,
     });
     const Derived = factory.createRenderState.fromState({
       ref: Source,
       state: 'Derived',
-      render: ({ children }, { composables }) => (
-        <composables.Ref>{children}</composables.Ref>
-      ),
+      render: ({ children }, { composables }) => <composables.Ref>{children}</composables.Ref>,
     });
     const Deferred = factory.createRenderState.defer({
       state: 'Deferred',
@@ -189,9 +223,16 @@ describe('default render children', () => {
     });
     const Users = factory
       .defineResourceLayout({
-        render: { default: () => <></>, ...Derived, ...Deferred },
+        render: {
+          default: () => <></>,
+          ...Derived,
+          ...Deferred,
+        },
       })
-      .createResourceLayout({ resource: 'users', name: 'Users' });
+      .createResourceLayout({
+        resource: 'users',
+        name: 'Users',
+      });
     const view = render(<Users.Derived>Derived content</Users.Derived>);
     expect(screen.getByText('Derived content')).toBeInTheDocument();
     view.rerender(<Users.Deferred>Deferred content</Users.Deferred>);
@@ -201,23 +242,31 @@ describe('default render children', () => {
   it('requires children on scoped components and supplies children to resource renders', () => {
     const { createResourceLayout } = defineResourceLayout({
       resources: ['users'],
-      layout: { render: ({ children }) => <main>{children}</main> },
+      layout: {
+        render: ({ children }) => <main>{children}</main>,
+      },
     });
-    const Directory = createResourceLayout
-      .forResources('users')
-      .createComponent({
-        props: { custom: { children: 'required' } },
-        resources: {
-          users: { render: ({ children }) => <aside>{children}</aside> },
+    const Directory = createResourceLayout.forResources('users').createComponent({
+      props: {
+        custom: {
+          children: 'required',
         },
-        render: ({ children }, { Users }) => <Users>{children}</Users>,
-      });
-    const view = render(<Directory resource="users">Scoped content</Directory>);
+      },
+      resources: {
+        users: {
+          render: ({ children }) => <aside>{children}</aside>,
+        },
+      },
+      render: ({ children }, { Users }) => <Users>{children}</Users>,
+    });
+    const view = render(<Directory resource='users'>Scoped content</Directory>);
     expect(screen.getByText('Scoped content')).toBeInTheDocument();
     view.unmount();
     expect(
       renderCapturingError(
-        createElement(Directory, { resource: 'users' } as never),
+        createElement(Directory, {
+          resource: 'users',
+        } as never),
       )?.message,
     ).toContain('children');
   });
@@ -225,12 +274,16 @@ describe('default render children', () => {
   it('passes children to path-based render callbacks', () => {
     const { createResourceConfig } = defineResourceLayout({
       resources: ['users'],
-      layout: { render: () => <></> },
+      layout: {
+        render: () => <></>,
+      },
     });
-    const config = createResourceConfig({ users: { component: <div /> } });
-    const PathView = config
-      .forPaths('users')
-      .render(({ children }) => <main>{children}</main>);
+    const config = createResourceConfig({
+      users: {
+        component: <div />,
+      },
+    });
+    const PathView = config.forPaths('users').render(({ children }) => <main>{children}</main>);
     render(<PathView>Path content</PathView>);
     expect(screen.getByText('Path content')).toBeInTheDocument();
   });

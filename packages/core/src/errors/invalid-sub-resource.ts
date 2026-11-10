@@ -19,11 +19,8 @@ export class InvalidSubResourceError extends createReactLayoutError({
   .defineContext(context)
   .implement(({ context, scope }) => {
     const quotedSubResource =
-      JSON.stringify(context.subResource) ??
-      `"${String(context.subResource)}"`;
-    const resourceMessage = context.resource
-      ? ` for resource "${context.resource}"`
-      : '';
+      JSON.stringify(context.subResource) ?? `"${String(context.subResource)}"`;
+    const resourceMessage = context.resource ? ` for resource "${context.resource}"` : '';
     const reasonMessage = context.reason ? ` ${context.reason}` : '';
     const validSubResourcesMessage =
       context.validSubResources && context.validSubResources.length > 0

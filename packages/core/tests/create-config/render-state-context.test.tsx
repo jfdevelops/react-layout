@@ -1,15 +1,13 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, expectTypeOf, it } from 'vitest';
-import {
-  createDefinedResourceLayout,
-  createProp,
-  ResourceModuleLoadError,
-} from '../../src';
+import { createDefinedResourceLayout, createProp, ResourceModuleLoadError } from '../../src';
 
 afterEach(cleanup);
 
 it('reports the caller through nested shared shells and keeps direct states independent', () => {
-  const factory = createDefinedResourceLayout({ resources: ['users'] });
+  const factory = createDefinedResourceLayout({
+    resources: ['users'],
+  });
   type States = 'default' | 'Loading' | 'Error' | 'NotFound' | 'Audit';
   const createState = factory.createRenderState.forStates(
     'default',
@@ -22,14 +20,21 @@ it('reports the caller through nested shared shells and keeps direct states inde
     state: 'Inner',
     props: {
       custom: {
-        children: createProp.component({ type: 'ReactNode' }).optional(),
+        children: createProp
+          .component({
+            type: 'ReactNode',
+          })
+          .optional(),
       },
     },
     render: ({ children }, { state }) => {
       expectTypeOf(state).toEqualTypeOf<States>();
-      if (state === 'Loading') expectTypeOf(state).toEqualTypeOf<'Loading'>();
+      if (state === 'Loading') {
+        expectTypeOf(state).toEqualTypeOf<'Loading'>();
+      }
+
       return (
-        <section data-testid="inner">
+        <section data-testid='inner'>
           {state}:{children}
         </section>
       );
@@ -37,17 +42,21 @@ it('reports the caller through nested shared shells and keeps direct states inde
   });
   const Shell = createState({
     state: 'Layout',
-    composables: () => ({ Inner: Inner.asComposable() }),
+    composables: () => ({
+      Inner: Inner.asComposable(),
+    }),
     render: (_, { composables, state }) => (
       <composables.Inner>
-        <span data-testid="shell">{state}</span>
+        <span data-testid='shell'>{state}</span>
       </composables.Inner>
     ),
   });
   const outer = (state: States) =>
     createState({
       state,
-      composables: () => ({ Shell: Shell.asComposable() }),
+      composables: () => ({
+        Shell: Shell.asComposable(),
+      }),
       render: (_, { composables }) => <composables.Shell />,
     });
   const { createResourceLayout } = factory.defineResourceLayout({
@@ -59,7 +68,10 @@ it('reports the caller through nested shared shells and keeps direct states inde
       ...outer('Audit'),
     },
   });
-  const Users = createResourceLayout({ resource: 'users', name: 'Users' });
+  const Users = createResourceLayout({
+    resource: 'users',
+    name: 'Users',
+  });
   for (const [State, name] of [
     [Users, 'default'],
     [Users.Loading, 'Loading'],
@@ -82,6 +94,7 @@ it('provides literal state contexts for lazy defaults and their shared shells', 
     state: 'Loading',
     render: (_, { state }) => {
       expectTypeOf(state).toEqualTypeOf<'Loading'>();
+
       return <p>{state}</p>;
     },
   });
@@ -90,17 +103,18 @@ it('provides literal state contexts for lazy defaults and their shared shells', 
     render: {
       fallback: (_, { state }) => {
         expectTypeOf(state).toEqualTypeOf<'Error'>();
+
         return <p>{state}</p>;
       },
     },
   });
   expectTypeOf(ErrorUI).not.toBeAny();
-  const view = render(<Loading resource="users" />);
+  const view = render(<Loading resource='users' />);
   expect(screen.getByText('Loading')).toBeInTheDocument();
   view.unmount();
   render(
     <ErrorUI
-      resource="users"
+      resource='users'
       error={new ResourceModuleLoadError('users', 'offline')}
       retry={() => {}}
     />,
@@ -109,20 +123,31 @@ it('provides literal state contexts for lazy defaults and their shared shells', 
 });
 
 it('sets the built-in state for ordinary layouts', () => {
-  const factory = createDefinedResourceLayout({ resources: ['users'] });
+  const factory = createDefinedResourceLayout({
+    resources: ['users'],
+  });
   const { createResourceLayout } = factory.defineResourceLayout({
     render: (_, { state }) => <p>{state}</p>,
   });
-  const Users = createResourceLayout({ resource: 'users', name: 'Users' });
+  const Users = createResourceLayout({
+    resource: 'users',
+    name: 'Users',
+  });
   render(<Users />);
   expect(screen.getByText('default')).toBeInTheDocument();
 });
 
 it('infers inline state unions and exposes the active state in scoped render contexts', () => {
-  const factory = createDefinedResourceLayout({ resources: ['users'] });
+  const factory = createDefinedResourceLayout({
+    resources: ['users'],
+  });
   const children = {
     custom: {
-      children: createProp.component({ type: 'ReactNode' }).optional(),
+      children: createProp
+        .component({
+          type: 'ReactNode',
+        })
+        .optional(),
     },
   };
   const ErrorState = factory.createRenderState({
@@ -139,13 +164,17 @@ it('infers inline state unions and exposes the active state in scoped render con
     render: {
       default: (_, { state }) => {
         expectTypeOf(state).toEqualTypeOf<'default' | 'Error' | 'Audit'>();
+
         return <p>{state}</p>;
       },
       ...ErrorState,
       ...Audit,
     },
   });
-  const Users = createResourceLayout({ resource: 'users', name: 'Users' });
+  const Users = createResourceLayout({
+    resource: 'users',
+    name: 'Users',
+  });
   const Directory = createResourceLayout.forResources('users').createComponent({
     resources: {
       users: {
@@ -153,15 +182,14 @@ it('infers inline state unions and exposes the active state in scoped render con
           Badge: {
             props: {},
             render: (_, { state }) => {
-              expectTypeOf(state).toEqualTypeOf<
-                'default' | 'Error' | 'Audit'
-              >();
-              return <span data-testid="badge">{state}</span>;
+              expectTypeOf(state).toEqualTypeOf<'default' | 'Error' | 'Audit'>();
+
+              return <span data-testid='badge'>{state}</span>;
             },
           },
         },
         render: (_, components) => (
-          <div data-testid="resource">
+          <div data-testid='resource'>
             {components.state}
             <components.Badge />
           </div>
@@ -169,7 +197,7 @@ it('infers inline state unions and exposes the active state in scoped render con
       },
     },
     render: (_, context) => (
-      <div data-testid="scoped">
+      <div data-testid='scoped'>
         {context.state}
         <context.Users />
       </div>
@@ -177,7 +205,7 @@ it('infers inline state unions and exposes the active state in scoped render con
   });
   render(
     <Users.Error>
-      <Directory resource="users" />
+      <Directory resource='users' />
     </Users.Error>,
   );
   expect(screen.getByTestId('badge')).toHaveTextContent('Error');
@@ -186,22 +214,23 @@ it('infers inline state unions and exposes the active state in scoped render con
 });
 
 it('keeps directly rendered nested layouts independent from the enclosing state', () => {
-  const factory = createDefinedResourceLayout({ resources: ['users'] });
+  const factory = createDefinedResourceLayout({
+    resources: ['users'],
+  });
   const Inner = factory
     .defineResourceLayout({
       render: {
-        default: (_, { state }) => (
-          <span data-testid="direct-default">{state}</span>
-        ),
+        default: (_, { state }) => <span data-testid='direct-default'>{state}</span>,
         ...factory.createRenderState({
           state: 'Error',
-          render: (_, { state }) => (
-            <span data-testid="direct-error">{state}</span>
-          ),
+          render: (_, { state }) => <span data-testid='direct-error'>{state}</span>,
         }),
       },
     })
-    .createResourceLayout({ resource: 'users', name: 'Inner' });
+    .createResourceLayout({
+      resource: 'users',
+      name: 'Inner',
+    });
   const Outer = factory
     .defineResourceLayout({
       render: {
@@ -217,40 +246,54 @@ it('keeps directly rendered nested layouts independent from the enclosing state'
         }),
       },
     })
-    .createResourceLayout({ resource: 'users', name: 'Outer' });
+    .createResourceLayout({
+      resource: 'users',
+      name: 'Outer',
+    });
   render(<Outer.Loading />);
   expect(screen.getByTestId('direct-default')).toHaveTextContent('default');
   expect(screen.getByTestId('direct-error')).toHaveTextContent('Error');
 });
 
 it('retains the calling state through lazy state references', async () => {
-  const factory = createDefinedResourceLayout({ resources: ['users'] });
+  const factory = createDefinedResourceLayout({
+    resources: ['users'],
+  });
   const Shell = factory.createRenderState({
     state: 'Layout',
-    render: (_, { state }) => <p data-testid="lazy-shell">{state}</p>,
+    render: (_, { state }) => <p data-testid='lazy-shell'>{state}</p>,
   });
-  const LazyShell = factory.createRenderState.lazy(async () => ({ Shell }));
+  const LazyShell = factory.createRenderState.lazy(async () => ({
+    Shell,
+  }));
   const Users = factory
     .defineResourceLayout({
       render: {
         default: () => <></>,
         ...factory.createRenderState({
           state: 'Error',
-          composables: () => ({ Shell: LazyShell.asComposable() }),
+          composables: () => ({
+            Shell: LazyShell.asComposable(),
+          }),
           render: (_, { composables }) => <composables.Shell />,
         }),
       },
     })
-    .createResourceLayout({ resource: 'users', name: 'Users' });
+    .createResourceLayout({
+      resource: 'users',
+      name: 'Users',
+    });
   render(<Users.Error />);
   expect(await screen.findByTestId('lazy-shell')).toHaveTextContent('Error');
 });
 
 it('gives automatic fallbacks their own state while a shared lazy shell is pending', async () => {
-  const factory = createDefinedResourceLayout({ resources: ['users'] });
+  const factory = createDefinedResourceLayout({
+    resources: ['users'],
+  });
   const Shell = factory.createRenderState({
     state: 'Layout',
-    render: (_, { state }) => <p data-testid="resolved-shell">{state}</p>,
+    render: (_, { state }) => <p data-testid='resolved-shell'>{state}</p>,
   });
   let resolve!: (value: { Shell: typeof Shell }) => void;
   const pending = new Promise<{ Shell: typeof Shell }>((done) => {
@@ -263,31 +306,41 @@ it('gives automatic fallbacks their own state while a shared lazy shell is pendi
         default: () => <></>,
         ...factory.createRenderState({
           state: 'Loading',
-          render: (_, { state }) => <p data-testid="pending-shell">{state}</p>,
+          render: (_, { state }) => <p data-testid='pending-shell'>{state}</p>,
         }),
         ...factory.createRenderState({
           state: 'Error',
-          composables: () => ({ Shell: LazyShell.asComposable() }),
+          composables: () => ({
+            Shell: LazyShell.asComposable(),
+          }),
           render: (_, { composables }) => <composables.Shell />,
         }),
       },
     })
-    .createResourceLayout({ resource: 'users', name: 'Users' });
+    .createResourceLayout({
+      resource: 'users',
+      name: 'Users',
+    });
   render(<Users.Error />);
   expect(screen.getByTestId('pending-shell')).toHaveTextContent('Loading');
-  resolve({ Shell });
-  expect(await screen.findByTestId('resolved-shell')).toHaveTextContent(
-    'Error',
-  );
+  resolve({
+    Shell,
+  });
+  expect(await screen.findByTestId('resolved-shell')).toHaveTextContent('Error');
 });
 
 it('keeps unbound shared-state contexts safe for custom callers', () => {
-  const factory = createDefinedResourceLayout({ resources: ['users'] });
+  const factory = createDefinedResourceLayout({
+    resources: ['users'],
+  });
   const Shell = factory.createRenderState({
     state: 'Layout',
     render: (_, { state }) => {
       expectTypeOf(state).toEqualTypeOf<string>();
-      if (state === 'Audit') expectTypeOf<typeof state>().toEqualTypeOf<'Audit'>();
+      if (state === 'Audit') {
+        expectTypeOf<typeof state>().toEqualTypeOf<'Audit'>();
+      }
+
       return <p>{state}</p>;
     },
   });
@@ -296,6 +349,7 @@ it('keeps unbound shared-state contexts safe for custom callers', () => {
     state: 'Derived',
     render: (_, { state, composables }) => {
       expectTypeOf(state).toEqualTypeOf<string>();
+
       return <composables.Ref />;
     },
   });
@@ -305,12 +359,17 @@ it('keeps unbound shared-state contexts safe for custom callers', () => {
         default: () => <></>,
         ...factory.createRenderState({
           state: 'Audit',
-          composables: () => ({ Shell: Derived.asComposable() }),
+          composables: () => ({
+            Shell: Derived.asComposable(),
+          }),
           render: (_, { composables }) => <composables.Shell />,
         }),
       },
     })
-    .createResourceLayout({ resource: 'users', name: 'Users' });
+    .createResourceLayout({
+      resource: 'users',
+      name: 'Users',
+    });
   render(<Users.Audit />);
   expect(screen.getByText('Audit')).toBeInTheDocument();
 });
@@ -320,54 +379,54 @@ it.each([
   ['deferred', 'asComposable'],
   ['lazy', 'states.default'],
   ['lazy', 'asComposable'],
-] as const)(
-  'preserves callers through %s defaults referenced via %s',
-  async (kind, via) => {
-    const factory = createDefinedResourceLayout({ resources: ['users'] });
-    const Definition = factory.createRenderState({
-      state: 'default',
-      render: (_, { state }) => <p data-testid="registered-default">{state}</p>,
-    });
-    const Deferred = factory.createRenderState.defer(Definition.default);
-    const Lazy = factory.createRenderState.lazy(async () => ({ Definition }));
-    const source = kind === 'deferred' ? Deferred : Lazy;
-    const Users = factory
-      .defineResourceLayout({
-        composables: (_create, states) => ({
-          Default:
-            via === 'states.default' ? states.default : source.asComposable(),
-        }),
-        render: {
-          default: kind === 'deferred' ? Deferred.default : Lazy,
-          Error: { render: (_, { composables }) => <composables.Default /> },
+] as const)('preserves callers through %s defaults referenced via %s', async (kind, via) => {
+  const factory = createDefinedResourceLayout({
+    resources: ['users'],
+  });
+  const Definition = factory.createRenderState({
+    state: 'default',
+    render: (_, { state }) => <p data-testid='registered-default'>{state}</p>,
+  });
+  const Deferred = factory.createRenderState.defer(Definition.default);
+  const Lazy = factory.createRenderState.lazy(async () => ({
+    Definition,
+  }));
+  const source = kind === 'deferred' ? Deferred : Lazy;
+  const Users = factory
+    .defineResourceLayout({
+      composables: (_create, states) => ({
+        Default: via === 'states.default' ? states.default : source.asComposable(),
+      }),
+      render: {
+        default: kind === 'deferred' ? Deferred.default : Lazy,
+        Error: {
+          render: (_, { composables }) => <composables.Default />,
         },
-      })
-      .createResourceLayout({ resource: 'users', name: 'Users' });
-    const view = render(<Users.Error />);
-    expect(await screen.findByTestId('registered-default')).toHaveTextContent(
-      'Error',
-    );
-    view.unmount();
-    render(<Users />);
-    expect(await screen.findByTestId('registered-default')).toHaveTextContent(
-      'default',
-    );
-  },
-);
+      },
+    })
+    .createResourceLayout({
+      resource: 'users',
+      name: 'Users',
+    });
+  const view = render(<Users.Error />);
+  expect(await screen.findByTestId('registered-default')).toHaveTextContent('Error');
+  view.unmount();
+  render(<Users />);
+  expect(await screen.findByTestId('registered-default')).toHaveTextContent('default');
+});
 
 it('exposes the literal Error state through the deprecated lazy helper', () => {
   const { defineLazyDefaults } = createDefinedResourceLayout({
     resources: ['users'],
   });
-  const Legacy = defineLazyDefaults.createErrorComponent(
-    (_props, { state }) => {
-      expectTypeOf(state).toEqualTypeOf<'Error'>();
-      return <p>{state}</p>;
-    },
-  );
+  const Legacy = defineLazyDefaults.createErrorComponent((_props, { state }) => {
+    expectTypeOf(state).toEqualTypeOf<'Error'>();
+
+    return <p>{state}</p>;
+  });
   render(
     <Legacy
-      resource="users"
+      resource='users'
       error={new ResourceModuleLoadError('users', 'offline')}
       retry={() => {}}
     />,

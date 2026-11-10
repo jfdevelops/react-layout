@@ -32,9 +32,7 @@ const { createResourceConfig } = defineResourceLayout({
 const usersList = <div data-testid='users-list'>users</div>;
 const usersError = <div data-testid='users-error'>users error</div>;
 const usersDetail = <div data-testid='users-detail'>users detail</div>;
-const usersDetailError = (
-  <div data-testid='users-detail-error'>detail error</div>
-);
+const usersDetailError = <div data-testid='users-detail-error'>detail error</div>;
 const adminsList = <div data-testid='admins-list'>admins</div>;
 const femaleList = <div data-testid='female-list'>female managers</div>;
 const groupsList = <div data-testid='groups-list'>groups</div>;
@@ -49,15 +47,21 @@ function createTestConfig() {
         component: usersDetail,
         errorComponent: usersDetailError,
       },
-      admins: { component: adminsList },
+      admins: {
+        component: adminsList,
+      },
       managers: {
         component: <div>managers</div>,
-        female: { component: femaleList },
+        female: {
+          component: femaleList,
+        },
       },
     },
     groups: {
       component: groupsList,
-      detail: { component: groupsDetail },
+      detail: {
+        component: groupsDetail,
+      },
     },
   });
 }
@@ -73,12 +77,16 @@ describe('createGetComponent', () => {
     const { createGetComponent } = createTestConfig();
     const getResource = createGetComponent('$resource');
 
-    expect(getResource({ resource: 'users' }).getComponent('component')).toBe(
-      usersList,
-    );
-    expect(getResource({ resource: 'groups' }).getComponent('component')).toBe(
-      groupsList,
-    );
+    expect(
+      getResource({
+        resource: 'users',
+      }).getComponent('component'),
+    ).toBe(usersList);
+    expect(
+      getResource({
+        resource: 'groups',
+      }).getComponent('component'),
+    ).toBe(groupsList);
   });
 
   it('resolves $resource and $component together', () => {
@@ -97,19 +105,23 @@ describe('createGetComponent', () => {
     const { createGetComponent } = createTestConfig();
     const getDetail = createGetComponent('$resource.detail.$component');
 
-    expect(getDetail({ resource: 'users', component: 'errorComponent' })).toBe(
-      usersDetailError,
-    );
-    expect(getDetail({ resource: 'groups', component: 'component' })).toBe(
-      groupsDetail,
-    );
+    expect(
+      getDetail({
+        resource: 'users',
+        component: 'errorComponent',
+      }),
+    ).toBe(usersDetailError);
+    expect(
+      getDetail({
+        resource: 'groups',
+        component: 'component',
+      }),
+    ).toBe(groupsDetail);
   });
 
   it('resolves a $subResource variable one level deep', () => {
     const { createGetComponent } = createTestConfig();
-    const getSubResource = createGetComponent(
-      '$resource.$subResource.$component',
-    );
+    const getSubResource = createGetComponent('$resource.$subResource.$component');
 
     expect(
       getSubResource({
@@ -122,14 +134,15 @@ describe('createGetComponent', () => {
 
   it('resolves a nested $subResource param', () => {
     const { createGetComponent } = createTestConfig();
-    const getSubResource = createGetComponent(
-      '$resource.$subResource.$component',
-    );
+    const getSubResource = createGetComponent('$resource.$subResource.$component');
 
     expect(
       getSubResource({
         resource: 'users',
-        subResource: { value: 'managers', subResource: 'female' },
+        subResource: {
+          value: 'managers',
+          subResource: 'female',
+        },
         component: 'component',
       }),
     ).toBe(femaleList);
@@ -139,9 +152,9 @@ describe('createGetComponent', () => {
     const { createGetComponent } = createTestConfig();
 
     expect(
-      createGetComponent('$resource')({ resource: 'groups' }).getComponent(
-        'pendingComponent',
-      ),
+      createGetComponent('$resource')({
+        resource: 'groups',
+      }).getComponent('pendingComponent'),
     ).toBeNull();
   });
 
@@ -156,9 +169,7 @@ describe('createGetComponent', () => {
 
   it('narrows values with the variable guards', () => {
     const { createGetComponent } = createTestConfig();
-    const getSubResource = createGetComponent(
-      '$resource.$subResource.$component',
-    );
+    const getSubResource = createGetComponent('$resource.$subResource.$component');
 
     expect(getSubResource.isResource('users')).toBe(true);
     expect(getSubResource.isResource('nope')).toBe(false);
@@ -177,34 +188,36 @@ describe('createGetComponent', () => {
     const getResource = createGetComponent('$resource');
 
     expect(() =>
-      (
-        getResource as unknown as (
-          variables?: Record<string, unknown>,
-        ) => unknown
-      )(),
+      (getResource as unknown as (variables?: Record<string, unknown>) => unknown)(),
     ).toThrowError(MissingPathVariableError);
   });
 
   it('throws typed errors for values outside the config', () => {
     const { createGetComponent } = createTestConfig();
-    const getSubResource = createGetComponent(
-      '$resource.$subResource.$component',
-    );
+    const getSubResource = createGetComponent('$resource.$subResource.$component');
     const call = (variables: Record<string, unknown>) =>
-      (
-        getSubResource as unknown as (
-          variables: Record<string, unknown>,
-        ) => unknown
-      )(variables);
+      (getSubResource as unknown as (variables: Record<string, unknown>) => unknown)(variables);
 
     expect(() =>
-      call({ resource: 'nope', subResource: 'admins', component: 'component' }),
+      call({
+        resource: 'nope',
+        subResource: 'admins',
+        component: 'component',
+      }),
     ).toThrowError(InvalidResourceError);
     expect(() =>
-      call({ resource: 'users', subResource: 'nope', component: 'component' }),
+      call({
+        resource: 'users',
+        subResource: 'nope',
+        component: 'component',
+      }),
     ).toThrowError(InvalidSubResourceError);
     expect(() =>
-      call({ resource: 'users', subResource: 'admins', component: 'nope' }),
+      call({
+        resource: 'users',
+        subResource: 'admins',
+        component: 'nope',
+      }),
     ).toThrowError(InvalidComponentError);
   });
 });
@@ -217,12 +230,8 @@ describe('forPaths', () => {
   it('rejects a path the config does not support', () => {
     const { forPaths } = createTestConfig();
 
-    expect(() => forPaths('users.missing.component' as never)).toThrowError(
-      InvalidPathError,
-    );
-    expect(() => forPaths('users.missing.component' as never)).toThrowError(
-      /Available paths are/,
-    );
+    expect(() => forPaths('users.missing.component' as never)).toThrowError(InvalidPathError);
+    expect(() => forPaths('users.missing.component' as never)).toThrowError(/Available paths are/);
   });
 
   it('renders a component built from the path params', () => {
@@ -241,7 +250,11 @@ describe('forPaths', () => {
   it('picks only the requested path params', () => {
     const { forPaths } = createTestConfig();
     const UsersComponent = forPaths('$resource.$component')
-      .addPathParams({ pick: { component: true } })
+      .addPathParams({
+        pick: {
+          component: true,
+        },
+      })
       .render(({ params, getComponentForPath }) =>
         getComponentForPath('$resource.$component')({
           resource: 'users',
@@ -257,7 +270,9 @@ describe('forPaths', () => {
   it('exposes custom params as defaults', () => {
     const { forPaths } = createTestConfig();
     const Heading = forPaths('$resource')
-      .addParams({ heading: 'Directory' })
+      .addParams({
+        heading: 'Directory',
+      })
       .render(({ params }) => <h1>{params.heading}</h1>);
 
     render(<Heading />);
@@ -269,7 +284,11 @@ describe('forPaths', () => {
     const { forPaths } = createTestConfig();
     const Slot = forPaths('$resource')
       .addComponentKeyParams()
-      .addPathParams({ pick: { resource: true } })
+      .addPathParams({
+        pick: {
+          resource: true,
+        },
+      })
       .render(({ params, getComponentForPath }) =>
         getComponentForPath('$resource')({
           resource: params.resource,
@@ -290,15 +309,19 @@ describe('forPaths', () => {
       (Slot as unknown as (props: Record<string, unknown>) => unknown)(props);
 
     expect(() => renderWith({})).toThrowError(InvalidComponentError);
-    expect(() => renderWith({ componentKey: 'nope' })).toThrowError(
-      InvalidComponentError,
-    );
+    expect(() =>
+      renderWith({
+        componentKey: 'nope',
+      }),
+    ).toThrowError(InvalidComponentError);
   });
 
   it('allows an optional componentKey to be omitted', () => {
     const { forPaths } = createTestConfig();
     const Slot = forPaths('$resource')
-      .addComponentKeyParams({ optional: true })
+      .addComponentKeyParams({
+        optional: true,
+      })
       .render(({ params }) => <div>{params.componentKey ?? 'none'}</div>);
 
     render(<Slot />);
@@ -308,11 +331,10 @@ describe('forPaths', () => {
 
   it('rejects a path the component was not built for', () => {
     const { forPaths } = createTestConfig();
-    const Detail = forPaths('$resource.detail.component').render(
-      ({ getComponentForPath }) =>
-        (getComponentForPath as unknown as (path: string) => () => JSX.Element)(
-          '$resource.$component',
-        )(),
+    const Detail = forPaths('$resource.detail.component').render(({ getComponentForPath }) =>
+      (getComponentForPath as unknown as (path: string) => () => JSX.Element)(
+        '$resource.$component',
+      )(),
     );
 
     expect(() =>
@@ -348,7 +370,11 @@ describe('forPaths', () => {
       .render(({ params, getComponentForPath }) =>
         getComponentForPath('$resource.$component')(params),
       )
-      .asHOF({ args: { resource: true } });
+      .asHOF({
+        args: {
+          resource: true,
+        },
+      });
     const UsersView = createResourceView('users');
 
     render(<UsersView component='errorComponent' />);
@@ -363,8 +389,16 @@ describe('forPaths', () => {
       .render(({ params, getComponentForPath }) =>
         getComponentForPath('$resource.$component')(params),
       )
-      .asHOF({ args: { resource: true } })('users')
-      .asHOF({ args: { component: true } })('errorComponent');
+      .asHOF({
+        args: {
+          resource: true,
+        },
+      })('users')
+      .asHOF({
+        args: {
+          component: true,
+        },
+      })('errorComponent');
 
     render(<UsersError />);
 
@@ -378,7 +412,12 @@ describe('forPaths', () => {
       .render(({ params, getComponentForPath }) =>
         getComponentForPath('$resource.$component')(params),
       )
-      .asHOF({ args: { component: true, resource: true } });
+      .asHOF({
+        args: {
+          component: true,
+          resource: true,
+        },
+      });
     const UsersError = createResourceView({
       component: 'errorComponent',
       resource: 'users',
@@ -394,21 +433,41 @@ describe('isSubResourceKey', () => {
   it('narrows sub-resource keys for a resource', () => {
     const { isSubResourceKey } = createTestConfig();
 
-    expect(isSubResourceKey('admins', { resource: 'users' })).toBe(true);
-    expect(isSubResourceKey('female', { resource: 'users' })).toBe(true);
-    expect(isSubResourceKey('admins', { resource: 'groups' })).toBe(false);
-    expect(isSubResourceKey('component', { resource: 'users' })).toBe(false);
+    expect(
+      isSubResourceKey('admins', {
+        resource: 'users',
+      }),
+    ).toBe(true);
+    expect(
+      isSubResourceKey('female', {
+        resource: 'users',
+      }),
+    ).toBe(true);
+    expect(
+      isSubResourceKey('admins', {
+        resource: 'groups',
+      }),
+    ).toBe(false);
+    expect(
+      isSubResourceKey('component', {
+        resource: 'users',
+      }),
+    ).toBe(false);
   });
 
   it('narrows sub-resource keys for a path', () => {
     const { isSubResourceKey } = createTestConfig();
 
     expect(
-      isSubResourceKey('managers', { path: '$resource.$subResource' }),
+      isSubResourceKey('managers', {
+        path: '$resource.$subResource',
+      }),
     ).toBe(true);
-    expect(isSubResourceKey('nope', { path: '$resource.$subResource' })).toBe(
-      false,
-    );
+    expect(
+      isSubResourceKey('nope', {
+        path: '$resource.$subResource',
+      }),
+    ).toBe(false);
   });
 });
 

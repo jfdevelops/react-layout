@@ -4,10 +4,7 @@ import { vi } from 'vitest';
 import { defineResourceLayout } from '../../src';
 
 /** Factory bound to `users` + `posts`. Pass `resources` for extras. */
-export const testResourceLayout = defineResourceLayout.forResources(
-  'users',
-  'posts',
-);
+export const testResourceLayout = defineResourceLayout.forResources('users', 'posts');
 
 /** Minimal defined layout for tests that only need create* APIs. */
 export const testResourceLayoutWithRender = testResourceLayout({
@@ -20,10 +17,14 @@ class RenderErrorBoundary extends Component<
   { children?: ReactNode; onError: (error: Error) => void },
   { failed: boolean }
 > {
-  state = { failed: false };
+  state = {
+    failed: false,
+  };
 
   static getDerivedStateFromError() {
-    return { failed: true };
+    return {
+      failed: true,
+    };
   }
 
   componentDidCatch(error: Error) {

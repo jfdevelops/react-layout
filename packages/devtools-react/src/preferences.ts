@@ -31,8 +31,7 @@ type Preferences = DevtoolsPreferences & {
 
 const adapterKeys = ['fabPosition', 'panel', 'variant', 'toolbar'] as const;
 
-type PreferencesPatch = DevtoolsConfig &
-  Pick<Preferences, (typeof adapterKeys)[number]>;
+type PreferencesPatch = DevtoolsConfig & Pick<Preferences, (typeof adapterKeys)[number]>;
 
 function read(key: string): string | null {
   try {
@@ -63,10 +62,7 @@ function write(key: string, value: Preferences) {
   window.dispatchEvent(new Event(changeEvent));
 }
 
-function resolve(
-  raw: string | null,
-  defaults?: ReactLayoutDevtoolsConfig
-): Preferences {
+function resolve(raw: string | null, defaults?: ReactLayoutDevtoolsConfig): Preferences {
   const shared: Preferences = parseDevtoolsPreferences(raw, defaults);
 
   try {
@@ -75,20 +71,20 @@ function resolve(
     const panel = saved?.panel;
     const toolbarHeight = saved?.toolbar?.height;
 
-    if (saved?.variant === 'floating' || saved?.variant === 'toolbar')
+    if (saved?.variant === 'floating' || saved?.variant === 'toolbar') {
       shared.variant = saved.variant;
+    }
 
-    if (
-      typeof toolbarHeight === 'number' &&
-      Number.isFinite(toolbarHeight) &&
-      toolbarHeight > 0
-    )
-      shared.toolbar = { height: toolbarHeight };
+    if (typeof toolbarHeight === 'number' && Number.isFinite(toolbarHeight) && toolbarHeight > 0) {
+      shared.toolbar = {
+        height: toolbarHeight,
+      };
+    }
 
     if (
       panel &&
       [panel.x, panel.y, panel.width, panel.height].every(
-        (value) => typeof value === 'number' && Number.isFinite(value)
+        (value) => typeof value === 'number' && Number.isFinite(value),
       ) &&
       panel.width > 0 &&
       panel.height > 0 &&
@@ -110,7 +106,13 @@ function resolve(
       typeof point.y === 'number' &&
       Number.isFinite(point.y)
     ) {
-      return { ...shared, fabPosition: { x: point.x, y: point.y } };
+      return {
+        ...shared,
+        fabPosition: {
+          x: point.x,
+          y: point.y,
+        },
+      };
     }
   } catch {
     // Invalid adapter-specific data falls back to the default FAB placement.
@@ -120,10 +122,7 @@ function resolve(
 }
 
 /** Storage is authoritative; all inspectors in this origin update together. */
-export function usePanelPreferences(
-  defaults?: ReactLayoutDevtoolsConfig,
-  key = defaultStorageKey
-) {
+export function usePanelPreferences(defaults?: ReactLayoutDevtoolsConfig, key = defaultStorageKey) {
   const raw = useSyncExternalStore(
     useMemo(
       () => (listener: () => void) => {
@@ -145,27 +144,29 @@ export function usePanelPreferences(
           window.removeEventListener(changeEvent, listener);
         };
       },
-      [key]
+      [key],
     ),
     () => read(key),
-    () => null
+    () => null,
   );
   const preferences = useMemo(() => resolve(raw, defaults), [raw, defaults]);
 
   useEffect(() => {
-    if (raw === null && read(key) === null) write(key, preferences);
+    if (raw === null && read(key) === null) {
+      write(key, preferences);
+    }
   }, [raw, key, preferences]);
 
   function update(patch: PreferencesPatch) {
     const current = resolve(read(key), defaults);
     const adapter = Object.fromEntries(
-      adapterKeys.map((name) => [
-        name,
-        name in patch ? patch[name] : current[name],
-      ])
+      adapterKeys.map((name) => [name, name in patch ? patch[name] : current[name]]),
     );
 
-    write(key, { ...mergeDevtoolsPreferences(current, patch), ...adapter });
+    write(key, {
+      ...mergeDevtoolsPreferences(current, patch),
+      ...adapter,
+    });
   }
 
   function reset() {

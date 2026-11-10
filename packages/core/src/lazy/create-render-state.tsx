@@ -1,8 +1,4 @@
-import type {
-  CustomPropsInput,
-  CustomPropsObject,
-  ResolveCallProps,
-} from '../custom-props';
+import type { CustomPropsInput, CustomPropsObject, ResolveCallProps } from '../custom-props';
 import { createElement, type ComponentType, type ReactNode } from 'react';
 import type { ComposableComponents } from '@jfdevelops/react-layout-composables';
 import { LayoutConfigurationError } from '../errors';
@@ -21,17 +17,10 @@ import type {
   OptionalStateChildren,
 } from '../create-config/render-state';
 
-import type {
-  LazyResourceErrorProps,
-  LazyErrorHandlers,
-  CreateLazyErrorComponent,
-} from './types';
+import type { LazyResourceErrorProps, LazyErrorHandlers, CreateLazyErrorComponent } from './types';
 
 export type LazyDefaultState = 'Loading' | 'Error';
-type BuiltinProps<
-  State extends LazyDefaultState,
-  Resource,
-> = State extends 'Error'
+type BuiltinProps<State extends LazyDefaultState, Resource> = State extends 'Error'
   ? LazyResourceErrorProps<Resource>
   : { resource: Resource };
 
@@ -43,13 +32,8 @@ type LazyDefaultIncludes<Include> = {
 };
 
 type LazyRender<State extends LazyDefaultState, Resource, Props, Context> =
-  | ((
-      props: Props & BuiltinProps<State, Resource>,
-      context: Context,
-    ) => ReactNode)
-  | (State extends 'Error'
-      ? LazyErrorHandlers<Resource, Props & object, Context>
-      : never);
+  | ((props: Props & BuiltinProps<State, Resource>, context: Context) => ReactNode)
+  | (State extends 'Error' ? LazyErrorHandlers<Resource, Props & object, Context> : never);
 
 /** Creates validated, composable-aware fallback components for one factory. */
 export type CreateLazyRenderState<
@@ -59,9 +43,7 @@ export type CreateLazyRenderState<
 > = <
   const State extends LazyDefaultState,
   const Custom extends CustomPropsObject = {},
-  const Include extends IncludedProps<
-    MergedLayoutInProps<Resources, Options, Composables>
-  > = {},
+  const Include extends IncludedProps<MergedLayoutInProps<Resources, Options, Composables>> = {},
 >(definition: {
   state: State;
   props?: { include?: Include; custom?: Custom & CustomPropsInput<Custom> };
@@ -84,15 +66,15 @@ export type CreateLazyRenderState<
 >;
 
 /** Compatibility helper; custom props keep their existing unchecked contract. */
-export type CreateBoundLazyErrorComponent<Resource, Context> =
-  CreateLazyErrorComponent<Resource, Context>;
+export type CreateBoundLazyErrorComponent<Resource, Context> = CreateLazyErrorComponent<
+  Resource,
+  Context
+>;
 
 type RuntimeDefinition = {
   state: LazyDefaultState;
   props?: { include?: Record<string, unknown>; custom?: CustomPropsObject };
-  render:
-    | ((props: any, context: any) => ReactNode)
-    | LazyErrorHandlers<string, object, any>;
+  render: ((props: any, context: any) => ReactNode) | LazyErrorHandlers<string, object, any>;
 };
 
 export function createLazyRenderStateBuilder<
@@ -106,9 +88,7 @@ export function createLazyRenderStateBuilder<
 }): CreateLazyRenderState<Resources, Options, Composables> {
   function createRenderState(definition: RuntimeDefinition) {
     if (definition.state !== 'Loading' && definition.state !== 'Error') {
-      throw new LayoutConfigurationError(
-        `Unknown lazy default state "${definition.state}"`,
-      );
+      throw new LayoutConfigurationError(`Unknown lazy default state "${definition.state}"`);
     }
     // Lazy defaults have no create-time configuration call. Included values are
     // supplied by their component caller unless an explicit config source is selected.
@@ -116,24 +96,23 @@ export function createLazyRenderStateBuilder<
       Object.entries(definition.props?.include ?? {}).map(([key, behavior]) => [
         key,
         behavior === true
-          ? { required: true, suppliedVia: 'component' }
+          ? {
+              required: true,
+              suppliedVia: 'component',
+            }
           : behavior,
       ]),
     );
-    function RenderLazyDefault({
-      props,
-      context,
-    }: {
-      props: any;
-      context: any;
-    }) {
+    function RenderLazyDefault({ props, context }: { props: any; context: any }) {
       if (typeof definition.render === 'function') {
         return definition.render(props, context);
       }
       const errorProps = props as LazyResourceErrorProps;
-      const handler =
-        definition.render[errorProps.error.code] ?? definition.render.fallback;
-      if (!handler) throw errorProps.error;
+      const handler = definition.render[errorProps.error.code] ?? definition.render.fallback;
+      if (!handler) {
+        throw errorProps.error;
+      }
+
       return handler(props as never, context);
     }
     const layout = defineResourceLayout({
@@ -144,9 +123,15 @@ export function createLazyRenderStateBuilder<
           default: () => null,
           [definition.state]: {
             composables: configuration.composables,
-            props: { include, custom: definition.props?.custom },
+            props: {
+              include,
+              custom: definition.props?.custom,
+            },
             render: (props: any, context: any) =>
-              createElement(RenderLazyDefault, { props, context }),
+              createElement(RenderLazyDefault, {
+                props,
+                context,
+              }),
           },
         },
       },
@@ -166,13 +151,12 @@ export function createLazyRenderStateBuilder<
         Component = Root[definition.state];
         components.set(resource, Component);
       }
+
       return createElement(Component, props);
     }
+
     return LazyDefault;
   }
-  return createRenderState as CreateLazyRenderState<
-    Resources,
-    Options,
-    Composables
-  >;
+
+  return createRenderState as CreateLazyRenderState<Resources, Options, Composables>;
 }

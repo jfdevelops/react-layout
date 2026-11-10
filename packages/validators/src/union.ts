@@ -11,7 +11,10 @@ export class UnionProp<
   readonly members: Members;
 
   constructor(members: Members, visibility: Visibility) {
-    super({ type: 'union', visibility });
+    super({
+      type: 'union',
+      visibility,
+    });
     this.members = members;
   }
 
@@ -25,7 +28,7 @@ export class UnionProp<
         const result = member.validate(value);
 
         return containsStandardSchema(member)
-          ? result as ExtractPropValue<Members[number]>
+          ? (result as ExtractPropValue<Members[number]>)
           : undefined;
       } catch (error) {
         if (!(error instanceof PropError) && !(error instanceof InvalidRecordKeyError)) {

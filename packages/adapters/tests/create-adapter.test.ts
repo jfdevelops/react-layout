@@ -5,14 +5,27 @@ import { createAdapter, type ReactCheck } from '../src';
 function createTestSchema<Value>(check: ReactCheck<Value>) {
   return {
     parse(value: unknown) {
-      if (!check(value)) throw new TypeError('Invalid React value');
+      if (!check(value)) {
+        throw new TypeError('Invalid React value');
+      }
+
       return value;
     },
     '~standard': {
       version: 1 as const,
       vendor: 'custom-test',
       validate(value: unknown) {
-        return check(value) ? { value } : { issues: [{ message: 'Invalid React value' }] };
+        return check(value)
+          ? {
+              value,
+            }
+          : {
+              issues: [
+                {
+                  message: 'Invalid React value',
+                },
+              ],
+            };
       },
     },
   };
@@ -23,10 +36,12 @@ describe('createAdapter', () => {
     const { reactNode, reactElement } = createAdapter({
       node: (check) => {
         expectTypeOf(check).toEqualTypeOf<ReactCheck<ReactNode>>();
+
         return createTestSchema(check);
       },
       element: (check) => {
         expectTypeOf(check).toEqualTypeOf<ReactCheck<ReactElement>>();
+
         return createTestSchema(check);
       },
     });
@@ -35,10 +50,24 @@ describe('createAdapter', () => {
     expectTypeOf(node.parse('text')).toEqualTypeOf<ReactNode>();
     expectTypeOf(element.parse(createElement('span'))).toEqualTypeOf<ReactElement>();
 
-    for (const value of ['text', 1, null, undefined, false, createElement('span'), new Set(['text'])]) {
+    for (const value of [
+      'text',
+      1,
+      null,
+      undefined,
+      false,
+      createElement('span'),
+      new Set(['text']),
+    ]) {
       expect(node.parse(value)).toBe(value);
     }
-    for (const value of [{}, () => createElement('span'), { $$typeof: Symbol('fake') }]) {
+    for (const value of [
+      {},
+      () => createElement('span'),
+      {
+        $$typeof: Symbol('fake'),
+      },
+    ]) {
       expect(() => node.parse(value)).toThrow('Invalid React value');
     }
     expect(element.parse(createElement('span')).type).toBe('span');
@@ -53,10 +82,12 @@ describe('createAdapter', () => {
     const adapter = createAdapter({
       node: (check) => {
         nodeCalls++;
+
         return createTestSchema(check);
       },
       element: (check) => {
         elementCalls++;
+
         return createTestSchema(check);
       },
     });
@@ -68,11 +99,16 @@ describe('createAdapter', () => {
   });
 
   it('rejects cyclic collections and leaves one-shot iterators unconsumed', () => {
-    const { reactNode } = createAdapter({ node: createTestSchema, element: createTestSchema });
+    const { reactNode } = createAdapter({
+      node: createTestSchema,
+      element: createTestSchema,
+    });
     const cyclic: unknown[] = [];
     cyclic.push(cyclic);
     expect(() => reactNode().parse(cyclic)).toThrow('Invalid React value');
-    function* children() { yield 'child'; }
+    function* children() {
+      yield 'child';
+    }
     const iterator = children();
     expect(() => reactNode().parse(iterator)).toThrow('Invalid React value');
     expect(iterator.next().value).toBe('child');

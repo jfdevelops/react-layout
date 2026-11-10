@@ -5,25 +5,47 @@ import { resolveChipColors } from '../src/config';
 
 function fixture() {
   const required = Object.assign(vi.fn(), {
-    _baseProp: { type: 'ReactNode', visibility: 'required' },
+    _baseProp: {
+      type: 'ReactNode',
+      visibility: 'required',
+    },
   });
   const optional = Object.assign(vi.fn(), {
-    _baseProp: { type: 'string', visibility: 'optional' },
+    _baseProp: {
+      type: 'string',
+      visibility: 'optional',
+    },
   });
   const details = {
     resource: 'users',
-    propSchemas: { title: optional },
+    propSchemas: {
+      title: optional,
+    },
     props: {
       include: {
         title: true,
-        segments: { required: false, suppliedVia: 'component' },
-        action: { required: true, suppliedVia: 'component' },
+        segments: {
+          required: false,
+          suppliedVia: 'component',
+        },
+        action: {
+          required: true,
+          suppliedVia: 'component',
+        },
         description: 'optional',
       },
-      custom: { children: required, className: optional },
+      custom: {
+        children: required,
+        className: optional,
+      },
     },
   };
-  return { required, optional, details };
+
+  return {
+    required,
+    optional,
+    details,
+  };
 }
 it('lists readable prop contracts with configurable chips and shared accessible tooltips', async () => {
   const { required, optional, details } = fixture();
@@ -31,14 +53,19 @@ it('lists readable prop contracts with configurable chips and shared accessible 
     <InspectionDetails
       details={details}
       palette={resolveChipColors({
-        required: { color: 'red', background: 'pink' },
+        required: {
+          color: 'red',
+          background: 'pink',
+        },
         included: 'cyan',
         component: 'lime',
       })}
-    />
+    />,
   );
   const rows = within(
-    screen.getByRole('list', { name: 'Prop list' })
+    screen.getByRole('list', {
+      name: 'Prop list',
+    }),
   ).getAllByRole('listitem');
   expect(rows).toHaveLength(6);
   const title = within(rows[0]);
@@ -55,36 +82,43 @@ it('lists readable prop contracts with configurable chips and shared accessible 
   expect(within(rows[3]).getByText('config')).toBeTruthy();
   fireEvent.focus(within(rows[1]).getByText('component'));
   expect((await screen.findByRole('tooltip')).textContent).toContain(
-    'supply this value on the rendered layout component'
+    'supply this value on the rendered layout component',
   );
-  fireEvent.keyDown(within(rows[1]).getByText('component'), { key: 'Escape' });
+  fireEvent.keyDown(within(rows[1]).getByText('component'), {
+    key: 'Escape',
+  });
   expect(screen.queryByRole('tooltip')).toBeNull();
   expect(required).not.toHaveBeenCalled();
   expect(optional).not.toHaveBeenCalled();
 });
 it('combines search, kind, and requirement filters and explains empty results', () => {
-  render(
-    <InspectionDetails
-      details={fixture().details}
-      palette={resolveChipColors(undefined)}
-    />
-  );
-  const list = screen.getByRole('list', { name: 'Prop list' });
+  render(<InspectionDetails details={fixture().details} palette={resolveChipColors(undefined)} />);
+  const list = screen.getByRole('list', {
+    name: 'Prop list',
+  });
   fireEvent.change(screen.getByLabelText('Filter prop kind'), {
-    target: { value: 'custom' },
+    target: {
+      value: 'custom',
+    },
   });
   expect(within(list).getAllByRole('listitem')).toHaveLength(2);
   fireEvent.change(screen.getByLabelText('Filter prop requirement'), {
-    target: { value: 'optional' },
+    target: {
+      value: 'optional',
+    },
   });
   expect(within(list).getAllByRole('listitem')).toHaveLength(1);
   expect(within(list).getByText('className')).toBeTruthy();
   fireEvent.change(screen.getByLabelText('Filter props'), {
-    target: { value: 'string' },
+    target: {
+      value: 'string',
+    },
   });
   expect(within(list).getByText('className')).toBeTruthy();
   fireEvent.change(screen.getByLabelText('Filter props'), {
-    target: { value: 'missing' },
+    target: {
+      value: 'missing',
+    },
   });
   expect(screen.getByText('No props match these filters.')).toBeTruthy();
 });
@@ -93,9 +127,13 @@ it('handles empty contracts and safe non-prop descriptions', () => {
   cycle.self = cycle;
   render(
     <InspectionDetails
-      details={{ props: {}, resource: 'users', metadata: cycle }}
+      details={{
+        props: {},
+        resource: 'users',
+        metadata: cycle,
+      }}
       palette={resolveChipColors(undefined)}
-    />
+    />,
   );
   expect(screen.getByText('No props declared for this node.')).toBeTruthy();
   expect(screen.getByText('users')).toBeTruthy();
@@ -106,35 +144,56 @@ it('handles empty contracts and safe non-prop descriptions', () => {
 it('filters by available prop types alongside the other filters', () => {
   const { details } = fixture();
 
-  render(
-    <InspectionDetails
-      details={details}
-      palette={resolveChipColors(undefined)}
-    />
-  );
+  render(<InspectionDetails details={details} palette={resolveChipColors(undefined)} />);
 
-  const list = screen.getByRole('list', { name: 'Prop list' });
+  const list = screen.getByRole('list', {
+    name: 'Prop list',
+  });
   const types = screen.getByLabelText('Filter prop type');
 
-  expect(within(types).getByRole('option', { name: 'ReactNode' })).toBeTruthy();
-  expect(within(types).getByRole('option', { name: 'string' })).toBeTruthy();
-  expect(within(types).getByRole('option', { name: 'Unknown' })).toBeTruthy();
+  expect(
+    within(types).getByRole('option', {
+      name: 'ReactNode',
+    }),
+  ).toBeTruthy();
+  expect(
+    within(types).getByRole('option', {
+      name: 'string',
+    }),
+  ).toBeTruthy();
+  expect(
+    within(types).getByRole('option', {
+      name: 'Unknown',
+    }),
+  ).toBeTruthy();
 
-  fireEvent.change(types, { target: { value: 'ReactNode' } });
+  fireEvent.change(types, {
+    target: {
+      value: 'ReactNode',
+    },
+  });
 
   expect(within(list).getAllByRole('listitem')).toHaveLength(1);
   expect(within(list).getByText('children')).toBeTruthy();
 
-  fireEvent.change(types, { target: { value: 'string' } });
+  fireEvent.change(types, {
+    target: {
+      value: 'string',
+    },
+  });
   fireEvent.change(screen.getByLabelText('Filter prop kind'), {
-    target: { value: 'custom' },
+    target: {
+      value: 'custom',
+    },
   });
 
   expect(within(list).getAllByRole('listitem')).toHaveLength(1);
   expect(within(list).getByText('className')).toBeTruthy();
 
   fireEvent.change(screen.getByLabelText('Filter prop requirement'), {
-    target: { value: 'required' },
+    target: {
+      value: 'required',
+    },
   });
 
   expect(screen.getByText('No props match these filters.')).toBeTruthy();

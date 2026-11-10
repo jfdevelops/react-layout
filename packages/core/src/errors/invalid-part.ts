@@ -4,7 +4,7 @@ import { createReactLayoutError } from './react-layout-error';
 const context = type({
   part: 'string',
   validParts: 'string[]',
-  scope: "'namingPart'"
+  scope: "'namingPart'",
 });
 
 export type InvalidPartContext = typeof context.infer;
@@ -14,7 +14,7 @@ export type InvalidPartContext = typeof context.infer;
  */
 export class InvalidPartError extends createReactLayoutError({
   code: 'invalidPart',
-  scope: 'namingPart'
+  scope: 'namingPart',
 })
   .defineContext(context)
   .implement(({ context, scope }) => {
@@ -24,7 +24,6 @@ export class InvalidPartError extends createReactLayoutError({
             .map((part) => JSON.stringify(part))
             .join(', ')}.`
         : ' No parts are defined.';
-    return `[${scope}]: Naming part ${JSON.stringify(
-      context.part
-    )} is not defined.${available}`;
+
+    return `[${scope}]: Naming part ${JSON.stringify(context.part)} is not defined.${available}`;
   }) {}

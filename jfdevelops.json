@@ -128,12 +128,7 @@
       "options": {}
     }
   ],
-  "agents": [
-    "claude-code",
-    "codex",
-    "cursor",
-    "copilot"
-  ],
+  "agents": ["claude-code", "codex", "cursor", "copilot"],
   "skills": [
     {
       "name": "jf-coding-conventions",

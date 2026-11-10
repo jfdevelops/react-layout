@@ -1,10 +1,6 @@
 import type { JSX, ReactNode } from 'react';
 import { describe, expectTypeOf, it } from 'vitest';
-import {
-  createProp,
-  defineComposableComponent,
-  defineResourceLayout,
-} from '../../src';
+import { createProp, defineComposableComponent, defineResourceLayout } from '../../src';
 import { testResourceLayout } from './helpers';
 
 const { createResourceLayout } = testResourceLayout({
@@ -18,21 +14,18 @@ const { createResourceLayout } = testResourceLayout({
   },
 });
 
-const createDirectoryLayout = createResourceLayout.forResources(
-  'users',
-  'admins',
-);
+const createDirectoryLayout = createResourceLayout.forResources('users', 'admins');
 
 describe('defineResourceLayout types', () => {
   it('types the current resource provider and hook from declared resources', () => {
     const { ResourceProvider, useResource } = defineResourceLayout({
       resources: ['users', 'posts'],
-      layout: { render: () => null as never },
+      layout: {
+        render: () => null as never,
+      },
     });
 
-    expectTypeOf(useResource).returns.toEqualTypeOf<
-      'users' | 'posts'
-    >();
+    expectTypeOf(useResource).returns.toEqualTypeOf<'users' | 'posts'>();
     expectTypeOf(ResourceProvider).parameter(0).toMatchTypeOf<{
       resource: 'users' | 'posts';
     }>();
@@ -61,7 +54,9 @@ describe('defineResourceLayout types', () => {
         value: 'posts',
         subResources: ['comments'],
       }),
-      layout: { render: () => null as never },
+      layout: {
+        render: () => null as never,
+      },
     });
 
     const picked = resources.pick('posts');
@@ -93,7 +88,9 @@ describe('defineResourceLayout types', () => {
     const widened: string[] = ['users', 'posts'];
     const { resources } = defineResourceLayout({
       resources: widened,
-      layout: { render: () => null as never },
+      layout: {
+        render: () => null as never,
+      },
     });
 
     expectTypeOf(resources.pick('users')()).toEqualTypeOf<string[]>();
@@ -155,12 +152,20 @@ describe('defineResourceLayout types', () => {
       createResourceLayout.forResource('comments');
     };
     () => {
-      // @ts-expect-error keyed notation accepts exactly one resource
-      createResourceLayout.forResource({ users: {}, admins: {} });
+      createResourceLayout.forResource({
+        // @ts-expect-error keyed notation accepts exactly one resource
+        users: {},
+        admins: {},
+      });
     };
     () => {
+      const invalidName = {
+        resource: 'users',
+        name: () => 123,
+      } as const;
+
       // @ts-expect-error name callbacks must return strings
-      createResourceLayout.forResource({ resource: 'users', name: () => 123 });
+      createResourceLayout.forResource(invalidName);
     };
   });
 
@@ -176,11 +181,18 @@ describe('defineResourceLayout types', () => {
     expectTypeOf(UsersPage.resource).toEqualTypeOf<'users'>();
     expectTypeOf(layouts.resources).toEqualTypeOf<'users' | 'admins'>();
 
-    const GeneratedUsers = layouts({ resource: 'users', title: 'Users', description: 'Manage users' });
+    const GeneratedUsers = layouts({
+      resource: 'users',
+      title: 'Users',
+      description: 'Manage users',
+    });
     expectTypeOf(GeneratedUsers.displayName).toEqualTypeOf<'UsersLayout'>();
     () => {
-      // @ts-expect-error unselected resources cannot be used
-      layouts({ resource: 'posts', name: 'PostsPage' });
+      layouts({
+        // @ts-expect-error unselected resources cannot be used
+        resource: 'posts',
+        name: 'PostsPage',
+      });
     };
     () => {
       // @ts-expect-error forResources is intentionally omitted from scoped factories
@@ -195,7 +207,9 @@ describe('defineResourceLayout types', () => {
   it('merges optional extra resources from defineResourceLayout.forResources', () => {
     const { createResourceLayout: extended } = testResourceLayout({
       resources: ['admins'],
-      layout: { render: () => null as never },
+      layout: {
+        render: () => null as never,
+      },
     });
     const AdminsPage = extended.forResource('admins')();
     const UsersPage = extended.forResource('users')();
@@ -222,7 +236,9 @@ describe('defineResourceLayout types', () => {
             },
           })(() => null as never);
 
-          return { ...Breadcrumb };
+          return {
+            ...Breadcrumb,
+          };
         },
         props: {
           include: {
@@ -230,14 +246,15 @@ describe('defineResourceLayout types', () => {
             segments: 'optional',
           },
           custom: {
-            children: createProp.component({ type: 'ReactNode' }),
+            children: createProp.component({
+              type: 'ReactNode',
+            }),
           },
         },
         render: (props) => {
           expectTypeOf(props.title).toEqualTypeOf<string>();
-          expectTypeOf(props.segments).toEqualTypeOf<
-            Record<string, string> | undefined
-          >();
+          expectTypeOf(props.segments).toEqualTypeOf<Record<string, string> | undefined>();
+
           return null as never;
         },
       },
@@ -255,12 +272,16 @@ describe('defineResourceLayout types', () => {
     });
     expectTypeOf(DetailPane).toBeCallableWith({
       children: null as never,
-      segments: { name: 'Test Test' },
+      segments: {
+        name: 'Test Test',
+      },
     });
 
     () => {
-      // @ts-expect-error title remains required at the factory
-      createResourceLayout.forResource({ resource: 'detail' })({
+      createResourceLayout.forResource({
+        resource: 'detail',
+        // @ts-expect-error title remains required at the factory
+      })({
         name: 'MissingTitle',
       });
     };
@@ -300,12 +321,11 @@ describe('defineResourceLayout types', () => {
         },
         render: (props) => {
           expectTypeOf(props.title).toEqualTypeOf<string>();
-          expectTypeOf(props.componentLabel).toEqualTypeOf<
-            string | undefined
-          >();
+          expectTypeOf(props.componentLabel).toEqualTypeOf<string | undefined>();
           expectTypeOf(props.configLabel).toEqualTypeOf<string | undefined>();
           expectTypeOf(props.requiredComponentLabel).toEqualTypeOf<string>();
           expectTypeOf(props.requiredConfigLabel).toEqualTypeOf<string>();
+
           return null as never;
         },
       },
@@ -383,12 +403,14 @@ describe('createComponent types', () => {
       users: {
         render: (props) => {
           expectTypeOf(props.resource).toEqualTypeOf<'users'>();
+
           return null as never;
         },
       },
       admins: {
         render: (props) => {
           expectTypeOf(props.resource).toEqualTypeOf<'admins'>();
+
           return null as never;
         },
       },
@@ -399,6 +421,7 @@ describe('createComponent types', () => {
       expectTypeOf(props.eyebrow).toEqualTypeOf<string | undefined>();
       expectTypeOf(context.Users).toBeFunction();
       expectTypeOf(context.Admins).toBeFunction();
+
       return null as never;
     },
   });
@@ -411,23 +434,36 @@ describe('createComponent types', () => {
 
     () => {
       // @ts-expect-error required included props remain required at the call site
-      Directory({ resource: 'users' });
+      Directory({
+        resource: 'users',
+      });
     };
     () => {
-      // @ts-expect-error resources outside the scope are rejected by the resource prop
-      Directory({ resource: 'posts', title: 'Posts' });
+      Directory({
+        // @ts-expect-error resources outside the scope are rejected by the resource prop
+        resource: 'posts',
+        title: 'Posts',
+      });
     };
     () => {
       createDirectoryLayout.createComponent({
-        // @ts-expect-error include only accepts props from the layout definition
-        props: { include: { missing: true } },
+        props: {
+          include: {
+            // @ts-expect-error include only accepts props from the layout definition
+            missing: true,
+          },
+        },
         render: () => null as never,
       });
     };
     () => {
       createDirectoryLayout.createComponent({
-        // @ts-expect-error custom renders only accept selected resource keys
-        resources: { posts: { render: () => null as never } },
+        resources: {
+          // @ts-expect-error custom renders only accept selected resource keys
+          posts: {
+            render: () => null as never,
+          },
+        },
         render: () => null as never,
       });
     };
@@ -435,9 +471,15 @@ describe('createComponent types', () => {
 
   it('omits undeclared resources from context and drops resource on asHOF()', () => {
     createDirectoryLayout.createComponent({
-      props: { include: { title: true } },
+      props: {
+        include: {
+          title: true,
+        },
+      },
       resources: {
-        users: { render: () => null as never },
+        users: {
+          render: () => null as never,
+        },
       },
       render: (_props, context) => {
         expectTypeOf(context.Users).toBeFunction();
@@ -445,17 +487,23 @@ describe('createComponent types', () => {
           // @ts-expect-error admins has no entry, so it is absent from the context
           context.Admins;
         };
+
         return null as never;
       },
     });
 
     const UsersDirectory = Directory.asHOF()('users');
     expectTypeOf(UsersDirectory.resource).toEqualTypeOf<'users'>();
-    expectTypeOf(UsersDirectory).toBeCallableWith({ title: 'Users' });
+    expectTypeOf(UsersDirectory).toBeCallableWith({
+      title: 'Users',
+    });
 
     () => {
-      // @ts-expect-error the bound component no longer accepts a resource prop
-      UsersDirectory({ resource: 'users', title: 'Users' });
+      UsersDirectory({
+        // @ts-expect-error the bound component no longer accepts a resource prop
+        resource: 'users',
+        title: 'Users',
+      });
     };
     () => {
       // @ts-expect-error resources outside the scope cannot be bound
@@ -465,7 +513,11 @@ describe('createComponent types', () => {
 
   it('types scoped sibling components and rejects reserved shapes', () => {
     createDirectoryLayout.createComponent({
-      props: { include: { title: true } },
+      props: {
+        include: {
+          title: true,
+        },
+      },
       resources: {
         users: {
           components: {
@@ -476,58 +528,81 @@ describe('createComponent types', () => {
                   // @ts-expect-error a scoped component is omitted from its own siblings
                   components.Toolbar;
                 };
+
                 return null as never;
               },
             },
             Footer: {
-              props: { label: createProp.string() },
+              props: {
+                label: createProp.string(),
+              },
               render: () => null as never,
             },
           },
           render: (_props, components) => {
-            expectTypeOf(components.Footer).toBeCallableWith({ label: 'x' });
+            expectTypeOf(components.Footer).toBeCallableWith({
+              label: 'x',
+            });
             () => {
               // @ts-expect-error Footer requires its declared label prop
               components.Footer({});
             };
+
             return null as never;
           },
         },
-        admins: { render: () => null as never },
+        admins: {
+          render: () => null as never,
+        },
       },
       render: (_props, context) => {
-        expectTypeOf(context.Users.Footer).toBeCallableWith({ label: 'x' });
+        expectTypeOf(context.Users.Footer).toBeCallableWith({
+          label: 'x',
+        });
         () => {
           // @ts-expect-error admins declared no scoped components
           context.Admins.Footer;
         };
+
         return null as never;
       },
     });
 
     () => {
-      // @ts-expect-error resource entries reject layout option fields like title
-      createDirectoryLayout.createComponent({
+      const invalidOptions1 = {
         resources: {
           users: {
+            // @ts-expect-error resource entries reject layout option fields like title
             title: 'Users',
             render: () => null as never,
           },
         },
         render: () => null as never,
-      });
+      } satisfies Parameters<typeof createDirectoryLayout.createComponent<{ users: {} }, never>>[0];
+
+      createDirectoryLayout.createComponent(invalidOptions1);
     };
     () => {
+      const invalidOptions2 = {
+        resources: {
+          users: {
+            render: () => null as never,
+          },
+        },
+      } as const;
+
       // @ts-expect-error the shared render function is required
-      createDirectoryLayout.createComponent({
-        resources: { users: { render: () => null as never } },
-      });
+      createDirectoryLayout.createComponent(invalidOptions2);
     };
   });
 
   it('infers call-site props from returned component types', () => {
     const ReturnedDirectory = createDirectoryLayout.createComponent({
-      props: { include: { title: true } },
+      props: {
+        include: {
+          title: true,
+        },
+      },
       resources: {
         users: {
           components: {
@@ -535,12 +610,16 @@ describe('createComponent types', () => {
               render: function UsersDataTable() {
                 function Table(props: { caption: string; rows: number }) {
                   void props;
+
                   return null as never;
                 }
                 function Loading() {
                   return null as never;
                 }
-                return Object.assign(Table, { Loading });
+
+                return Object.assign(Table, {
+                  Loading,
+                });
               },
             },
           },
@@ -554,6 +633,7 @@ describe('createComponent types', () => {
               // @ts-expect-error DataTable requires props from the returned component
               components.DataTable({});
             };
+
             return null as never;
           },
         },
@@ -564,6 +644,7 @@ describe('createComponent types', () => {
           rows: 2,
         });
         expectTypeOf(context.Users.DataTable.Loading).toBeFunction();
+
         return null as never;
       },
     });
@@ -579,45 +660,57 @@ describe('createComponent types', () => {
   it('keeps declared prop keys uncapitalized for JSX.Element slots', () => {
     const { createResourceLayout: createJsxSlotLayout } = testResourceLayout({
       options: {
-        actions: createProp.component({ type: 'JSX.Element' }),
+        actions: createProp.component({
+          type: 'JSX.Element',
+        }),
         title: createProp.string(),
       },
       layout: {
-        props: { include: { actions: true, title: true } },
+        props: {
+          include: {
+            actions: true,
+            title: true,
+          },
+        },
         render: () => null as never,
       },
     });
-    const JsxSlotDirectory = createJsxSlotLayout
-      .forResources('users')
-      .createComponent({
-        props: {
-          include: { actions: true, title: true },
-          custom: {
-            badge: createProp.component({ type: 'JSX.Element' }),
+    const JsxSlotDirectory = createJsxSlotLayout.forResources('users').createComponent({
+      props: {
+        include: {
+          actions: true,
+          title: true,
+        },
+        custom: {
+          badge: createProp.component({
+            type: 'JSX.Element',
+          }),
+        },
+      },
+      resources: {
+        users: {
+          render: (props) => {
+            expectTypeOf(props.actions).toEqualTypeOf<() => JSX.Element>();
+            expectTypeOf(props.badge).toEqualTypeOf<JSX.Element>();
+            () => {
+              // @ts-expect-error declared keys are not capitalized
+              props.Actions;
+            };
+
+            return null as never;
           },
         },
-        resources: {
-          users: {
-            render: (props) => {
-              expectTypeOf(props.actions).toEqualTypeOf<() => JSX.Element>();
-              expectTypeOf(props.badge).toEqualTypeOf<JSX.Element>();
-              () => {
-                // @ts-expect-error declared keys are not capitalized
-                props.Actions;
-              };
-              return null as never;
-            },
-          },
-        },
-        render: (props) => {
-          expectTypeOf(props.actions).toEqualTypeOf<() => JSX.Element>();
-          () => {
-            // @ts-expect-error declared keys are not capitalized
-            props.Badge;
-          };
-          return null as never;
-        },
-      });
+      },
+      render: (props) => {
+        expectTypeOf(props.actions).toEqualTypeOf<() => JSX.Element>();
+        () => {
+          // @ts-expect-error declared keys are not capitalized
+          props.Badge;
+        };
+
+        return null as never;
+      },
+    });
 
     expectTypeOf(JsxSlotDirectory).toBeCallableWith({
       resource: 'users' as const,
@@ -638,15 +731,21 @@ describe('createComponent types', () => {
   });
 
   it('types setProps base props and forbids redefining them', () => {
-    const createSharedDirectory = createDirectoryLayout.createComponent.setProps(
-      {
-        include: { title: true },
-        custom: { heading: createProp.string() },
+    const createSharedDirectory = createDirectoryLayout.createComponent.setProps({
+      include: {
+        title: true,
       },
-    );
+      custom: {
+        heading: createProp.string(),
+      },
+    });
     const sharedUsersEntry = createSharedDirectory.createResourceComponents({
       resource: 'users',
-      props: { include: { description: 'optional' } },
+      props: {
+        include: {
+          description: 'optional',
+        },
+      },
       render: (props) => {
         expectTypeOf(props.title).toEqualTypeOf<string>();
         expectTypeOf(props.heading).toEqualTypeOf<string>();
@@ -655,6 +754,7 @@ describe('createComponent types', () => {
           // @ts-expect-error title is string (not any)
           props.title.definitelyNotAMethod();
         };
+
         return null as never;
       },
     });
@@ -662,14 +762,20 @@ describe('createComponent types', () => {
     () => {
       createSharedDirectory.createResourceComponents({
         resource: 'users',
-        // @ts-expect-error setProps already defined title
-        props: { include: { title: true } },
+        props: {
+          include: {
+            // @ts-expect-error setProps already defined title
+            title: true,
+          },
+        },
         render: () => null as never,
       });
     };
 
     const SharedDirectory = createSharedDirectory({
-      resources: { users: sharedUsersEntry },
+      resources: {
+        users: sharedUsersEntry,
+      },
       render: (props, context) => {
         expectTypeOf(props.title).toEqualTypeOf<string>();
         expectTypeOf(props.heading).toEqualTypeOf<string>();
@@ -681,6 +787,7 @@ describe('createComponent types', () => {
             children?: ReactNode;
           }) => JSX.Element
         >();
+
         return null as never;
       },
     });
@@ -693,26 +800,42 @@ describe('createComponent types', () => {
 
     () => {
       // @ts-expect-error heading from setProps custom remains required
-      SharedDirectory({ resource: 'users', title: 'Users' });
+      SharedDirectory({
+        resource: 'users',
+        title: 'Users',
+      });
     };
     () => {
-      // @ts-expect-error setProps already defined title on the thunk
-      createSharedDirectory({
-        props: { include: { title: true } },
+      const invalidOptions3 = {
+        props: {
+          include: {
+            title: true,
+          },
+        },
         render: () => null as never,
-      });
+      } as const;
+
+      // @ts-expect-error setProps already defined title on the thunk
+      createSharedDirectory(invalidOptions3);
     };
   });
 
   it('optionalizes defined props from setProps resource entries', () => {
     const createWithTitle = createDirectoryLayout.createComponent.setProps({
-      include: { title: true },
+      include: {
+        title: true,
+      },
     });
     const usersEntry = createWithTitle.createResourceComponents({
       resource: 'users',
-      props: { defined: { title: 'Users' } },
+      props: {
+        defined: {
+          title: 'Users',
+        },
+      },
       render: ({ title }) => {
         expectTypeOf(title).toEqualTypeOf<string>();
+
         return null as never;
       },
     });
@@ -720,13 +843,17 @@ describe('createComponent types', () => {
       readonly defined: { readonly title: 'Users' };
     }>();
     const Users = createWithTitle({
-      resources: { users: usersEntry },
+      resources: {
+        users: usersEntry,
+      },
       render: (_props, context) => context.Users({}),
     }).asHOF()('users');
 
     () => {
       Users({});
-      Users({ title: 'Override' });
+      Users({
+        title: 'Override',
+      });
     };
   });
 
@@ -734,10 +861,13 @@ describe('createComponent types', () => {
     const usersEntry = createDirectoryLayout.createResourceComponents({
       resource: 'users',
       props: {
-        defined: { title: 'Users' },
+        defined: {
+          title: 'Users',
+        },
       },
       render: (props) => {
         expectTypeOf(props.title).toEqualTypeOf<string>();
+
         return null as never;
       },
     });
@@ -748,16 +878,23 @@ describe('createComponent types', () => {
       render: ({ title }, context) => {
         expectTypeOf(title).toEqualTypeOf<string>();
         expectTypeOf(context.Users).toBeCallableWith({});
-        expectTypeOf(context.Users).toBeCallableWith({ title: 'Override' });
+        expectTypeOf(context.Users).toBeCallableWith({
+          title: 'Override',
+        });
+
         return null as never;
       },
     });
     const DefinedUsers = DefinedDirectory.asHOF()('users');
 
     () => {
-      DefinedDirectory({ resource: 'users' });
+      DefinedDirectory({
+        resource: 'users',
+      });
       DefinedUsers({});
-      DefinedUsers({ title: 'Override' });
+      DefinedUsers({
+        title: 'Override',
+      });
     };
 
     () => {
@@ -771,23 +908,27 @@ describe('createComponent types', () => {
       createDirectoryLayout.createResourceComponents({
         resource: 'users',
         props: {
-          // @ts-expect-error defined keys must be available layout props
-          defined: { missing: 'nope' },
+          defined: {
+            // @ts-expect-error defined keys must be available layout props
+            missing: 'nope',
+          },
         },
         render: () => null as never,
       });
     };
     () => {
-      // @ts-expect-error layout values belong under props.defined
-      createDirectoryLayout.createComponent({
+      const invalidOptions4 = {
         resources: {
           users: {
+            // @ts-expect-error layout values belong under props.defined
             title: 'Users',
             render: () => null as never,
           },
         },
         render: () => null as never,
-      });
+      } satisfies Parameters<typeof createDirectoryLayout.createComponent<{ users: {} }, never>>[0];
+
+      createDirectoryLayout.createComponent(invalidOptions4);
     };
   });
 
@@ -796,9 +937,14 @@ describe('createComponent types', () => {
       const { resources } = defineResourceLayout({
         resources: [
           'users',
-          { value: 'posts', subResources: ['comments'] },
+          {
+            value: 'posts',
+            subResources: ['comments'],
+          },
         ],
-        layout: { render: () => null as never },
+        layout: {
+          render: () => null as never,
+        },
       });
 
       expectTypeOf(resources()[0].value).toEqualTypeOf<'users'>();
@@ -832,9 +978,17 @@ describe('createComponent types', () => {
         },
       });
 
-      () => Shell({ resource: 'users', children: null });
-      // @ts-expect-error unknown resource key
-      () => Shell({ resource: 'nope', children: null });
+      () =>
+        Shell({
+          resource: 'users',
+          children: null,
+        });
+      () =>
+        Shell({
+          // @ts-expect-error unknown resource key
+          resource: 'nope',
+          children: null,
+        });
     });
 
     it('exposes resources.current as possibly-undefined in the shell render', () => {

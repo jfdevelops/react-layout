@@ -1,8 +1,4 @@
-import type {
-  PrimitivePropType,
-  PrimitiveTypesMap,
-  PropVisibility,
-} from './types';
+import type { PrimitivePropType, PrimitiveTypesMap, PropVisibility } from './types';
 import { BaseProp } from './base';
 
 export class LiteralProp<
@@ -13,7 +9,11 @@ export class LiteralProp<
   declare readonly value: Value;
 
   constructor(value: Value, type: Type, visibility: Visibility) {
-    super({ type, visibility, value });
+    super({
+      type,
+      visibility,
+      value,
+    });
   }
 
   optional(this: LiteralProp<Value, Type, 'required'>) {

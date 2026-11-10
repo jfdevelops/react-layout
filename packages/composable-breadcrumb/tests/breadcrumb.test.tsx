@@ -1,17 +1,16 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { createBreadcrumbComposable } from '../src';
-import {
-  createProp,
-  composablePresetMetaKey,
-} from '@jfdevelops/react-layout-composables';
+import { createProp, composablePresetMetaKey } from '@jfdevelops/react-layout-composables';
 
 describe('createBreadcrumbComposable', () => {
   it('adds props and replaces segments without changing the defaults', () => {
     const { Breadcrumb } = createBreadcrumbComposable({
       props: {
         segments: createProp.array(
-          createProp.object({ label: createProp.string() }),
+          createProp.object({
+            label: createProp.string(),
+          }),
         ),
         separator: createProp.string(),
       },
@@ -22,14 +21,19 @@ describe('createBreadcrumbComposable', () => {
 
     render(
       <Breadcrumb
-        segments={[{ label: 'Home' }, { label: 'Docs' }]}
-        separator=" / "
+        segments={[
+          {
+            label: 'Home',
+          },
+          {
+            label: 'Docs',
+          },
+        ]}
+        separator=' / '
       />,
     );
     expect(screen.getByText('Home / Docs')).toBeInTheDocument();
-    expect(Breadcrumb[composablePresetMetaKey].props.segments.type).toBe(
-      'array',
-    );
+    expect(Breadcrumb[composablePresetMetaKey].props.segments.type).toBe('array');
     expect(createBreadcrumbComposable.props.segments.type).toBe('record');
   });
 
@@ -41,15 +45,13 @@ describe('createBreadcrumbComposable', () => {
       }),
       render: ({ label }) => label,
     });
-    expect(Breadcrumb[composablePresetMetaKey].props.segments.visibility).toBe(
-      'optional',
-    );
+    expect(Breadcrumb[composablePresetMetaKey].props.segments.visibility).toBe('optional');
     expect(Breadcrumb[composablePresetMetaKey].props.label.type).toBe('string');
   });
 
   it('renders breadcrumb segments', () => {
     const Breadcrumb = createBreadcrumbComposable(({ segments }) => (
-      <nav aria-label="Breadcrumb">
+      <nav aria-label='Breadcrumb'>
         {Object.entries(segments).map(([key, segment]) => {
           const label = typeof segment === 'string' ? segment : segment.value;
 
@@ -62,7 +64,10 @@ describe('createBreadcrumbComposable', () => {
       <Breadcrumb.Breadcrumb
         segments={{
           home: 'Home',
-          users: { value: 'Users', isActive: true },
+          users: {
+            value: 'Users',
+            isActive: true,
+          },
         }}
       />,
     );

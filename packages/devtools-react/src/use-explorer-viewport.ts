@@ -8,7 +8,10 @@ interface Viewport {
 }
 
 // jsdom and hidden panes report zero sizes; assume a typical panel instead.
-const FALLBACK = { width: 1024, height: 600 };
+const FALLBACK = {
+  width: 1024,
+  height: 600,
+};
 
 /** Tracks the scroll position and size of a scroll container. */
 export function useExplorerViewport(ref: RefObject<HTMLElement | null>) {
@@ -21,7 +24,9 @@ export function useExplorerViewport(ref: RefObject<HTMLElement | null>) {
   useLayoutEffect(() => {
     const element = ref.current;
 
-    if (!element) return;
+    if (!element) {
+      return;
+    }
 
     const read = () =>
       setViewport((current) => {
@@ -42,12 +47,13 @@ export function useExplorerViewport(ref: RefObject<HTMLElement | null>) {
 
     read();
 
-    const observer =
-      typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(read);
+    const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(read);
 
     observer?.observe(element);
 
-    element.addEventListener('scroll', read, { passive: true });
+    element.addEventListener('scroll', read, {
+      passive: true,
+    });
 
     window.addEventListener('resize', read);
 

@@ -36,13 +36,13 @@ export function createMissingPropMessage(options: PropMessageOptions) {
   return `Missing required prop "${options.path}"${createPropLocation(options)}.`;
 }
 
-export function createMismatchedPropMessage(
-  options: MismatchedPropMessageOptions,
-) {
+export function createMismatchedPropMessage(options: MismatchedPropMessageOptions) {
   return `Invalid prop "${options.path}"${createPropLocation(options)}: expected "${options.expected}", received "${options.received}".`;
 }
 
-export class PropError extends validatorErrorFactory({ code: 'invalidProp' })
+export class PropError extends validatorErrorFactory({
+  code: 'invalidProp',
+})
   .defineContext(propErrorContext)
   .implement(({ message }) => message) {
   get layoutName() {

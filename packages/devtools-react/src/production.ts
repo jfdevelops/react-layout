@@ -10,10 +10,7 @@ export {
   ReactLayoutDevtoolsWorkspace,
   useReactLayoutDevtools,
 } from './content';
-export type {
-  ReactLayoutDevtoolsContentProps,
-  ReactLayoutDevtoolsProviderProps,
-} from './content';
+export type { ReactLayoutDevtoolsContentProps, ReactLayoutDevtoolsProviderProps } from './content';
 export type {
   DevtoolsConfig,
   DevtoolsPreferences,
@@ -24,8 +21,4 @@ export type {
   InspectionSource,
 } from '@jfdevelops/react-layout-devtools-core';
 
-export type {
-  ReactLayoutDevtoolsConfig,
-  DevtoolsChipColor,
-  DevtoolsChipKind,
-} from './config';
+export type { ReactLayoutDevtoolsConfig, DevtoolsChipColor, DevtoolsChipKind } from './config';

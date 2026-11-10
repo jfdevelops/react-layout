@@ -2,23 +2,38 @@ import type { ReactNode } from 'react';
 import { expectTypeOf } from 'vitest';
 import { createDefinedResourceLayout, createProp } from '../../src';
 
-const factory = createDefinedResourceLayout({ resources: ['users'] });
+const factory = createDefinedResourceLayout({
+  resources: ['users'],
+});
 const Users = factory
   .defineResourceLayout({
     render: ({ children }) => {
       expectTypeOf(children).toEqualTypeOf<ReactNode>();
+
       return <main>{children}</main>;
     },
   })
-  .createResourceLayout({ resource: 'users', name: 'Users' });
+  .createResourceLayout({
+    resource: 'users',
+    name: 'Users',
+  });
 <Users />;
 <Users>Content</Users>;
-// @ts-expect-error Built-in children must be React content.
-<Users children={{ invalid: true }} />;
+<Users
+  children={{
+    // @ts-expect-error Built-in children must be React content.
+    invalid: true,
+  }}
+/>;
 
 const Required = factory
   .defineResourceLayout({
-    props: { custom: { children: 'required', title: createProp.string() } },
+    props: {
+      custom: {
+        children: 'required',
+        title: createProp.string(),
+      },
+    },
     render: ({ children, title }) => (
       <main>
         {title}
@@ -26,19 +41,34 @@ const Required = factory
       </main>
     ),
   })
-  .createResourceLayout({ resource: 'users', name: 'Required' });
-<Required title="Title">Content</Required>;
+  .createResourceLayout({
+    resource: 'users',
+    name: 'Required',
+  });
+<Required title='Title'>Content</Required>;
 // @ts-expect-error Explicit required children must be supplied.
-<Required title="Title" />;
+<Required title='Title' />;
 
 const Preview = factory.createRenderState({
   state: 'Preview',
-  props: { custom: { children: 'required' } },
+  props: {
+    custom: {
+      children: 'required',
+    },
+  },
   render: ({ children }) => <aside>{children}</aside>,
 });
 const States = factory
-  .defineResourceLayout({ render: { default: () => <></>, ...Preview } })
-  .createResourceLayout({ resource: 'users', name: 'States' });
+  .defineResourceLayout({
+    render: {
+      default: () => <></>,
+      ...Preview,
+    },
+  })
+  .createResourceLayout({
+    resource: 'users',
+    name: 'States',
+  });
 <States.Preview>Content</States.Preview>;
 // @ts-expect-error State-local required children must be supplied.
 <States.Preview />;
@@ -47,20 +77,36 @@ const PreviewComposable = Preview.asComposable();
 <PreviewComposable />;
 
 factory.defineResourceLayout({
-  // @ts-expect-error The required shorthand is reserved for children.
-  props: { custom: { title: 'required' } },
+  props: {
+    custom: {
+      // @ts-expect-error The required shorthand is reserved for children.
+      title: 'required',
+    },
+  },
   render: () => <></>,
 });
-// @ts-expect-error Children shorthand only supports required.
-factory.createRenderState({
+const invalidOptions1 = {
   state: 'Preview',
-  props: { custom: { children: 'yes' } },
+  props: {
+    custom: {
+      children: 'yes',
+    },
+  },
   render: () => <></>,
-});
+} as const;
+
+// @ts-expect-error Children shorthand only supports required.
+factory.createRenderState(invalidOptions1);
+
+const invalidOptions2 = {
+  state: 'Preview',
+  props: {
+    custom: {
+      children: 'optional',
+    },
+  },
+  render: () => <></>,
+} as const;
 
 // @ts-expect-error Optional children are implicit, not an explicit shorthand.
-factory.createRenderState({
-  state: 'Preview',
-  props: { custom: { children: 'optional' } },
-  render: () => <></>,
-});
+factory.createRenderState(invalidOptions2);

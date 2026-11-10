@@ -5,17 +5,26 @@ import { reactLayoutDevtools } from '../src';
 async function transform(code: string, id = '/app/src/page.tsx', ssr = false) {
   const plugin = reactLayoutDevtools();
 
-  if (typeof plugin.configResolved === 'function')
+  if (typeof plugin.configResolved === 'function') {
     Reflect.apply(plugin.configResolved, {}, [
-      { root: '/app', base: '/demo/' },
+      {
+        root: '/app',
+        base: '/demo/',
+      },
     ]);
+  }
 
-  if (typeof plugin.transform !== 'function')
+  if (typeof plugin.transform !== 'function') {
     throw new Error('Missing transform');
+  }
 
-  return (await Reflect.apply(plugin.transform, {}, [code, id, { ssr }])) as
-    | { code: string; map: { sourcesContent: string[] } }
-    | undefined;
+  return (await Reflect.apply(plugin.transform, {}, [
+    code,
+    id,
+    {
+      ssr,
+    },
+  ])) as { code: string; map: { sourcesContent: string[] } } | undefined;
 }
 
 it('instruments aliases, factory helpers, inline states and imported state spreads with sourcemaps', async () => {
@@ -66,48 +75,60 @@ it('skips SSR, dependency files and unrelated APIs and applies only during devel
 
   expect(await transform(code, '/app/src/server.ts', true)).toBeUndefined();
 
-  expect(
-    await transform(code, '/app/node_modules/library/index.ts')
-  ).toBeUndefined();
+  expect(await transform(code, '/app/node_modules/library/index.ts')).toBeUndefined();
 
   expect(
-    await transform(
-      'const defineResourceLayout = (x) => x; defineResourceLayout({});'
-    )
+    await transform('const defineResourceLayout = (x) => x; defineResourceLayout({});'),
   ).toBeUndefined();
 
   const plugin = reactLayoutDevtools();
-  if (typeof plugin.configResolved === 'function')
+  if (typeof plugin.configResolved === 'function') {
     Reflect.apply(plugin.configResolved, {}, [
-      { root: '/app', base: '/', command: 'build' },
+      {
+        root: '/app',
+        base: '/',
+        command: 'build',
+      },
     ]);
-  if (typeof plugin.transform !== 'function')
+  }
+  if (typeof plugin.transform !== 'function') {
     throw new Error('Missing transform');
-  expect(
-    await Reflect.apply(plugin.transform, {}, [code, '/app/src/page.ts', {}])
-  ).toBeUndefined();
+  }
+  expect(await Reflect.apply(plugin.transform, {}, [code, '/app/src/page.ts', {}])).toBeUndefined();
 });
 
 it('preserves existing declaration metadata when an imported state is registered elsewhere', () => {
   const plugin = reactLayoutDevtools();
 
-  if (typeof plugin.load !== 'function') throw new Error('Missing runtime');
+  if (typeof plugin.load !== 'function') {
+    throw new Error('Missing runtime');
+  }
 
-  const runtime = Reflect.apply(plugin.load, {}, [
-    '\0virtual:react-layout-devtools',
-  ]) as string;
+  const runtime = Reflect.apply(plugin.load, {}, ['\0virtual:react-layout-devtools']) as string;
   const annotate = new Function(
-    runtime.replace('export function annotate', 'function annotate') +
-      '; return annotate;'
+    runtime.replace('export function annotate', 'function annotate') + '; return annotate;',
   )();
   const key = Symbol.for('@jfdevelops/react-layout/debug');
   const declaration = {
-    source: { file: 'state.ts', line: 1, column: 1 },
+    source: {
+      file: 'state.ts',
+      line: 1,
+      column: 1,
+    },
     preview: true,
   };
-  const value = annotate({ render: () => null }, declaration);
+  const value = annotate(
+    {
+      render: () => null,
+    },
+    declaration,
+  );
   const registered = annotate(value, {
-    source: { file: 'layout.ts', line: 5, column: 1 },
+    source: {
+      file: 'layout.ts',
+      line: 5,
+      column: 1,
+    },
   });
 
   expect(registered[key].source.file).toBe('state.ts');
@@ -116,8 +137,7 @@ it('preserves existing declaration metadata when an imported state is registered
 });
 
 it('follows destructured definition helpers and resource-bound creators', async () => {
-  const result =
-    await transform(`import { defineResourceLayout } from '@jfdevelops/react-layout';
+  const result = await transform(`import { defineResourceLayout } from '@jfdevelops/react-layout';
 const define = defineResourceLayout.forResources('users');
 const definition = define({ layout: { render: () => null } });
 const { createResourceLayout } = definition;
@@ -130,25 +150,25 @@ const Page = createUsers({ name: 'Users' });`);
 });
 
 it('does not instrument calls to a shadowing function parameter', async () => {
-  const result =
-    await transform(`import { defineResourceLayout } from '@jfdevelops/react-layout';
+  const result = await transform(`import { defineResourceLayout } from '@jfdevelops/react-layout';
 function unrelated(defineResourceLayout) { return defineResourceLayout({}); }`);
 
   expect(result).toBeUndefined();
 });
 
 it('preserves module directives and can opt out of state controls', async () => {
-  const plugin = reactLayoutDevtools({ statePreview: false });
+  const plugin = reactLayoutDevtools({
+    statePreview: false,
+  });
   const code = `'use client';\nimport { defineResourceLayout } from '@jfdevelops/react-layout';\ndefineResourceLayout({});`;
 
-  if (typeof plugin.transform !== 'function')
+  if (typeof plugin.transform !== 'function') {
     throw new Error('Missing transform');
+  }
 
-  const result = (await Reflect.apply(plugin.transform, {}, [
-    code,
-    '/app/client.ts',
-    {},
-  ])) as { code: string };
+  const result = (await Reflect.apply(plugin.transform, {}, [code, '/app/client.ts', {}])) as {
+    code: string;
+  };
 
   expect(result.code.startsWith("'use client';")).toBe(true);
 
@@ -158,50 +178,67 @@ it('preserves module directives and can opt out of state controls', async () => 
 it('preserves function and frozen state-reference identities while supplying metadata', () => {
   const plugin = reactLayoutDevtools();
 
-  if (typeof plugin.load !== 'function') throw new Error('Missing runtime');
+  if (typeof plugin.load !== 'function') {
+    throw new Error('Missing runtime');
+  }
 
-  const runtime = Reflect.apply(plugin.load, {}, [
-    '\0virtual:react-layout-devtools',
-  ]) as string;
+  const runtime = Reflect.apply(plugin.load, {}, ['\0virtual:react-layout-devtools']) as string;
   const annotate = new Function(
-    runtime.replace('export function annotate', 'function annotate') +
-      '; return annotate;'
+    runtime.replace('export function annotate', 'function annotate') + '; return annotate;',
   )();
-  const input = Object.freeze({ render: () => null });
+  const input = Object.freeze({
+    render: () => null,
+  });
 
   const render = () => null;
 
-  const metadata = { source: { file: 'state.ts', line: 1, column: 1 } };
+  const metadata = {
+    source: {
+      file: 'state.ts',
+      line: 1,
+      column: 1,
+    },
+  };
 
   expect(annotate(input, metadata)).toBe(input);
 
   expect(annotate(render, metadata)).toBe(render);
 
-  const registry = (
-    globalThis as unknown as Record<symbol, WeakMap<object, unknown>>
-  )[Symbol.for('@jfdevelops/react-layout/debug-registry')];
+  const registry = (globalThis as unknown as Record<symbol, WeakMap<object, unknown>>)[
+    Symbol.for('@jfdevelops/react-layout/debug-registry')
+  ];
 
   expect(registry.get(input)).toEqual(metadata);
 });
 
 it('resolves the production inspector to an empty entry by default and supports opt-in', async () => {
   for (const production of [false, true]) {
-    const plugin = reactLayoutDevtools({ production });
+    const plugin = reactLayoutDevtools({
+      production,
+    });
 
     if (typeof plugin.configResolved === 'function') {
       Reflect.apply(plugin.configResolved, {}, [
-        { root: '/app', base: '/', command: 'build' },
+        {
+          root: '/app',
+          base: '/',
+          command: 'build',
+        },
       ]);
     }
 
-    if (typeof plugin.resolveId !== 'function')
+    if (typeof plugin.resolveId !== 'function') {
       throw new Error('Missing resolver');
+    }
 
     const requests: string[] = [];
     const context = {
       resolve: async (id: string) => {
         requests.push(id);
-        return { id };
+
+        return {
+          id,
+        };
       },
     };
 
@@ -211,18 +248,14 @@ it('resolves the production inspector to an empty entry by default and supports 
     ]);
 
     expect(requests).toEqual([
-      `@jfdevelops/react-layout-devtools-react/${
-        production ? 'production' : 'disabled'
-      }`,
+      `@jfdevelops/react-layout-devtools-react/${production ? 'production' : 'disabled'}`,
     ]);
   }
 });
 
 it('does not instrument unrelated composables callbacks', async () => {
   expect(
-    await transform(
-      'const config = { composables: (create) => create({ unrelated: true }) };'
-    )
+    await transform('const config = { composables: (create) => create({ unrelated: true }) };'),
   ).toBeUndefined();
 });
 
@@ -255,12 +288,20 @@ const definition = createDefinedResourceLayout({ resources: ['users'] }).defineR
   expect(result?.code).toContain('"line":3');
 });
 
-it.each(['js', 'jsx', 'mjs', 'cjs'])('binds JavaScript %s modules before inspecting their calls', async (extension) => {
-  expect(await transform('const value = {}; Object.keys(value);', `/app/src/dependency.${extension}`)).toBeUndefined();
-  const result = await transform(`import { defineResourceLayout } from '@jfdevelops/react-layout';
-const definition = defineResourceLayout({ render: { default: () => null } });`, `/app/src/page.${extension}`);
-  expect(result?.code).toContain('virtual:react-layout-devtools');
-});
+it.each(['js', 'jsx', 'mjs', 'cjs'])(
+  'binds JavaScript %s modules before inspecting their calls',
+  async (extension) => {
+    expect(
+      await transform('const value = {}; Object.keys(value);', `/app/src/dependency.${extension}`),
+    ).toBeUndefined();
+    const result = await transform(
+      `import { defineResourceLayout } from '@jfdevelops/react-layout';
+const definition = defineResourceLayout({ render: { default: () => null } });`,
+      `/app/src/page.${extension}`,
+    );
+    expect(result?.code).toContain('virtual:react-layout-devtools');
+  },
+);
 
 it('handles bundled validator modules served from workspace packages', async () => {
   const code = `import { BaseProp } from './base.mjs';

@@ -14,7 +14,10 @@ export class EnumProp<
   private readonly allowedValues: Values;
 
   constructor(values: Values, type: Type, visibility: Visibility) {
-    super({ type, visibility });
+    super({
+      type,
+      visibility,
+    });
     this.allowedValues = values;
   }
 

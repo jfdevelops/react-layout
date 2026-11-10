@@ -1,9 +1,5 @@
 import type { BasePropOptions, PropType, PropVisibility } from './types';
-import {
-  createMismatchedPropMessage,
-  getPropValueType,
-  PropError,
-} from './prop-error';
+import { createMismatchedPropMessage, getPropValueType, PropError } from './prop-error';
 
 export const primitiveTypes = {
   string: 'string',
