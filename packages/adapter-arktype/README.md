@@ -14,10 +14,13 @@ const content = reactNode();
 const icon = reactElement();
 ```
 
-Both helpers return native arktype schemas, so use the library's normal
-object, array, union, and optional APIs. `reactElement()` accepts element values
+Both helpers build native ArkType schemas at runtime, but expose only the thin
+`ReactNodeSchema` and `ReactElementSchema` Standard Schema interfaces. This keeps
+ArkType's internal types out of React Layout's deep mapped generics and avoids
+excessive type instantiation. Native ArkType methods are intentionally absent
+from the exported TypeScript API. `reactElement()` accepts element values
 such as `<Icon />`; component functions require their own schema.
 
 See the [Standard Schema guide](../../docs/standard-schema.md) for usage with React Layout.
 
-Node and element fields are required by default. Use your schema library's optional wrapper to allow omitted values. `null` remains a valid node.
+Node and element fields are required by default. Use a Standard Schema library's optional wrapper to allow omitted values. `null` remains a valid node.

@@ -32,7 +32,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@jfdevelops/react-layout-adapters": "workspace:*"
+    "@jfdevelops/react-layout-adapters": "workspace:*",
+    "@standard-schema/spec": "^1.1.0"
   },
   "devDependencies": {
     "@types/react": "18.3.28",
