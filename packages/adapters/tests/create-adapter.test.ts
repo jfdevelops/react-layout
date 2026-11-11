@@ -35,7 +35,7 @@ describe('createAdapter', () => {
   it('provides typed predicates and preserves the constructors native schema types', () => {
     const { reactNode, reactElement } = createAdapter({
       node: (check) => {
-        expectTypeOf(check).toEqualTypeOf<ReactCheck<ReactNode>>();
+        expectTypeOf(check).toEqualTypeOf<ReactCheck<Exclude<ReactNode, undefined>>>();
 
         return createTestSchema(check);
       },
@@ -47,21 +47,14 @@ describe('createAdapter', () => {
     });
     const node = reactNode();
     const element = reactElement();
-    expectTypeOf(node.parse('text')).toEqualTypeOf<ReactNode>();
+    expectTypeOf(node.parse('text')).toEqualTypeOf<Exclude<ReactNode, undefined>>();
     expectTypeOf(element.parse(createElement('span'))).toEqualTypeOf<ReactElement>();
 
-    for (const value of [
-      'text',
-      1,
-      null,
-      undefined,
-      false,
-      createElement('span'),
-      new Set(['text']),
-    ]) {
+    for (const value of ['text', 1, null, false, createElement('span'), new Set(['text'])]) {
       expect(node.parse(value)).toBe(value);
     }
     for (const value of [
+      undefined,
       {},
       () => createElement('span'),
       {

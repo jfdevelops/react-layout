@@ -76,7 +76,7 @@ describe('Standard Schema props', () => {
         },
         render: ({ title, description, icon, legacy }) => {
           expectTypeOf(title).toEqualTypeOf<string>();
-          expectTypeOf(description).toEqualTypeOf<ReactNode>();
+          expectTypeOf(description).toEqualTypeOf<Exclude<ReactNode, undefined>>();
           expectTypeOf(icon).toEqualTypeOf<ReactElement | undefined>();
 
           return (
@@ -330,6 +330,31 @@ describe('Standard Schema props', () => {
 });
 
 describe('native React adapters', () => {
+  it('requires node keys unless explicitly wrapped as optional', () => {
+    const zodSchema = z.object({ node: reactNode() });
+    const valibotSchema = v.object({ node: valibot.reactNode() });
+    const arktypeSchema = type({ node: arktype.reactNode() });
+
+    for (const input of [{}, { node: undefined }]) {
+      expect(zodSchema.safeParse(input).success).toBe(false);
+      expect(v.safeParse(valibotSchema, input).success).toBe(false);
+      expect(arktypeSchema.allows(input)).toBe(false);
+    }
+
+    expect(z.object({ node: reactNode().optional() }).safeParse({}).success).toBe(true);
+    expect(v.safeParse(v.object({ node: v.optional(valibot.reactNode()) }), {}).success).toBe(true);
+    expect(type({ 'node?': arktype.reactNode() }).allows({})).toBe(true);
+    expectTypeOf<z.infer<typeof zodSchema>>().toEqualTypeOf<{
+      node: Exclude<ReactNode, undefined>;
+    }>();
+    expectTypeOf<v.InferOutput<typeof valibotSchema>>().toEqualTypeOf<{
+      node: Exclude<ReactNode, undefined>;
+    }>();
+    expectTypeOf<typeof arktypeSchema.infer>().toEqualTypeOf<{
+      node: Exclude<ReactNode, undefined>;
+    }>();
+  });
+
   for (const [name, node, element, parse] of [
     [
       'zod',
@@ -356,7 +381,6 @@ describe('native React adapters', () => {
         'text',
         1,
         null,
-        undefined,
         false,
         <span />,
         [<span key='a' />, 'text'],
@@ -365,6 +389,7 @@ describe('native React adapters', () => {
         expect(accepts(node, value)).toBe(true);
       }
       for (const value of [
+        undefined,
         {},
         () => <span />,
         {
