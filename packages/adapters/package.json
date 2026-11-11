@@ -1,6 +1,6 @@
 {
   "name": "@jfdevelops/react-layout-adapters",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Schema-library independent React adapter factory for React Layout.",
   "repository": {
     "type": "git",

@@ -1,5 +1,13 @@
 # @jfdevelops/react-layout-adapter-zod
 
+## 0.1.1
+
+### Patch Changes
+
+- 60a43df: Require React node fields by default across adapters. Reject top-level undefined and infer required node fields; callers can explicitly opt into optional schemas. Nested undefined children and null nodes remain valid.
+- Updated dependencies [60a43df]
+  - @jfdevelops/react-layout-adapters@0.1.1
+
 ## 0.1.0
 
 ### Minor Changes
