@@ -333,9 +333,17 @@ describe('native React adapters', () => {
   it('threads opaque ArkType schemas through layout and scoped component inference', () => {
     const { createResourceLayout } = defineResourceLayout({
       resources: ['users'],
-      options: { content: arktype.reactNode(), icon: arktype.reactElement() },
+      options: {
+        content: arktype.reactNode(),
+        icon: arktype.reactElement(),
+      },
       layout: {
-        props: { include: { content: true, icon: true } },
+        props: {
+          include: {
+            content: true,
+            icon: true,
+          },
+        },
         render: ({ content, icon }) => {
           expectTypeOf(content).toEqualTypeOf<Exclude<ReactNode, undefined>>();
           expectTypeOf(icon).toEqualTypeOf<ReactElement>();
@@ -350,8 +358,17 @@ describe('native React adapters', () => {
       },
     });
     const Directory = createResourceLayout.forResources('users').createComponent({
-      resources: { users: { render: () => <aside /> } },
-      props: { include: { content: true, icon: true } },
+      resources: {
+        users: {
+          render: () => <aside />,
+        },
+      },
+      props: {
+        include: {
+          content: true,
+          icon: true,
+        },
+      },
       render: ({ content, icon }, { Root }) => {
         expectTypeOf(content).toEqualTypeOf<Exclude<ReactNode, undefined>>();
         expectTypeOf(icon).toEqualTypeOf<ReactElement>();
@@ -366,21 +383,49 @@ describe('native React adapters', () => {
   });
 
   it('requires node keys unless explicitly wrapped as optional', () => {
-    const zodSchema = z.object({ node: reactNode() });
-    const valibotSchema = v.object({ node: valibot.reactNode() });
+    const zodSchema = z.object({
+      node: reactNode(),
+    });
+    const valibotSchema = v.object({
+      node: valibot.reactNode(),
+    });
     // Runtime schemas remain native, even though their public types are opaque.
     const nativeNode = arktype.reactNode() as unknown as type.Any;
-    const arktypeSchema = type({ node: nativeNode });
+    const arktypeSchema = type({
+      node: nativeNode,
+    });
 
-    for (const input of [{}, { node: undefined }]) {
+    for (const input of [
+      {},
+      {
+        node: undefined,
+      },
+    ]) {
       expect(zodSchema.safeParse(input).success).toBe(false);
       expect(v.safeParse(valibotSchema, input).success).toBe(false);
       expect(arktypeSchema.allows(input)).toBe(false);
     }
 
-    expect(z.object({ node: reactNode().optional() }).safeParse({}).success).toBe(true);
-    expect(v.safeParse(v.object({ node: v.optional(valibot.reactNode()) }), {}).success).toBe(true);
-    expect(type({ 'node?': nativeNode }).allows({})).toBe(true);
+    expect(
+      z
+        .object({
+          node: reactNode().optional(),
+        })
+        .safeParse({}).success,
+    ).toBe(true);
+    expect(
+      v.safeParse(
+        v.object({
+          node: v.optional(valibot.reactNode()),
+        }),
+        {},
+      ).success,
+    ).toBe(true);
+    expect(
+      type({
+        'node?': nativeNode,
+      }).allows({}),
+    ).toBe(true);
     expectTypeOf<z.infer<typeof zodSchema>>().toEqualTypeOf<{
       node: Exclude<ReactNode, undefined>;
     }>();
