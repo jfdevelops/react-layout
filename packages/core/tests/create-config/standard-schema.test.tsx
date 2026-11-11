@@ -331,19 +331,47 @@ describe('Standard Schema props', () => {
 
 describe('native React adapters', () => {
   it('requires node keys unless explicitly wrapped as optional', () => {
-    const zodSchema = z.object({ node: reactNode() });
-    const valibotSchema = v.object({ node: valibot.reactNode() });
-    const arktypeSchema = type({ node: arktype.reactNode() });
+    const zodSchema = z.object({
+      node: reactNode(),
+    });
+    const valibotSchema = v.object({
+      node: valibot.reactNode(),
+    });
+    const arktypeSchema = type({
+      node: arktype.reactNode(),
+    });
 
-    for (const input of [{}, { node: undefined }]) {
+    for (const input of [
+      {},
+      {
+        node: undefined,
+      },
+    ]) {
       expect(zodSchema.safeParse(input).success).toBe(false);
       expect(v.safeParse(valibotSchema, input).success).toBe(false);
       expect(arktypeSchema.allows(input)).toBe(false);
     }
 
-    expect(z.object({ node: reactNode().optional() }).safeParse({}).success).toBe(true);
-    expect(v.safeParse(v.object({ node: v.optional(valibot.reactNode()) }), {}).success).toBe(true);
-    expect(type({ 'node?': arktype.reactNode() }).allows({})).toBe(true);
+    expect(
+      z
+        .object({
+          node: reactNode().optional(),
+        })
+        .safeParse({}).success,
+    ).toBe(true);
+    expect(
+      v.safeParse(
+        v.object({
+          node: v.optional(valibot.reactNode()),
+        }),
+        {},
+      ).success,
+    ).toBe(true);
+    expect(
+      type({
+        'node?': arktype.reactNode(),
+      }).allows({}),
+    ).toBe(true);
     expectTypeOf<z.infer<typeof zodSchema>>().toEqualTypeOf<{
       node: Exclude<ReactNode, undefined>;
     }>();
