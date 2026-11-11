@@ -1,6 +1,6 @@
 {
   "name": "@jfdevelops/react-layout-adapter-valibot",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Native valibot schemas for React nodes and elements in React Layout.",
   "repository": {
     "type": "git",
