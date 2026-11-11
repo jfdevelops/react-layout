@@ -13,7 +13,7 @@ import { z } from 'zod';
 import type { ReactElement, ReactNode } from 'react';
 
 export const { reactNode, reactElement } = createAdapter({
-  node: (check) => z.custom<ReactNode>(check).optional(),
+  node: (check) => z.custom<Exclude<ReactNode, undefined>>(check),
   element: (check) => z.custom<ReactElement>(check),
 });
 ```

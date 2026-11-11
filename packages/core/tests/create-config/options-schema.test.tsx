@@ -65,6 +65,7 @@ it('accepts an aliased whole object schema and preserves object refinements and 
     resource: 'users',
     name: 'Invalid',
     title: 'Users',
+    description: null,
     count: '-1',
   });
   expect(() => renderToStaticMarkup(<Invalid />)).toThrow('Count must be positive');
