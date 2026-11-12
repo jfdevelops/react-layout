@@ -3201,7 +3201,10 @@ export interface CreateResourceLayoutWithLayoutOptions<
   ShellCustomProps extends CustomPropsObject = {},
   Render = LayoutRenderFunction<Resources, Options, Composables, IncludeProps, CustomProps>,
   Namespace extends boolean = false,
-> extends ResourceLayoutScope<Resources, Options, Namespace> {
+  Naming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = LayoutNameInput<
+    LayoutResourceKey<Resources>
+  >,
+> extends ResourceLayoutConfig<Resources, Options, Namespace, Naming> {
   /**
    * Props that the shell and the per-resource layout can opt into through
    * `props.include`, so either side can draw from the same definitions.
@@ -3252,6 +3255,7 @@ export type DefinedResourceLayoutWithShell<
   ShellCustomProps extends CustomPropsObject = {},
   States = {},
   DefaultNamespace extends boolean = false,
+  DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
 > = DefinedResourceLayout<
   Resources,
   Options,
@@ -3259,7 +3263,8 @@ export type DefinedResourceLayoutWithShell<
   IncludeProps,
   CustomProps,
   States,
-  DefaultNamespace
+  DefaultNamespace,
+  DefaultNaming
 > & {
   /**
    * The application shell. Mount it once, wrapping the router outlet:
@@ -3302,6 +3307,7 @@ export type DefineResourceLayoutWithLayoutFn = {
     const ShellIncludeProps extends LayoutIncludeProps<Resources, Options, ShellComposables> = {},
     ShellCustomProps extends CustomPropsObject = {},
     Namespace extends boolean = false,
+    const Naming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = undefined,
   >(
     options: Omit<
       CreateResourceLayoutWithLayoutOptions<
@@ -3314,7 +3320,8 @@ export type DefineResourceLayoutWithLayoutFn = {
         ShellIncludeProps,
         ShellCustomProps,
         LayoutRenderFunction<Resources, Options, Composables, {}, {}>,
-        Namespace
+        Namespace,
+        Naming
       >,
       'layout'
     > & {
@@ -3328,7 +3335,16 @@ export type DefineResourceLayoutWithLayoutFn = {
         Namespace
       >['layout'];
     },
-  ): DefinedResourceLayoutFromStates<Resources, Options, Composables, Render, Namespace> & {
+  ): DefinedResourceLayoutFromStates<
+    Resources,
+    Options,
+    Composables,
+    Render,
+    Namespace,
+    {},
+    {},
+    Naming
+  > & {
     Shell: ResourceLayoutShellComponent<
       Resources,
       Options,
@@ -3347,6 +3363,7 @@ export type DefineResourceLayoutWithLayoutFn = {
     const ShellIncludeProps extends LayoutIncludeProps<Resources, Options, ShellComposables> = {},
     ShellCustomProps extends CustomPropsObject = {},
     Namespace extends boolean = false,
+    const Naming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = undefined,
   >(
     options: CreateResourceLayoutWithLayoutOptions<
       Resources,
@@ -3358,7 +3375,8 @@ export type DefineResourceLayoutWithLayoutFn = {
       ShellIncludeProps,
       ShellCustomProps,
       LayoutRenderFunction<Resources, Options, Composables, IncludeProps, CustomProps>,
-      Namespace
+      Namespace,
+      Naming
     >,
   ): DefinedResourceLayoutWithShell<
     Resources,
@@ -3370,7 +3388,8 @@ export type DefineResourceLayoutWithLayoutFn = {
     ShellIncludeProps,
     ShellCustomProps,
     {},
-    Namespace
+    Namespace,
+    Naming
   >;
 };
 

@@ -55,6 +55,21 @@ it('narrows default naming to the selected resource and supports optional variat
   expect(Inline.displayName).toBe('UsersInline');
 });
 
+it('applies a default naming convention declared on withLayout', () => {
+  const definition = defineResourceLayout.withLayout({
+    resources: ['settings', 'users'],
+    name: naming({}),
+    shell: {
+      render: (_props, { children }) => <main>{children}</main>,
+    },
+  });
+  const Settings = definition.createResourceLayout({
+    resource: 'settings',
+  });
+  expectTypeOf(Settings.displayName).toEqualTypeOf<'SettingsResourceLayout'>();
+  expect(Settings.displayName).toBe('SettingsResourceLayout');
+});
+
 it('derives a resource name without a naming default', () => {
   const definition = defineResourceLayout({
     resources: ['users'],
