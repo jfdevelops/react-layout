@@ -3,7 +3,7 @@ export type {
   Show,
   ShowCallable,
   UnionToIntersection,
-} from '@jfdevelops/react-layout-composables';
+} from '@jfdevelops/react-layout-internals';
 export type MergeIntersection<T> = {
   [Key in keyof T]: T[Key];
 };

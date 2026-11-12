@@ -41,6 +41,8 @@ import {
   type InPropsObject,
   type NormalizedIncludedPropBehavior,
   LayoutIncludeProps,
+  PropsContract,
+  TypedPropsContract,
 } from '../props';
 import type {
   IncludedProps,
@@ -68,10 +70,7 @@ export const definedResourceLayoutComponentSymbol: unique symbol = Symbol.for(
 /** Runtime-compatible render-state shape used when inspecting lazy modules. */
 export type AnyRenderStateDefinition = {
   composables?: (create: CreateLayoutComposable<any>, states: any) => ComposableComponents;
-  props?: {
-    include?: Record<string, unknown>;
-    custom?: CustomPropsObject;
-  };
+  props?: PropsContract<Record<string, unknown>, CustomPropsObject>;
   render: (props: any, context: any) => JSX.Element;
   state?: string;
 };
@@ -175,10 +174,7 @@ type TypedRenderStateDefinition<
   KnownStates extends string = string,
 > = {
   composables?: RenderStateComposablesDefinition<Resources, StateComposables>;
-  props?: {
-    include?: IncludeProps;
-    custom?: CustomProps & CustomPropsInput<CustomProps>;
-  };
+  props?: TypedPropsContract<IncludeProps, CustomProps>;
   render: (
     props: RenderStateProps<
       Resources,
@@ -809,7 +805,7 @@ export type CreateRenderStateBuilderArguments<
   SharedInclude extends LayoutIncludeProps<Resources, Options, SharedComposables> = {},
   SharedCustom extends CustomPropsObject = {},
 > = {
-  props?: { include?: SharedInclude; custom?: SharedCustom };
+  props?: PropsContract<SharedInclude, SharedCustom>;
   /**
    * Shared composables whose components and preset props every state can use.
    */

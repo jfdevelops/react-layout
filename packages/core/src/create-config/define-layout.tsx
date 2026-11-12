@@ -105,6 +105,7 @@ import {
   ResolvedIncludedConfigProps,
   ResolvedIncludedProps,
   type LayoutIncludeProps,
+  type TypedPropsContract,
 } from '../props';
 import {
   createIsValidResourceFn,
@@ -118,7 +119,7 @@ import {
   type NonEmptyResources,
 } from '../resource';
 import { BaseComponent, functionalUpdate, pick, Show, ShowCallable, Updater } from '../utils';
-import { capitalize } from '@jfdevelops/react-layout-composables';
+import { capitalize } from '@jfdevelops/react-layout-internals';
 import { InvalidConfigError } from '../errors';
 import { isResourceConfigComponentKey } from './component-keys';
 import { type CreateResourceConfigFn, createResourceConfig } from './get-component';
@@ -162,16 +163,10 @@ export type LayoutProps<
   Composables extends ComposableComponents,
   IncludeProps extends LayoutIncludeProps<Resources, Options, Composables> = {},
   CustomProps extends CustomPropsObject = {},
-> = {
-  /**
-   * Props to include in the layout.
-   */
-  include?: LayoutIncludeProps<Resources, Options, Composables> & IncludeProps;
-  /**
-   * Custom props that the layout will receive.
-   */
-  custom?: CustomProps & CustomPropsInput<CustomProps>;
-};
+> = TypedPropsContract<
+  LayoutIncludeProps<Resources, Options, Composables> & IncludeProps,
+  CustomProps
+>;
 
 type LayoutRenderContext<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -757,10 +752,7 @@ export type TypedInlineRenderState<
   IncludeProps extends LayoutIncludeProps<Resources, Options, LayoutComposables & StateComposables>,
   CustomProps extends CustomPropsObject,
 > = {
-  props?: {
-    include?: IncludeProps;
-    custom?: CustomProps & CustomPropsInput<CustomProps>;
-  };
+  props?: TypedPropsContract<IncludeProps, CustomProps>;
   composables?: (create: CreateLayoutComposable<LayoutResourceKey<Resources>>) => StateComposables;
   render: LayoutRenderFunction<
     Resources,

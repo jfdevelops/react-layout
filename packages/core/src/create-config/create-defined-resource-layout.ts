@@ -1,5 +1,5 @@
 import { createResourceSurface, type DefineResourceSurface } from './resource-surface';
-import type { CustomPropsInput, CustomPropsObject } from '../custom-props';
+import type { CustomPropsObject } from '../custom-props';
 import { createReusableBuilder, type CreateReusable } from './create-reusable';
 import { inspectLazy } from '../lazy/inspection';
 import type { ResourcePath } from '../resource';
@@ -24,7 +24,7 @@ import type {
   CreateLayoutComposable,
 } from '@jfdevelops/react-layout-composables';
 import { LayoutConfigurationError } from '../errors';
-import type { InPropsDefinition } from '../props';
+import type { InPropsDefinition, PropsContract, TypedPropsContract } from '../props';
 import type { LayoutResourceKey, NonEmptyResources, ResourceDefinition } from '../resource';
 import {
   type CreateViewMapFunctionRenderOptions,
@@ -151,15 +151,11 @@ export type BoundDefineResourceLayout<
       'composables' | 'name' | 'props'
     > & {
       name?: Naming;
-      props?: {
-        include?: LayoutIncludeProps<
-          Resources,
-          Options,
-          MergeContract<Composables, LocalComposables>
-        > &
-          IncludeProps;
-        custom?: CustomProps & CustomPropsInput<CustomProps>;
-      };
+      props?: TypedPropsContract<
+        LayoutIncludeProps<Resources, Options, MergeContract<Composables, LocalComposables>> &
+          IncludeProps,
+        CustomProps
+      >;
       composables?: (
         create: CreateLayoutComposable<LayoutResourceKey<Resources>>,
         states: RenderStateReferences<Resources, Options, Composables, Render>,
@@ -204,15 +200,11 @@ export type BoundDefineResourceLayout<
       'composables' | 'name' | 'props'
     > & {
       name?: Naming;
-      props?: {
-        include?: LayoutIncludeProps<
-          Resources,
-          Options,
-          MergeContract<Composables, LocalComposables>
-        > &
-          IncludeProps;
-        custom?: CustomProps & CustomPropsInput<CustomProps>;
-      };
+      props?: TypedPropsContract<
+        LayoutIncludeProps<Resources, Options, MergeContract<Composables, LocalComposables>> &
+          IncludeProps,
+        CustomProps
+      >;
       composables?: (
         create: CreateLayoutComposable<LayoutResourceKey<Resources>>,
         states: {},
@@ -414,10 +406,7 @@ export function createDefinedResourceLayout<
       namespace: layout.namespace ?? configuration.namespace,
       layout: {
         ...layout,
-        props: mergeLayoutProps(
-          configuration.props,
-          layout.props as { include?: object; custom?: object },
-        ),
+        props: mergeLayoutProps(configuration.props, layout.props as PropsContract),
         composables:
           composables || localComposables
             ? (create: CreateLayoutComposable<LayoutResourceKey<Resources>>, states: {}) => ({

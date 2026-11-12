@@ -20,8 +20,12 @@ import {
   validateProps,
 } from '@jfdevelops/react-layout-validator';
 import { InPropsObject, type WithChildren } from './types';
-import { BaseComponent, Show, UnionToIntersection } from './utils';
-import { CapitalizeFn } from './utils/capitalize';
+import type {
+  BaseComponent,
+  CapitalizeFn,
+  Show,
+  UnionToIntersection,
+} from '@jfdevelops/react-layout-internals';
 
 export const composablePresetMetaKey = Symbol.for('view-map.composable-preset-meta');
 

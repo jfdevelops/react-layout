@@ -1,4 +1,4 @@
-import type { CustomPropsInput, CustomPropsObject, ResolveCallProps } from '../custom-props';
+import type { CustomPropsObject, ResolveCallProps } from '../custom-props';
 import { createElement, type ComponentType, type ReactNode } from 'react';
 import type { ComposableComponents } from '@jfdevelops/react-layout-composables';
 import { LayoutConfigurationError } from '../errors';
@@ -8,6 +8,8 @@ import type {
   InPropsDefinition,
   MergedLayoutInProps,
   LayoutIncludeProps,
+  PropsContract,
+  TypedPropsContract,
 } from '../props';
 import { defineResourceLayout } from '../create-config/define-layout';
 import type {
@@ -46,7 +48,7 @@ export type CreateLazyRenderState<
   const Include extends LayoutIncludeProps<Resources, Options, Composables> = {},
 >(definition: {
   state: State;
-  props?: { include?: Include; custom?: Custom & CustomPropsInput<Custom> };
+  props?: TypedPropsContract<Include, Custom>;
   render: LazyRender<
     State,
     ResourcePath<Resources>,
@@ -67,7 +69,7 @@ export type CreateLazyRenderState<
 
 type RuntimeDefinition = {
   state: LazyDefaultState;
-  props?: { include?: Record<string, unknown>; custom?: CustomPropsObject };
+  props?: PropsContract<Record<string, unknown>, CustomPropsObject>;
   render: ((props: any, context: any) => ReactNode) | LazyErrorHandlers<string, object, any>;
 };
 

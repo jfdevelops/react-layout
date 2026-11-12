@@ -1,4 +1,4 @@
-import { capitalize } from '@jfdevelops/react-layout-composables';
+import { capitalize } from '@jfdevelops/react-layout-internals';
 import { InvalidPartError, InvalidPartTypeError, LayoutConfigurationError } from '../errors';
 /**
  * Each slot has a distinct type identity, so ordinary text cannot become a slot.

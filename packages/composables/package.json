@@ -35,6 +35,7 @@
   },
   "dependencies": {
     "@jfdevelops/create-error": "0.2.1",
+    "@jfdevelops/react-layout-internals": "workspace:*",
     "@jfdevelops/react-layout-validator": "workspace:*"
   },
   "devDependencies": {

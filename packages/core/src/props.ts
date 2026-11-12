@@ -1,5 +1,5 @@
 import type { WithChildren } from '@jfdevelops/react-layout-composables';
-import type { CustomPropsObject, ResolveRenderProps } from './custom-props';
+import type { CustomPropsInput, CustomPropsObject, ResolveRenderProps } from './custom-props';
 import { LayoutConfigurationError } from './errors';
 import type { ComposableComponents, MergePresetProps } from '@jfdevelops/react-layout-composables';
 import type { InPropsObject } from '@jfdevelops/react-layout-composables';
@@ -18,10 +18,25 @@ import type { OptionSchema, SchemaOptionDefinitions } from './option-schema';
 export type { InPropsObject };
 
 /** Shared include/custom contract used by configurable layout helpers. */
-export type PropsContract<Include extends object = object, Custom extends object = object> = {
+export interface PropsContract<Include extends object = object, Custom extends object = object> {
+  /**
+   * Shared options and preset props to include, keyed by prop name.
+   */
   include?: Include;
+  /**
+   * Custom props that the layout, state, or component will receive.
+   */
   custom?: Custom;
-};
+}
+
+/**
+ * A {@link PropsContract} whose custom props are checked as prop definitions;
+ * string requirements are reserved for the built-in `children` slot.
+ */
+export interface TypedPropsContract<
+  Include extends object,
+  Custom extends CustomPropsObject,
+> extends PropsContract<Include, Custom & CustomPropsInput<Custom>> {}
 
 /**
  * Two-argument `render(props, context)` used by createComponent and scoped

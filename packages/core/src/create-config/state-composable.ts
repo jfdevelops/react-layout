@@ -2,7 +2,7 @@ import { RenderStateNameContext, ReferencedRenderStateContext } from './render-s
 import { createContext, createElement, useContext, type ComponentType, type JSX } from 'react';
 import { LayoutConfigurationError } from '../errors';
 import type { IncludedProps } from '../props';
-import { capitalize } from '@jfdevelops/react-layout-composables';
+import { capitalize } from '@jfdevelops/react-layout-internals';
 import { isStandardSchema } from '@jfdevelops/react-layout-validator';
 
 /** Props selected here are inherited from the containing state's render props. */

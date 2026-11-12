@@ -11,7 +11,7 @@ import type {
 import type { LayoutResourceKey, ResourceDefinition } from '../resource';
 import type { UnionToIntersection, Updater } from '../utils';
 import { LayoutConfigurationError } from '../errors';
-import { capitalize } from '@jfdevelops/react-layout-composables';
+import { capitalize } from '@jfdevelops/react-layout-internals';
 import type {
   LayoutIncludeProps,
   LayoutPropsForResource,
