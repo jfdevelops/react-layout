@@ -1,8 +1,10 @@
 import { createError } from '@jfdevelops/create-error';
-import { createContextSchema } from '@jfdevelops/react-layout-validator';
+import { type } from 'arktype';
 
 const composableErrorFactory = createError({
-  definition: createContextSchema<{ code: string }>(),
+  definition: type({
+    code: 'string',
+  }),
   data: {
     property: 'context',
     resolve: ({ input }) => input,
@@ -17,12 +19,12 @@ const composableErrorFactory = createError({
 export class InvalidComponentsError extends composableErrorFactory({
   code: 'invalidComponents',
 })
-  .defineContext(createContextSchema<string>())
+  .defineContext(type('string'))
   .implement((message) => message) {}
 
 /** Thrown when no composable components were provided. */
 export class EmptyComponentsError extends composableErrorFactory({
   code: 'emptyComponents',
 })
-  .defineContext(createContextSchema<string>())
+  .defineContext(type('string'))
   .implement((message) => message) {}

@@ -1,14 +1,14 @@
-import { createContextSchema } from '@jfdevelops/react-layout-validator';
+import { type } from 'arktype';
 import { createReactLayoutError } from './react-layout-error';
 
-export interface MissingPathVariableContext {
-  path: string;
-  providedVariables?: string[];
-  scope: 'pathVariable';
-  variable: string;
-}
+const context = type({
+  path: 'string',
+  'providedVariables?': 'string[]',
+  scope: "'pathVariable'",
+  variable: 'string',
+});
 
-const context = createContextSchema<MissingPathVariableContext>();
+export type MissingPathVariableContext = typeof context.infer;
 
 /** Thrown when a required layout path variable was not provided. */
 export class MissingPathVariableError extends createReactLayoutError({
