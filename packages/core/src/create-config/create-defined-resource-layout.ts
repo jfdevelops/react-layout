@@ -62,18 +62,28 @@ export type CreateDefinedResourceLayoutOptions<
   DefaultNaming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = undefined,
 > = {
   namespace?: DefaultNamespace;
-  /** Default naming convention; explicit definition and component names override it. */
+  /**
+   * Default naming convention; explicit definition and component names override it.
+   */
   name?: DefaultNaming;
-  /** Shared prop contracts, merged by key with layout and state contracts. */
+  /**
+   * Shared prop contracts, merged by key with layout and state contracts.
+   */
   props?: {
     include?: LayoutIncludeProps<Resources, Options, Composables> & SharedInclude;
     custom?: SharedCustom & CustomPropsInput<SharedCustom>;
   };
-  /** Resources supported by every layout created from this factory. */
+  /**
+   * Resources supported by every layout created from this factory.
+   */
   resources: Resources;
-  /** Props that render states can opt into through `props.include`. */
+  /**
+   * Props that render states can opt into through `props.include`.
+   */
   options?: Options;
-  /** Layout-wide composables available to every render state. */
+  /**
+   * Layout-wide composables available to every render state.
+   */
   composables?: LayoutComposablesDefinition<Resources, Composables>;
 };
 
@@ -178,7 +188,9 @@ export type BoundDefineResourceLayout<
     MergeContract<SharedCustom, CustomProps>,
     Naming
   >;
-  /** Defines a layout whose `render` value is a single default-state callback. */
+  /**
+   * Defines a layout whose `render` value is a single default-state callback.
+   */
   <
     const IncludeProps extends LayoutIncludeProps<
       Resources,
@@ -267,11 +279,17 @@ export type CreateDefinedResourceLayoutResult<
   SharedCustom extends CustomPropsObject = {},
   DefaultNaming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = undefined,
 > = {
-  /** Defines an independent surface attached to this factory?s resources. */
+  /**
+   * Defines an independent surface attached to this factory's resources.
+   */
   defineResourceSurface: DefineResourceSurface<Resources>;
-  /** Creates a custom logic function with selected options and custom props. */
+  /**
+   * Creates a custom logic function with selected options and custom props.
+   */
   createReusable: CreateReusable<Resources, Options>;
-  /** Creates eager, deferred, or separately imported render-state fragments. */
+  /**
+   * Creates eager, deferred, or separately imported render-state fragments.
+   */
   createRenderState: CreateRenderState<
     Resources,
     Options,
@@ -279,9 +297,13 @@ export type CreateDefinedResourceLayoutResult<
     SharedInclude,
     SharedCustom
   >;
-  /** Sets the shared loading and module-error UI used by lazy layouts. */
+  /**
+   * Sets the shared loading and module-error UI used by lazy layouts.
+   */
   defineLazyDefaults: DefineLazyDefaults<ResourcePath<Resources>, Resources, Options, Composables>;
-  /** Defines a layout using the resources, options, and composables already bound. */
+  /**
+   * Defines a layout using the resources, options, and composables already bound.
+   */
   defineResourceLayout: BoundDefineResourceLayout<
     Resources,
     Options,
@@ -291,7 +313,9 @@ export type CreateDefinedResourceLayoutResult<
     SharedCustom,
     DefaultNaming
   >;
-  /** Reads, selects, or validates the resources bound to this factory. */
+  /**
+   * Reads, selects, or validates the resources bound to this factory.
+   */
   resources: LayoutResourcesAccessor<Resources>;
 };
 

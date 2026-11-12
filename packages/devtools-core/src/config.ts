@@ -28,21 +28,33 @@ export type DevtoolsChipKind =
 export type DevtoolsChipColor = string | { color: string; background?: string };
 
 export interface DevtoolsConfig {
-  /** Partial overrides. Accepts CSS colors, including variables and named colors. */
+  /**
+   * Partial overrides. Accepts CSS colors, including variables and named colors.
+   */
   chipColors?: Partial<Record<DevtoolsChipKind, DevtoolsChipColor>>;
-  /** Defaults used when no saved preference exists. Toolbar changes are persisted. */
+  /**
+   * Defaults used when no saved preference exists. Toolbar changes are persisted.
+   */
   initialView?: 'graph' | 'tree';
   initialFilters?: { activeOnly?: boolean; showComposables?: boolean };
-  /** Initial graph scale, clamped to the supported range 0.25–2. */
+  /**
+   * Initial graph scale, clamped to the supported range 0.25–2.
+   */
   initialZoom?: number;
   tree?: {
     stickyScopes?: boolean;
-    /** Whether branches begin expanded. Defaults to true. */
+    /**
+     * Whether branches begin expanded. Defaults to true.
+     */
     initialExpanded?: boolean;
   };
-  /** Show the node-details pane. Defaults to true. */
+  /**
+   * Show the node-details pane. Defaults to true.
+   */
   showDetails?: boolean;
-  /** Outline mounted composables in development. */
+  /**
+   * Outline mounted composables in development.
+   */
   showOutlines?: boolean;
 }
 

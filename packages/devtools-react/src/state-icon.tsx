@@ -41,11 +41,15 @@ export function StateIcon({
   size = 12,
   spinning = false,
 }: {
-  /** The state's label, e.g. `Loading`. */
+  /**
+   * The state's label, e.g. `Loading`.
+   */
   state: string;
   palette: ChipPalette;
   size?: 12 | 14;
-  /** Spin the Loading icon, e.g. while that state is active or forced. */
+  /**
+   * Spin the Loading icon, e.g. while that state is active or forced.
+   */
   spinning?: boolean;
 }) {
   const kind = stateIconKind(state);

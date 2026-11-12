@@ -6,7 +6,9 @@ export interface SourceLocation {
   readonly file: string;
   readonly line: number;
   readonly column: number;
-  /** Adapter-provided, same-origin development editor endpoint. */
+  /**
+   * Adapter-provided, same-origin development editor endpoint.
+   */
   readonly editorUrl?: string;
 }
 

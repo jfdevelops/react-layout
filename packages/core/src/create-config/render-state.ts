@@ -677,7 +677,9 @@ export type CreateRenderStateFromState<
     | undefined = undefined,
 >(definition: {
   ref: Ref;
-  /** Defer Ref rendering through React.lazy. Defaults to false. */
+  /**
+   * Defer Ref rendering through React.lazy. Defaults to false.
+   */
   lazy?: boolean;
   state?: State;
   props?: {
@@ -737,7 +739,9 @@ export interface CreateRenderState<
   SharedInclude,
   SharedCustom
 > {
-  /** Bind the full calling-state union for a shell created before its layout. */
+  /**
+   * Bind the full calling-state union for a shell created before its layout.
+   */
   forStates<const Names extends readonly [string, ...string[]]>(
     ...states: Names
   ): RenderStateOverloads<
@@ -808,11 +812,17 @@ export type CreateRenderStateBuilderArguments<
   SharedCustom extends CustomPropsObject = {},
 > = {
   props?: { include?: SharedInclude; custom?: SharedCustom };
-  /** Shared composables whose components and preset props every state can use. */
+  /**
+   * Shared composables whose components and preset props every state can use.
+   */
   composables?: LayoutComposablesDefinition<Resources, SharedComposables>;
-  /** Option props that individual states can expose through `props.include`. */
+  /**
+   * Option props that individual states can expose through `props.include`.
+   */
   options: Options;
-  /** Resources used to constrain composable names and resource-specific props. */
+  /**
+   * Resources used to constrain composable names and resource-specific props.
+   */
   resources: Resources;
 };
 

@@ -537,7 +537,9 @@ export type ScopedComponentResourceEntry<
    * Defaults to the scope's configured name, then the capitalized resource.
    */
   name?: string;
-  /** Props exposed or pre-filled for this resource entry. */
+  /**
+   * Props exposed or pre-filled for this resource entry.
+   */
   props?: EntryProps;
   /**
    * Components scoped to this resource. Each becomes a component on this
@@ -575,7 +577,9 @@ export type ScopedComponentResourceEntry<
       > &
       Components[Name];
   };
-  /** Renders this resource's content inside the shared render function. */
+  /**
+   * Renders this resource's content inside the shared render function.
+   */
 } & ScopedLazyContent<
   PropsContextRender<
     ScopedResourceComponentProps<
@@ -690,7 +694,9 @@ export type ScopedBoundResourceComponent<
   } & ([keyof Composables] extends [never]
     ? { readonly makeComposable?: undefined }
     : {
-        /** Creates the bound resource's composable layout, using the scope's default name when omitted. */
+        /**
+         * Creates the bound resource's composable layout, using the scope's default name when omitted.
+         */
         makeComposable: MakeComposable<Composables, string>;
       });
 
@@ -899,9 +905,13 @@ export type ScopedCreateResourceComponents<
   StateNames
 > & {
   props: Props;
-  /** Type-only metadata preserving the exact captured props bag. */
+  /**
+   * Type-only metadata preserving the exact captured props bag.
+   */
   readonly resourceComponentProps: Props;
-  /** Type-only metadata preserving the exact captured components map. */
+  /**
+   * Type-only metadata preserving the exact captured components map.
+   */
   readonly resourceComponents: NormalizeScopedComponentsMap<Components>;
 } & LazyHandle &
   ScopedReusableResourceEntry<Props, Components>;

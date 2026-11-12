@@ -75,7 +75,9 @@ export type PathVariableGuards<
   Path extends string,
 > = {
   [Name in ExtractPathVariables<Path>]: {
-    /** Narrows a value to what this variable accepts for this path. */
+    /**
+     * Narrows a value to what this variable accepts for this path.
+     */
     isVariable: (key: unknown) => key is PathVariableDomain<Resources, Config, Path, Name>;
   };
 };
@@ -85,16 +87,24 @@ export interface GetComponentForPathApi<
   Config,
   Path extends string,
 > {
-  /** The path this getter reads. */
+  /**
+   * The path this getter reads.
+   */
   readonly path: Path;
-  /** Variable names this path leaves open, in order of appearance. */
+  /**
+   * Variable names this path leaves open, in order of appearance.
+   */
   readonly variables: ReadonlyArray<ExtractPathVariables<Path>>;
-  /** Resources this path can target. */
+  /**
+   * Resources this path can target.
+   */
   readonly resources: ReadonlyArray<PathResourceCandidates<Resources, Config, Path>>;
   isResource: (key: unknown) => key is PathResourceCandidates<Resources, Config, Path>;
   isSubResource: (key: unknown) => key is PathSubResourceKeys<Resources, Config, Path>;
   isComponent: (key: unknown) => key is PathComponentKeys<Resources, Config, Path>;
-  /** Narrows a sub-resource against one specific resource rather than the whole path. */
+  /**
+   * Narrows a sub-resource against one specific resource rather than the whole path.
+   */
   isValidSubResource: <Resource extends PathResourceCandidates<Resources, Config, Path>>(
     resource: Resource,
     subResource: unknown,

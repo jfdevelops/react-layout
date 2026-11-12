@@ -17,14 +17,18 @@ const memory = new Map<string, string>();
 export type DevtoolsVariant = 'floating' | 'toolbar';
 
 export interface ToolbarPreferences {
-  /** Drawer height in CSS pixels, excluding the bar. */
+  /**
+   * Drawer height in CSS pixels, excluding the bar.
+   */
   height: number;
 }
 
 type Preferences = DevtoolsPreferences & {
   fabPosition?: { x: number; y: number };
   panel?: PanelPreferences;
-  /** Overrides the `variant` prop once the user switches. */
+  /**
+   * Overrides the `variant` prop once the user switches.
+   */
   variant?: DevtoolsVariant;
   toolbar?: ToolbarPreferences;
 };

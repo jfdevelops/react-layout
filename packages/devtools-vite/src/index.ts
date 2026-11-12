@@ -4,13 +4,21 @@ import MagicString from 'magic-string';
 import type { Plugin } from 'vite';
 
 export interface ReactLayoutDevtoolsOptions {
-  /** Include the React inspector in production builds. Defaults to false. */
+  /**
+   * Include the React inspector in production builds. Defaults to false.
+   */
   production?: boolean;
-  /** Enable temporary render-state previews. Defaults to true. */
+  /**
+   * Enable temporary render-state previews. Defaults to true.
+   */
   statePreview?: boolean;
-  /** Add wrapper packages that re-export the layout API. Relative imports are recognized automatically. */
+  /**
+   * Add wrapper packages that re-export the layout API. Relative imports are recognized automatically.
+   */
   imports?: readonly string[];
-  /** Restrict instrumentation to matching module paths. */
+  /**
+   * Restrict instrumentation to matching module paths.
+   */
   include?: RegExp;
   exclude?: RegExp;
 }

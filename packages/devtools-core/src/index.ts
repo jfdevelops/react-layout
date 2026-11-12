@@ -31,9 +31,13 @@ export interface GraphNode {
   readonly label: string;
   readonly active: number;
   readonly unresolved?: boolean;
-  /** Set on lazy nodes. `unresolved` stays true for both `loading` and `error`. */
+  /**
+   * Set on lazy nodes. `unresolved` stays true for both `loading` and `error`.
+   */
   readonly status?: LoadStatus;
-  /** The failure reported when `status` is `error`. */
+  /**
+   * The failure reported when `status` is `error`.
+   */
   readonly error?: InspectionError;
   readonly source?: SourceLocation;
   readonly registrationSource?: SourceLocation;

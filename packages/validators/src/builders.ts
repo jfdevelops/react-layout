@@ -767,7 +767,9 @@ export const createProp = {
   boolean: createPrimitivePropBuilder('boolean'),
   object: createObjectProp,
   record: createRecordProp,
-  /** Creates an array whose elements are validated by the supplied definition. */
+  /**
+   * Creates an array whose elements are validated by the supplied definition.
+   */
   array: <Item extends AnyBuiltPropDefinition>(item: Item) =>
     wrapProp(new ArrayProp(item, 'required')),
   component: <Type extends ComponentPropType>(options: { type: Type }) =>
