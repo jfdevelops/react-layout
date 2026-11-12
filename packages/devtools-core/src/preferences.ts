@@ -3,6 +3,9 @@ import {
   initialGraphZoom,
   type DevtoolsConfig,
   type DevtoolsChipKind,
+  type DevtoolsFilters,
+  type DevtoolsTreeOptions,
+  type DevtoolsView,
 } from './config';
 
 /** Kept stable so existing React adapter preferences also work with other adapters. */
@@ -10,10 +13,10 @@ export const defaultDevtoolsStorageKey = 'react-layout-devtools:preferences:v1';
 
 export interface DevtoolsPreferences {
   chipColors: NonNullable<DevtoolsConfig['chipColors']>;
-  initialView: 'graph' | 'tree';
+  initialView: DevtoolsView;
   initialZoom: number;
-  initialFilters: { activeOnly: boolean; showComposables: boolean };
-  tree: { stickyScopes: boolean; initialExpanded: boolean };
+  initialFilters: DevtoolsFilters;
+  tree: DevtoolsTreeOptions;
   showDetails: boolean;
   showOutlines: boolean;
 }

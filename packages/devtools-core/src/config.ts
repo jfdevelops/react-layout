@@ -27,6 +27,30 @@ export type DevtoolsChipKind =
 
 export type DevtoolsChipColor = string | { color: string; background?: string };
 
+/**
+ * The explorer view modes.
+ */
+export type DevtoolsView = 'graph' | 'tree';
+
+/**
+ * Filters applied to the explorer.
+ */
+export interface DevtoolsFilters {
+  activeOnly: boolean;
+  showComposables: boolean;
+}
+
+/**
+ * Tree view behavior.
+ */
+export interface DevtoolsTreeOptions {
+  stickyScopes: boolean;
+  /**
+   * Whether branches begin expanded. Defaults to true.
+   */
+  initialExpanded: boolean;
+}
+
 export interface DevtoolsConfig {
   /**
    * Partial overrides. Accepts CSS colors, including variables and named colors.
@@ -35,19 +59,13 @@ export interface DevtoolsConfig {
   /**
    * Defaults used when no saved preference exists. Toolbar changes are persisted.
    */
-  initialView?: 'graph' | 'tree';
-  initialFilters?: { activeOnly?: boolean; showComposables?: boolean };
+  initialView?: DevtoolsView;
+  initialFilters?: Partial<DevtoolsFilters>;
   /**
    * Initial graph scale, clamped to the supported range 0.25–2.
    */
   initialZoom?: number;
-  tree?: {
-    stickyScopes?: boolean;
-    /**
-     * Whether branches begin expanded. Defaults to true.
-     */
-    initialExpanded?: boolean;
-  };
+  tree?: Partial<DevtoolsTreeOptions>;
   /**
    * Show the node-details pane. Defaults to true.
    */

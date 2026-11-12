@@ -5,6 +5,7 @@ import type { GraphSnapshot } from '@jfdevelops/react-layout-devtools-core';
 import { useDevtoolsContext } from './context';
 import { Button } from './components/ui/button';
 import { HelpTooltip } from './components/ui/tooltip';
+import type { ElementBounds } from './element-bounds';
 
 export function OutlineToggle({ size = 'icon' }: { size?: 'icon' | 'icon-sm' } = {}) {
   const { config, updatePreferences } = useDevtoolsContext();
@@ -36,17 +37,13 @@ export function OutlineToggle({ size = 'icon' }: { size?: 'icon' | 'icon-sm' } =
   );
 }
 
-type Target = {
+interface Target extends ElementBounds {
   element: HTMLElement;
   id: string;
   name: string;
   layout: string;
   depth: number;
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-};
+}
 function layoutName(graph: GraphSnapshot, id: string) {
   const nodes = new Map(graph.nodes.map((node) => [node.id, node]));
   const seen = new Set<string>();

@@ -168,14 +168,33 @@ export type LayoutProps<
   CustomProps
 >;
 
-type LayoutRenderContext<
+/**
+ * Context fields shared by layout and shell render callbacks.
+ */
+interface RenderContextBase<Composables extends ComposableComponents> {
+  /**
+   * The composables defined for this layout, bound to its resource and name.
+   */
+  composables: LayoutRenderComposables<Composables>;
+  /**
+   * The resolved option values available to this definition.
+   */
+  inProps: Record<string, unknown>;
+  /**
+   * The resolved component name.
+   */
+  name: string;
+}
+
+interface LayoutRenderContext<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Composables extends ComposableComponents,
   States extends string = import('./render-state').BuiltinRenderStateName,
-> = {
+> extends RenderContextBase<Composables> {
+  /**
+   * The render state this callback is rendering.
+   */
   state: States;
-  composables: LayoutRenderComposables<Composables>;
-  inProps: Record<string, unknown>;
   /**
    * Accessor for the resources bound to this definition. Read `resources.current`
    * for the resource this instance renders, call `resources()` for normalized
@@ -184,12 +203,11 @@ type LayoutRenderContext<
    * `resources.isResource(...)` to narrow an unknown value.
    */
   resources: LayoutRenderResourcesAccessor<Resources>;
-  name: string;
   /**
    * Retries the active lazy state when the current Error state was automatic.
    */
   retry?: () => void;
-};
+}
 
 type RenderStateBoundaryProps = {
   children: ReactNode;
@@ -3050,12 +3068,10 @@ function defineResourceLayoutForResources<const Resources extends NonEmptyResour
  * - `children` is the shell's content region. Render it where page content
  *   belongs; it is already wrapped so mounted pages report their resource back.
  */
-export type ShellRenderContext<
+export interface ShellRenderContext<
   Resources extends ReadonlyArray<ResourceDefinition>,
   ShellComposables extends ComposableComponents,
-> = {
-  composables: LayoutRenderComposables<ShellComposables>;
-  inProps: Record<string, unknown>;
+> extends RenderContextBase<ShellComposables> {
   /**
    * The resource currently rendered in the outlet, or `undefined` when no
    * per-resource page is mounted and no `resource` prop was passed.
@@ -3068,13 +3084,12 @@ export type ShellRenderContext<
   resources: LayoutResourcesAccessor<Resources> & {
     readonly current: LayoutResourceKey<Resources> | undefined;
   };
-  name: string;
   /**
    * The shell's content region — typically a router `<Outlet />`. Render it
    * where page content belongs.
    */
   children?: ReactNode;
-};
+}
 
 /**
  * The `shell` block of a {@link defineResourceLayout.withLayout} call: the
