@@ -163,6 +163,7 @@ export type {
   InferredInProps,
   InPropsDefinition,
   PropsContract,
+  RenderDefinition,
   InPropsFunction,
   InPropsObject,
   InPropsOptions,

@@ -18,15 +18,18 @@ import type { OptionSchema, SchemaOptionDefinitions } from './option-schema';
 export type { InPropsObject };
 
 /** Shared include/custom contract used by configurable layout helpers. */
-export interface PropsContract<Include extends object = object, Custom extends object = object> {
+export interface PropsContract<
+  IncludeProps extends object = object,
+  CustomProps extends object = object,
+> {
   /**
    * Shared options and preset props to include, keyed by prop name.
    */
-  include?: Include;
+  include?: IncludeProps;
   /**
    * Custom props that the layout, state, or component will receive.
    */
-  custom?: Custom;
+  custom?: CustomProps;
 }
 
 /**
@@ -34,9 +37,28 @@ export interface PropsContract<Include extends object = object, Custom extends o
  * string requirements are reserved for the built-in `children` slot.
  */
 export interface TypedPropsContract<
-  Include extends object,
-  Custom extends CustomPropsObject,
-> extends PropsContract<Include, Custom & CustomPropsInput<Custom>> {}
+  IncludeProps extends object,
+  CustomProps extends CustomPropsObject,
+> extends PropsContract<IncludeProps, CustomProps & CustomPropsInput<CustomProps>> {}
+
+/**
+ * The `{ props?, composables?, render }` block shared by layouts, shells, and
+ * render states.
+ */
+export interface RenderDefinition<Props, Composables, Render> {
+  /**
+   * The props the block declares.
+   */
+  props?: Props;
+  /**
+   * Components composed by the block, created for each rendered instance.
+   */
+  composables?: Composables;
+  /**
+   * Renders the block.
+   */
+  render: Render;
+}
 
 /**
  * Two-argument `render(props, context)` used by createComponent and scoped

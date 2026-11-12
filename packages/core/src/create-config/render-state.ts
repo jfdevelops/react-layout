@@ -42,6 +42,7 @@ import {
   type NormalizedIncludedPropBehavior,
   LayoutIncludeProps,
   PropsContract,
+  RenderDefinition,
   TypedPropsContract,
 } from '../props';
 import type {
@@ -68,12 +69,13 @@ export const definedResourceLayoutComponentSymbol: unique symbol = Symbol.for(
 );
 
 /** Runtime-compatible render-state shape used when inspecting lazy modules. */
-export type AnyRenderStateDefinition = {
-  composables?: (create: CreateLayoutComposable<any>, states: any) => ComposableComponents;
-  props?: PropsContract<Record<string, unknown>, CustomPropsObject>;
-  render: (props: any, context: any) => JSX.Element;
+export interface AnyRenderStateDefinition extends RenderDefinition<
+  PropsContract<Record<string, unknown>, CustomPropsObject>,
+  (create: CreateLayoutComposable<any>, states: any) => ComposableComponents,
+  (props: any, context: any) => JSX.Element
+> {
   state?: string;
-};
+}
 
 /** An inline state whose first render is scheduled through `React.lazy`. */
 export type DeferredRenderState<Definition extends AnyRenderStateDefinition> = {
@@ -126,19 +128,31 @@ type BuilderRenderComposables<Composables extends ComposableComponents> = [
   : Composables;
 
 /** Values available as the second argument of a created state's `render`. */
-export type RenderStateContext<
+export interface RenderStateContext<
+  Resources extends ReadonlyArray<ResourceDefinition>,
   Composables extends ComposableComponents,
-  Resources extends ReadonlyArray<ResourceDefinition> = ReadonlyArray<ResourceDefinition>,
   States extends string = string,
-> = {
+> {
+  /**
+   * The render state this callback is rendering.
+   */
   state: States;
+  /**
+   * Accessor for the resources bound to the surrounding builder.
+   */
   resources: LayoutRenderResourcesAccessor<Resources>;
+  /**
+   * The shared and state-local composables available to this state.
+   */
   composables: BuilderRenderComposables<Composables>;
+  /**
+   * Retries the active lazy state when the current Error state was automatic.
+   */
   retry?: () => void;
-};
+}
 
 /** Legacy state contracts may omit children; explicit shorthand stays required. */
-export type OptionalStateChildren<Props, Custom = {}> = Custom extends {
+export type OptionalStateChildren<Props, CustomProps = {}> = CustomProps extends {
   children: 'required';
 }
   ? Props
@@ -159,7 +173,7 @@ export type RenderStateProps<
   CustomProps
 >;
 
-type TypedRenderStateDefinition<
+interface TypedRenderStateDefinition<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   State extends string,
@@ -172,10 +186,10 @@ type TypedRenderStateDefinition<
   SharedInclude extends LayoutIncludeProps<Resources, Options, SharedComposables> = {},
   SharedCustom extends CustomPropsObject = {},
   KnownStates extends string = string,
-> = {
-  composables?: RenderStateComposablesDefinition<Resources, StateComposables>;
-  props?: TypedPropsContract<IncludeProps, CustomProps>;
-  render: (
+> extends RenderDefinition<
+  TypedPropsContract<IncludeProps, CustomProps>,
+  RenderStateComposablesDefinition<Resources, StateComposables>,
+  (
     props: RenderStateProps<
       Resources,
       Options,
@@ -183,10 +197,11 @@ type TypedRenderStateDefinition<
       MergeContract<SharedInclude, IncludeProps>,
       MergeContract<SharedCustom, CustomProps>
     >,
-    context: RenderStateContext<SharedComposables & StateComposables, Resources, KnownStates>,
-  ) => JSX.Element;
+    context: RenderStateContext<Resources, SharedComposables & StateComposables, KnownStates>,
+  ) => JSX.Element
+> {
   state: State;
-};
+}
 
 /**
  * Callback shorthand for a created state, typed with the bound resources,
@@ -201,7 +216,7 @@ export type TypedRenderStateCallback<
   KnownStates extends string = string,
 > = (
   props: RenderStateProps<Resources, Options, SharedComposables, SharedInclude, SharedCustom>,
-  context: RenderStateContext<SharedComposables, Resources, KnownStates>,
+  context: RenderStateContext<Resources, SharedComposables, KnownStates>,
 ) => JSX.Element;
 
 type NormalizeRenderStateDefinition<Input> =
@@ -520,8 +535,8 @@ type DefaultReferenceIncludes<Ref extends RenderStateReference, CustomProps> = O
 type ReferenceIncludes<
   Ref extends RenderStateReference,
   CustomProps,
-  Include,
-> = Include extends object ? Include : DefaultReferenceIncludes<Ref, CustomProps>;
+  IncludeProps,
+> = IncludeProps extends object ? IncludeProps : DefaultReferenceIncludes<Ref, CustomProps>;
 
 type FromStateInProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -539,10 +554,10 @@ type FromStateInProps<
   ? Props
   : {};
 
-type SelectedReferenceSchemas<Ref extends RenderStateReference, Include> =
+type SelectedReferenceSchemas<Ref extends RenderStateReference, IncludeProps> =
   Pick<
     ReferenceSchemas<Ref>,
-    Extract<keyof Include, keyof ReferenceSchemas<Ref>>
+    Extract<keyof IncludeProps, keyof ReferenceSchemas<Ref>>
   > extends infer Selected extends InPropsObject
     ? Selected
     : {};
@@ -552,11 +567,11 @@ type ReferenceCarriedProps<
   Options extends InPropsDefinition<Resources>,
   Shared extends ComposableComponents,
   Ref extends RenderStateReference,
-  Include,
+  IncludeProps,
 > =
   Pick<
     FromStateInProps<Resources, Options, Shared, Ref, {}>,
-    Extract<keyof Include, keyof FromStateInProps<Resources, Options, Shared, Ref, {}>>
+    Extract<keyof IncludeProps, keyof FromStateInProps<Resources, Options, Shared, Ref, {}>>
   > extends infer Selected extends InPropsObject
     ? ResolveRenderProps<Selected>
     : {};
@@ -588,16 +603,16 @@ type FromStateComposables<
   Shared extends ComposableComponents,
   Ref extends RenderStateReference,
   Local extends ComposableComponents,
-  Include,
+  IncludeProps,
 > = Local & {
   Ref: StateComposable<
     ReferenceRenderProps<Resources, Options, Shared, Ref>,
     Extract<
-      keyof ReferenceCarriedProps<Resources, Options, Shared, Ref, Include>,
+      keyof ReferenceCarriedProps<Resources, Options, Shared, Ref, IncludeProps>,
       keyof ReferenceRenderProps<Resources, Options, Shared, Ref>
     >
   > & {
-    [composablePresetMetaKey]: ComposablePresetMeta<SelectedReferenceSchemas<Ref, Include>>;
+    [composablePresetMetaKey]: ComposablePresetMeta<SelectedReferenceSchemas<Ref, IncludeProps>>;
   };
 };
 
@@ -609,12 +624,12 @@ type FromStateDefinition<
   out State extends string,
   in out CustomProps extends CustomPropsObject,
   in out Local extends ComposableComponents,
-  in out Include,
+  in out IncludeProps,
 > = {
   state: State;
   props?: {
     custom?: CustomProps & CustomPropsInput<CustomProps>;
-    include?: ReferenceIncludes<Ref, CustomProps, Include>;
+    include?: ReferenceIncludes<Ref, CustomProps, IncludeProps>;
   };
   composables: RenderStateComposablesDefinition<
     Resources,
@@ -624,7 +639,7 @@ type FromStateDefinition<
       Shared,
       Ref,
       Local,
-      ReferenceIncludes<Ref, CustomProps, Include>
+      ReferenceIncludes<Ref, CustomProps, IncludeProps>
     >
   >;
   render: (
@@ -632,15 +647,15 @@ type FromStateDefinition<
       ResolveRenderProps<CustomProps> &
         ResolvedIncludedProps<
           FromStateInProps<Resources, Options, Shared, Ref, Local>,
-          ReferenceIncludes<Ref, CustomProps, Include> extends infer Selected extends IncludedProps<
-            FromStateInProps<Resources, Options, Shared, Ref, Local>
-          >
+          ReferenceIncludes<Ref, CustomProps, IncludeProps> extends infer Selected extends
+            IncludedProps<FromStateInProps<Resources, Options, Shared, Ref, Local>>
             ? Selected
             : {}
         >,
       CustomProps
     >,
     context: RenderStateContext<
+      Resources,
       Shared &
         FromStateComposables<
           Resources,
@@ -648,9 +663,8 @@ type FromStateDefinition<
           Shared,
           Ref,
           Local,
-          ReferenceIncludes<Ref, CustomProps, Include>
+          ReferenceIncludes<Ref, CustomProps, IncludeProps>
         >,
-      Resources,
       string
     >,
   ) => JSX.Element;
@@ -666,7 +680,7 @@ export type CreateRenderStateFromState<
   const State extends RenderStateName = 'default',
   const CustomProps extends CustomPropsObject = {},
   const Local extends ComposableComponents = {},
-  const Include extends
+  const IncludeProps extends
     | IncludedProps<FromStateInProps<Resources, Options, Shared, Ref, Local>>
     | undefined = undefined,
 >(definition: {
@@ -678,9 +692,9 @@ export type CreateRenderStateFromState<
   state?: State;
   props?: {
     custom?: CustomProps & CustomPropsInput<CustomProps>;
-    include?: Include &
+    include?: IncludeProps &
       Record<
-        Exclude<keyof Include, keyof FromStateInProps<Resources, Options, Shared, Ref, Local>>,
+        Exclude<keyof IncludeProps, keyof FromStateInProps<Resources, Options, Shared, Ref, Local>>,
         never
       >;
   };
@@ -696,7 +710,7 @@ export type CreateRenderStateFromState<
     State,
     CustomProps,
     Local,
-    Include
+    IncludeProps
   >['render'];
 }) => BoundRenderStateFragment<
   Resources,
@@ -704,7 +718,7 @@ export type CreateRenderStateFromState<
   Shared,
   FromStateEntry<
     Ref,
-    FromStateDefinition<Resources, Options, Shared, Ref, State, CustomProps, Local, Include>
+    FromStateDefinition<Resources, Options, Shared, Ref, State, CustomProps, Local, IncludeProps>
   >
 >;
 

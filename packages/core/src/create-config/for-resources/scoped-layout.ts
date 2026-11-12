@@ -22,6 +22,7 @@ import type {
   CreatedLayoutForResource,
   CreateLayoutForResourceOptions,
   CreateResourceLayoutOptionsBase,
+  ResourceLayoutTarget,
   SetDefaultPropForResourceFn,
 } from '../for-resource';
 import type { ScopedCreateComponent, ScopedCreateResourceComponents } from './create-component';
@@ -41,24 +42,21 @@ import type {
 
 export type ScopedCreateResourceLayoutOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
+  Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
-  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
+  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
   Arguments extends ReadonlyArray<unknown>,
   Name extends string,
   Resource extends SelectedLayoutResources<Resources, Arguments>,
   Props extends InPropsObject,
-> = LayoutPropsForResource<Resources, InProps, Composables, IncludeProps> & {
-  resource: Resource;
-  props?: Props;
-  name?: Name;
-};
+> = LayoutPropsForResource<Resources, Options, Composables, IncludeProps> &
+  ResourceLayoutTarget<Resource, Name, Props>;
 
 export type ScopedCreateResourceLayoutFnImpl<
   in out Resources extends ReadonlyArray<ResourceDefinition>,
-  in out InProps extends InPropsDefinition<Resources>,
+  in out Options extends InPropsDefinition<Resources>,
   in out Composables extends ComposableComponents,
-  in out IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
+  in out IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
   out Arguments extends ReadonlyArray<unknown>,
   in out CustomProps extends CustomPropsObject,
   out DefaultNamespace extends boolean = false,
@@ -72,7 +70,7 @@ export type ScopedCreateResourceLayoutFnImpl<
 >(
   options: ScopedCreateResourceLayoutOptions<
     Resources,
-    InProps,
+    Options,
     Composables,
     IncludeProps,
     Arguments,
@@ -87,21 +85,21 @@ export type ScopedCreateResourceLayoutFnImpl<
     Composables,
     Resource,
     ResolvedIncludedComponentProps<
-      MergedLayoutInProps<Resources, InProps, Composables>,
+      MergedLayoutInProps<Resources, Options, Composables>,
       IncludeProps
     >,
     States,
     Resources,
-    InProps
+    Options
   >,
   Namespace
 >;
 
 export type ScopedCreateLayoutForResource<
   in out Resources extends ReadonlyArray<ResourceDefinition>,
-  in out InProps extends InPropsDefinition<Resources>,
+  in out Options extends InPropsDefinition<Resources>,
   in out Composables extends ComposableComponents,
-  in out IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
+  in out IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
   out Arguments extends ReadonlyArray<unknown>,
   in out CustomProps extends CustomPropsObject,
   out DefaultNamespace extends boolean = false,
@@ -114,7 +112,7 @@ export type ScopedCreateLayoutForResource<
   options: Omit<CreateLayoutForResourceOptions<Resources, Name, Resource>, 'hostedBy'>,
 ) => CreatedLayoutForResource<
   Resources,
-  InProps,
+  Options,
   Composables,
   IncludeProps,
   Name,
@@ -126,7 +124,7 @@ export type ScopedCreateLayoutForResource<
 > & {
   setDefaults: SetDefaultPropForResourceFn<
     Resources,
-    InProps,
+    Options,
     Composables,
     IncludeProps,
     Name,
@@ -139,9 +137,9 @@ export type ScopedCreateLayoutForResource<
 
 export type ScopedCreateResourceLayoutMakeComposableFn<
   in out Resources extends ReadonlyArray<ResourceDefinition>,
-  in out InProps extends InPropsDefinition<Resources>,
+  in out Options extends InPropsDefinition<Resources>,
   in out Composables extends ComposableComponents,
-  in out IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
+  in out IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
   out Arguments extends ReadonlyArray<unknown>,
   out DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
 > = <
@@ -153,14 +151,14 @@ export type ScopedCreateResourceLayoutMakeComposableFn<
     CreateResourceLayoutOptionsBase<Resources, Name, Resource, Props, Name>,
     'hostedBy'
   > &
-    Partial<LayoutPropsForResource<Resources, InProps, Composables, IncludeProps>>,
+    Partial<LayoutPropsForResource<Resources, Options, Composables, IncludeProps>>,
 ) => ComposableResourceLayout<Composables, Name, any, any, any>;
 
 export type ScopedCreateResourceLayoutFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
+  Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
-  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
+  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
   Arguments extends ReadonlyArray<unknown>,
   CustomProps extends CustomPropsObject,
   DefaultNamespace extends boolean = false,
@@ -168,7 +166,7 @@ export type ScopedCreateResourceLayoutFn<
   DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
 > = ScopedCreateResourceLayoutFnImpl<
   Resources,
-  InProps,
+  Options,
   Composables,
   IncludeProps,
   Arguments,
@@ -232,7 +230,7 @@ export type ScopedCreateResourceLayoutFn<
    */
   createComponent: ScopedCreateComponent<
     Resources,
-    InProps,
+    Options,
     Composables,
     Arguments,
     CustomProps,
@@ -243,7 +241,7 @@ export type ScopedCreateResourceLayoutFn<
    */
   createResourceComponents: ScopedCreateResourceComponents<
     Resources,
-    InProps,
+    Options,
     Composables,
     Arguments,
     CustomProps,
@@ -253,7 +251,7 @@ export type ScopedCreateResourceLayoutFn<
   >;
   forResource: ScopedCreateLayoutForResource<
     Resources,
-    InProps,
+    Options,
     Composables,
     IncludeProps,
     Arguments,
@@ -275,7 +273,7 @@ export type ScopedCreateResourceLayoutFn<
     : {
         makeComposable: ScopedCreateResourceLayoutMakeComposableFn<
           Resources,
-          InProps,
+          Options,
           Composables,
           IncludeProps,
           Arguments,
@@ -285,9 +283,9 @@ export type ScopedCreateResourceLayoutFn<
 
 export type CreateResourceLayoutForResourcesFn<
   in out Resources extends ReadonlyArray<ResourceDefinition>,
-  in out InProps extends InPropsDefinition<Resources>,
+  in out Options extends InPropsDefinition<Resources>,
   in out Composables extends ComposableComponents = {},
-  in out IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
+  in out IncludeProps extends LayoutIncludeProps<Resources, Options, Composables> = {},
   in out CustomProps extends CustomPropsObject = {},
   out DefaultNamespace extends boolean = false,
   in out States = {},
@@ -313,7 +311,7 @@ export type CreateResourceLayoutForResourcesFn<
     ...resources: ResourceKeys & UnhostedOnly<Resources>
   ): ScopedCreateResourceLayoutFn<
     Resources,
-    InProps,
+    Options,
     Composables,
     IncludeProps,
     ResourceKeys,
@@ -339,7 +337,7 @@ export type CreateResourceLayoutForResourcesFn<
     } & HostedSelection<Resources>,
   ): ScopedCreateResourceLayoutFn<
     Resources,
-    InProps,
+    Options,
     Composables,
     IncludeProps,
     readonly [{ resources: ResourceKeys }],
@@ -394,7 +392,7 @@ export type CreateResourceLayoutForResourcesFn<
       },
   ): ScopedCreateResourceLayoutFn<
     Resources,
-    InProps,
+    Options,
     Composables,
     IncludeProps,
     MappedResourceLayoutArguments<Resources, ResourceKeys, Names, CallbackName>,
@@ -428,7 +426,7 @@ export type CreateResourceLayoutForResourcesFn<
     } & { resources: ResourceKeys } & HostedSelection<Resources>,
   ): ScopedCreateResourceLayoutFn<
     Resources,
-    InProps,
+    Options,
     Composables,
     IncludeProps,
     SharedResourceLayoutArguments<Resources, ResourceKeys, Name>,
@@ -462,7 +460,7 @@ export type CreateResourceLayoutForResourcesFn<
       Record<Exclude<keyof Selection, LayoutResourceKey<Resources>>, never>,
   ): ScopedCreateResourceLayoutFn<
     Resources,
-    InProps,
+    Options,
     Composables,
     IncludeProps,
     SelectedResourceLayoutArguments<Selection>,

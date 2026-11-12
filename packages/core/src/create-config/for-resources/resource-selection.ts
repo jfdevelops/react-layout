@@ -77,7 +77,7 @@ export type NormalizeCapitalizedResourceName<
   Name extends string,
   Resource extends string,
 > = Name extends Name
-  ? NormalizeCapitalizedResourceNameMatch<Name, Resource> extends infer Match
+  ? NormalizeCapitalizedResourceNameMatch<Name, Resource> extends infer Match extends string
     ? [Match] extends [never]
       ? Name
       : Match

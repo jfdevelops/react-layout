@@ -15,16 +15,10 @@ const propErrorContext = type({
 
 export type PropErrorOptions = typeof propErrorContext.infer;
 
-type PropMessageOptions = {
-  path: string;
-  layoutName?: string;
-  resource?: string;
-};
+type PropMessageOptions = Pick<PropErrorOptions, 'path' | 'layoutName' | 'resource'>;
 
-type MismatchedPropMessageOptions = PropMessageOptions & {
-  received: unknown;
-  expected: unknown;
-};
+type MismatchedPropMessageOptions = PropMessageOptions &
+  Pick<PropErrorOptions, 'received' | 'expected'>;
 
 function createPropLocation({ layoutName, resource }: PropMessageOptions) {
   return layoutName === undefined || resource === undefined

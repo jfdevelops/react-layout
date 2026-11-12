@@ -17,7 +17,7 @@ import {
 import type { ResourceDefinition } from '../resource';
 
 export function inspectDefinition(
-  resources: readonly ResourceDefinition[],
+  resources: ReadonlyArray<ResourceDefinition>,
   source?: SourceLocation,
 ) {
   const store = createInspectionStore();
@@ -29,7 +29,7 @@ export function inspectDefinition(
   });
   const resourceIds = new Map<string, string>();
 
-  function visit(items: readonly ResourceDefinition[], parent: string, prefix = '') {
+  function visit(items: ReadonlyArray<ResourceDefinition>, parent: string, prefix = '') {
     for (const item of items) {
       const slug = typeof item === 'string' ? item : item.value;
       const path = prefix ? `${prefix}.${slug}` : slug;

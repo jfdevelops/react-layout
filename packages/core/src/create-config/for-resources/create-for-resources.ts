@@ -5,6 +5,7 @@ import {
   createScopedLazyContent,
   scopedLazySymbol,
   type LazyEnvironment,
+  type ScopedComponentRenderFn as ScopedRenderFn,
   type ScopedLazyContent,
 } from '../../lazy/scoped-content';
 import { withLazyHandle } from '../../lazy/inspection';
@@ -45,9 +46,9 @@ type CreateForResourcesOptions<Resources extends ReadonlyArray<ResourceDefinitio
 
 export function createForResources<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
+  Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
-  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
+  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
   CustomProps extends CustomPropsObject,
 >({
   createLayoutForResource,
@@ -116,10 +117,10 @@ export function createForResources<
       );
     }
 
-    type ScopedComponentRenderFn = (
-      props: Record<string, unknown>,
-      components: Record<string, (props?: never) => JSX.Element>,
-    ) => ScopedRenderResult;
+    type ScopedComponentRenderFn = ScopedRenderFn<
+      Record<string, unknown>,
+      Record<string, (props?: never) => JSX.Element>
+    >;
 
     type ScopedResourceScopedComponentDefinition = {
       props?: Record<string, AnyBuiltPropDefinition>;
@@ -859,7 +860,7 @@ export function createForResources<
     return Object.assign(scopedCreateResourceLayout, scopedExtras);
   }) as unknown as CreateResourceLayoutForResourcesFn<
     Resources,
-    InProps,
+    Options,
     Composables,
     IncludeProps,
     CustomProps
