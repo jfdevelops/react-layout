@@ -1,14 +1,14 @@
-import { createContextSchema } from '@jfdevelops/react-layout-validator';
+import { type } from 'arktype';
 import { createReactLayoutError } from './react-layout-error';
 
-export interface InvalidResourceContext {
-  reason?: string;
-  resource: unknown;
-  scope: 'resource';
-  validResources?: string[];
-}
+const context = type({
+  'reason?': 'string',
+  resource: 'unknown',
+  scope: "'resource'",
+  'validResources?': 'string[]',
+});
 
-const context = createContextSchema<InvalidResourceContext>();
+export type InvalidResourceContext = typeof context.infer;
 
 /** Thrown when a requested layout resource is invalid or unavailable. */
 export class InvalidResourceError extends createReactLayoutError({

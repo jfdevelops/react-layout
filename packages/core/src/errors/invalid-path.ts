@@ -1,14 +1,14 @@
-import { createContextSchema } from '@jfdevelops/react-layout-validator';
+import { type } from 'arktype';
 import { createReactLayoutError } from './react-layout-error';
 
-export interface InvalidPathContext {
-  path: unknown;
-  reason?: string;
-  scope: 'path';
-  validPaths?: string[];
-}
+const context = type({
+  path: 'unknown',
+  'reason?': 'string',
+  scope: "'path'",
+  'validPaths?': 'string[]',
+});
 
-const context = createContextSchema<InvalidPathContext>();
+export type InvalidPathContext = typeof context.infer;
 
 /** Thrown when a requested layout path is invalid or unavailable. */
 export class InvalidPathError extends createReactLayoutError({
