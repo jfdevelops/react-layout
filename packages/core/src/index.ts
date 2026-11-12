@@ -222,7 +222,6 @@ export type {
   LazyHandle,
   LoadStatus,
   LazyResourceErrorProps,
-  CreateLazyErrorComponent,
   LazyErrorHandlers,
 } from './lazy/types';
 

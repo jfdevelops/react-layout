@@ -6,7 +6,6 @@ import type { ResourcePath } from '../resource';
 import {
   createLazyRenderStateBuilder,
   type CreateLazyRenderState,
-  type CreateBoundLazyErrorComponent,
 } from '../lazy/create-render-state';
 import { lazyDefaultsSymbol } from '../lazy/types';
 import type { LazyResourceError } from '../errors/lazy-resource-error';
@@ -45,7 +44,6 @@ import {
 import {
   createRenderStateBuilder,
   type CreateRenderState,
-  type RenderStateContext,
   type RenderStateReferences,
   type LayoutComposablesDefinition,
 } from './render-state';
@@ -257,11 +255,6 @@ export type DefineLazyDefaults<
   (defaults: LazyResourceStates<Resource>): void;
   readonly errors: LazyResourceError;
   createRenderState: CreateLazyRenderState<Resources, Options, Composables>;
-  /** @deprecated Use createRenderState({ state: 'Error', render }) instead. */
-  createErrorComponent: CreateBoundLazyErrorComponent<
-    Resource,
-    RenderStateContext<Composables, Resources, 'Error'>
-  >;
 };
 
 /** Reusable helpers produced by {@link createDefinedResourceLayout}. */
@@ -397,14 +390,6 @@ export function createDefinedResourceLayout<
     options,
     composables,
   });
-  defineLazyDefaults.createErrorComponent = ((render: any) =>
-    defineLazyDefaults.createRenderState({
-      state: 'Error',
-      render,
-    })) as CreateBoundLazyErrorComponent<
-    ResourcePath<Resources>,
-    RenderStateContext<Composables, Resources, 'Error'>
-  >;
 
   const boundDefineResourceLayout = ((layout: Record<string, unknown>) => {
     const localComposables = layout.composables as

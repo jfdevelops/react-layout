@@ -17,7 +17,7 @@ import type {
   OptionalStateChildren,
 } from '../create-config/render-state';
 
-import type { LazyResourceErrorProps, LazyErrorHandlers, CreateLazyErrorComponent } from './types';
+import type { LazyResourceErrorProps, LazyErrorHandlers } from './types';
 
 export type LazyDefaultState = 'Loading' | 'Error';
 type BuiltinProps<State extends LazyDefaultState, Resource> = State extends 'Error'
@@ -63,12 +63,6 @@ export type CreateLazyRenderState<
     Custom
   > &
     BuiltinProps<State, ResourcePath<Resources>>
->;
-
-/** Compatibility helper; custom props keep their existing unchecked contract. */
-export type CreateBoundLazyErrorComponent<Resource, Context> = CreateLazyErrorComponent<
-  Resource,
-  Context
 >;
 
 type RuntimeDefinition = {

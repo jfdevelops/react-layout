@@ -414,22 +414,3 @@ it.each([
   render(<Users />);
   expect(await screen.findByTestId('registered-default')).toHaveTextContent('default');
 });
-
-it('exposes the literal Error state through the deprecated lazy helper', () => {
-  const { defineLazyDefaults } = createDefinedResourceLayout({
-    resources: ['users'],
-  });
-  const Legacy = defineLazyDefaults.createErrorComponent((_props, { state }) => {
-    expectTypeOf(state).toEqualTypeOf<'Error'>();
-
-    return <p>{state}</p>;
-  });
-  render(
-    <Legacy
-      resource='users'
-      error={new ResourceModuleLoadError('users', 'offline')}
-      retry={() => {}}
-    />,
-  );
-  expect(screen.getByText('Error')).toBeInTheDocument();
-});
