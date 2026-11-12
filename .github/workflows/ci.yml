@@ -51,6 +51,9 @@ jobs:
       - name: Build library
         run: pnpm build
 
+      - name: Check member docs in built declarations
+        run: pnpm check:declarations
+
       - name: Verify published factory types on TypeScript 5.9 and 6
         run: pnpm --filter @jfdevelops/react-layout test:types:published
 
