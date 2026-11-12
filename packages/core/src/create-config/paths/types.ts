@@ -5,6 +5,7 @@ import type {
   ResourceDefinitionForKey,
   SubResourceDefinitionsFor,
   SubResourceParamForResource,
+  NestedSubResourceDefinitions,
 } from '../../resource';
 import type { Show } from '../../utils';
 import type {
@@ -38,12 +39,6 @@ type ComponentTailPath =
   | ComponentSegment
   | SharedBranchKey
   | `${SharedBranchKey}.${ComponentSegment}`;
-
-type NestedSubResourceDefinitions<Def extends ResourceDefinition> = Def extends {
-  subResources: infer Nested extends ReadonlyArray<ResourceDefinition>;
-}
-  ? Nested
-  : readonly [];
 
 type SubResourceTailPaths<
   SubDefs extends ReadonlyArray<ResourceDefinition>,

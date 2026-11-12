@@ -33,5 +33,6 @@ export type {
   ResolveLayoutComposables,
 } from './composable';
 export type { InPropsObject, WithChildren } from './types';
-export type { BaseComponent, Show, UnionToIntersection } from './utils';
+export type { BaseComponent, Show, ShowCallable, UnionToIntersection } from './utils';
+export { capitalize, type CapitalizeFn } from './utils/capitalize';
 export { EmptyComponentsError, InvalidComponentsError } from './errors';

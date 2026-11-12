@@ -14,7 +14,7 @@ import type { ComposableComponents } from '@jfdevelops/react-layout-composables'
 import { type AnyBuiltPropDefinition, validateProps } from '@jfdevelops/react-layout-validator';
 import type { InPropsDefinition } from '../../props';
 import type { LayoutResourceKey, ResourceDefinition } from '../../resource';
-import { capitalize } from '../../utils/capitalize';
+import { capitalize } from '@jfdevelops/react-layout-composables';
 import { LayoutConfigurationError } from '../../errors';
 import type { LayoutIncludeProps } from '../define-layout';
 import type { CapitalizedResource, ResourcesLayoutName } from './resource-selection';

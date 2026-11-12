@@ -104,6 +104,7 @@ import {
   ResolvedIncludedComponentProps,
   ResolvedIncludedConfigProps,
   ResolvedIncludedProps,
+  type LayoutIncludeProps,
 } from '../props';
 import {
   createIsValidResourceFn,
@@ -114,9 +115,10 @@ import {
   type NormalizedResourceDefinitions,
   type ResourceDefinition,
   type ResourceDefinitionValue,
+  type NonEmptyResources,
 } from '../resource';
 import { BaseComponent, functionalUpdate, pick, Show, ShowCallable, Updater } from '../utils';
-import { capitalize } from '../utils/capitalize';
+import { capitalize } from '@jfdevelops/react-layout-composables';
 import { InvalidConfigError } from '../errors';
 import { isResourceConfigComponentKey } from './component-keys';
 import { type CreateResourceConfigFn, createResourceConfig } from './get-component';
@@ -152,11 +154,7 @@ import {
   type RenderStateScope,
 } from './state-composable';
 
-export type LayoutIncludeProps<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  Options extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents,
-> = IncludedProps<MergedLayoutInProps<Resources, Options, Composables>>;
+export type { LayoutIncludeProps };
 
 export type LayoutProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -2754,13 +2752,11 @@ function defineResourceLayoutImpl<
   >;
 }
 
-type NonEmptyResourceDefinitions = readonly [ResourceDefinition, ...ResourceDefinition[]];
-
 /**
  * Factory returned by {@link DefineResourceLayout.forResources}.
  */
 export type DefineResourceLayoutForResourcesFactory<
-  in out BaseResources extends NonEmptyResourceDefinitions,
+  in out BaseResources extends NonEmptyResources,
 > = {
   <
     const Render extends { default: unknown } & Record<string, unknown>,
@@ -2826,9 +2822,7 @@ export type DefineResourceLayoutForResourcesFactory<
  * Binds one or more resources, then accepts the remaining
  * {@link defineResourceLayout} options (with optional extra `resources`).
  */
-export type DefineResourceLayoutForResources = <
-  const Resources extends NonEmptyResourceDefinitions,
->(
+export type DefineResourceLayoutForResources = <const Resources extends NonEmptyResources>(
   ...resources: Resources
 ) => DefineResourceLayoutForResourcesFactory<Resources>;
 
@@ -3028,7 +3022,7 @@ export type DefineResourceLayout = DefineResourceLayoutFn & {
   withLayout: DefineResourceLayoutWithLayoutFn;
 };
 
-function defineResourceLayoutForResources<const Resources extends NonEmptyResourceDefinitions>(
+function defineResourceLayoutForResources<const Resources extends NonEmptyResources>(
   ...baseResources: Resources
 ): DefineResourceLayoutForResourcesFactory<Resources> {
   return ((

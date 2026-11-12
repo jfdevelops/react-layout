@@ -108,6 +108,15 @@ export type IncludedProps<T extends object> = {
   [K in keyof T & string]?: IncludedPropType;
 };
 
+/**
+ * The include map accepted for a layout's merged options and preset props.
+ */
+export type LayoutIncludeProps<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+> = IncludedProps<MergedLayoutInProps<Resources, Options, Composables>>;
+
 type PropsKeys<Props extends InPropsObject, T> = T & keyof Props;
 export type IncludedPropVisibility<Value> = Value extends { required: boolean }
   ? Value['required'] extends true
@@ -222,7 +231,7 @@ export type LayoutRenderProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents = {},
-  IncludeProps extends IncludedProps<MergedLayoutInProps<Resources, Options, Composables>> = {},
+  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables> = {},
   CustomProps extends CustomPropsObject = {},
 > = Show<
   ResolveRenderProps<CustomProps> &

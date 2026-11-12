@@ -25,7 +25,7 @@ import type {
 } from '@jfdevelops/react-layout-composables';
 import { LayoutConfigurationError } from '../errors';
 import type { InPropsDefinition } from '../props';
-import type { LayoutResourceKey, ResourceDefinition } from '../resource';
+import type { LayoutResourceKey, NonEmptyResources, ResourceDefinition } from '../resource';
 import {
   type CreateViewMapFunctionRenderOptions,
   type DefinedResourceLayout,
@@ -50,8 +50,7 @@ import {
   type LayoutComposablesDefinition,
 } from './render-state';
 
-/** A resource tuple with at least one entry, preserving literal and nested paths. */
-export type NonEmptyResources = readonly [ResourceDefinition, ...ResourceDefinition[]];
+export type { NonEmptyResources };
 
 /** Configuration shared by every layout created from one defined-layout factory. */
 export interface CreateDefinedResourceLayoutOptions<

@@ -5,9 +5,9 @@ import { LayoutConfigurationError } from '../errors';
 import type { ResourceDefinition, ResourcePath } from '../resource';
 import type {
   ResolvedIncludedComponentProps,
-  IncludedProps,
   InPropsDefinition,
   MergedLayoutInProps,
+  LayoutIncludeProps,
 } from '../props';
 import { defineResourceLayout } from '../create-config/define-layout';
 import type {
@@ -43,7 +43,7 @@ export type CreateLazyRenderState<
 > = <
   const State extends LazyDefaultState,
   const Custom extends CustomPropsObject = {},
-  const Include extends IncludedProps<MergedLayoutInProps<Resources, Options, Composables>> = {},
+  const Include extends LayoutIncludeProps<Resources, Options, Composables> = {},
 >(definition: {
   state: State;
   props?: { include?: Include; custom?: Custom & CustomPropsInput<Custom> };

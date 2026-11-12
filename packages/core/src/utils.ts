@@ -1,39 +1,17 @@
-/**
- * Flattens an object type for display. Use {@link ShowCallable} when the type
- * may carry call signatures, which a mapped type does not preserve.
- */
-export type Show<T> = { [K in keyof T]: T[K] } & {};
-/**
- * Like {@link Show}, but keeps the call signature of callable types.
- */
-export type ShowCallable<T> = T extends (...args: infer Arguments) => infer Result
-  ? ((...args: Arguments) => Result) & { [Key in keyof T]: T[Key] }
-  : Show<T>;
+export type {
+  BaseComponent,
+  Show,
+  ShowCallable,
+  UnionToIntersection,
+} from '@jfdevelops/react-layout-composables';
 export type MergeIntersection<T> = {
   [Key in keyof T]: T[Key];
 };
 export type IsUnion<T, U = T> = T extends unknown ? ([U] extends [T] ? false : true) : never;
-export type UnionToIntersection<Union> = (
-  Union extends unknown ? (value: Union) => void : never
-) extends (value: infer Intersection) => void
-  ? Intersection
-  : never;
 export type Updater<T> = T | ((prev: T) => T);
 export type OptionalRecord<K extends string, V = unknown> = {
   [key in K]?: V;
 };
-
-export interface BaseComponent<Name extends string, Props = {}> {
-  /**
-   * The name of the component. Useful for debugging and error messages.
-   */
-  displayName: Name;
-  /**
-   * A type only property to get the type of the props. At runtime,
-   * this is `undefined`.
-   */
-  props: Props;
-}
 
 export function pick<T extends object, K extends keyof T>(obj: T, keys: K[]) {
   if (keys.length === 0) {

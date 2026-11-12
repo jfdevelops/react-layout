@@ -574,7 +574,7 @@ export function defineComposableComponent<
       name,
       wrapWith,
       inProps: props,
-      outProps: (resolved) => resolved,
+      outProps: (resolved) => resolved as never,
       ...{
         [validatedComposableProps]: true,
       },

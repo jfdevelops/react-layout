@@ -12,6 +12,7 @@ import type {
   ResourceDefinitionForKey,
   SubResourceDefinitionsFor,
   SubResourceParamForResource,
+  NestedSubResourceDefinitions,
 } from '../resource';
 import {
   createForPaths,
@@ -82,12 +83,6 @@ type ComponentSlotPathKey = keyof BaseResourceConfigComponents;
 type SharedBranchPath = {
   [Branch in keyof SharedResourceConfigOptions]: `${Branch}.${ComponentSlotPathKey}`;
 }[keyof SharedResourceConfigOptions];
-
-type NestedSubResourceDefinitions<Def extends ResourceDefinition> = Def extends {
-  subResources: infer Nested extends ReadonlyArray<ResourceDefinition>;
-}
-  ? Nested
-  : readonly [];
 
 type SubResourceEntryPaths<
   SubDefs extends ReadonlyArray<ResourceDefinition>,
