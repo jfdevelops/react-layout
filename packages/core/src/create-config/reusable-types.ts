@@ -11,7 +11,7 @@ import type { OptionSchema } from '../option-schema';
 import type { InferredInProps, InPropsDefinition, InPropsObject, PropsContract } from '../props';
 import type { ResourceDefinition, ResourceEnum, ResourcePath } from '../resource';
 import type { LayoutResourcesAccessor } from './define-layout';
-import type { Show } from '../utils';
+import type { ShowCallable } from '../utils';
 import type { SingleResourceInput, ReusableResourcesAccessor } from './reusable-resource-input';
 export type { SingleResourceInput, ReusableResourcesAccessor } from './reusable-resource-input';
 
@@ -581,4 +581,4 @@ export type CreateReusable<
   const Overlap extends ReusableOverlap | undefined = undefined,
 >(
   definition: ReusableDefinition<Resources, Options, Include, Custom, Select, Result, Overlap>,
-) => Show<ReusableFunction<Resources, Options, Include, Custom, Select, Result>>;
+) => ShowCallable<ReusableFunction<Resources, Options, Include, Custom, Select, Result>>;

@@ -26,7 +26,7 @@ import type {
   ResolvedIncludedPropsAsDefined,
 } from '../../props';
 import type { ResourceDefinition } from '../../resource';
-import type { BaseComponent, Show, UnionToIntersection } from '../../utils';
+import type { BaseComponent, Show, ShowCallable, UnionToIntersection } from '../../utils';
 import type { LayoutIncludeProps, LayoutProps } from '../define-layout';
 import type { SelectedLayoutResources } from './resource-selection';
 import type { ScopedRenderResult } from './scoped-render';
@@ -764,7 +764,7 @@ export type ScopedResourceComponent<
      */
     asHOF(): <const Resource extends SelectedLayoutResources<ResourceDefinitions, Arguments>>(
       resource: Resource,
-    ) => Show<
+    ) => ShowCallable<
       ScopedBoundResourceComponent<
         ScopedBoundResourceComponentProps<
           ResourceDefinitions,

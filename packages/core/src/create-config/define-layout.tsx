@@ -115,7 +115,7 @@ import {
   type ResourceDefinition,
   type ResourceDefinitionValue,
 } from '../resource';
-import { BaseComponent, functionalUpdate, pick, Show, Updater } from '../utils';
+import { BaseComponent, functionalUpdate, pick, Show, ShowCallable, Updater } from '../utils';
 import { capitalize } from '../utils/capitalize';
 import { InvalidConfigError } from '../errors';
 import { isResourceConfigComponentKey } from './component-keys';
@@ -1250,7 +1250,7 @@ type CreateResourceLayoutFnImpl<
     Namespace,
     Name
   >,
-) => Show<
+) => ShowCallable<
   ResourceLayoutResult<
     ResourceLayoutComponent<
       ResolvedLayoutName<[Name] extends [never] ? DefaultNaming : Name, Resource>,
@@ -1290,7 +1290,7 @@ type CreateResourceLayoutFnImpl<
       Namespace,
       Naming
     >,
-  ) => Show<
+  ) => ShowCallable<
     ResourceLayoutResult<
       ResourceLayoutComponent<
         ResolvedLayoutName<Naming, Resource>,
@@ -1330,7 +1330,7 @@ type CreateResourceLayoutFnImpl<
       Namespace,
       LayoutNameCallback<Resource, ('default' | keyof States) & string, Name>
     >,
-  ) => Show<
+  ) => ShowCallable<
     ResourceLayoutResult<
       ResourceLayoutComponent<
         Name,
@@ -3133,7 +3133,7 @@ export type ResourceLayoutShellProps<
   ShellComposables extends ComposableComponents,
   ShellIncludeProps extends LayoutIncludeProps<Resources, Options, ShellComposables>,
   ShellCustomProps extends CustomPropsObject,
-> = Show<
+> = ShowCallable<
   (Options extends OptionSchema
     ? import('@jfdevelops/react-layout-validator').StandardSchemaV1.InferInput<Options>
     : {}) &

@@ -1,6 +1,14 @@
-export type Show<T> = T extends (...args: infer Arguments) => infer Result
+/**
+ * Flattens an object type for display. Use {@link ShowCallable} when the type
+ * may carry call signatures, which a mapped type does not preserve.
+ */
+export type Show<T> = { [K in keyof T]: T[K] } & {};
+/**
+ * Like {@link Show}, but keeps the call signature of callable types.
+ */
+export type ShowCallable<T> = T extends (...args: infer Arguments) => infer Result
   ? ((...args: Arguments) => Result) & { [Key in keyof T]: T[Key] }
-  : { [K in keyof T]: T[K] } & {};
+  : Show<T>;
 export type MergeIntersection<T> = {
   [Key in keyof T]: T[Key];
 };

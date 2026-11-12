@@ -83,8 +83,8 @@ export type MergedLayoutInProps<
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
 > =
-  InferredInProps<Resources, Options> extends InPropsObject
-    ? InferredInProps<Resources, Options> & MergePresetProps<Composables>
+  InferredInProps<Resources, Options> extends infer Props extends InPropsObject
+    ? Props & MergePresetProps<Composables>
     : never;
 export type RequiredVariant = true | 'required';
 /**

@@ -279,17 +279,17 @@ type NormalizeCapitalizedResourceNameMatch<
     : never
   : never;
 
-type ResourceLayoutBuilder<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents,
-  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
-  Name extends string,
-  Resource extends LayoutResourceKey<Resources>,
-  CustomProps extends CustomPropsObject,
-  DefaultNamespace extends boolean = false,
-  States = {},
-> = CreatedLayoutForResource<
+interface ResourceLayoutBuilder<
+  in out Resources extends ReadonlyArray<ResourceDefinition>,
+  in out InProps extends InPropsDefinition<Resources>,
+  in out Composables extends ComposableComponents,
+  in out IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
+  out Name extends string,
+  out Resource extends LayoutResourceKey<Resources>,
+  in out CustomProps extends CustomPropsObject,
+  out DefaultNamespace extends boolean = false,
+  in out States = {},
+> extends CreatedLayoutForResource<
   Resources,
   InProps,
   Composables,
@@ -300,7 +300,7 @@ type ResourceLayoutBuilder<
   {},
   DefaultNamespace,
   States
-> & {
+> {
   /**
    * Set default values for layout props in a single call.
    */
@@ -315,7 +315,7 @@ type ResourceLayoutBuilder<
     DefaultNamespace,
     States
   >;
-};
+}
 
 type SingleResourceLayoutSelection<
   Resources extends ReadonlyArray<ResourceDefinition>,
