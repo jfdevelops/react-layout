@@ -10,6 +10,7 @@ import { createLayoutResourcesAccessor } from './define-layout';
 import { schemaOptionDefinitions, validateOptionSchema, type OptionSchema } from '../option-schema';
 import type { CreateReusable, ReusableOverlap } from './reusable-types';
 import { type } from 'arktype';
+import { fieldDefinitions } from '../schema-fields';
 import {
   acceptsUndefined,
   objectDefinition,
@@ -90,6 +91,27 @@ function optionPlan(
         source: 'option',
         selector: value as ValuePlan['selector'],
         definition,
+      };
+    } else if (
+      (value === true && fieldDefinitions(definition)) ||
+      (value && typeof value === 'object')
+    ) {
+      // Fields come from the schema library when it exposes them. Otherwise the
+      // selected keys become unvalidated parts of a value its schema validates.
+      const fields =
+        fieldDefinitions(definition) ??
+        schemaOptionDefinitions(definition as OptionSchema, Object.keys(value as object));
+      const optional = acceptsUndefined(definition);
+      const nested = optionPlan(
+        fields,
+        value,
+        from,
+        location.path,
+        optional ? [...optionalPaths, location.path] : optionalPaths,
+      );
+      children[key] = {
+        ...nested,
+        optional,
       };
     } else if (value === true) {
       children[key] = {

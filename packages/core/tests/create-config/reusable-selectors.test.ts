@@ -43,9 +43,9 @@ describe('reusable selectors', () => {
       },
       select: {
         options: {
-          nested: (nested) => ({
-            label: nested.label.toUpperCase(),
-          }),
+          nested: {
+            label: (label) => label.toUpperCase(),
+          },
         },
       },
       fn: (props) => {
@@ -61,7 +61,6 @@ describe('reusable selectors', () => {
       options: {
         nested: {
           label: 'docs',
-          count: 1,
         },
       },
     };
@@ -382,6 +381,41 @@ describe('reusable selectors', () => {
     ).toThrow();
   });
 
+  it('combines disjoint nested fields from include and select', () => {
+    const helper = factory.createReusable({
+      props: {
+        include: {
+          options: {
+            nested: {
+              label: (label) => label.toUpperCase(),
+            },
+          },
+        },
+      },
+      select: {
+        options: {
+          nested: {
+            count: (count) => count * 2,
+          },
+        },
+      },
+      fn: (props) => props.nested,
+    });
+    expect(
+      helper({
+        options: {
+          nested: {
+            label: 'docs',
+            count: 2,
+          },
+        },
+      }),
+    ).toEqual({
+      label: 'DOCS',
+      count: 4,
+    });
+  });
+
   it('deduplicates identical callbacks and true selections', () => {
     const transform = vi.fn((title: string) => title.toUpperCase());
     const helper = factory.createReusable({
@@ -407,6 +441,38 @@ describe('reusable selectors', () => {
       }),
     ).toBe('DOCS');
     expect(transform).toHaveBeenCalledOnce();
+    const shared = factory.createReusable({
+      props: {
+        include: {
+          options: {
+            nested: true,
+          },
+        },
+      },
+      select: {
+        options: {
+          nested: {
+            label: true,
+          },
+        },
+      },
+      fn: (props) => props.nested,
+    });
+    expect(
+      shared({
+        nested: {
+          count: 2,
+        },
+        options: {
+          nested: {
+            label: 'docs',
+          },
+        },
+      }),
+    ).toEqual({
+      label: 'docs',
+      count: 2,
+    });
   });
 
   it('deduplicates the same resource selector', () => {
@@ -573,7 +639,9 @@ describe('reusable selectors', () => {
       },
       select: {
         options: {
-          optional: true,
+          optional: {
+            label: true,
+          },
         },
       },
       fn: (props) => {
@@ -602,6 +670,31 @@ describe('reusable selectors', () => {
     });
   });
 
+  it('resolves optional included object callbacks from source values', () => {
+    const helper = factory.createReusable({
+      props: {
+        include: {
+          options: {
+            optional: {
+              label: (label) => label.toUpperCase(),
+            },
+          },
+        },
+      },
+      fn: (props) => props.optional?.label,
+    });
+    expect(helper()).toBeUndefined();
+    expect(
+      helper({
+        options: {
+          optional: {
+            label: 'docs',
+          },
+        },
+      }),
+    ).toBe('DOCS');
+  });
+
   it('applies precedence to an entire transformed object and skips the losing transform', () => {
     const transform = vi.fn((nested: { label: string; count: number }) => ({
       summary: nested.label,
@@ -616,9 +709,9 @@ describe('reusable selectors', () => {
       },
       select: {
         options: {
-          nested: (nested) => ({
-            count: nested.count,
-          }),
+          nested: {
+            count: true,
+          },
         },
       },
       overlap: 'preferProps',
@@ -641,9 +734,6 @@ describe('reusable selectors', () => {
       summary: 'Docs',
     });
     transform.mockClear();
-    const selectCount = (nested: { label: string; count: number }) => ({
-      count: nested.count,
-    });
     const preferredSelect = factory.createReusable({
       props: {
         include: {
@@ -654,7 +744,9 @@ describe('reusable selectors', () => {
       },
       select: {
         options: {
-          nested: selectCount,
+          nested: {
+            count: true,
+          },
         },
       },
       overlap: 'preferSelect',
@@ -698,6 +790,291 @@ describe('reusable selectors', () => {
         expectTypeOf(props.optional).toEqualTypeOf<{ label: string } | undefined>();
 
         return props;
+      },
+    });
+    expect(helper()).toEqual({});
+  });
+
+  it('guards each optional source independently when merging object fields', () => {
+    const { createReusable } = createDefinedResourceLayout({
+      resources: ['users'],
+      options: {
+        optional: z
+          .object({
+            label: z.string(),
+            count: z.number(),
+          })
+          .optional(),
+      },
+    });
+    const count = vi.fn((value: number) => value.toFixed(0));
+    const helper = createReusable({
+      props: {
+        include: {
+          options: {
+            optional: {
+              label: true,
+            },
+          },
+        },
+      },
+      select: {
+        options: {
+          optional: {
+            count,
+          },
+        },
+      },
+      fn: (props) => {
+        expectTypeOf(props.optional?.label).toEqualTypeOf<string | undefined>();
+        expectTypeOf(props.optional?.count).toEqualTypeOf<string | undefined>();
+
+        return props;
+      },
+    });
+    expect(
+      helper({
+        optional: {
+          label: 'Docs',
+        },
+      }),
+    ).toEqual({
+      optional: {
+        label: 'Docs',
+      },
+    });
+    expect(count).not.toHaveBeenCalled();
+    expect(
+      helper({
+        options: {
+          optional: {
+            count: 2,
+          },
+        },
+      }),
+    ).toEqual({
+      optional: {
+        count: '2',
+      },
+    });
+    expect(
+      helper({
+        optional: {
+          label: 'Docs',
+        },
+        options: {
+          optional: {
+            count: 2,
+          },
+        },
+      }),
+    ).toEqual({
+      optional: {
+        label: 'Docs',
+        count: '2',
+      },
+    });
+    expect(helper()).toEqual({});
+    expect(count).toHaveBeenCalledTimes(2);
+  });
+
+  it('guards sources split within include and retains precise same-source fields', () => {
+    const { createReusable } = createDefinedResourceLayout({
+      resources: ['users'],
+      options: {
+        optional: z
+          .object({
+            label: z.string(),
+            count: z.number(),
+          })
+          .optional(),
+      },
+    });
+    const helper = createReusable({
+      props: {
+        include: {
+          options: {
+            optional: {
+              label: true,
+              count: (count) => count.toFixed(0),
+            },
+          },
+        },
+      },
+      fn: (props) => {
+        expectTypeOf(props.optional?.label).toEqualTypeOf<string | undefined>();
+        expectTypeOf(props.optional?.count).toEqualTypeOf<string | undefined>();
+
+        return props;
+      },
+    });
+    expect(
+      helper({
+        optional: {
+          label: 'Docs',
+        },
+      }),
+    ).toEqual({
+      optional: {
+        label: 'Docs',
+      },
+    });
+    expect(
+      helper({
+        options: {
+          optional: {
+            count: 2,
+          },
+        },
+      }),
+    ).toEqual({
+      optional: {
+        count: '2',
+      },
+    });
+    const sameSource = createReusable({
+      props: {
+        include: {
+          options: {
+            optional: {
+              label: (label) => label.toUpperCase(),
+            },
+          },
+        },
+      },
+      select: {
+        options: {
+          optional: {
+            count: (count) => count.toFixed(0),
+          },
+        },
+      },
+      fn: (props) => {
+        if (props.optional) {
+          expectTypeOf(props.optional.label).toEqualTypeOf<string>();
+          expectTypeOf(props.optional.count).toEqualTypeOf<string>();
+        }
+
+        return props;
+      },
+    });
+    expect(
+      sameSource({
+        options: {
+          optional: {
+            label: 'Docs',
+            count: 2,
+          },
+        },
+      }),
+    ).toEqual({
+      optional: {
+        label: 'DOCS',
+        count: '2',
+      },
+    });
+  });
+
+  it('preserves optional ancestor guards on required nested objects', () => {
+    const { createReusable } = createDefinedResourceLayout({
+      resources: ['users'],
+      options: {
+        optional: z
+          .object({
+            shared: z.object({
+              label: z.string(),
+              count: z.number(),
+            }),
+            caller: z.object({
+              title: z.string(),
+            }),
+            selected: z.object({
+              count: z.number(),
+            }),
+          })
+          .optional(),
+      },
+    });
+    const helper = createReusable({
+      props: {
+        include: {
+          options: {
+            optional: {
+              shared: {
+                label: true,
+              },
+              caller: true,
+            },
+          },
+        },
+      },
+      select: {
+        options: {
+          optional: {
+            shared: {
+              count: (count) => count.toFixed(0),
+            },
+            selected: {
+              count: true,
+            },
+          },
+        },
+      },
+      fn: (props) => {
+        expectTypeOf(props.optional?.shared?.label).toEqualTypeOf<string | undefined>();
+        expectTypeOf(props.optional?.shared?.count).toEqualTypeOf<string | undefined>();
+        if (props.optional?.caller) {
+          expectTypeOf(props.optional.caller.title).toEqualTypeOf<string>();
+        }
+        if (props.optional?.selected) {
+          expectTypeOf(props.optional.selected.count).toEqualTypeOf<number>();
+        }
+
+        return props;
+      },
+    });
+    expect(
+      helper({
+        optional: {
+          shared: {
+            label: 'Docs',
+          },
+          caller: {
+            title: 'Title',
+          },
+        },
+      }),
+    ).toEqual({
+      optional: {
+        shared: {
+          label: 'Docs',
+        },
+        caller: {
+          title: 'Title',
+        },
+      },
+    });
+    expect(
+      helper({
+        options: {
+          optional: {
+            shared: {
+              count: 2,
+            },
+            selected: {
+              count: 3,
+            },
+          },
+        },
+      }),
+    ).toEqual({
+      optional: {
+        shared: {
+          count: '2',
+        },
+        selected: {
+          count: 3,
+        },
       },
     });
     expect(helper()).toEqual({});

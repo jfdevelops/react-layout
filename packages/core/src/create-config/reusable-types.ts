@@ -16,9 +16,49 @@ export type { SingleResourceInput, ReusableResourcesAccessor } from './reusable-
 
 type Selector<Source> = (source: Source) => unknown;
 
-/** Select resolved option values whole, or transform them with a selector. */
+/**
+ * Standard Schema has no field introspection, so the fields of an object
+ * option are read from its output type. Arrays, functions, and built-in
+ * objects are values, not field containers.
+ */
+type IsFieldContainer<Value> = [Value] extends [object]
+  ? [Value] extends [
+      | ReadonlyArray<unknown>
+      | ((...args: never[]) => unknown)
+      | Date
+      | RegExp
+      | Map<unknown, unknown>
+      | Set<unknown>
+      | Promise<unknown>,
+    ]
+    ? false
+    : true
+  : false;
+
+/** One definition per field of an object value. */
+type FieldDefinitions<Value> = {
+  [Key in keyof Required<Value> & string]: StandardSchemaV1<Value[Key], Value[Key]>;
+};
+
+/** Exposes `properties` when an option's value is an object whose fields can be selected. */
+type ObjectOption<Definition> = Definition extends PropDefinition
+  ? NonNullable<StandardSchemaV1.InferOutput<Definition>> extends infer Value
+    ? IsFieldContainer<Value> extends true
+      ? { properties: FieldDefinitions<Value> }
+      : {}
+    : {}
+  : {};
+type OptionValue<Definition extends PropDefinition> =
+  | StandardSchemaV1.InferOutput<Definition>
+  | (DefinitionVisibility<Definition> extends 'optional' ? undefined : never);
+
+/** Select or transform resolved option values, or drill into object values. */
 export type ReusableOptionSelection<Props extends InPropsObject> = {
-  [Key in keyof Props]?: true | Selector<StandardSchemaV1.InferOutput<Props[Key]>>;
+  [Key in keyof Props]?: ObjectOption<Props[Key]> extends {
+    properties: infer Shape extends InPropsObject;
+  }
+    ? true | Selector<OptionValue<Props[Key]>> | ReusableOptionSelection<Shape>
+    : true | Selector<OptionValue<Props[Key]>>;
 };
 
 type ResolvedResourceSelection<Resources extends ReadonlyArray<ResourceDefinition>, Result> =
@@ -59,7 +99,9 @@ type SelectedOptionValue<Definition extends PropDefinition, Selection> = Selecti
   ? StandardSchemaV1.InferOutput<Definition>
   : Selection extends (...args: any[]) => infer Result
     ? Result
-    : never;
+    : ObjectOption<Definition> extends { properties: infer Shape extends InPropsObject }
+      ? SelectedOptionProps<Shape, Selection>
+      : never;
 
 type SelectedOptionProps<Props extends InPropsObject, Selection> = {
   [
@@ -123,7 +165,13 @@ type SelectionShape<Props extends InPropsObject, Selection> =
   Selection extends Selector<any>
     ? 'value'
     : {
-        [Key in keyof Props & (Selection extends true ? keyof Props : keyof Selection)]: 'value';
+        [
+          Key in keyof Props & (Selection extends true ? keyof Props : keyof Selection)
+        ]: SelectionAt<Selection, Key> extends Selector<any>
+          ? 'value'
+          : ObjectOption<Props[Key]> extends { properties: infer Shape extends InPropsObject }
+            ? SelectionShape<Shape, SelectionAt<Selection, Key>>
+            : 'value';
       };
 type ContractShape<Props extends InPropsObject, Contract, CustomProps> = (Contract extends {
   resources: unknown;
@@ -197,6 +245,84 @@ type MergeValues<Left, Right, Overlap, LeftShape, RightShape> = Omit<Left, keyof
     >;
   };
 
+// A merged object can exist while only one of its optional source containers exists.
+type IndependentSources<Props extends InPropsObject, IncludeProps, Select> = keyof CallerOptions<
+  Props,
+  IncludeProps,
+  Select
+> extends never
+  ? false
+  : keyof (SourceValues<Props, IncludeProps, true> &
+        SourceValues<Props, Select, false>) extends never
+    ? false
+    : true;
+
+type BranchSelection<Selection> = Selection extends Selector<any> ? {} : Selection;
+
+type GuardedFields<
+  Value,
+  Props extends InPropsObject,
+  IncludeProps,
+  Select,
+  Shape,
+  Independent extends boolean,
+> = {
+  [Key in keyof Value]: Key extends keyof Props
+    ? Key extends keyof Shape
+      ? Shape[Key] extends object
+        ? ObjectOption<Props[Key]> extends { properties: infer Nested extends InPropsObject }
+          ?
+              | GuardedObject<
+                  NonNullable<Value[Key]>,
+                  Nested,
+                  BranchSelection<SelectionAt<IncludeProps, Key>>,
+                  BranchSelection<SelectionAt<Select, Key>>,
+                  Shape[Key],
+                  IndependentSources<
+                    Nested,
+                    BranchSelection<SelectionAt<IncludeProps, Key>>,
+                    BranchSelection<SelectionAt<Select, Key>>
+                  > extends true
+                    ? Independent extends true
+                      ? true
+                      : DefinitionVisibility<Props[Key]> extends 'optional'
+                        ? true
+                        : false
+                    : false
+                >
+              | Extract<Value[Key], undefined>
+          : Value[Key]
+        : Value[Key]
+      : Value[Key]
+    : Value[Key];
+};
+
+type GuardedObject<
+  Value,
+  Props extends InPropsObject,
+  IncludeProps,
+  Select,
+  Shape,
+  Independent extends boolean = false,
+> = Independent extends true
+  ? Partial<GuardedFields<Value, Props, IncludeProps, Select, Shape, Independent>>
+  : GuardedFields<Value, Props, IncludeProps, Select, Shape, Independent>;
+
+type MergedShape<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  IncludeProps,
+  CustomProps,
+  Select,
+  Overlap,
+> = MergeValues<
+  ContractShape<OptionDefinitions<Resources, Options>, IncludeProps, CustomProps>,
+  ContractShape<OptionDefinitions<Resources, Options>, Select, {}>,
+  Overlap,
+  ContractShape<OptionDefinitions<Resources, Options>, IncludeProps, CustomProps>,
+  ContractShape<OptionDefinitions<Resources, Options>, Select, {}>
+>;
+
 export type ReusableResolved<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
@@ -205,12 +331,18 @@ export type ReusableResolved<
   Select,
   Overlap = undefined,
 > = Expanded<
-  MergeValues<
-    ReusableProps<Resources, Options, IncludeProps, CustomProps>,
-    ReusableSelected<Resources, Options, Select>,
-    Overlap,
-    ContractShape<OptionDefinitions<Resources, Options>, IncludeProps, CustomProps>,
-    ContractShape<OptionDefinitions<Resources, Options>, Select, {}>
+  GuardedObject<
+    MergeValues<
+      ReusableProps<Resources, Options, IncludeProps, CustomProps>,
+      ReusableSelected<Resources, Options, Select>,
+      Overlap,
+      ContractShape<OptionDefinitions<Resources, Options>, IncludeProps, CustomProps>,
+      ContractShape<OptionDefinitions<Resources, Options>, Select, {}>
+    >,
+    OptionDefinitions<Resources, Options>,
+    IncludeProps extends { options: infer Selection } ? Selection : {},
+    Select extends { options: infer Selection } ? Selection : {},
+    MergedShape<Resources, Options, IncludeProps, CustomProps, Select, Overlap>
   >
 >;
 
@@ -225,12 +357,14 @@ type SelectedValues<Props extends InPropsObject, Selection> = Selection extends 
 /** Sources are derived against the finite definition tree, not arbitrary input keys. */
 type SourceValue<Definition extends PropDefinition, Selection, CallbacksOnly extends boolean> =
   Selection extends Selector<any>
-    ? StandardSchemaV1.InferOutput<Definition>
+    ? OptionValue<Definition>
     : Selection extends true
       ? CallbacksOnly extends true
         ? never
-        : StandardSchemaV1.InferOutput<Definition>
-      : never;
+        : OptionValue<Definition>
+      : ObjectOption<Definition> extends { properties: infer Shape extends InPropsObject }
+        ? SourceValues<Shape, Selection, CallbacksOnly>
+        : never;
 
 type SourceKeys<Props extends InPropsObject, Selection, CallbacksOnly extends boolean> = {
   [Key in keyof Props & keyof Selection]: Selection[Key] extends Selector<any>
@@ -239,7 +373,11 @@ type SourceKeys<Props extends InPropsObject, Selection, CallbacksOnly extends bo
       ? CallbacksOnly extends true
         ? never
         : Key
-      : never;
+      : ObjectOption<Props[Key]> extends { properties: infer Shape extends InPropsObject }
+        ? keyof SourceValues<Shape, Selection[Key], CallbacksOnly> extends never
+          ? never
+          : Key
+        : never;
 }[keyof Props & keyof Selection];
 
 type SourceValues<Props extends InPropsObject, Selection, CallbacksOnly extends boolean> =
@@ -357,10 +495,26 @@ type CallerOptions<Props extends InPropsObject, IncludeProps, Select> = {
         : Value extends true
           ? SelectionAt<Select, Key> extends true
             ? never
-            : Key
-          : never
+            : ObjectOption<Props[Key]> extends { properties: infer Shape extends InPropsObject }
+              ? SelectionAt<Select, Key> extends object
+                ? keyof CallerOptions<Shape, true, SelectionAt<Select, Key>> extends never
+                  ? never
+                  : Key
+                : Key
+              : Key
+          : ObjectOption<Props[Key]> extends { properties: infer Shape extends InPropsObject }
+            ? keyof CallerOptions<Shape, Value, SelectionAt<Select, Key>> extends never
+              ? never
+              : Key
+            : never
       : never
-  ]: true;
+  ]: ObjectOption<Props[Key]> extends { properties: infer Shape extends InPropsObject }
+    ? SelectionAt<IncludeProps, Key> extends true
+      ? SelectionAt<Select, Key> extends object
+        ? CallerOptions<Shape, true, SelectionAt<Select, Key>>
+        : true
+      : CallerOptions<Shape, SelectionAt<IncludeProps, Key>, SelectionAt<Select, Key>>
+    : true;
 };
 
 type CallerContract<

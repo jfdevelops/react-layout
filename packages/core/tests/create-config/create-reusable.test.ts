@@ -68,13 +68,15 @@ describe('createReusable', () => {
     ).toThrow();
   });
 
-  it('combines resource selections, option selections, and custom props', () => {
+  it('combines resource selections, nested selections, and custom props', () => {
     const format = createReusable({
       props: {
         include: {
           resources: true,
           options: {
-            nested: true,
+            nested: {
+              label: true,
+            },
           },
         },
         custom: {
@@ -88,7 +90,6 @@ describe('createReusable', () => {
         resources: ['panedeck'],
         nested: {
           label: 'Docs',
-          hidden: 1,
         },
         suffix: '!',
       }),
@@ -98,7 +99,6 @@ describe('createReusable', () => {
         resources: ['other'],
         nested: {
           label: 'Docs',
-          hidden: 1,
         },
         suffix: '!',
       } as never),
@@ -108,7 +108,6 @@ describe('createReusable', () => {
         resources: [],
         nested: {
           label: 'Docs',
-          hidden: 1,
         },
       } as never),
     ).toThrow();
