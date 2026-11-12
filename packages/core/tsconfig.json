@@ -17,5 +17,12 @@
       "@jfdevelops/react-layout-adapters": ["../adapters/src/index.ts"]
     }
   },
-  "include": ["src", "tests", "vite.config.ts", "vitest.setup.ts"]
+  "include": [
+    "src",
+    "tests",
+    "bench",
+    "vitest.bench.config.ts",
+    "vite.config.ts",
+    "vitest.setup.ts"
+  ]
 }
