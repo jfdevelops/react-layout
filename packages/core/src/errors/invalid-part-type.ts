@@ -1,14 +1,14 @@
-import { createContextSchema } from '@jfdevelops/react-layout-validator';
+import { type } from 'arktype';
 import { createReactLayoutError } from './react-layout-error';
 
-export interface InvalidPartTypeContext {
-  part: string;
-  expectedType: 'string' | 'number';
-  receivedType: string;
-  scope: 'namingPart';
-}
+const context = type({
+  part: 'string',
+  expectedType: "'string' | 'number'",
+  receivedType: 'string',
+  scope: "'namingPart'",
+});
 
-const context = createContextSchema<InvalidPartTypeContext>();
+export type InvalidPartTypeContext = typeof context.infer;
 
 /**
  * Thrown when a supplied naming part does not match its declared value kind.
