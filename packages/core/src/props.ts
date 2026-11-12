@@ -3,15 +3,8 @@ import type { CustomPropsInput, CustomPropsObject, ResolveRenderProps } from './
 import { LayoutConfigurationError } from './errors';
 import type { ComposableComponents, MergePresetProps } from '@jfdevelops/react-layout-composables';
 import type { InPropsObject } from '@jfdevelops/react-layout-composables';
-import {
-  EnumWrappedProp,
-  LiteralWrappedProp,
-  ResolveLayoutProps,
-  ResolveLayoutInputProps,
-  ResolveLayoutPropsAsDefined,
-  ResolveProps,
-} from '@jfdevelops/react-layout-validator';
-import { ResourceDefinition, ResourceEnum } from './resource';
+import { ResolveProps, ResolveInputProps } from '@jfdevelops/react-layout-validator';
+import { ResourceDefinition } from './resource';
 import { Show } from './utils';
 import type { OptionSchema, SchemaOptionDefinitions } from './option-schema';
 
@@ -91,30 +84,18 @@ export interface PropsRenderDefinition<
   render: PropsContextRender<RenderProps, Context, Result>;
 }
 
-export type InPropsOptions<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  Name extends string,
-> = {
-  name: LiteralWrappedProp<Name, 'string', 'required'>;
-  resource: EnumWrappedProp<ResourceEnum<Resources>, 'string', 'required'>;
-};
-export type InPropsFunction<Resources extends ReadonlyArray<ResourceDefinition>> = <
-  Name extends string,
->(
-  props: Show<InPropsOptions<Resources, Name>>,
-) => InPropsObject;
-export type InPropsDefinition<Resources extends ReadonlyArray<ResourceDefinition>> =
-  | InPropsObject
-  | OptionSchema
-  | InPropsFunction<Resources>;
+/**
+ * The options a definition declares: one object schema validated as a whole,
+ * or a map of schemas keyed by option name.
+ */
+export type InPropsDefinition<
+  // Kept so every definition type shares one parameter list.
+  _Resources extends ReadonlyArray<ResourceDefinition> = ReadonlyArray<ResourceDefinition>,
+> = InPropsObject | OptionSchema;
 export type InferredInProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
-> = Options extends OptionSchema
-  ? SchemaOptionDefinitions<Options>
-  : Options extends InPropsFunction<Resources>
-    ? ReturnType<Options>
-    : Options;
+> = Options extends OptionSchema ? SchemaOptionDefinitions<Options> : Options;
 export type MergedLayoutInProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
@@ -236,34 +217,21 @@ export type IncludedComponentPropDefinitions<
 export type ResolvedIncludedProps<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,
-> = ResolveLayoutProps<SelectedIncludedProps<Props, IncludeProps, 'required'>> &
-  Partial<ResolveLayoutProps<SelectedIncludedProps<Props, IncludeProps, 'optional'>>>;
+> = ResolveProps<SelectedIncludedProps<Props, IncludeProps, 'required'>> &
+  Partial<ResolveProps<SelectedIncludedProps<Props, IncludeProps, 'optional'>>>;
 
 export type ResolvedIncludedConfigProps<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,
-> = ResolveLayoutInputProps<SelectedIncludedProps<Props, IncludeProps, 'required', 'config'>> &
-  Partial<
-    ResolveLayoutInputProps<SelectedIncludedProps<Props, IncludeProps, 'optional', 'config'>>
-  >;
+> = ResolveInputProps<SelectedIncludedProps<Props, IncludeProps, 'required', 'config'>> &
+  Partial<ResolveInputProps<SelectedIncludedProps<Props, IncludeProps, 'optional', 'config'>>>;
 
 export type ResolvedIncludedComponentProps<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,
-> = ResolveLayoutInputProps<SelectedIncludedProps<Props, IncludeProps, 'required', 'component'>> &
-  Partial<
-    ResolveLayoutInputProps<SelectedIncludedProps<Props, IncludeProps, 'optional', 'component'>>
-  >;
+> = ResolveInputProps<SelectedIncludedProps<Props, IncludeProps, 'required', 'component'>> &
+  Partial<ResolveInputProps<SelectedIncludedProps<Props, IncludeProps, 'optional', 'component'>>>;
 
-/**
- * Like {@link ResolvedIncludedProps}, but keeps included prop keys exactly as
- * declared (no `JSX.Element` capitalization).
- */
-export type ResolvedIncludedPropsAsDefined<
-  Props extends InPropsObject,
-  IncludeProps extends IncludedProps<Props>,
-> = ResolveLayoutPropsAsDefined<SelectedIncludedProps<Props, IncludeProps, 'required'>> &
-  Partial<ResolveLayoutPropsAsDefined<SelectedIncludedProps<Props, IncludeProps, 'optional'>>>;
 export type LayoutRenderProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,

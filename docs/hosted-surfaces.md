@@ -81,8 +81,8 @@ export const adminLayoutDefinition = createDefinedResourceLayout({
     // ...
   ],
   options: {
-    title: createProp.component({ type: 'ReactNode' }),
-    description: createProp.component({ type: 'ReactNode' }).optional(),
+    title: reactNode(),
+    description: reactNode().optional(),
   },
   composables: (create) => ({
     // page chrome composables
@@ -122,7 +122,7 @@ export const { createRenderState, defineResourceLayout } =
       ], // must be ⊆ admin resources
     },
     options: {
-      title: createProp.component({ type: 'ReactNode' }),
+      title: reactNode(),
     },
     composables: (create) => ({
       // pane chrome composables
@@ -156,8 +156,8 @@ export const { createRenderState, defineResourceLayout } =
       resources: '*', // openable over any host resource
     },
     options: {
-      title: createProp.component({ type: 'ReactNode' }),
-      description: createProp.component({ type: 'ReactNode' }),
+      title: reactNode(),
+      description: reactNode(),
     },
   });
 ```
@@ -268,8 +268,8 @@ export const adminSurfaces = defineResourceSurfaces({
       'dashboard',
     ],
     options: {
-      title: createProp.component({ type: 'ReactNode' }),
-      description: createProp.component({ type: 'ReactNode' }).optional(),
+      title: reactNode(),
+      description: reactNode().optional(),
     },
     composables: adminComposables,
     shell: {
@@ -297,7 +297,7 @@ export const adminSurfaces = defineResourceSurfaces({
       ],
     },
     options: {
-      title: createProp.component({ type: 'ReactNode' }),
+      title: reactNode(),
     },
     composables: paneComposables,
     props: {
@@ -306,10 +306,10 @@ export const adminSurfaces = defineResourceSurfaces({
         segments: 'optional',
       },
       custom: {
-        children: createProp.component({ type: 'ReactNode' }),
-        actions: createProp.component({ type: 'ReactNode' }).optional(),
-        close: createProp.component({ type: 'ReactNode' }).optional(),
-        status: createProp.component({ type: 'ReactNode' }).optional(),
+        children: reactNode(),
+        actions: reactNode().optional(),
+        close: reactNode().optional(),
+        status: reactNode().optional(),
       },
     },
     render: {
@@ -332,8 +332,8 @@ export const adminSurfaces = defineResourceSurfaces({
       resources: '*',
     },
     options: {
-      title: createProp.component({ type: 'ReactNode' }),
-      description: createProp.component({ type: 'ReactNode' }),
+      title: reactNode(),
+      description: reactNode(),
     },
     render: {
       // settings frame states

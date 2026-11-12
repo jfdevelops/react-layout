@@ -57,7 +57,6 @@ function propsFor(details: Bag): PropRow[] {
       return {
         name,
         kind: 'custom',
-        visibility: description?.visibility,
         type: description?.type,
         locations: [],
       };

@@ -14,17 +14,3 @@ export const validatorErrorFactory = createError({
     code: definition.code,
   }),
 });
-
-export class InvalidWrapperError extends validatorErrorFactory({
-  code: 'invalidWrapper',
-})
-  .defineContext(type('string'))
-  .implement((message) => message) {}
-
-export class InvalidRecordKeyError extends validatorErrorFactory({
-  code: 'invalidRecordKey',
-})
-  .defineContext(type('string'))
-  .implement((message) => message) {}
-
-Object.setPrototypeOf(InvalidRecordKeyError.prototype, TypeError.prototype);

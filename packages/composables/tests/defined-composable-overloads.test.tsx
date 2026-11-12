@@ -1,12 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { createProp } from '@jfdevelops/react-layout-validator';
 import type { ReactNode } from 'react';
 import {
   composablePresetMetaKey,
   defineComposableComponent,
   LayoutComposablePresetProvider,
 } from '../src';
+import { z } from 'zod';
 
 function Frame({ children, label }: { children?: ReactNode; label: string }) {
   return <section aria-label={label}>{children}</section>;
@@ -16,8 +16,8 @@ describe('defined composable factory overloads', () => {
   const createLabel = defineComposableComponent({
     name: 'Label',
     props: {
-      value: createProp.string(),
-      suffix: createProp.string(),
+      value: z.string(),
+      suffix: z.string(),
     },
     wrapWith: Frame,
   });
@@ -41,8 +41,8 @@ describe('defined composable factory overloads', () => {
     const { Count } = createLabel({
       name: 'Count',
       props: {
-        value: createProp.number(),
-        prefix: createProp.string(),
+        value: z.number(),
+        prefix: z.string(),
       },
       render: ({ value, prefix, suffix }) => `${prefix}${value}${suffix}`,
     });
@@ -68,7 +68,7 @@ describe('defined composable factory overloads', () => {
     const { Count } = createLabel({
       name: 'Count',
       props: (defaults) => ({
-        value: createProp.number(),
+        value: z.number(),
         suffix: defaults.suffix,
       }),
       wrapWith: 'aside',
@@ -83,7 +83,7 @@ describe('defined composable factory overloads', () => {
           },
         }}
       >
-        <Count value={undefined as never} suffix={undefined as never} />
+        <Count {...({} as { value: number; suffix: string })} />
       </LayoutComposablePresetProvider>,
     );
     expect(screen.getByText('3!').tagName).toBe('ASIDE');

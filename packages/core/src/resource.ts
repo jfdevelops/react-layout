@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { NonEmptyReadonlyArray } from '@jfdevelops/react-layout-validator';
+import type { NonEmptyReadonlyArray } from '@jfdevelops/react-layout-internals';
 import { MergeIntersection, UnionToIntersection } from './utils';
 import { LayoutConfigurationError } from './errors';
 

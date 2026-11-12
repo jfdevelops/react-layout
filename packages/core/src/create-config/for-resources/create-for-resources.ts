@@ -12,7 +12,7 @@ import { withLazyHandle } from '../../lazy/inspection';
 import type { LazyHandle } from '../../lazy/types';
 import { createContext, createElement, type ComponentType, type JSX, useContext } from 'react';
 import type { ComposableComponents } from '@jfdevelops/react-layout-composables';
-import { type AnyBuiltPropDefinition, validateProps } from '@jfdevelops/react-layout-validator';
+import { type PropDefinition, validateProps } from '@jfdevelops/react-layout-validator';
 import type { InPropsDefinition } from '../../props';
 import type { LayoutResourceKey, ResourceDefinition } from '../../resource';
 import { capitalize } from '@jfdevelops/react-layout-internals';
@@ -41,7 +41,7 @@ type CreateForResourcesOptions<Resources extends ReadonlyArray<ResourceDefinitio
   createResourceLayout: (options: Record<string, unknown>) => unknown;
   getComponentPropDefinitions: (
     resource: LayoutResourceKey<Resources>,
-  ) => Record<string, AnyBuiltPropDefinition>;
+  ) => Record<string, PropDefinition>;
 };
 
 export function createForResources<
@@ -123,7 +123,7 @@ export function createForResources<
     >;
 
     type ScopedResourceScopedComponentDefinition = {
-      props?: Record<string, AnyBuiltPropDefinition>;
+      props?: Record<string, PropDefinition>;
       [scopedLazySymbol]?: LazyHandle;
     } & ScopedLazyContent<ScopedComponentRenderFn>;
 
@@ -238,7 +238,7 @@ export function createForResources<
       ...bags: Array<CreateComponentPropsBag | undefined>
     ): CreateComponentPropsBag {
       const include: Record<string, true | 'optional'> = {};
-      const custom: Record<string, AnyBuiltPropDefinition> = {};
+      const custom: Record<string, PropDefinition> = {};
 
       for (const bag of bags) {
         Object.assign(include, bag?.include);
@@ -634,7 +634,7 @@ export function createForResources<
           );
         }
         const availableDefinitions = getComponentPropDefinitions(componentResource);
-        const definitionsToValidate: Record<string, AnyBuiltPropDefinition> = {};
+        const definitionsToValidate: Record<string, PropDefinition> = {};
 
         for (const [key, inclusion] of Object.entries(include)) {
           const definition = availableDefinitions[key];

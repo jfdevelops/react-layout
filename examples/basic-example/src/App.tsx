@@ -3,7 +3,9 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { type ComponentPropsWithRef } from 'react';
 import { createBreadcrumbComposable } from '@jfdevelops/react-layout-composable-breadcrumb';
 import { ReactLayoutDevtools } from '@jfdevelops/react-layout-devtools-react';
-import { createProp, defineResourceLayout } from '@jfdevelops/react-layout';
+import { defineResourceLayout } from '@jfdevelops/react-layout';
+import { reactNode } from '@jfdevelops/react-layout-adapter-zod';
+import { z } from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
   Card as UiCard,
@@ -70,8 +72,8 @@ const layoutDefinition = defineResourceLayout({
     'roles',
   ],
   options: {
-    title: createProp.string(),
-    description: createProp.string(),
+    title: z.string(),
+    description: z.string(),
   },
   layout: {
     composables: (create) => ({
@@ -117,10 +119,8 @@ const layoutDefinition = defineResourceLayout({
         segments: true,
       },
       custom: {
-        children: createProp.component({
-          type: 'ReactNode',
-        }),
-        className: createProp.string().optional(),
+        children: reactNode(),
+        className: z.string().optional(),
       },
     },
     render: {

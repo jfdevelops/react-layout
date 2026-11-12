@@ -1,7 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import type { ReactNode } from 'react';
-import { createProp, defineComposableComponent } from '../src';
+import { defineComposableComponent } from '../src';
+import { z } from 'zod';
+import { reactNode } from '@jfdevelops/react-layout-adapter-zod';
 
 describe('default composable children', () => {
   const createContainer = defineComposableComponent({
@@ -23,7 +25,7 @@ describe('default composable children', () => {
   it('forwards children alongside added props in the object overload', () => {
     const { Container } = createContainer({
       props: {
-        title: createProp.string(),
+        title: z.string(),
       },
       render: ({ children, title }) => (
         <section>
@@ -41,9 +43,7 @@ describe('default composable children', () => {
     const createRequired = defineComposableComponent({
       name: 'Required',
       props: {
-        children: createProp.component({
-          type: 'ReactNode',
-        }),
+        children: reactNode(),
       },
     });
     const { Required } = createRequired(({ children }) => <main>{children}</main>);

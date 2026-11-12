@@ -1,28 +1,29 @@
 import { describe, expect, it } from 'vitest';
-import { createDefinedResourceLayout, createProp, type InPropsOptions } from '../../src';
+import { createDefinedResourceLayout } from '../../src';
+import { z } from 'zod';
 
 const { createReusable } = createDefinedResourceLayout({
   resources: ['panedeck', 'jfdevelops'],
   options: {
-    title: createProp.string(),
-    presentation: createProp.string.enum(['docs', 'article']),
-    meta: createProp
+    title: z.string(),
+    presentation: z.enum(['docs', 'article']),
+    meta: z
       .object({
-        source: createProp.string.literal('github'),
-        owner: createProp.string(),
-        repo: createProp.string(),
+        source: z.literal('github'),
+        owner: z.string(),
+        repo: z.string(),
       })
       .or(
-        createProp.object({
-          source: createProp.string.literal('npm'),
-          package: createProp.string(),
+        z.object({
+          source: z.literal('npm'),
+          package: z.string(),
         }),
       ),
-    nested: createProp.object({
-      label: createProp.string(),
-      hidden: createProp.number(),
+    nested: z.object({
+      label: z.string(),
+      hidden: z.number(),
     }),
-    subtitle: createProp.string().optional(),
+    subtitle: z.string().optional(),
   },
 });
 
@@ -67,19 +68,17 @@ describe('createReusable', () => {
     ).toThrow();
   });
 
-  it('combines resource selections, nested selections, and custom props', () => {
+  it('combines resource selections, option selections, and custom props', () => {
     const format = createReusable({
       props: {
         include: {
           resources: true,
           options: {
-            nested: {
-              label: true,
-            },
+            nested: true,
           },
         },
         custom: {
-          suffix: createProp.string(),
+          suffix: z.string(),
         },
       },
       fn: ({ resources, nested, suffix }) => `${resources.join(',')}: ${nested.label}${suffix}`,
@@ -89,6 +88,7 @@ describe('createReusable', () => {
         resources: ['panedeck'],
         nested: {
           label: 'Docs',
+          hidden: 1,
         },
         suffix: '!',
       }),
@@ -98,6 +98,7 @@ describe('createReusable', () => {
         resources: ['other'],
         nested: {
           label: 'Docs',
+          hidden: 1,
         },
         suffix: '!',
       } as never),
@@ -107,6 +108,7 @@ describe('createReusable', () => {
         resources: [],
         nested: {
           label: 'Docs',
+          hidden: 1,
         },
       } as never),
     ).toThrow();
@@ -157,7 +159,7 @@ describe('createReusable', () => {
     const custom = createReusable({
       props: {
         custom: {
-          count: createProp.number(),
+          count: z.number(),
         },
       },
       fn: ({ count }) => count + 1,
@@ -170,37 +172,6 @@ describe('createReusable', () => {
     expect(() =>
       custom({
         count: 'one',
-      } as never),
-    ).toThrow();
-  });
-
-  it('supports callback option definitions', () => {
-    const factory = createDefinedResourceLayout({
-      resources: ['users', 'posts'],
-      options: ({
-        resource,
-      }: Pick<InPropsOptions<readonly ['users', 'posts'], never>, 'resource'>) => ({
-        target: resource,
-      }),
-    });
-    const target = factory.createReusable({
-      props: {
-        include: {
-          options: {
-            target: true,
-          },
-        },
-      },
-      fn: ({ target }) => target,
-    });
-    expect(
-      target({
-        target: 'users',
-      }),
-    ).toBe('users');
-    expect(() =>
-      target({
-        target: 'other',
       } as never),
     ).toThrow();
   });
@@ -237,7 +208,7 @@ describe('createReusable', () => {
             },
           },
           custom: {
-            title: createProp.number(),
+            title: z.number(),
           },
         },
         fn: () => null,

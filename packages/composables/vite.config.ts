@@ -7,6 +7,11 @@ export default defineConfig({
     alias: {
       '@jfdevelops/react-layout-internals': path.resolve(__dirname, '../internals/src/index.ts'),
       '@jfdevelops/react-layout-validator': path.resolve(__dirname, '../validators/src/index.ts'),
+      '@jfdevelops/react-layout-adapters': path.resolve(__dirname, '../adapters/src/index.ts'),
+      '@jfdevelops/react-layout-adapter-zod': path.resolve(
+        __dirname,
+        '../adapter-zod/src/index.ts',
+      ),
     },
   },
   plugins: [react()],

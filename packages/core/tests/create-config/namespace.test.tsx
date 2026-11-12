@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, expectTypeOf, it } from 'vitest';
-import { createDefinedResourceLayout, createProp, defineResourceLayout } from '../../src';
+import { createDefinedResourceLayout, defineResourceLayout } from '../../src';
+import { z } from 'zod';
 
 afterEach(cleanup);
 
@@ -9,7 +10,7 @@ const layout = {
     default: {
       props: {
         custom: {
-          title: createProp.string(),
+          title: z.string(),
         },
       },
       render: ({ title }: { title: string }) => <p>{title}</p>,
@@ -17,7 +18,7 @@ const layout = {
     Other: {
       props: {
         custom: {
-          count: createProp.number(),
+          count: z.number(),
         },
       },
       render: ({ count }: { count: number }) => <p>Other {count}</p>,

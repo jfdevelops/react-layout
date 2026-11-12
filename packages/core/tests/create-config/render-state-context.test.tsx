@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, expectTypeOf, it } from 'vitest';
-import { createDefinedResourceLayout, createProp, ResourceModuleLoadError } from '../../src';
+import { createDefinedResourceLayout, ResourceModuleLoadError } from '../../src';
+import { reactNode } from '@jfdevelops/react-layout-adapter-zod';
 
 afterEach(cleanup);
 
@@ -20,11 +21,7 @@ it('reports the caller through nested shared shells and keeps direct states inde
     state: 'Inner',
     props: {
       custom: {
-        children: createProp
-          .component({
-            type: 'ReactNode',
-          })
-          .optional(),
+        children: reactNode().optional(),
       },
     },
     render: ({ children }, { state }) => {
@@ -143,11 +140,7 @@ it('infers inline state unions and exposes the active state in scoped render con
   });
   const children = {
     custom: {
-      children: createProp
-        .component({
-          type: 'ReactNode',
-        })
-        .optional(),
+      children: reactNode().optional(),
     },
   };
   const ErrorState = factory.createRenderState({

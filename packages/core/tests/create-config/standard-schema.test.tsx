@@ -7,7 +7,6 @@ import { type } from 'arktype';
 import { Schema } from 'effect';
 import {
   createDefinedResourceLayout,
-  createProp,
   defineResourceLayout,
   defineComposableComponent,
 } from '../../src';
@@ -62,7 +61,7 @@ describe('Standard Schema props', () => {
       title: titleSchema,
       description: reactNode(),
       icon: reactElement().optional(),
-      legacy: createProp.number(),
+      legacy: z.number(),
     };
     const { createResourceLayout } = defineResourceLayout({
       resources: ['users'],

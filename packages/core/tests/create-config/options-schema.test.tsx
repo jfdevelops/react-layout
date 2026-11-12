@@ -8,7 +8,6 @@ import {
   defineResourceLayout,
   createDefinedResourceLayout,
   defineComposableComponent,
-  createProp,
 } from '../../src';
 import { reactNode, reactElement } from '@jfdevelops/react-layout-adapter-zod';
 
@@ -397,7 +396,7 @@ it('supplies resolved shell defaults to required legacy and schema presets witho
   const preset = defineComposableComponent({
     name: 'Summary',
     props: {
-      count: createProp.number(),
+      count: z.number(),
       label: z.string(),
       optional: z.string().optional(),
     },

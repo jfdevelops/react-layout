@@ -1,5 +1,5 @@
 import type { ElementType, ReactNode } from 'react';
-import type { NonEmptyReadonlyArray } from '@jfdevelops/react-layout-validator';
+import type { NonEmptyReadonlyArray } from '@jfdevelops/react-layout-internals';
 import {
   createIsValidResourceFn,
   type LayoutResourceKey,

@@ -5,7 +5,9 @@
     "types": ["node", "vitest/globals", "@testing-library/jest-dom"],
     "paths": {
       "@jfdevelops/react-layout-internals": ["../internals/src/index.ts"],
-      "@jfdevelops/react-layout-validator": ["../validators/src/index.ts"]
+      "@jfdevelops/react-layout-validator": ["../validators/src/index.ts"],
+      "@jfdevelops/react-layout-adapters": ["../adapters/src/index.ts"],
+      "@jfdevelops/react-layout-adapter-zod": ["../adapter-zod/src/index.ts"]
     }
   },
   "include": ["src", "tests", "vite.config.ts", "vitest.setup.ts"]

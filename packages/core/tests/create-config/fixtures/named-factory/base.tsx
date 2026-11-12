@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { expectTypeOf } from 'vitest';
 import { createBreadcrumbComposable } from '@jfdevelops/react-layout-composable-breadcrumb';
-import { createDefinedResourceLayout, createProp } from '@jfdevelops/react-layout';
+import { createDefinedResourceLayout } from '@jfdevelops/react-layout';
+import { reactNode } from '@jfdevelops/react-layout-adapter-zod';
 
 export type Resource = 'appointments' | 'dashboard' | 'builder';
 
@@ -36,14 +37,8 @@ export const { defineResourceLayout, createRenderState, defineLazyDefaults, reso
       },
     ],
     options: {
-      title: createProp.component({
-        type: 'ReactNode',
-      }),
-      description: createProp
-        .component({
-          type: 'ReactNode',
-        })
-        .optional(),
+      title: reactNode(),
+      description: reactNode().optional(),
     },
     composables: (create) => ({
       Layout: create({

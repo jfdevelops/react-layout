@@ -1,7 +1,8 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, expect, it } from 'vitest';
-import { createDefinedResourceLayout, createProp, defineResourceLayout } from '../../src';
+import { createDefinedResourceLayout, defineResourceLayout } from '../../src';
+import { z } from 'zod';
 
 afterEach(cleanup);
 
@@ -13,7 +14,7 @@ it('renders an unregistered builder state as a composable with isolated hooks', 
     state: 'Counter',
     props: {
       custom: {
-        label: createProp.string(),
+        label: z.string(),
       },
     },
     render: ({ label }) => {
@@ -30,7 +31,7 @@ it('renders an unregistered builder state as a composable with isolated hooks', 
   const Default = createRenderState({
     props: {
       custom: {
-        label: createProp.string(),
+        label: z.string(),
       },
     },
     composables: () => ({
@@ -80,8 +81,8 @@ it('inherits only selected props and lets JSX override inherited values', () => 
     state: 'Message',
     props: {
       custom: {
-        title: createProp.string(),
-        suffix: createProp.string(),
+        title: z.string(),
+        suffix: z.string(),
       },
     },
     render: ({ title, suffix }) => (
@@ -93,8 +94,8 @@ it('inherits only selected props and lets JSX override inherited values', () => 
   const Default = createRenderState({
     props: {
       custom: {
-        title: createProp.string(),
-        suffix: createProp.string(),
+        title: z.string(),
+        suffix: z.string(),
       },
     },
     composables: () => ({
@@ -148,7 +149,7 @@ it('resolves inline forward references and aliases through the states argument',
         default: {
           props: {
             custom: {
-              message: createProp.string(),
+              message: z.string(),
             },
           },
           render: (_props, { composables }) => (
@@ -161,7 +162,7 @@ it('resolves inline forward references and aliases through the states argument',
         Loading: {
           props: {
             custom: {
-              message: createProp.string(),
+              message: z.string(),
             },
           },
           render: ({ message }) => <p>{message}</p>,
@@ -190,7 +191,7 @@ it('allows conditional circular references without recursively constructing layo
         default: {
           props: {
             custom: {
-              depth: createProp.number(),
+              depth: z.number(),
             },
           },
           render: ({ depth }, { composables }) =>
@@ -199,7 +200,7 @@ it('allows conditional circular references without recursively constructing layo
         Other: {
           props: {
             custom: {
-              depth: createProp.number(),
+              depth: z.number(),
             },
           },
           render: ({ depth }, { composables }) =>
@@ -319,7 +320,7 @@ it('merges bound shared composables with inline state references', () => {
       Message: {
         props: {
           custom: {
-            message: createProp.string(),
+            message: z.string(),
           },
         },
         render: ({ message }) => <p>{message}</p>,
@@ -342,7 +343,7 @@ it('supports builder references in a bound layout with a function render', () =>
     state: 'Message',
     props: {
       custom: {
-        message: createProp.string(),
+        message: z.string(),
       },
     },
     render: ({ message }) => <p>{message}</p>,
@@ -350,7 +351,7 @@ it('supports builder references in a bound layout with a function render', () =>
   const definition = defineLayout({
     props: {
       custom: {
-        message: createProp.string(),
+        message: z.string(),
       },
     },
     composables: (create) => ({

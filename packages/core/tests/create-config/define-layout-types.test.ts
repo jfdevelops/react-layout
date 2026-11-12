@@ -1,13 +1,15 @@
 import type { JSX, ReactNode } from 'react';
 import { describe, expectTypeOf, it } from 'vitest';
-import { createProp, defineComposableComponent, defineResourceLayout } from '../../src';
+import { defineComposableComponent, defineResourceLayout } from '../../src';
 import { testResourceLayout } from './helpers';
+import { z } from 'zod';
+import { reactNode } from '@jfdevelops/react-layout-adapter-zod';
 
 const { createResourceLayout } = testResourceLayout({
   resources: ['admins'],
   options: {
-    description: createProp.string(),
-    title: createProp.string(),
+    description: z.string(),
+    title: z.string(),
   },
   layout: {
     render: () => null as never,
@@ -222,17 +224,14 @@ describe('defineResourceLayout types', () => {
     const { createResourceLayout } = defineResourceLayout({
       resources: ['detail', 'create'],
       options: {
-        title: createProp.string(),
+        title: z.string(),
       },
       layout: {
         composables: () => {
           const Breadcrumb = defineComposableComponent({
             name: 'Breadcrumb',
             props: {
-              segments: createProp.record({
-                value: createProp.string(),
-                key: createProp.string(),
-              }),
+              segments: z.record(z.string(), z.string()),
             },
           })(() => null as never);
 
@@ -246,9 +245,7 @@ describe('defineResourceLayout types', () => {
             segments: 'optional',
           },
           custom: {
-            children: createProp.component({
-              type: 'ReactNode',
-            }),
+            children: reactNode(),
           },
         },
         render: (props) => {
@@ -291,11 +288,11 @@ describe('defineResourceLayout types', () => {
     const { createResourceLayout } = defineResourceLayout({
       resources: ['detail', 'create'],
       options: {
-        title: createProp.string(),
-        componentLabel: createProp.string(),
-        configLabel: createProp.string(),
-        requiredComponentLabel: createProp.string(),
-        requiredConfigLabel: createProp.string(),
+        title: z.string(),
+        componentLabel: z.string(),
+        configLabel: z.string(),
+        requiredComponentLabel: z.string(),
+        requiredConfigLabel: z.string(),
       },
       layout: {
         props: {
@@ -396,7 +393,7 @@ describe('createComponent types', () => {
         title: true,
       },
       custom: {
-        eyebrow: createProp.string().optional(),
+        eyebrow: z.string().optional(),
       },
     },
     resources: {
@@ -534,7 +531,7 @@ describe('createComponent types', () => {
             },
             Footer: {
               props: {
-                label: createProp.string(),
+                label: z.string(),
               },
               render: () => null as never,
             },
@@ -657,86 +654,13 @@ describe('createComponent types', () => {
     >();
   });
 
-  it('keeps declared prop keys uncapitalized for JSX.Element slots', () => {
-    const { createResourceLayout: createJsxSlotLayout } = testResourceLayout({
-      options: {
-        actions: createProp.component({
-          type: 'JSX.Element',
-        }),
-        title: createProp.string(),
-      },
-      layout: {
-        props: {
-          include: {
-            actions: true,
-            title: true,
-          },
-        },
-        render: () => null as never,
-      },
-    });
-    const JsxSlotDirectory = createJsxSlotLayout.forResources('users').createComponent({
-      props: {
-        include: {
-          actions: true,
-          title: true,
-        },
-        custom: {
-          badge: createProp.component({
-            type: 'JSX.Element',
-          }),
-        },
-      },
-      resources: {
-        users: {
-          render: (props) => {
-            expectTypeOf(props.actions).toEqualTypeOf<() => JSX.Element>();
-            expectTypeOf(props.badge).toEqualTypeOf<JSX.Element>();
-            () => {
-              // @ts-expect-error declared keys are not capitalized
-              props.Actions;
-            };
-
-            return null as never;
-          },
-        },
-      },
-      render: (props) => {
-        expectTypeOf(props.actions).toEqualTypeOf<() => JSX.Element>();
-        () => {
-          // @ts-expect-error declared keys are not capitalized
-          props.Badge;
-        };
-
-        return null as never;
-      },
-    });
-
-    expectTypeOf(JsxSlotDirectory).toBeCallableWith({
-      resource: 'users' as const,
-      title: 'Users',
-      actions: (() => null as never) as () => JSX.Element,
-      badge: null as never as JSX.Element,
-    });
-
-    () => {
-      JsxSlotDirectory({
-        resource: 'users',
-        title: 'Users',
-        // @ts-expect-error call site uses the declared key, not Actions
-        Actions: () => null as never,
-        badge: null as never,
-      });
-    };
-  });
-
   it('types setProps base props and forbids redefining them', () => {
     const createSharedDirectory = createDirectoryLayout.createComponent.setProps({
       include: {
         title: true,
       },
       custom: {
-        heading: createProp.string(),
+        heading: z.string(),
       },
     });
     const sharedUsersEntry = createSharedDirectory.createResourceComponents({

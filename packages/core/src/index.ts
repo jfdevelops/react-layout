@@ -140,21 +140,17 @@ export type {
   ResourceStateError,
 } from './errors';
 export {
-  createProp,
-  createPrimitivePropBuilder,
-  isPropDefinitionShape,
+  isStandardSchema,
   PropError,
   resolvePropDefinitionValues,
   validateProps,
 } from '@jfdevelops/react-layout-validator';
 export type {
-  AnyBuiltPropDefinition,
-  ExtractDefinitionValue,
+  PropDefinition,
+  PropDefinitions,
+  ResolveInputProps,
   PropErrorOptions,
-  ResolveLayoutProps,
-  ResolveLayoutPropsAsDefined,
   ResolveProps,
-  ResolvedBuiltPropShape,
 } from '@jfdevelops/react-layout-validator';
 export type {
   IncludedProps,
@@ -164,9 +160,7 @@ export type {
   InPropsDefinition,
   PropsContract,
   RenderDefinition,
-  InPropsFunction,
   InPropsObject,
-  InPropsOptions,
   LayoutRenderProps,
   MergedLayoutInProps,
   PropsContextRender,
@@ -174,7 +168,6 @@ export type {
   ResolvedIncludedProps,
   ResolvedIncludedComponentProps,
   ResolvedIncludedConfigProps,
-  ResolvedIncludedPropsAsDefined,
 } from './props';
 export {
   normalizeResource,

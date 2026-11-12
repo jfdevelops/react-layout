@@ -1,7 +1,8 @@
 import { getIncludedPropBehavior } from '../../src/props';
 import { render, screen } from '@testing-library/react';
 import { expect, expectTypeOf, it } from 'vitest';
-import { createDefinedResourceLayout, createProp, type IncludedPropBehavior } from '../../src';
+import { createDefinedResourceLayout, type IncludedPropBehavior } from '../../src';
+import { z } from 'zod';
 
 it('supports canonical include requirements and supply sources', () => {
   const component = {
@@ -15,8 +16,8 @@ it('supports canonical include requirements and supply sources', () => {
   const factory = createDefinedResourceLayout({
     resources: ['users'],
     options: {
-      label: createProp.string(),
-      title: createProp.string(),
+      label: z.string(),
+      title: z.string(),
     },
     props: {
       include: {

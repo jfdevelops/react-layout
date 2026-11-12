@@ -1,6 +1,5 @@
 import { type ComponentProps, type ComponentType } from 'react';
 import { LazyResourceModuleShapeError } from '../errors/lazy-resource-error';
-import { componentPropDefinitionsSymbol } from '@jfdevelops/react-layout-validator';
 import type { ResourcePath, ResourceDefinition } from '../resource';
 import { definedResourceLayoutComponentSymbol } from './render-state';
 import { createLazyLoader, type LazyResourceLoadHooks } from '../lazy/create-lazy-loader';
@@ -29,7 +28,6 @@ type LazyUnsupportedStatic =
   | 'makeComposable'
   | 'props'
   | 'resource'
-  | typeof componentPropDefinitionsSymbol
   | typeof definedResourceLayoutComponentSymbol;
 
 /**
@@ -135,7 +133,6 @@ export function createLazyResourceLayout<
     'makeComposable',
     'props',
     'resource',
-    componentPropDefinitionsSymbol,
     definedResourceLayoutComponentSymbol,
     'contextTypes',
     'childContextTypes',

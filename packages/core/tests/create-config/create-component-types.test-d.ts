@@ -1,5 +1,6 @@
 import type { ComponentProps } from 'react';
-import { createProp, defineResourceLayout } from '../../src';
+import { defineResourceLayout } from '../../src';
+import { z } from 'zod';
 
 type IsAny<Value> = 0 extends 1 & Value ? true : false;
 type IsEqual<Left, Right> =
@@ -10,7 +11,7 @@ type IsEqual<Left, Right> =
 const { createResourceLayout } = defineResourceLayout({
   resources: ['appointments'],
   options: {
-    title: createProp.string(),
+    title: z.string(),
   },
   layout: {
     props: {

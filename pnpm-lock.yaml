@@ -41,6 +41,9 @@ importers:
       '@jfdevelops/react-layout':
         specifier: workspace:*
         version: link:../../packages/core
+      '@jfdevelops/react-layout-adapter-zod':
+        specifier: workspace:*
+        version: link:../../packages/adapter-zod
       '@jfdevelops/react-layout-composable-breadcrumb':
         specifier: workspace:*
         version: link:../../packages/composable-breadcrumb
@@ -74,6 +77,9 @@ importers:
       tailwind-merge:
         specifier: ^3.6.0
         version: 3.6.0
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
     devDependencies:
       '@jfdevelops/react-layout-devtools-vite':
         specifier: workspace:*
@@ -212,6 +218,9 @@ importers:
       '@jfdevelops/react-layout-validator':
         specifier: workspace:*
         version: link:../validators
+      arktype:
+        specifier: 2.2.8
+        version: 2.2.8
     devDependencies:
       '@testing-library/jest-dom':
         specifier: 6.9.1
@@ -252,6 +261,9 @@ importers:
       vitest:
         specifier: 4.1.5
         version: 4.1.5(@types/node@24.10.1)(@vitest/coverage-v8@4.1.5)(@vitest/ui@4.1.5)(jsdom@29.0.2(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@24.10.1)(typescript@6.0.3))(vite@8.0.10(@types/node@24.10.1)(jiti@2.7.0)(yaml@2.9.1))
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
 
   packages/composables:
     dependencies:
@@ -268,6 +280,9 @@ importers:
         specifier: 2.2.8
         version: 2.2.8
     devDependencies:
+      '@jfdevelops/react-layout-adapter-zod':
+        specifier: workspace:*
+        version: link:../adapter-zod
       '@testing-library/jest-dom':
         specifier: 6.9.1
         version: 6.9.1
@@ -307,12 +322,18 @@ importers:
       vitest:
         specifier: 4.1.5
         version: 4.1.5(@types/node@24.10.1)(@vitest/coverage-v8@4.1.5)(@vitest/ui@4.1.5)(jsdom@29.0.2(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@24.10.1)(typescript@6.0.3))(vite@8.0.10(@types/node@24.10.1)(jiti@2.7.0)(yaml@2.9.1))
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
 
   packages/core:
     dependencies:
       '@jfdevelops/create-error':
         specifier: 0.2.1
         version: 0.2.1
+      '@jfdevelops/react-layout-adapter-arktype':
+        specifier: workspace:*
+        version: link:../adapter-arktype
       '@jfdevelops/react-layout-composables':
         specifier: workspace:*
         version: link:../composables
@@ -329,9 +350,6 @@ importers:
         specifier: 2.2.8
         version: 2.2.8
     devDependencies:
-      '@jfdevelops/react-layout-adapter-arktype':
-        specifier: workspace:*
-        version: link:../adapter-arktype
       '@jfdevelops/react-layout-adapter-effect':
         specifier: workspace:*
         version: link:../adapter-effect
@@ -511,12 +529,6 @@ importers:
       '@types/node':
         specifier: 24.10.1
         version: 24.10.1
-      '@types/react':
-        specifier: 18.3.28
-        version: 18.3.28
-      react:
-        specifier: 18.3.1
-        version: 18.3.1
       tsdown:
         specifier: 0.22.1
         version: 0.22.1(typescript@6.0.3)(unrun@0.3.0)
@@ -529,6 +541,9 @@ importers:
       vitest:
         specifier: 4.1.5
         version: 4.1.5(@types/node@24.10.1)(@vitest/coverage-v8@4.1.5)(@vitest/ui@4.1.5)(jsdom@29.0.2(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@24.10.1)(typescript@6.0.3))(vite@8.0.10(@types/node@24.10.1)(jiti@2.7.0)(yaml@2.9.1))
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
 
 packages:
 

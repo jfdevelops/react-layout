@@ -1,8 +1,7 @@
 import {
-  createProp,
   validateProps,
   isStandardSchema,
-  type AnyBuiltPropDefinition,
+  type PropDefinition,
 } from '@jfdevelops/react-layout-validator';
 import type { InPropsDefinition, InPropsObject, PropsContract } from '../props';
 import type { ResourceDefinition } from '../resource';
@@ -10,6 +9,8 @@ import { LayoutConfigurationError } from '../errors';
 import { createLayoutResourcesAccessor } from './define-layout';
 import { schemaOptionDefinitions, validateOptionSchema, type OptionSchema } from '../option-schema';
 import type { CreateReusable, ReusableOverlap } from './reusable-types';
+import { type } from 'arktype';
+import { acceptsUndefined, objectDefinition, optionalDefinition } from '../built-in-props';
 export type * from './reusable-types';
 import {
   singleResourceInput,
@@ -25,7 +26,7 @@ type ValuePlan = PlanLocation & {
   guards?: PlanLocation[];
   source: 'option' | 'resource' | 'custom';
   selector?: (value: any) => unknown;
-  definition?: AnyBuiltPropDefinition;
+  definition?: PropDefinition;
 };
 type ResourceSelector = NonNullable<ValuePlan['selector']>;
 type ResourceSelections = Map<ResourceSelector, unknown>;
@@ -84,23 +85,6 @@ function optionPlan(
         source: 'option',
         selector: value as ValuePlan['selector'],
         definition,
-      };
-    } else if (
-      'properties' in definition &&
-      'type' in definition &&
-      definition.type === 'object' &&
-      (value === true || (value && typeof value === 'object'))
-    ) {
-      const nested = optionPlan(
-        definition.properties as InPropsObject,
-        value,
-        from,
-        location.path,
-        definition.visibility === 'optional' ? [...optionalPaths, location.path] : optionalPaths,
-      );
-      children[key] = {
-        ...nested,
-        optional: definition.visibility === 'optional',
       };
     } else if (value === true) {
       children[key] = {
@@ -228,8 +212,8 @@ function planDefinitions(plan: ObjectPlan, from: 'props' | 'options'): InPropsOb
     } else {
       const nested = planDefinitions(value, from);
       if (Object.keys(nested).length) {
-        const definition = createProp.object(nested);
-        definitions[key] = value.optional ? definition.optional() : definition;
+        const definition = objectDefinition(nested);
+        definitions[key] = value.optional ? optionalDefinition(definition) : definition;
       }
     }
   }
@@ -324,7 +308,7 @@ function resolvePlan(
           node.source === 'resource' && isSingleResourceInput(selected)
             ? props.resources
             : selected;
-      } else if (value !== undefined || node.definition?.visibility !== 'optional') {
+      } else if (value !== undefined || !(node.definition && acceptsUndefined(node.definition))) {
         result[key] = value;
       }
     }
@@ -339,7 +323,7 @@ export function createReusableBuilder<
 >(resources: Resources, options: Options): CreateReusable<Resources, Options>;
 export function createReusableBuilder(
   resources: ReadonlyArray<ResourceDefinition>,
-  options: InPropsObject | OptionSchema | ((...args: any[]) => InPropsObject),
+  options: InPropsObject | OptionSchema,
 ) {
   if (isStandardSchema(options)) {
     return function createSchemaReusable(definition: {
@@ -393,10 +377,8 @@ export function createReusableBuilder(
     } as unknown;
   }
   const keys = resources.map((entry) => (typeof entry === 'string' ? entry : entry.value));
-  const resource = createProp.string.enum(keys as [string, ...string[]]);
-  const singleResource = createProp.string.enum(
-    getResourcePaths(resources) as [string, ...string[]],
-  );
+  const selectedResources = type.enumerated(...keys).array();
+  const singleResource = type.enumerated(...getResourcePaths(resources));
   const resourcesAccessor = Object.assign(createLayoutResourcesAccessor(resources), {
     single() {
       return {
@@ -420,14 +402,7 @@ export function createReusableBuilder(
     ) {
       throw new LayoutConfigurationError('Unknown reusable overlap policy.');
     }
-    const optionDefinitions = (
-      typeof options === 'function'
-        ? options({
-            name: createProp.string.literal('Reusable'),
-            resource,
-          })
-        : options
-    ) as InPropsObject;
+    const optionDefinitions = options as InPropsObject;
 
     function compile(selection: RuntimeSelection, from: 'props' | 'options') {
       let plan = objectPlan({});
@@ -461,8 +436,7 @@ export function createReusableBuilder(
               from: value === true && from === 'props' ? 'props' : 'resources',
               path: value === true && from === 'props' ? ['resources'] : [],
               selector: typeof value === 'function' ? (value as ValuePlan['selector']) : undefined,
-              definition:
-                value === true && from === 'props' ? createProp.array(resource) : undefined,
+              definition: value === true && from === 'props' ? selectedResources : undefined,
             },
           });
         } else {

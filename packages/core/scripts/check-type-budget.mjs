@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
  * Upper bound on type instantiations for checking this package's source and
  * tests. Raise it deliberately, in the same change that needs the headroom.
  */
-const INSTANTIATION_BUDGET = 4_800_000;
+const INSTANTIATION_BUDGET = 3_400_000;
 
 const result = spawnSync('tsc --noEmit --extendedDiagnostics', {
   encoding: 'utf8',

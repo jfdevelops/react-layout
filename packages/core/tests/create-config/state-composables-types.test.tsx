@@ -1,24 +1,24 @@
 import { expectTypeOf, it } from 'vitest';
 import {
   createDefinedResourceLayout,
-  createProp,
   defineComposableComponent,
   defineResourceLayout,
 } from '../../src';
+import { z } from 'zod';
 
 it('preserves required props and narrows the carry-over configuration', () => {
   const { createRenderState, defineResourceLayout: defineLayout } = createDefinedResourceLayout({
     resources: ['users'],
     options: {
-      title: createProp.string(),
+      title: z.string(),
     },
   });
   const Target = createRenderState({
     state: 'Target',
     props: {
       custom: {
-        label: createProp.string(),
-        count: createProp.number(),
+        label: z.string(),
+        count: z.number(),
       },
       include: {
         title: {
@@ -136,7 +136,7 @@ it('infers forward state references and their composable aliases in an inline ma
         default: {
           props: {
             custom: {
-              label: createProp.string(),
+              label: z.string(),
             },
           },
           render: (_props, { composables }) => {
@@ -159,8 +159,8 @@ it('infers forward state references and their composable aliases in an inline ma
         Target: {
           props: {
             custom: {
-              label: createProp.string(),
-              count: createProp.number(),
+              label: z.string(),
+              count: z.number(),
             },
           },
           render: ({ label, count }) => (
@@ -215,7 +215,7 @@ it('types references and aliases in bound inline layouts', () => {
       Preview: {
         props: {
           custom: {
-            label: createProp.string(),
+            label: z.string(),
           },
         },
         render: ({ label }) => <p>{label}</p>,
@@ -253,12 +253,12 @@ it('preserves preset prop requirements while inferring layout composables', () =
   const Message = defineComposableComponent({
     name: 'Message',
     props: {
-      message: createProp.string(),
-      suffix: createProp.string(),
+      message: z.string(),
+      suffix: z.string(),
     },
   })(() => <></>);
   const options = {
-    title: createProp.string(),
+    title: z.string(),
   };
   const states = {
     default: () => <></>,
@@ -357,7 +357,7 @@ it('uses inferred layout presets in state-local reference callbacks', () => {
   const Message = defineComposableComponent({
     name: 'Message',
     props: {
-      message: createProp.string(),
+      message: z.string(),
     },
   })(() => <></>);
   defineResourceLayout({
@@ -401,7 +401,7 @@ it('includes spread preset props in shared factory and local layout contracts', 
   const breadcrumb = defineComposableComponent({
     name: 'Breadcrumb',
     props: {
-      segments: createProp.string(),
+      segments: z.string(),
     },
   })(() => null);
   const { defineResourceLayout: defineLayout } = createDefinedResourceLayout({

@@ -1,7 +1,7 @@
-import { createProp } from '@jfdevelops/react-layout';
 import { createRenderState, defineResourceLayout } from './base';
 import { defaultState } from './default-state';
 import { layoutState } from './layout-state';
+import { z } from 'zod';
 
 const errorState = createRenderState({
   state: 'Error',
@@ -10,7 +10,7 @@ const errorState = createRenderState({
       title: true,
     },
     custom: {
-      error: createProp.string(),
+      error: z.string(),
     },
   },
   render: ({ title, error }) => (

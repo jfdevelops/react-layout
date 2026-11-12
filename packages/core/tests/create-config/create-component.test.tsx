@@ -2,8 +2,10 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { createElement, useState, type ComponentType, type JSX, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { afterEach, describe, expect, it } from 'vitest';
-import { createProp, defineResourceLayout } from '../../src';
+import { defineResourceLayout } from '../../src';
 import { renderCapturingError, testResourceLayout, testResourceLayoutWithRender } from './helpers';
+import { z } from 'zod';
+import { reactNode, reactElement } from '@jfdevelops/react-layout-adapter-zod';
 
 describe('createComponent', () => {
   afterEach(() => {
@@ -14,15 +16,13 @@ describe('createComponent', () => {
     const { createResourceLayout } = testResourceLayout({
       resources: ['admins'],
       options: {
-        description: createProp.string(),
-        title: createProp.string(),
+        description: z.string(),
+        title: z.string(),
       },
       layout: {
         props: {
           custom: {
-            actions: createProp.component({
-              type: 'ReactNode',
-            }),
+            actions: reactNode(),
           },
         },
         render: () => <section />,
@@ -43,7 +43,7 @@ describe('createComponent', () => {
           title: true,
         },
         custom: {
-          eyebrow: createProp.string().optional(),
+          eyebrow: z.string().optional(),
         },
       },
       resources: {
@@ -106,7 +106,7 @@ describe('createComponent', () => {
           default: {
             props: {
               custom: {
-                label: createProp.string(),
+                label: z.string(),
               },
             },
             render: ({ label }) => <p>{label}</p>,
@@ -142,7 +142,7 @@ describe('createComponent', () => {
   it('preserves resource render state when the scoped component rerenders', () => {
     const { createResourceLayout } = testResourceLayout({
       options: {
-        title: createProp.string(),
+        title: z.string(),
       },
       layout: {
         render: () => <section />,
@@ -214,7 +214,7 @@ describe('createComponent', () => {
     const { createResourceLayout } = testResourceLayout({
       resources: ['admins'],
       options: {
-        title: createProp.string(),
+        title: z.string(),
       },
       layout: {
         props: {
@@ -222,11 +222,7 @@ describe('createComponent', () => {
             title: true,
           },
           custom: {
-            children: createProp
-              .component({
-                type: 'ReactNode',
-              })
-              .optional(),
+            children: reactNode().optional(),
           },
         },
         render: ({ children, title }) => (
@@ -252,7 +248,7 @@ describe('createComponent', () => {
             },
             Footer: {
               props: {
-                label: createProp.string(),
+                label: z.string(),
               },
               render: ({ label, resource }) => <footer>{`footer:${resource}:${label}`}</footer>,
             },
@@ -309,7 +305,7 @@ describe('createComponent', () => {
   it('mounts returned component types with call-site props and compound statics', () => {
     const { createResourceLayout } = testResourceLayout({
       options: {
-        title: createProp.string(),
+        title: z.string(),
       },
       layout: {
         props: {
@@ -317,11 +313,7 @@ describe('createComponent', () => {
             title: true,
           },
           custom: {
-            children: createProp
-              .component({
-                type: 'ReactNode',
-              })
-              .optional(),
+            children: reactNode().optional(),
           },
         },
         render: ({ children, title }) => (
@@ -344,7 +336,7 @@ describe('createComponent', () => {
           components: {
             DataTable: {
               props: {
-                variant: createProp.string().literal('a').or(createProp.string().literal('b')),
+                variant: z.literal('a').or(z.literal('b')),
               },
               render: function UsersDataTable({ variant }) {
                 function VariantTable() {
@@ -416,11 +408,7 @@ describe('createComponent', () => {
       layout: {
         props: {
           custom: {
-            children: createProp
-              .component({
-                type: 'ReactNode',
-              })
-              .optional(),
+            children: reactNode().optional(),
           },
         },
         render: ({ children }) => <section>{children}</section>,
@@ -466,11 +454,7 @@ describe('createComponent', () => {
       layout: {
         props: {
           custom: {
-            children: createProp
-              .component({
-                type: 'ReactNode',
-              })
-              .optional(),
+            children: reactNode().optional(),
           },
         },
         render: ({ children }) => <section>{children}</section>,
@@ -483,7 +467,7 @@ describe('createComponent', () => {
           components: {
             Badge: {
               props: {
-                label: createProp.string(),
+                label: z.string(),
               },
               render: ({ label }) => <span>{String(label)}</span>,
             },
@@ -546,11 +530,7 @@ describe('createComponent', () => {
       layout: {
         props: {
           custom: {
-            children: createProp
-              .component({
-                type: 'ReactNode',
-              })
-              .optional(),
+            children: reactNode().optional(),
           },
         },
         render: ({ children }) => <section>{children}</section>,
@@ -563,9 +543,7 @@ describe('createComponent', () => {
           components: {
             Widget: {
               props: {
-                actions: createProp.component({
-                  type: 'JSX.Element',
-                }),
+                actions: reactElement(),
               },
               render: ({ actions }) => <div>{actions}</div>,
             },
@@ -597,9 +575,7 @@ describe('createComponent', () => {
           components: {
             Widget: {
               props: {
-                actions: createProp.component({
-                  type: 'JSX.Element',
-                }),
+                actions: reactElement(),
               },
               render: ({ actions }) => <div>{actions}</div>,
             },
@@ -618,85 +594,6 @@ describe('createComponent', () => {
     });
 
     expect(renderCapturingError(<MissingActions resource='users' />)?.message).toContain('actions');
-  });
-
-  it('keeps createComponent JSX.Element prop names as declared', () => {
-    const { createResourceLayout } = testResourceLayout({
-      options: {
-        actions: createProp.component({
-          type: 'JSX.Element',
-        }),
-        title: createProp.string(),
-      },
-      layout: {
-        props: {
-          include: {
-            actions: true,
-            title: true,
-          },
-          custom: {
-            children: createProp
-              .component({
-                type: 'ReactNode',
-              })
-              .optional(),
-          },
-        },
-        render: ({ children, title }) => (
-          <section>
-            <h1>{title}</h1>
-            {children}
-          </section>
-        ),
-      },
-    });
-    const Directory = createResourceLayout.forResources('users').createComponent({
-      props: {
-        include: {
-          actions: true,
-          title: true,
-        },
-        custom: {
-          badge: createProp.component({
-            type: 'JSX.Element',
-          }),
-        },
-      },
-      resources: {
-        users: {
-          render: ({ actions, badge }) => (
-            <div>
-              {actions()}
-              {badge}
-            </div>
-          ),
-        },
-      },
-      render: ({ actions, badge, title }, context) => (
-        <context.Root>
-          <h2>{title}</h2>
-          {actions()}
-          {badge}
-          <context.Users title={title} actions={actions} badge={badge} />
-        </context.Root>
-      ),
-    });
-
-    render(
-      <Directory
-        resource='users'
-        title='Users'
-        actions={() => <button type='button'>Go</button>}
-        badge={<span>badge</span>}
-      />,
-    );
-
-    expect(
-      screen.getAllByRole('button', {
-        name: 'Go',
-      }).length,
-    ).toBeGreaterThan(0);
-    expect(screen.getAllByText('badge').length).toBeGreaterThan(0);
   });
 
   it('throws when a scoped component is rendered outside its component', () => {
@@ -729,7 +626,7 @@ describe('createComponent', () => {
     const { createResourceLayout } = testResourceLayout({
       resources: ['admins'],
       options: {
-        title: createProp.string(),
+        title: z.string(),
       },
       layout: {
         props: {
@@ -737,11 +634,7 @@ describe('createComponent', () => {
             title: true,
           },
           custom: {
-            children: createProp
-              .component({
-                type: 'ReactNode',
-              })
-              .optional(),
+            children: reactNode().optional(),
           },
         },
         render: ({ children, title }) => (
@@ -759,7 +652,7 @@ describe('createComponent', () => {
           title: true,
         },
         custom: {
-          eyebrow: createProp.string().optional(),
+          eyebrow: z.string().optional(),
         },
       },
       resources: {
@@ -803,11 +696,7 @@ describe('createComponent', () => {
       layout: {
         props: {
           custom: {
-            children: createProp
-              .component({
-                type: 'ReactNode',
-              })
-              .optional(),
+            children: reactNode().optional(),
           },
         },
         render: ({ children }) => <section>{children}</section>,
@@ -828,7 +717,7 @@ describe('createComponent', () => {
     const Directory = createDirectoryLayout.createComponent({
       props: {
         custom: {
-          eyebrow: createProp.string().optional(),
+          eyebrow: z.string().optional(),
         },
       },
       resources: {
@@ -903,7 +792,7 @@ describe('createComponent', () => {
     const { createResourceLayout } = testResourceLayout({
       resources: ['admins'],
       options: {
-        title: createProp.string(),
+        title: z.string(),
       },
       layout: {
         props: {
@@ -911,16 +800,8 @@ describe('createComponent', () => {
             title: true,
           },
           custom: {
-            actions: createProp
-              .component({
-                type: 'ReactNode',
-              })
-              .optional(),
-            children: createProp
-              .component({
-                type: 'ReactNode',
-              })
-              .optional(),
+            actions: reactNode().optional(),
+            children: reactNode().optional(),
           },
         },
         render: ({ actions, children, title }) => (
@@ -982,7 +863,7 @@ describe('createComponent', () => {
     const { createResourceLayout } = testResourceLayout({
       resources: ['admins'],
       options: {
-        title: createProp.string(),
+        title: z.string(),
       },
       layout: {
         props: {
@@ -990,11 +871,7 @@ describe('createComponent', () => {
             title: true,
           },
           custom: {
-            children: createProp
-              .component({
-                type: 'ReactNode',
-              })
-              .optional(),
+            children: reactNode().optional(),
           },
         },
         render: ({ children, title }, context) => (
@@ -1048,11 +925,7 @@ describe('createComponent', () => {
       layout: {
         props: {
           custom: {
-            children: createProp
-              .component({
-                type: 'ReactNode',
-              })
-              .optional(),
+            children: reactNode().optional(),
           },
         },
         render: ({ children }) => <section>{children}</section>,
@@ -1084,7 +957,7 @@ describe('createComponent', () => {
     const { createResourceLayout } = testResourceLayout({
       resources: ['admins'],
       options: {
-        title: createProp.string(),
+        title: z.string(),
       },
       layout: {
         props: {
@@ -1113,7 +986,7 @@ describe('createComponent', () => {
   it('preserves render context root state when the scoped component rerenders', () => {
     const { createResourceLayout } = testResourceLayout({
       options: {
-        title: createProp.string(),
+        title: z.string(),
       },
       layout: {
         props: {
@@ -1121,11 +994,7 @@ describe('createComponent', () => {
             title: true,
           },
           custom: {
-            children: createProp
-              .component({
-                type: 'ReactNode',
-              })
-              .optional(),
+            children: reactNode().optional(),
           },
         },
         render: ({ children, title }) => (
@@ -1159,7 +1028,7 @@ describe('createComponent', () => {
           title: true,
         },
         custom: {
-          eyebrow: createProp.string().optional(),
+          eyebrow: z.string().optional(),
         },
       },
       resources: {
@@ -1270,11 +1139,7 @@ describe('createComponent', () => {
         render: ({ children }) => <section>{children}</section>,
         props: {
           custom: {
-            children: createProp
-              .component({
-                type: 'ReactNode',
-              })
-              .optional(),
+            children: reactNode().optional(),
           },
         },
       },
@@ -1325,7 +1190,7 @@ describe('createComponent', () => {
   it('allows optional scoped component props to be omitted', () => {
     const { createResourceLayout } = testResourceLayout({
       options: {
-        description: createProp.string(),
+        description: z.string(),
       },
       layout: {
         render: () => <section />,
@@ -1357,8 +1222,8 @@ describe('createComponent', () => {
     const { createResourceLayout } = testResourceLayout({
       resources: ['admins'],
       options: {
-        description: createProp.string(),
-        title: createProp.string(),
+        description: z.string(),
+        title: z.string(),
       },
       layout: {
         props: {
@@ -1367,11 +1232,7 @@ describe('createComponent', () => {
             title: true,
           },
           custom: {
-            children: createProp
-              .component({
-                type: 'ReactNode',
-              })
-              .optional(),
+            children: reactNode().optional(),
           },
         },
         render: ({ children, title }) => (
@@ -1388,7 +1249,7 @@ describe('createComponent', () => {
         title: true,
       },
       custom: {
-        heading: createProp.string(),
+        heading: z.string(),
       },
     });
     const usersEntry = createShared.createResourceComponents({
@@ -1456,7 +1317,7 @@ describe('createComponent', () => {
   it('applies resource entry defaults and lets call-site props override them', () => {
     const { createResourceLayout } = testResourceLayout({
       options: {
-        title: createProp.string(),
+        title: z.string(),
       },
       layout: {
         props: {
@@ -1464,11 +1325,7 @@ describe('createComponent', () => {
             title: true,
           },
           custom: {
-            children: createProp
-              .component({
-                type: 'ReactNode',
-              })
-              .optional(),
+            children: reactNode().optional(),
           },
         },
         render: ({ children, title }) => (

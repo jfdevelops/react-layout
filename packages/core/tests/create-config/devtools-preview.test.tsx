@@ -2,12 +2,8 @@ import { StrictMode } from 'react';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { getInspectionSource, layoutDebug } from '@jfdevelops/react-layout-devtools-core';
-import {
-  createDefinedResourceLayout,
-  createProp,
-  defineLayoutPreview,
-  defineResourceLayout,
-} from '../../src';
+import { createDefinedResourceLayout, defineLayoutPreview, defineResourceLayout } from '../../src';
+import { z } from 'zod';
 
 afterEach(cleanup);
 
@@ -40,7 +36,7 @@ function setup(enabled = true) {
         state: 'Empty',
         props: {
           custom: {
-            message: createProp.string(),
+            message: z.string(),
           },
         },
         render: ({ message }) => <p>{message}</p>,
@@ -191,7 +187,7 @@ it('supports namespace roots, explicit state mounts and shared typed fixtures', 
         state: 'Empty',
         props: {
           custom: {
-            message: createProp.string(),
+            message: z.string(),
           },
         },
         render: ({ message }) => <p>{message}</p>,

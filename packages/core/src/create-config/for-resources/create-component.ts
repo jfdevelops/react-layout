@@ -4,11 +4,9 @@ import type { InputDefinitions } from '@jfdevelops/react-layout-validator';
 import type {
   CustomPropsInput,
   NormalizedCustomProps,
-  ResolveRenderPropsAsDefined,
-  ResolveCallPropsAsDefined,
+  ResolveRenderProps,
   ResolveCallProps,
   CustomPropsObject,
-  ResolveRenderProps,
 } from '../../custom-props';
 import type { BuiltinRenderStateName } from '../render-state';
 import type { LazyHandle } from '../../lazy/types';
@@ -17,13 +15,13 @@ export type { ScopedComponentRenderFn } from '../../lazy/scoped-content';
 
 import type { ComponentType, JSX, ReactNode } from 'react';
 import type { ComposableComponents, MakeComposable } from '@jfdevelops/react-layout-composables';
-import type { ResolvedBuiltPropShape, SafeKeyOf } from '@jfdevelops/react-layout-validator';
+import type { ResolveProps, SafeKeyOf } from '@jfdevelops/react-layout-validator';
 import type {
   IncludedProps,
   InPropsDefinition,
   MergedLayoutInProps,
   PropsContextRender,
-  ResolvedIncludedPropsAsDefined,
+  ResolvedIncludedProps,
 } from '../../props';
 import type { ResourceDefinition } from '../../resource';
 import type { BaseComponent, Show, ShowCallable, UnionToIntersection } from '../../utils';
@@ -49,7 +47,7 @@ type ResourceComponentResolvedAvailableProps<
   LayoutCustomProps extends CustomPropsObject,
   ComponentCustomProps extends CustomPropsObject,
   EntryCustomProps extends CustomPropsObject,
-> = ResolvedBuiltPropShape<
+> = ResolveProps<
   NormalizedCustomProps<
     ScopedComponentAvailableProps<Resources, Options, Composables, LayoutCustomProps> &
       ComponentCustomProps &
@@ -178,7 +176,7 @@ export type ScopedResourceComponentProps<
   Input extends boolean = false,
 > = Show<
   Omit<
-    ResolvedIncludedPropsAsDefined<
+    ResolvedIncludedProps<
       Input extends true
         ? InputDefinitions<
             ScopedComponentAvailableProps<Resources, Options, Composables, LayoutCustomProps>
@@ -187,8 +185,8 @@ export type ScopedResourceComponentProps<
       ComponentIncludeProps
     > &
       (Input extends true
-        ? ResolveCallPropsAsDefined<ComponentCustomProps>
-        : ResolveRenderPropsAsDefined<ComponentCustomProps>),
+        ? ResolveCallProps<ComponentCustomProps>
+        : ResolveRenderProps<ComponentCustomProps>),
     'resource'
   > & {
     children?: ReactNode;
@@ -346,7 +344,7 @@ export type PropsFromScopedRender<Definition> = Definition extends {
  * component type returned from `render`.
  */
 export type ScopedComponentCallProps<Definition> = Show<
-  ResolveCallPropsAsDefined<ScopedComponentOwnProps<Definition>> & PropsFromScopedRender<Definition>
+  ResolveCallProps<ScopedComponentOwnProps<Definition>> & PropsFromScopedRender<Definition>
 >;
 
 /**
@@ -574,7 +572,7 @@ export type ScopedComponentResourceEntry<
           ComponentCustomProps & ResourceEntryCustom<EntryProps>,
           Resource
         > &
-          Show<ResolveRenderPropsAsDefined<ScopedComponentOwnProps<Components[Name]>>>,
+          Show<ResolveRenderProps<ScopedComponentOwnProps<Components[Name]>>>,
         ScopedRenderResult,
         Omit<ScopedComponentRenderContext<Components, StateNames>, Name>
       > &
@@ -874,7 +872,7 @@ export type ScopedCreateResourceComponents<
             BaseCustom & ResourceEntryCustom<Props>,
             Resource
           > &
-            Show<ResolveRenderPropsAsDefined<ScopedComponentOwnProps<Components[Name]>>>,
+            Show<ResolveRenderProps<ScopedComponentOwnProps<Components[Name]>>>,
           ScopedRenderResult,
           Omit<ScopedComponentRenderContext<Components, StateNames>, Name>
         > &

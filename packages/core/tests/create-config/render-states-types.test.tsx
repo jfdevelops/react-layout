@@ -2,10 +2,10 @@ import { expectTypeOf, it } from 'vitest';
 import {
   createDefinedResourceLayout,
   createComposableComponent,
-  createProp,
   defineComposableComponent,
   defineResourceLayout,
 } from '../../src';
+import { z } from 'zod';
 
 it('contextually types inline state render arguments', () => {
   const sourceDefinition = defineResourceLayout({
@@ -56,8 +56,8 @@ it('infers included option props independently for built-in inline states', () =
   const definition = defineResourceLayout({
     resources: ['users'],
     options: {
-      title: createProp.string(),
-      message: createProp.string(),
+      title: z.string(),
+      message: z.string(),
     },
     layout: {
       render: {
@@ -106,7 +106,7 @@ it('uses default-state props for the root component contract', () => {
   const definition = defineResourceLayout({
     resources: ['users'],
     options: {
-      title: createProp.string(),
+      title: z.string(),
     },
     layout: {
       render: {
@@ -119,7 +119,7 @@ it('uses default-state props for the root component contract', () => {
               },
             },
             custom: {
-              label: createProp.string(),
+              label: z.string(),
             },
           },
           render: ({ label, title }) => <h1>{`${title}: ${label}`}</h1>,
@@ -170,8 +170,8 @@ it('infers included option props through a bound layout factory', () => {
   const { defineResourceLayout: defineBoundLayout } = createDefinedResourceLayout({
     resources: ['users'],
     options: {
-      title: createProp.string(),
-      message: createProp.string(),
+      title: z.string(),
+      message: z.string(),
     },
   });
 
@@ -209,7 +209,7 @@ it('carries defined options and typed composables through the factory', () => {
   const createSharedMessage = defineComposableComponent({
     name: 'SharedMessage',
     props: {
-      message: createProp.string(),
+      message: z.string(),
     },
   });
   const SharedMessage = createSharedMessage(() => <></>);
@@ -217,7 +217,7 @@ it('carries defined options and typed composables through the factory', () => {
     createDefinedResourceLayout({
       resources: ['users'],
       options: {
-        title: createProp.string(),
+        title: z.string(),
       },
       composables: (create) => ({
         ...SharedMessage,
@@ -298,7 +298,7 @@ it('types compound render states independently', () => {
     state: 'Error',
     props: {
       custom: {
-        error: createProp.string(),
+        error: z.string(),
       },
     },
     render: ({ error }, { retry }) => {
@@ -389,52 +389,7 @@ it('does not expose synchronous metadata on lazy resource proxies', () => {
   () => {
     // @ts-expect-error lazy proxies cannot synchronously expose resource metadata.
     Users.resource;
-    // @ts-expect-error lazy proxies cannot lift validators before loading.
-    createProp.fromComponent(Users);
   };
-});
-
-it('lifts included component props with their call-site optionality', () => {
-  const sourceDefinition = defineResourceLayout({
-    resources: ['users'],
-    options: {
-      title: createProp.string(),
-    },
-    layout: {
-      props: {
-        include: {
-          title: {
-            required: false,
-            suppliedVia: 'component',
-          },
-        },
-      },
-      render: () => <></>,
-    },
-  });
-  const Source = sourceDefinition.createResourceLayout({
-    resource: 'users',
-    name: 'Source',
-  });
-  const lifted = createProp.fromComponent(Source).pick('title');
-  const targetDefinition = defineResourceLayout({
-    resources: ['users'],
-    layout: {
-      props: {
-        custom: lifted,
-      },
-      render: () => <></>,
-    },
-  });
-  const Target = targetDefinition.createResourceLayout({
-    resource: 'users',
-    name: 'Target',
-  });
-
-  expectTypeOf(Target).toBeCallableWith({});
-  expectTypeOf(Target).toBeCallableWith({
-    title: 'Optional title',
-  });
 });
 
 it('rejects invalid render-state values across layout entry points', () => {
@@ -505,7 +460,7 @@ it('infers custom inline states from the complete render map', () => {
   const { defineResourceLayout: defineBoundLayout } = createDefinedResourceLayout({
     resources: ['users'],
     options: {
-      title: createProp.string(),
+      title: z.string(),
     },
   });
   const definition = defineBoundLayout({
@@ -520,7 +475,7 @@ it('infers custom inline states from the complete render map', () => {
             },
           },
           custom: {
-            count: createProp.number(),
+            count: z.number(),
           },
         },
         composables: () => ({
@@ -545,7 +500,7 @@ it('infers custom inline states from the complete render map', () => {
       Empty: {
         props: {
           custom: {
-            message: createProp.string(),
+            message: z.string(),
           },
         },
         render: ({ message }) => {
@@ -584,7 +539,7 @@ it('preserves the function overload and its props and context', () => {
   const { defineResourceLayout: defineBoundLayout } = createDefinedResourceLayout({
     resources: ['users'],
     options: {
-      title: createProp.string(),
+      title: z.string(),
     },
   });
   const definition = defineBoundLayout({
@@ -593,7 +548,7 @@ it('preserves the function overload and its props and context', () => {
         title: true,
       },
       custom: {
-        count: createProp.number(),
+        count: z.number(),
       },
     },
     render: ({ title, count }, { resources }) => {
@@ -622,7 +577,7 @@ it('validates option names in custom inline states', () => {
   const { defineResourceLayout: defineBoundLayout } = createDefinedResourceLayout({
     resources: ['users'],
     options: {
-      title: createProp.string(),
+      title: z.string(),
     },
   });
   () => {
@@ -649,7 +604,7 @@ it('tracks custom inline states through resource-bound and shell overloads', () 
   const resourceDefinition = defineResourceLayout.forResources('users')({
     resources: ['posts'],
     options: {
-      title: createProp.string(),
+      title: z.string(),
     },
     layout: {
       render: {
@@ -660,7 +615,7 @@ it('tracks custom inline states through resource-bound and shell overloads', () 
               title: true,
             },
             custom: {
-              count: createProp.number(),
+              count: z.number(),
             },
           },
           render: ({ title, count }, { resources }) => {
@@ -690,7 +645,7 @@ it('tracks custom inline states through resource-bound and shell overloads', () 
   const shellDefinition = defineResourceLayout.withLayout({
     resources: ['users'],
     options: {
-      title: createProp.string(),
+      title: z.string(),
     },
     shell: {
       render: (_props, { children }) => <main>{children}</main>,
@@ -704,7 +659,7 @@ it('tracks custom inline states through resource-bound and shell overloads', () 
               title: true,
             },
             custom: {
-              count: createProp.number(),
+              count: z.number(),
             },
           },
           render: ({ title, count }) => {
@@ -740,7 +695,7 @@ it('infers inline custom states on the unbound object overload', () => {
         Preview: {
           props: {
             custom: {
-              count: createProp.number(),
+              count: z.number(),
             },
           },
           render: ({ count }) => {

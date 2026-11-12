@@ -8,14 +8,11 @@ import {
 } from 'react';
 import { EmptyComponentsError, InvalidComponentsError } from './errors';
 import {
-  AnyBuiltPropDefinition,
+  PropDefinition,
   type PropValidationContext,
-  ResolveLayoutProps,
   ResolveProps,
   ResolveInputProps,
-  ResolveLayoutInputProps,
   type StandardSchemaV1,
-  isStandardSchema,
   resolvePropDefinitionValues,
   validateProps,
 } from '@jfdevelops/react-layout-validator';
@@ -101,7 +98,7 @@ export function resolveComposablePresetProps(
       }),
     );
 
-    resolved[key] = validateProps(props as Record<string, AnyBuiltPropDefinition>, values, context);
+    resolved[key] = validateProps(props as Record<string, PropDefinition>, values, context);
   }
 
   return resolved;
@@ -264,12 +261,12 @@ export type ComposablePresetComponent<
 type PresetPropDefinitions<Composables extends ComposableComponents> =
   MergePresetProps<Composables> extends InPropsObject ? MergePresetProps<Composables> : {};
 
-type PresetLayoutInputProps<Props extends InPropsObject> = ResolveLayoutInputProps<
+type PresetLayoutInputProps<Props extends InPropsObject> = ResolveInputProps<
   SchemaDefinitions<Props>
 > & {
-  [
-    Key in keyof ResolveLayoutProps<Omit<Props, keyof SchemaDefinitions<Props>>>
-  ]-?: ResolveLayoutProps<Omit<Props, keyof SchemaDefinitions<Props>>>[Key];
+  [Key in keyof ResolveProps<Omit<Props, keyof SchemaDefinitions<Props>>>]-?: ResolveProps<
+    Omit<Props, keyof SchemaDefinitions<Props>>
+  >[Key];
 };
 
 export type RequiredPresetLayoutProps<Composables extends ComposableComponents> =
@@ -406,12 +403,7 @@ export function createComposableComponent<
     const alreadyValidated = (options as unknown as Record<symbol, unknown>)[
       validatedComposableProps
     ];
-    const schemaDefinitions = alreadyValidated
-      ? {}
-      : Object.fromEntries(
-          Object.entries(inProps ?? {}).filter(([, definition]) => isStandardSchema(definition)),
-        );
-    const mergedResolved = validateProps(schemaDefinitions, mergedValues) as Show<
+    const mergedResolved = validateProps(alreadyValidated ? {} : inProps, mergedValues) as Show<
       ResolveProps<InProps>
     >;
 
@@ -516,18 +508,13 @@ function resolvePresetComposableCallProps<Props extends InPropsObject>(
   const presetValues = Object.fromEntries(
     presetKeys.map((key) => [
       key,
-      isStandardSchema(propDefinitions[key]) && Object.hasOwn(callProps, key)
-        ? callProps[key]
-        : (callProps[key] ?? contextValues[key]),
+      Object.hasOwn(callProps, key) ? callProps[key] : contextValues[key],
     ]),
   );
   // Context values have already been validated by the owning layout.
   const definitions = Object.fromEntries(
     Object.entries(propDefinitions).filter(
-      ([key, definition]) =>
-        !isStandardSchema(definition) ||
-        Object.hasOwn(callProps, key) ||
-        !Object.hasOwn(contextValues, key),
+      ([key]) => Object.hasOwn(callProps, key) || !Object.hasOwn(contextValues, key),
     ),
   );
 

@@ -4,22 +4,26 @@ import { InspectionDetails } from '../src/inspection-details';
 import { resolveChipColors } from '../src/config';
 
 function fixture() {
-  const required = Object.assign(vi.fn(), {
-    _baseProp: {
-      type: 'ReactNode',
-      visibility: 'required',
+  const required = vi.fn<(value: unknown) => unknown>();
+  const optional = vi.fn<(value: unknown) => unknown>();
+  const node = {
+    '~standard': {
+      version: 1,
+      vendor: 'arktype',
+      validate: required,
     },
-  });
-  const optional = Object.assign(vi.fn(), {
-    _baseProp: {
-      type: 'string',
-      visibility: 'optional',
+  };
+  const text = {
+    '~standard': {
+      version: 1,
+      vendor: 'zod',
+      validate: optional,
     },
-  });
+  };
   const details = {
     resource: 'users',
     propSchemas: {
-      title: optional,
+      title: text,
     },
     props: {
       include: {
@@ -35,8 +39,8 @@ function fixture() {
         description: 'optional',
       },
       custom: {
-        children: required,
-        className: optional,
+        children: node,
+        className: text,
       },
     },
   };
@@ -69,9 +73,8 @@ it('lists readable prop contracts with configurable chips and shared accessible 
   ).getAllByRole('listitem');
   expect(rows).toHaveLength(6);
   const title = within(rows[0]);
-  // The include contract overrides the schema's optional visibility.
   expect(title.getByText('required').style.color).toBe('red');
-  expect(title.getByText('string').style.background).toBe('pink');
+  expect(title.getByText('zod schema').style.background).toBe('pink');
   expect(title.getByText('included').style.color).toBe('cyan');
   expect(title.getByText('config')).toBeTruthy();
   expect(title.queryByText('component')).toBeNull();
@@ -102,19 +105,31 @@ it('combines search, kind, and requirement filters and explains empty results', 
     },
   });
   expect(within(list).getAllByRole('listitem')).toHaveLength(2);
+  fireEvent.change(screen.getByLabelText('Filter props'), {
+    target: {
+      value: 'zod',
+    },
+  });
+  expect(within(list).getAllByRole('listitem')).toHaveLength(1);
+  expect(within(list).getByText('className')).toBeTruthy();
+  fireEvent.change(screen.getByLabelText('Filter prop kind'), {
+    target: {
+      value: 'included',
+    },
+  });
+  fireEvent.change(screen.getByLabelText('Filter props'), {
+    target: {
+      value: '',
+    },
+  });
   fireEvent.change(screen.getByLabelText('Filter prop requirement'), {
     target: {
       value: 'optional',
     },
   });
-  expect(within(list).getAllByRole('listitem')).toHaveLength(1);
-  expect(within(list).getByText('className')).toBeTruthy();
-  fireEvent.change(screen.getByLabelText('Filter props'), {
-    target: {
-      value: 'string',
-    },
-  });
-  expect(within(list).getByText('className')).toBeTruthy();
+  // Requirement comes from the include contract; a schema is never run to find it.
+  expect(within(list).getAllByRole('listitem')).toHaveLength(2);
+  expect(within(list).getByText('segments')).toBeTruthy();
   fireEvent.change(screen.getByLabelText('Filter props'), {
     target: {
       value: 'missing',
@@ -153,12 +168,12 @@ it('filters by available prop types alongside the other filters', () => {
 
   expect(
     within(types).getByRole('option', {
-      name: 'ReactNode',
+      name: 'arktype schema',
     }),
   ).toBeTruthy();
   expect(
     within(types).getByRole('option', {
-      name: 'string',
+      name: 'zod schema',
     }),
   ).toBeTruthy();
   expect(
@@ -169,7 +184,7 @@ it('filters by available prop types alongside the other filters', () => {
 
   fireEvent.change(types, {
     target: {
-      value: 'ReactNode',
+      value: 'arktype schema',
     },
   });
 
@@ -178,7 +193,7 @@ it('filters by available prop types alongside the other filters', () => {
 
   fireEvent.change(types, {
     target: {
-      value: 'string',
+      value: 'zod schema',
     },
   });
   fireEvent.change(screen.getByLabelText('Filter prop kind'), {
