@@ -35,7 +35,8 @@
   },
   "dependencies": {
     "@jfdevelops/create-error": "0.2.1",
-    "@jfdevelops/react-layout-validator": "workspace:*"
+    "@jfdevelops/react-layout-validator": "workspace:*",
+    "arktype": "2.2.8"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "6.9.1",
