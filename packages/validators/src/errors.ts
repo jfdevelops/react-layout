@@ -1,8 +1,10 @@
 import { createError } from '@jfdevelops/create-error';
-import { createContextSchema } from './context-schema';
+import { type } from 'arktype';
 
 export const validatorErrorFactory = createError({
-  definition: createContextSchema<{ code: string }>(),
+  definition: type({
+    code: 'string',
+  }),
   data: {
     property: 'context',
     resolve: ({ input }) => input,
@@ -16,13 +18,13 @@ export const validatorErrorFactory = createError({
 export class InvalidWrapperError extends validatorErrorFactory({
   code: 'invalidWrapper',
 })
-  .defineContext(createContextSchema<string>())
+  .defineContext(type('string'))
   .implement((message) => message) {}
 
 export class InvalidRecordKeyError extends validatorErrorFactory({
   code: 'invalidRecordKey',
 })
-  .defineContext(createContextSchema<string>())
+  .defineContext(type('string'))
   .implement((message) => message) {}
 
 Object.setPrototypeOf(InvalidRecordKeyError.prototype, TypeError.prototype);

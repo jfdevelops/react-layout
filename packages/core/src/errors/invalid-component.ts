@@ -1,16 +1,16 @@
-import { createContextSchema } from '@jfdevelops/react-layout-validator';
+import { type } from 'arktype';
 import { createReactLayoutError } from './react-layout-error';
 
-export interface InvalidComponentContext {
-  component: unknown;
-  path?: string;
-  reason?: string;
-  resource?: string;
-  scope: 'component';
-  validComponents?: string[];
-}
+const context = type({
+  component: 'unknown',
+  'path?': 'string',
+  'reason?': 'string',
+  'resource?': 'string',
+  scope: "'component'",
+  'validComponents?': 'string[]',
+});
 
-const context = createContextSchema<InvalidComponentContext>();
+export type InvalidComponentContext = typeof context.infer;
 
 /** Thrown when a requested component slot cannot be resolved. */
 export class InvalidComponentError extends createReactLayoutError({
