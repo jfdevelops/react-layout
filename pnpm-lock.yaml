@@ -242,9 +242,6 @@ importers:
       '@jfdevelops/react-layout-validator':
         specifier: workspace:*
         version: link:../validators
-      arktype:
-        specifier: 2.2.8
-        version: 2.2.8
     devDependencies:
       '@testing-library/jest-dom':
         specifier: 6.9.1
@@ -300,9 +297,6 @@ importers:
       '@jfdevelops/react-layout-validator':
         specifier: workspace:*
         version: link:../validators
-      arktype:
-        specifier: 2.2.8
-        version: 2.2.8
     devDependencies:
       '@jfdevelops/react-layout-adapter-arktype':
         specifier: workspace:*
@@ -340,6 +334,9 @@ importers:
       '@vitest/ui':
         specifier: 4.1.5
         version: 4.1.5(vitest@4.1.5)
+      arktype:
+        specifier: 2.2.8
+        version: 2.2.8
       jsdom:
         specifier: 29.0.2
         version: 29.0.2(@noble/hashes@1.8.0)
@@ -461,9 +458,6 @@ importers:
       '@standard-schema/spec':
         specifier: ^1.1.0
         version: 1.1.0
-      arktype:
-        specifier: 2.2.8
-        version: 2.2.8
     devDependencies:
       '@types/node':
         specifier: 24.10.1

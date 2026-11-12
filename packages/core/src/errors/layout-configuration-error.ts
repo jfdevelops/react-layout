@@ -1,12 +1,15 @@
-import { type } from 'arktype';
+import { createContextSchema } from '@jfdevelops/react-layout-validator';
 import { createReactLayoutError } from './react-layout-error';
 
-const context = type('string').pipe((message) => ({
+export interface LayoutConfigurationErrorContext {
+  message: string;
+  scope: 'configuration';
+}
+
+const context = createContextSchema<LayoutConfigurationErrorContext, string>((message) => ({
   message,
   scope: 'configuration',
 }));
-
-export type LayoutConfigurationErrorContext = typeof context.infer;
 
 /** Thrown when a layout or resource configuration cannot be used. */
 export class LayoutConfigurationError extends createReactLayoutError({

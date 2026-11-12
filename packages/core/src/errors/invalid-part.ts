@@ -1,13 +1,13 @@
-import { type } from 'arktype';
+import { createContextSchema } from '@jfdevelops/react-layout-validator';
 import { createReactLayoutError } from './react-layout-error';
 
-const context = type({
-  part: 'string',
-  validParts: 'string[]',
-  scope: "'namingPart'",
-});
+export interface InvalidPartContext {
+  part: string;
+  validParts: string[];
+  scope: 'namingPart';
+}
 
-export type InvalidPartContext = typeof context.infer;
+const context = createContextSchema<InvalidPartContext>();
 
 /**
  * Thrown when a naming convention receives a part it has not declared.

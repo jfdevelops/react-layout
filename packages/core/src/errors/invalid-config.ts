@@ -1,13 +1,13 @@
-import { type } from 'arktype';
+import { createContextSchema } from '@jfdevelops/react-layout-validator';
 import { createReactLayoutError } from './react-layout-error';
 
-const context = type({
-  'config?': 'unknown',
-  reason: 'string',
-  scope: "'config'",
-});
+export interface InvalidConfigContext {
+  config?: unknown;
+  reason: string;
+  scope: 'config';
+}
 
-export type InvalidConfigContext = typeof context.infer;
+const context = createContextSchema<InvalidConfigContext>();
 
 /** Thrown when a React Layout configuration is invalid. */
 export class InvalidConfigError extends createReactLayoutError({

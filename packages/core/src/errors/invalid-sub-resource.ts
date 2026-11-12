@@ -1,15 +1,15 @@
-import { type } from 'arktype';
+import { createContextSchema } from '@jfdevelops/react-layout-validator';
 import { createReactLayoutError } from './react-layout-error';
 
-const context = type({
-  'reason?': 'string',
-  'resource?': 'string',
-  scope: "'subResource'",
-  subResource: 'unknown',
-  'validSubResources?': 'string[]',
-});
+export interface InvalidSubResourceContext {
+  reason?: string;
+  resource?: string;
+  scope: 'subResource';
+  subResource: unknown;
+  validSubResources?: string[];
+}
 
-export type InvalidSubResourceContext = typeof context.infer;
+const context = createContextSchema<InvalidSubResourceContext>();
 
 /** Thrown when a requested sub-resource is invalid or unavailable. */
 export class InvalidSubResourceError extends createReactLayoutError({

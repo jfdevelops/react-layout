@@ -1,5 +1,5 @@
 import { createError } from '@jfdevelops/create-error';
-import { type } from 'arktype';
+import { createContextSchema } from '@jfdevelops/react-layout-validator';
 
 function makeJsonSafe(value: unknown): unknown {
   if (value === undefined) {
@@ -21,10 +21,7 @@ function makeJsonSafe(value: unknown): unknown {
 
 /** @internal */
 export const createReactLayoutError = createError({
-  definition: type({
-    code: 'string',
-    scope: 'string',
-  }),
+  definition: createContextSchema<{ code: string; scope: string }>(),
   data: {
     property: 'context',
     resolve: ({ definition, input }) =>

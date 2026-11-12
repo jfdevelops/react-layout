@@ -1,30 +1,30 @@
-import { type } from 'arktype';
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 
+import { createContextSchema } from './context-schema';
 import { validatorErrorFactory } from './errors';
 
-const propErrorContext = type({
-  'layoutName?': 'string | undefined',
-  path: 'string',
-  'resource?': 'string | undefined',
-  received: 'unknown',
-  expected: 'unknown',
-  message: 'string',
-  'issues?': 'unknown',
-});
+export interface PropErrorOptions {
+  layoutName?: string | undefined;
+  path: string;
+  resource?: string | undefined;
+  received: unknown;
+  expected: unknown;
+  message: string;
+  issues?: unknown;
+}
 
-export type PropErrorOptions = typeof propErrorContext.infer;
+const propErrorContext = createContextSchema<PropErrorOptions>();
 
-type PropMessageOptions = {
+interface PropMessageOptions {
   path: string;
   layoutName?: string;
   resource?: string;
-};
+}
 
-type MismatchedPropMessageOptions = PropMessageOptions & {
+interface MismatchedPropMessageOptions extends PropMessageOptions {
   received: unknown;
   expected: unknown;
-};
+}
 
 function createPropLocation({ layoutName, resource }: PropMessageOptions) {
   return layoutName === undefined || resource === undefined

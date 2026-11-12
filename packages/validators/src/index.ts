@@ -1,5 +1,6 @@
 export { ArrayProp } from './array';
 export { isStandardSchema, validateDefinition } from './standard-schema';
+export { createContextSchema } from './context-schema';
 export type {
   DefinitionVisibility,
   LegacyPropDefinition,
