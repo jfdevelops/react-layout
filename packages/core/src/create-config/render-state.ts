@@ -321,10 +321,10 @@ export type RenderStateCallProps<
 
 /** Typed references to all the states declared in an inline render map. */
 export type RenderStateReferences<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  Options extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents,
-  States,
+  in out Resources extends ReadonlyArray<ResourceDefinition>,
+  in out Options extends InPropsDefinition<Resources>,
+  in out Composables extends ComposableComponents,
+  in out States,
 > = {
   readonly [State in keyof States & string]: StateComposable<
     RenderStateCallProps<Resources, Options, Composables, States[State]>
@@ -608,14 +608,14 @@ type FromStateComposables<
 };
 
 type FromStateDefinition<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  Options extends InPropsDefinition<Resources>,
-  Shared extends ComposableComponents,
-  Ref extends RenderStateReference,
-  State extends string,
-  CustomProps extends CustomPropsObject,
-  Local extends ComposableComponents,
-  Include,
+  in out Resources extends ReadonlyArray<ResourceDefinition>,
+  in out Options extends InPropsDefinition<Resources>,
+  in out Shared extends ComposableComponents,
+  in out Ref extends RenderStateReference,
+  out State extends string,
+  in out CustomProps extends CustomPropsObject,
+  in out Local extends ComposableComponents,
+  in out Include,
 > = {
   state: State;
   props?: {
@@ -725,12 +725,13 @@ export type CreateRenderStateFromState<
  * - `.fromState({ ref, ... })` inherits a state's props and exposes it as `Ref`.
  */
 export interface CreateRenderState<
-  Resources extends ReadonlyArray<ResourceDefinition> = ReadonlyArray<ResourceDefinition>,
-  Options extends InPropsDefinition<Resources> = {},
-  SharedComposables extends ComposableComponents = {},
-  SharedInclude extends IncludedProps<MergedLayoutInProps<Resources, Options, SharedComposables>> =
-    {},
-  SharedCustom extends CustomPropsObject = {},
+  in out Resources extends ReadonlyArray<ResourceDefinition> = ReadonlyArray<ResourceDefinition>,
+  in out Options extends InPropsDefinition<Resources> = {},
+  in out SharedComposables extends ComposableComponents = {},
+  in out SharedInclude extends IncludedProps<
+    MergedLayoutInProps<Resources, Options, SharedComposables>
+  > = {},
+  in out SharedCustom extends CustomPropsObject = {},
 > extends RenderStateOverloads<
   Resources,
   Options,

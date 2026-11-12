@@ -55,15 +55,15 @@ export type ScopedCreateResourceLayoutOptions<
 };
 
 export type ScopedCreateResourceLayoutFnImpl<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents,
-  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
-  Arguments extends ReadonlyArray<unknown>,
-  CustomProps extends CustomPropsObject,
-  DefaultNamespace extends boolean = false,
-  States = {},
-  DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
+  in out Resources extends ReadonlyArray<ResourceDefinition>,
+  in out InProps extends InPropsDefinition<Resources>,
+  in out Composables extends ComposableComponents,
+  in out IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
+  out Arguments extends ReadonlyArray<unknown>,
+  in out CustomProps extends CustomPropsObject,
+  out DefaultNamespace extends boolean = false,
+  in out States = {},
+  out DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
 > = <
   Resource extends SelectedLayoutResources<Resources, Arguments>,
   Name extends string = SelectedResourceLayoutName<Arguments, Resource, DefaultNaming>,
@@ -98,15 +98,15 @@ export type ScopedCreateResourceLayoutFnImpl<
 >;
 
 export type ScopedCreateLayoutForResource<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents,
-  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
-  Arguments extends ReadonlyArray<unknown>,
-  CustomProps extends CustomPropsObject,
-  DefaultNamespace extends boolean = false,
-  States = {},
-  DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
+  in out Resources extends ReadonlyArray<ResourceDefinition>,
+  in out InProps extends InPropsDefinition<Resources>,
+  in out Composables extends ComposableComponents,
+  in out IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
+  out Arguments extends ReadonlyArray<unknown>,
+  in out CustomProps extends CustomPropsObject,
+  out DefaultNamespace extends boolean = false,
+  in out States = {},
+  out DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
 > = <
   Resource extends SelectedLayoutResources<Resources, Arguments>,
   Name extends string = SelectedResourceLayoutName<Arguments, Resource, DefaultNaming>,
@@ -138,12 +138,12 @@ export type ScopedCreateLayoutForResource<
 };
 
 export type ScopedCreateResourceLayoutMakeComposableFn<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents,
-  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
-  Arguments extends ReadonlyArray<unknown>,
-  DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
+  in out Resources extends ReadonlyArray<ResourceDefinition>,
+  in out InProps extends InPropsDefinition<Resources>,
+  in out Composables extends ComposableComponents,
+  in out IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
+  out Arguments extends ReadonlyArray<unknown>,
+  out DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
 > = <
   Resource extends SelectedLayoutResources<Resources, Arguments>,
   Name extends string = SelectedResourceLayoutName<Arguments, Resource, DefaultNaming>,
@@ -284,14 +284,14 @@ export type ScopedCreateResourceLayoutFn<
       });
 
 export type CreateResourceLayoutForResourcesFn<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents = {},
-  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
-  CustomProps extends CustomPropsObject = {},
-  DefaultNamespace extends boolean = false,
-  States = {},
-  DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
+  in out Resources extends ReadonlyArray<ResourceDefinition>,
+  in out InProps extends InPropsDefinition<Resources>,
+  in out Composables extends ComposableComponents = {},
+  in out IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
+  in out CustomProps extends CustomPropsObject = {},
+  out DefaultNamespace extends boolean = false,
+  in out States = {},
+  out DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
 > = {
   /**
    * Creates a layout factory scoped to the listed resources.

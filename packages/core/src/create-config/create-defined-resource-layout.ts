@@ -108,13 +108,13 @@ type BoundLayoutInput<Definition extends { layout: unknown; namespace?: boolean 
 
 /** A `defineResourceLayout` function with its shared configuration pre-bound. */
 export type BoundDefineResourceLayout<
-  Resources extends NonEmptyResources,
-  Options extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents,
-  DefaultNamespace extends boolean = false,
-  SharedInclude extends LayoutIncludeProps<Resources, Options, Composables> = {},
-  SharedCustom extends CustomPropsObject = {},
-  DefaultNaming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = undefined,
+  in out Resources extends NonEmptyResources,
+  in out Options extends InPropsDefinition<Resources>,
+  in out Composables extends ComposableComponents,
+  out DefaultNamespace extends boolean = false,
+  out SharedInclude extends LayoutIncludeProps<Resources, Options, Composables> = {},
+  out SharedCustom extends CustomPropsObject = {},
+  out DefaultNaming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = undefined,
 > = {
   /**
    * Defines a layout whose `render` map contains the required `default` state
@@ -259,13 +259,13 @@ export type DefineLazyDefaults<
 
 /** Reusable helpers produced by {@link createDefinedResourceLayout}. */
 export type CreateDefinedResourceLayoutResult<
-  Resources extends NonEmptyResources,
-  Options extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents,
-  DefaultNamespace extends boolean = false,
-  SharedInclude extends LayoutIncludeProps<Resources, Options, Composables> = {},
-  SharedCustom extends CustomPropsObject = {},
-  DefaultNaming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = undefined,
+  in out Resources extends NonEmptyResources,
+  in out Options extends InPropsDefinition<Resources>,
+  in out Composables extends ComposableComponents,
+  out DefaultNamespace extends boolean = false,
+  in out SharedInclude extends LayoutIncludeProps<Resources, Options, Composables> = {},
+  in out SharedCustom extends CustomPropsObject = {},
+  out DefaultNaming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = undefined,
 > = {
   /**
    * Defines an independent surface attached to this factory's resources.

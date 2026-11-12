@@ -931,14 +931,14 @@ export type CreateViewMapFunctionRenderOptions<
  * `composables(create)` callbacks that need independent context inference.
  */
 export interface CreateViewMapRenderStatesOptions<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  Options extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents,
-  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
-  CustomProps extends CustomPropsObject,
-  RenderStates extends { default: unknown } & Record<string, unknown>,
-  Namespace extends boolean = false,
-  Naming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = LayoutNameInput<
+  in out Resources extends ReadonlyArray<ResourceDefinition>,
+  in out Options extends InPropsDefinition<Resources>,
+  in out Composables extends ComposableComponents,
+  in out IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
+  in out CustomProps extends CustomPropsObject,
+  in out RenderStates extends { default: unknown } & Record<string, unknown>,
+  out Namespace extends boolean = false,
+  out Naming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = LayoutNameInput<
     LayoutResourceKey<Resources>
   >,
 > extends ResourceLayoutConfig<Resources, Options, Namespace, Naming> {
@@ -1480,14 +1480,14 @@ export type CreateResourceLayoutFn<
   >;
 
 export type DefinedResourceLayout<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents = {},
-  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
-  CustomProps extends CustomPropsObject = {},
-  States = {},
-  DefaultNamespace extends boolean = false,
-  DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
+  in out Resources extends ReadonlyArray<ResourceDefinition>,
+  in out InProps extends InPropsDefinition<Resources>,
+  in out Composables extends ComposableComponents = {},
+  in out IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
+  in out CustomProps extends CustomPropsObject = {},
+  in out States = {},
+  out DefaultNamespace extends boolean = false,
+  out DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
 > = {
   createResourceConfig: CreateResourceConfigFn<Resources>;
   createResourceLayout: CreateResourceLayoutFn<
@@ -2726,7 +2726,7 @@ function defineResourceLayoutImpl<
   const createResourceLayout = Object.assign(
     definedResourceLayout,
     createResourceLayoutExtras,
-  ) as CreateResourceLayoutFn<
+  ) as unknown as CreateResourceLayoutFn<
     Resources,
     InProps,
     Composables,
@@ -2760,7 +2760,7 @@ type NonEmptyResourceDefinitions = readonly [ResourceDefinition, ...ResourceDefi
  * Factory returned by {@link DefineResourceLayout.forResources}.
  */
 export type DefineResourceLayoutForResourcesFactory<
-  BaseResources extends NonEmptyResourceDefinitions,
+  in out BaseResources extends NonEmptyResourceDefinitions,
 > = {
   <
     const Render extends { default: unknown } & Record<string, unknown>,
@@ -2902,14 +2902,14 @@ type StatesWithDefaults<States, Include, Custom extends CustomPropsObject> = {
 };
 
 export type DefinedResourceLayoutFromStates<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  Options extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents,
-  Render extends { default: unknown },
-  DefaultNamespace extends boolean = false,
-  BaseInclude extends LayoutIncludeProps<Resources, Options, Composables> = {},
-  BaseCustom extends CustomPropsObject = {},
-  Naming extends LayoutNameInput<any, any> | undefined = undefined,
+  in out Resources extends ReadonlyArray<ResourceDefinition>,
+  in out Options extends InPropsDefinition<Resources>,
+  in out Composables extends ComposableComponents,
+  in out Render extends { default: unknown },
+  out DefaultNamespace extends boolean = false,
+  in out BaseInclude extends LayoutIncludeProps<Resources, Options, Composables> = {},
+  in out BaseCustom extends CustomPropsObject = {},
+  out Naming extends LayoutNameInput<any, any> | undefined = undefined,
 > = DefinedResourceLayout<
   Resources,
   Options,
@@ -3871,7 +3871,7 @@ function defineResourceLayoutWithLayoutImpl(
 }
 
 export const defineResourceLayout: DefineResourceLayout = Object.assign(
-  defineResourceLayoutImpl as DefineResourceLayoutFn,
+  defineResourceLayoutImpl as unknown as DefineResourceLayoutFn,
   {
     forResources: defineResourceLayoutForResources,
     defineResources,

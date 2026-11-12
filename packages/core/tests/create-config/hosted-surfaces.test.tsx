@@ -1,4 +1,7 @@
 import type { CreateLayoutComposable } from '@jfdevelops/react-layout';
+
+/** Runtime-guard tests call builders with invalid input; skip overload inference. */
+type UntypedCall = (...args: unknown[]) => unknown;
 import { expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import {
@@ -116,7 +119,7 @@ it('supports wildcard hosts and independent surface contracts', () => {
 
 it('validates host selections at runtime', () => {
   expect(() =>
-    Reflect.apply(layout.createResourceLayout, undefined, [
+    Reflect.apply(layout.createResourceLayout as UntypedCall, undefined, [
       {
         resource: 'create',
         title: 'Missing',
@@ -124,7 +127,7 @@ it('validates host selections at runtime', () => {
     ]),
   ).toThrow('hostedBy');
   expect(() =>
-    Reflect.apply(layout.createResourceLayout.forResource, undefined, [
+    Reflect.apply(layout.createResourceLayout.forResource as UntypedCall, undefined, [
       {
         resource: 'create',
         hostedBy: 'teams',
