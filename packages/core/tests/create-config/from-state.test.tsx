@@ -1,7 +1,7 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { Component, type ReactNode } from 'react';
 import { afterEach, expect, expectTypeOf, it, vi } from 'vitest';
-import { createDefinedResourceLayout, defineComposableComponent } from '../../src';
+import { componentSlot, createDefinedResourceLayout, defineComposableComponent } from '../../src';
 import { z } from 'zod';
 import { reactElement } from '@jfdevelops/react-layout-adapter-zod';
 
@@ -225,6 +225,71 @@ it('inherits from deferred states without eagerly rendering them', async () => {
   });
   render(<Users message='Deferred' />);
   expect(await screen.findByText('Deferred')).toBeInTheDocument();
+});
+
+it('inherits source-local preset schemas and component-valued props', () => {
+  const { createRenderState, defineResourceLayout } = createDefinedResourceLayout({
+    resources: ['users'],
+    options: () => ({
+      content: componentSlot({
+        props: {
+          label: z.string(),
+        },
+      }),
+    }),
+  });
+  const Message = defineComposableComponent({
+    name: 'Message',
+    props: {
+      message: z.string(),
+    },
+  })(() => <></>);
+  const Source = createRenderState({
+    composables: () => Message,
+    props: {
+      include: {
+        content: {
+          required: true,
+          suppliedVia: 'component',
+        },
+        message: {
+          required: true,
+          suppliedVia: 'component',
+        },
+      },
+    },
+    render: ({ Content, message }) => (
+      <>
+        <Content label='Source' />
+        <p>{message}</p>
+      </>
+    ),
+  });
+  const Derived = createRenderState.fromState({
+    ref: Source,
+    render: ({ Content }, { composables }) => {
+      expectTypeOf(composables.Ref).toBeCallableWith({});
+
+      return (
+        <>
+          <Content label='Derived' />
+          <composables.Ref />
+        </>
+      );
+    },
+  });
+  const Users = defineResourceLayout({
+    render: {
+      ...Derived,
+    },
+  }).createResourceLayout({
+    resource: 'users',
+    name: 'Users',
+  });
+  render(<Users message='Preset' Content={({ label }) => <p>{label}</p>} />);
+  expect(screen.getByText('Source')).toBeInTheDocument();
+  expect(screen.getByText('Derived')).toBeInTheDocument();
+  expect(screen.getByText('Preset')).toBeInTheDocument();
 });
 
 it('inherits source-local preset schemas and element-valued props', () => {

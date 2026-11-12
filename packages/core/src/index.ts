@@ -139,8 +139,15 @@ export type {
   MissingPathVariableContext,
   ResourceStateError,
 } from './errors';
+export { componentSlot } from './component-slot';
+export type {
+  ComponentSlotComponent,
+  ComponentSlotDefinition,
+  ComponentSlotOptions,
+} from './component-slot';
 export {
   createPropsFromComponent,
+  isComponentSlot,
   isStandardSchema,
   PropError,
   resolvePropDefinitionValues,

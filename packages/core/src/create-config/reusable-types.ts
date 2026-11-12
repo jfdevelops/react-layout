@@ -2,8 +2,8 @@ import {
   type PropDefinition,
   type DefinitionVisibility,
   type InputDefinitions,
-  type ResolveProps,
-  type ResolveInputProps,
+  type ResolvePropsAsDefined,
+  type ResolveInputPropsAsDefined,
   type StandardSchemaV1,
 } from '@jfdevelops/react-layout-validator';
 import type { OptionSchema } from '../option-schema';
@@ -51,7 +51,7 @@ export type ReusableInclude<
   : {
       options?:
         | true
-        | Selector<ResolveProps<OptionDefinitions<Resources, Options>>>
+        | Selector<ResolvePropsAsDefined<OptionDefinitions<Resources, Options>>>
         | ReusableOptionSelection<OptionDefinitions<Resources, Options>>;
     });
 
@@ -94,10 +94,10 @@ export type ReusableProps<
     ? Selection extends (...args: any[]) => infer Result
       ? { options: Result }
       : Selection extends true
-        ? ResolveProps<OptionDefinitions<Resources, Options>>
+        ? ResolvePropsAsDefined<OptionDefinitions<Resources, Options>>
         : SelectedOptionProps<OptionDefinitions<Resources, Options>, Selection>
     : {}) &
-  ResolveProps<CustomProps>;
+  ResolvePropsAsDefined<CustomProps>;
 
 /** Data selected for the reusable's single callback argument. */
 export type ReusableSelected<
@@ -219,7 +219,7 @@ type SelectedValues<Props extends InPropsObject, Selection> = Selection extends 
 ) => infer Result
   ? Result
   : Selection extends true
-    ? ResolveProps<Props>
+    ? ResolvePropsAsDefined<Props>
     : SelectedOptionProps<Props, Selection>;
 
 /** Sources are derived against the finite definition tree, not arbitrary input keys. */
@@ -244,11 +244,11 @@ type SourceKeys<Props extends InPropsObject, Selection, CallbacksOnly extends bo
 
 type SourceValues<Props extends InPropsObject, Selection, CallbacksOnly extends boolean> =
   Selection extends Selector<any>
-    ? ResolveProps<Props>
+    ? ResolvePropsAsDefined<Props>
     : Selection extends true
       ? CallbacksOnly extends true
         ? {}
-        : ResolveProps<Props>
+        : ResolvePropsAsDefined<Props>
       : {
           [
             Key in SourceKeys<Props, Selection, CallbacksOnly> as DefinitionVisibility<
@@ -323,7 +323,7 @@ export type ReusableInput<
 > = Options extends OptionSchema
   ? Expanded<
       SchemaReusableInput<Options, IncludeProps, Select> &
-        ResolveInputProps<CustomProps> &
+        ResolveInputPropsAsDefined<CustomProps> &
         ReusableProps<Resources, {}, Omit<IncludeProps, 'options'>, {}> &
         ResourceCallerInput<Resources, IncludeProps> &
         ResourceCallerInput<Resources, Select>

@@ -85,6 +85,7 @@ import {
   validateProps,
   attachComponentPropDefinitions,
   componentPropDefinitionsSymbol,
+  isComponentSlot,
   isStandardSchema,
   PropError,
 } from '@jfdevelops/react-layout-validator';
@@ -447,6 +448,35 @@ function isSplitLayoutInPropDefinition(value: unknown): value is SplitLayoutInPr
     'render' in value &&
     (value as { render?: unknown }).render !== undefined
   );
+}
+
+/**
+ * The name a prop is supplied and rendered under. A component slot declared as
+ * `actions` is passed and rendered as `Actions`.
+ */
+function suppliedPropKey(key: string, definition: unknown) {
+  return isComponentSlot(definition) ? capitalize(key) : key;
+}
+
+/** Whether a prop was supplied under its supplied name or its declared name. */
+function hasSuppliedProp(source: object, key: string, suppliedKey: string) {
+  return Object.hasOwn(source, suppliedKey) || Object.hasOwn(source, key);
+}
+
+/**
+ * Reads a prop by its supplied name, falling back to the declared name that
+ * `createComponent` forwards slots under.
+ */
+function readSuppliedProp(
+  source: Record<string, unknown> | undefined,
+  key: string,
+  suppliedKey: string,
+) {
+  if (!source) {
+    return undefined;
+  }
+
+  return suppliedKey in source ? source[suppliedKey] : source[key];
 }
 
 function isIncludedPropRequired(value: unknown) {
@@ -2006,8 +2036,13 @@ function defineResourceLayoutImpl<
       };
       delete rootInputs.resource;
       for (const key of includedPropKeys) {
-        if (allowsComponentPassthrough(includeLayoutProps?.[key]) && Object.hasOwn(props, key)) {
-          rootInputs[key] = (props as Record<string, unknown>)[key];
+        const suppliedKey = suppliedPropKey(key, mergedResolvedInProps[key]);
+
+        if (
+          allowsComponentPassthrough(includeLayoutProps?.[key]) &&
+          hasSuppliedProp(props, key, suppliedKey)
+        ) {
+          rootInputs[key] = readSuppliedProp(props as Record<string, unknown>, key, suppliedKey);
         }
       }
       const rootValues = rootOptionSchema
@@ -2032,23 +2067,27 @@ function defineResourceLayoutImpl<
 
       for (const key of includedPropKeys) {
         const definition = mergedResolvedInProps[key];
+        const suppliedKey = suppliedPropKey(key, definition);
         const includeBehavior = includeLayoutProps?.[key];
         const callSiteValue = allowsComponentPassthrough(includeBehavior)
-          ? (props as Record<string, unknown>)[key]
+          ? readSuppliedProp(props as Record<string, unknown>, key, suppliedKey)
           : undefined;
         const layoutOptionValue = allowsConfigPassthrough(includeBehavior)
-          ? (
+          ? readSuppliedProp(
               (fallbackOptions?.owner === activeInspection.layout
                 ? fallbackOptions.props
-                : layoutOptionValues) as Record<string, unknown> | undefined
-            )?.[key]
+                : layoutOptionValues) as Record<string, unknown> | undefined,
+              key,
+              suppliedKey,
+            )
           : undefined;
-        const splitValue = key in splitInProps ? splitInProps[key] : undefined;
+        const splitValue = readSuppliedProp(splitInProps, key, suppliedKey);
         const value = rootValues
           ? rootValues[key]
           : isStandardSchema(definition)
-            ? allowsComponentPassthrough(includeBehavior) && Object.hasOwn(props, key)
-              ? (props as Record<string, unknown>)[key]
+            ? allowsComponentPassthrough(includeBehavior) &&
+              hasSuppliedProp(props, key, suppliedKey)
+              ? readSuppliedProp(props as Record<string, unknown>, key, suppliedKey)
               : layoutOptionValue !== undefined
                 ? layoutOptionValue
                 : splitValue
@@ -2085,7 +2124,12 @@ function defineResourceLayoutImpl<
             return [];
           }
 
-          return [[key, validatedIncludedProps[key as keyof typeof validatedIncludedProps]]];
+          return [
+            [
+              suppliedPropKey(key, mergedResolvedInProps[key]),
+              validatedIncludedProps[key as keyof typeof validatedIncludedProps],
+            ],
+          ];
         }),
       );
       const layoutRenderProps = {
@@ -3513,8 +3557,11 @@ function createResourceLayoutShellComponent(
 
     for (const key of includeShellPropKeys) {
       const definition = mergedResolvedInProps[key];
+      const suppliedKey = suppliedPropKey(key, definition);
       const behavior = includeShellProps?.[key];
-      const callSiteValue = allowsComponentPassthrough(behavior) ? props[key] : undefined;
+      const callSiteValue = allowsComponentPassthrough(behavior)
+        ? readSuppliedProp(props, key, suppliedKey)
+        : undefined;
       // Config passthrough has no create-time call on Shell; still honour
       // literal / split defaults from `options` when present.
       const configValue = allowsConfigPassthrough(behavior)
@@ -3529,8 +3576,8 @@ function createResourceLayoutShellComponent(
       const value = rootValues
         ? rootValues[key]
         : isStandardSchema(definition)
-          ? allowsComponentPassthrough(behavior) && Object.hasOwn(props, key)
-            ? props[key]
+          ? allowsComponentPassthrough(behavior) && hasSuppliedProp(props, key, suppliedKey)
+            ? readSuppliedProp(props, key, suppliedKey)
             : configValue !== undefined
               ? configValue
               : splitValue
@@ -3676,7 +3723,12 @@ function createResourceLayoutShellComponent(
     const renderIncludedProps = Object.fromEntries(
       includeShellPropKeys.flatMap((key) =>
         key in validatedIncludedProps
-          ? [[key, validatedIncludedProps[key as keyof typeof validatedIncludedProps]]]
+          ? [
+              [
+                suppliedPropKey(key, mergedResolvedInProps[key]),
+                validatedIncludedProps[key as keyof typeof validatedIncludedProps],
+              ],
+            ]
           : [],
       ),
     );

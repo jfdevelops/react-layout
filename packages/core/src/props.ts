@@ -5,6 +5,7 @@ import type { ComposableComponents, MergePresetProps } from '@jfdevelops/react-l
 import type { InPropsObject } from '@jfdevelops/react-layout-composables';
 import {
   ResolveProps,
+  ResolvePropsAsDefined,
   ResolveInputProps,
   type StandardSchemaV1,
 } from '@jfdevelops/react-layout-validator';
@@ -261,6 +262,15 @@ export type ResolvedIncludedComponentProps<
 > = ResolveInputProps<SelectedIncludedProps<Props, IncludeProps, 'required', 'component'>> &
   Partial<ResolveInputProps<SelectedIncludedProps<Props, IncludeProps, 'optional', 'component'>>>;
 
+/**
+ * Like {@link ResolvedIncludedProps}, but keeps included prop keys exactly as
+ * declared: component slots are not renamed to their capitalized form.
+ */
+export type ResolvedIncludedPropsAsDefined<
+  Props extends InPropsObject,
+  IncludeProps extends IncludedProps<Props>,
+> = ResolvePropsAsDefined<SelectedIncludedProps<Props, IncludeProps, 'required'>> &
+  Partial<ResolvePropsAsDefined<SelectedIncludedProps<Props, IncludeProps, 'optional'>>>;
 export type LayoutRenderProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,

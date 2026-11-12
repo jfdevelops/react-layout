@@ -2,7 +2,9 @@ import { requiredChildren, type RequiredChildren } from './built-in-props';
 import {
   type PropDefinition,
   type ResolveProps,
+  type ResolvePropsAsDefined,
   type ResolveInputProps,
+  type ResolveInputPropsAsDefined,
 } from '@jfdevelops/react-layout-validator';
 import type { WithChildren } from '@jfdevelops/react-layout-composables';
 import { LayoutConfigurationError } from './errors';
@@ -30,6 +32,12 @@ export type ResolveRenderProps<Props extends CustomPropsObject> = WithChildren<
 >;
 export type ResolveCallProps<Props extends CustomPropsObject> = WithChildren<
   ResolveInputProps<NormalizedCustomProps<Props>>
+>;
+export type ResolveCallPropsAsDefined<Props extends CustomPropsObject> = WithChildren<
+  ResolveInputPropsAsDefined<NormalizedCustomProps<Props>>
+>;
+export type ResolveRenderPropsAsDefined<Props extends CustomPropsObject> = WithChildren<
+  ResolvePropsAsDefined<NormalizedCustomProps<Props>>
 >;
 
 export function normalizeCustomProps<Props extends CustomPropsObject>(props: Props) {
