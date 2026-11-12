@@ -125,6 +125,25 @@ importers:
         specifier: 0.22.1
         version: 0.22.1(typescript@6.0.3)(unrun@0.3.0)
 
+  packages/adapter-effect:
+    dependencies:
+      '@jfdevelops/react-layout-adapters':
+        specifier: workspace:*
+        version: link:../adapters
+    devDependencies:
+      '@types/react':
+        specifier: 18.3.28
+        version: 18.3.28
+      effect:
+        specifier: 4.1.4
+        version: 4.1.4
+      react:
+        specifier: 18.3.1
+        version: 18.3.1
+      tsdown:
+        specifier: 0.22.1
+        version: 0.22.1(typescript@6.0.3)(unrun@0.3.0)
+
   packages/adapter-valibot:
     dependencies:
       '@jfdevelops/react-layout-adapters':
@@ -313,6 +332,9 @@ importers:
       '@jfdevelops/react-layout-adapter-arktype':
         specifier: workspace:*
         version: link:../adapter-arktype
+      '@jfdevelops/react-layout-adapter-effect':
+        specifier: workspace:*
+        version: link:../adapter-effect
       '@jfdevelops/react-layout-adapter-valibot':
         specifier: workspace:*
         version: link:../adapter-valibot
@@ -346,6 +368,9 @@ importers:
       '@vitest/ui':
         specifier: 4.1.5
         version: 4.1.5(vitest@4.1.5)
+      effect:
+        specifier: 4.1.4
+        version: 4.1.4
       jsdom:
         specifier: 29.0.2
         version: 29.0.2(@noble/hashes@1.8.0)
@@ -2255,6 +2280,9 @@ packages:
 
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
+
+  effect@4.1.4:
+    resolution: {integrity: sha512-Tgrv/9FN+TZYyOn8XSli+fVqAfwDrDAkiX5Uu9vztINb675VTQdhD0gWI5Kzvhlh9QqzjZvw72iugqw5pwoghQ==}
 
   electron-to-chromium@1.5.364:
     resolution: {integrity: sha512-G/dYE3+AYhyHwzTwg8UbnXf7zqMERYh7l2jJ3QujhFsH8agSYwtnGAR2aZ7f0AakIKJXd5En/Hre4igIUrdlYw==}
@@ -5602,6 +5630,8 @@ snapshots:
       '@noble/hashes': 1.8.0
 
   ee-first@1.1.1: {}
+
+  effect@4.1.4: {}
 
   electron-to-chromium@1.5.364: {}
 

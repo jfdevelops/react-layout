@@ -30,5 +30,6 @@ use `React.isValidElement`; they accept `<Icon />`, not `Icon`.
 
 Ready-made adapters are available separately as
 `@jfdevelops/react-layout-adapter-zod`,
-`@jfdevelops/react-layout-adapter-valibot`, and
-`@jfdevelops/react-layout-adapter-arktype`.
+`@jfdevelops/react-layout-adapter-valibot`,
+`@jfdevelops/react-layout-adapter-arktype`, and
+`@jfdevelops/react-layout-adapter-effect`.
