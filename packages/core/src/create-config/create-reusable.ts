@@ -10,7 +10,12 @@ import { createLayoutResourcesAccessor } from './define-layout';
 import { schemaOptionDefinitions, validateOptionSchema, type OptionSchema } from '../option-schema';
 import type { CreateReusable, ReusableOverlap } from './reusable-types';
 import { type } from 'arktype';
-import { acceptsUndefined, objectDefinition, optionalDefinition } from '../built-in-props';
+import {
+  acceptsUndefined,
+  objectDefinition,
+  optionalDefinition,
+  resolveOptionDefinitions,
+} from '../built-in-props';
 export type * from './reusable-types';
 import {
   singleResourceInput,
@@ -323,7 +328,7 @@ export function createReusableBuilder<
 >(resources: Resources, options: Options): CreateReusable<Resources, Options>;
 export function createReusableBuilder(
   resources: ReadonlyArray<ResourceDefinition>,
-  options: InPropsObject | OptionSchema,
+  options: InPropsObject | OptionSchema | ((...args: any[]) => InPropsObject),
 ) {
   if (isStandardSchema(options)) {
     return function createSchemaReusable(definition: {
@@ -402,7 +407,7 @@ export function createReusableBuilder(
     ) {
       throw new LayoutConfigurationError('Unknown reusable overlap policy.');
     }
-    const optionDefinitions = options as InPropsObject;
+    const optionDefinitions = resolveOptionDefinitions(options, keys, 'Reusable') as InPropsObject;
 
     function compile(selection: RuntimeSelection, from: 'props' | 'options') {
       let plan = objectPlan({});

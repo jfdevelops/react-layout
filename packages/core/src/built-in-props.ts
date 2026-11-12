@@ -1,5 +1,6 @@
 import { reactNode } from '@jfdevelops/react-layout-adapter-arktype';
 import type { StandardSchemaV1 } from '@jfdevelops/react-layout-validator';
+import { type } from 'arktype';
 import type { ReactNode } from 'react';
 
 /** The schema behind the `children: 'required'` shorthand. */
@@ -107,4 +108,53 @@ export function objectDefinition(
       },
     },
   };
+}
+
+/**
+ * A definition for one fixed value. A missing value resolves to that value, so
+ * including the definition supplies it without the caller passing anything.
+ */
+export function literalDefinition<const Value extends string>(
+  value: Value,
+): StandardSchemaV1<Value | undefined, Value> {
+  const standard = (type.unit(value) as unknown as StandardSchemaV1<Value, Value>)['~standard'];
+
+  return {
+    '~standard': {
+      version: 1,
+      vendor: standard.vendor,
+      validate: (input) =>
+        input === undefined
+          ? {
+              value,
+            }
+          : standard.validate(input),
+    },
+  };
+}
+
+/** A definition that accepts any one of the given values. */
+export function enumDefinition<const Values extends ReadonlyArray<string>>(
+  values: Values,
+): StandardSchemaV1<Values[number], Values[number]> {
+  return type.enumerated(...values) as unknown as StandardSchemaV1<Values[number], Values[number]>;
+}
+
+/**
+ * Resolves `options` declared as a function of the bound resources and the
+ * component name. Schemas and maps of schemas are returned unchanged.
+ */
+export function resolveOptionDefinitions<Options>(
+  options: Options,
+  resourceKeys: ReadonlyArray<string>,
+  name: string,
+): Exclude<Options, (...args: never[]) => unknown> {
+  return (
+    typeof options === 'function' && !('~standard' in options)
+      ? options({
+          resource: enumDefinition(resourceKeys),
+          name: literalDefinition(name),
+        })
+      : options
+  ) as Exclude<Options, (...args: never[]) => unknown>;
 }

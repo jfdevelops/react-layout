@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createDefinedResourceLayout } from '../../src';
+import { createDefinedResourceLayout, type InPropsOptions } from '../../src';
 import { z } from 'zod';
 
 const { createReusable } = createDefinedResourceLayout({
@@ -172,6 +172,37 @@ describe('createReusable', () => {
     expect(() =>
       custom({
         count: 'one',
+      } as never),
+    ).toThrow();
+  });
+
+  it('supports callback option definitions', () => {
+    const factory = createDefinedResourceLayout({
+      resources: ['users', 'posts'],
+      options: ({
+        resource,
+      }: Pick<InPropsOptions<readonly ['users', 'posts'], never>, 'resource'>) => ({
+        target: resource,
+      }),
+    });
+    const target = factory.createReusable({
+      props: {
+        include: {
+          options: {
+            target: true,
+          },
+        },
+      },
+      fn: ({ target }) => target,
+    });
+    expect(
+      target({
+        target: 'users',
+      }),
+    ).toBe('users');
+    expect(() =>
+      target({
+        target: 'other',
       } as never),
     ).toThrow();
   });

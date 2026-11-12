@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import {
   createDefinedResourceLayout,
+  createPropsFromComponent,
   createComposableComponent,
   defineResourceLayout,
   ResourceModuleLoadError,
@@ -752,6 +753,43 @@ describe('resource layout render states', () => {
 
     expect(screen.getByText('render failed')).toBeInTheDocument();
     consoleError.mockRestore();
+  });
+
+  it('lifts runtime prop definitions from created components', () => {
+    const first = defineResourceLayout({
+      resources: ['users'],
+      layout: {
+        props: {
+          custom: {
+            title: z.string(),
+            count: z.number().optional(),
+          },
+        },
+        render: ({ title }) => <h1>{title}</h1>,
+      },
+    });
+    const Source = first.createResourceLayout({
+      resource: 'users',
+      name: 'Source',
+    });
+    const lifted = createPropsFromComponent(Source).pick('title');
+    const second = defineResourceLayout({
+      resources: ['users'],
+      layout: {
+        props: {
+          custom: lifted,
+        },
+        render: ({ title }) => <p>{title}</p>,
+      },
+    });
+    const Target = second.createResourceLayout({
+      resource: 'users',
+      name: 'Target',
+    });
+
+    render(<Target title='Lifted title' />);
+
+    expect(screen.getByText('Lifted title')).toBeInTheDocument();
   });
 
   it('lazy loads an entire created component and exposes proxied states', async () => {

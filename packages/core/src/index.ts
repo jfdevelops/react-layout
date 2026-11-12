@@ -140,6 +140,7 @@ export type {
   ResourceStateError,
 } from './errors';
 export {
+  createPropsFromComponent,
   isStandardSchema,
   PropError,
   resolvePropDefinitionValues,
@@ -160,7 +161,9 @@ export type {
   InPropsDefinition,
   PropsContract,
   RenderDefinition,
+  InPropsFunction,
   InPropsObject,
+  InPropsOptions,
   LayoutRenderProps,
   MergedLayoutInProps,
   PropsContextRender,

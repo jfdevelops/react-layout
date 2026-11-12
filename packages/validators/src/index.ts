@@ -16,3 +16,9 @@ export type {
   SafeKeyOf,
 } from './types';
 export { type PropValidationContext, validateProps } from './validate-props';
+export {
+  attachComponentPropDefinitions,
+  componentPropDefinitionsSymbol,
+  createPropsFromComponent,
+  type ComponentWithPropDefinitions,
+} from './component-props';
