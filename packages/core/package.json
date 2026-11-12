@@ -31,6 +31,7 @@
     "dev": "portless react-layout vite",
     "build": "tsdown",
     "typecheck": "tsc --noEmit",
+    "typecheck:budget": "node scripts/check-type-budget.mjs",
     "test": "vitest run",
     "test:types:published": "REACT_LAYOUT_TYPE_ENTRY=dist vitest run tests/create-config/factory-naming-inference.test.ts",
     "test:watch": "vitest",
