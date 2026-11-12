@@ -826,8 +826,53 @@ export type LayoutDefinition<
   render: LayoutRenderInput<Resources, Options, Composables, IncludeProps, CustomProps>;
 };
 
+/**
+ * Resource scope shared by every resource-layout definition: the supported
+ * resources, the options render states can include, and the namespace mode.
+ */
+export interface ResourceLayoutScope<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources> = {},
+  Namespace extends boolean = false,
+> {
+  /**
+   * Default namespace mode for created layouts. Defaults to `false`.
+   */
+  namespace?: Namespace;
+  /**
+   * The resources supported by every layout created from this definition.
+   * Nested sub-resource slugs that collide with config keys (`component`,
+   * `detail`, `new`, …) are reserved.
+   */
+  resources: AssertUnreservedResources<Resources>;
+  /**
+   * Props that layouts and render states can opt into through `props.include`.
+   */
+  options?: Options;
+}
+
+/**
+ * Base configuration shared by {@link CreateViewMapOptions} and
+ * `CreateDefinedResourceLayoutOptions`: the resource scope plus the default
+ * naming convention.
+ */
+export interface ResourceLayoutConfig<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources> = {},
+  Namespace extends boolean = false,
+  Naming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = LayoutNameInput<
+    LayoutResourceKey<Resources>
+  >,
+> extends ResourceLayoutScope<Resources, Options, Namespace> {
+  /**
+   * Default naming convention for components created by this definition.
+   * Explicit definition and component names override it.
+   */
+  name?: Naming;
+}
+
 /** Complete input accepted by the unbound `defineResourceLayout` API. */
-export type CreateViewMapOptions<
+export interface CreateViewMapOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources> = {},
   Composables extends ComposableComponents = {},
@@ -838,24 +883,10 @@ export type CreateViewMapOptions<
   Naming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = LayoutNameInput<
     LayoutResourceKey<Resources>
   >,
-> = {
+> extends ResourceLayoutConfig<Resources, Options, Namespace, Naming> {
   /**
-   * Default naming convention for components created by this definition.
+   * The layout definition: its prop contract, composables, and renderer.
    */
-  name?: Naming;
-  /**
-   * Default namespace mode for created layouts. Defaults to false.
-   */
-  namespace?: Namespace;
-  /**
-   * An array of valid resource names to support. Nested sub-resource slugs that
-   * collide with config keys (`component`, `detail`, `new`, …) are reserved.
-   */
-  resources: AssertUnreservedResources<Resources>;
-  /**
-   * The options that are passed into the created resource layout.
-   */
-  options?: Options;
   layout: Omit<
     LayoutDefinition<Resources, Options, Composables, IncludeProps, CustomProps>,
     'render'
@@ -866,7 +897,7 @@ export type CreateViewMapOptions<
           ? never
           : Render & ContextualInlineRenderStates<Resources, Options, Composables>);
   };
-};
+}
 
 /**
  * Input for the callback shorthand of `layout.render`. Keeping the callback
@@ -899,7 +930,7 @@ export type CreateViewMapFunctionRenderOptions<
  * object-form render-state map. Use `createRenderState` for scoped
  * `composables(create)` callbacks that need independent context inference.
  */
-export type CreateViewMapRenderStatesOptions<
+export interface CreateViewMapRenderStatesOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
@@ -910,19 +941,7 @@ export type CreateViewMapRenderStatesOptions<
   Naming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = LayoutNameInput<
     LayoutResourceKey<Resources>
   >,
-> = Omit<
-  CreateViewMapOptions<
-    Resources,
-    Options,
-    Composables,
-    IncludeProps,
-    CustomProps,
-    RenderStates,
-    Namespace,
-    Naming
-  >,
-  'layout'
-> & {
+> extends ResourceLayoutConfig<Resources, Options, Namespace, Naming> {
   layout: Omit<
     LayoutDefinition<Resources, Options, Composables, IncludeProps, CustomProps>,
     'render' | 'composables'
@@ -942,31 +961,28 @@ export type CreateViewMapRenderStatesOptions<
       > &
       Partial<Record<RenderStateName, unknown>>;
   };
-};
+}
 
 /**
  * Object-form layout input that contextually types inline state callbacks.
  * Use {@link CreateViewMapRenderStatesOptions} when working with already
  * created state fragments instead.
  */
-export type CreateViewMapInlineRenderStatesOptions<
+export interface CreateViewMapInlineRenderStatesOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
   IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
   CustomProps extends CustomPropsObject,
   Namespace extends boolean = false,
-> = Omit<
-  CreateViewMapOptions<Resources, Options, Composables, IncludeProps, CustomProps, Namespace>,
-  'layout'
-> & {
+> extends ResourceLayoutConfig<Resources, Options, Namespace> {
   layout: Omit<
     LayoutDefinition<Resources, Options, Composables, IncludeProps, CustomProps>,
     'render'
   > & {
     render: ContextualInlineRenderStates<Resources, Options, Composables>;
   };
-};
+}
 
 /** Input for independently inferred built-in render states. */
 export type CreateViewMapBuiltInRenderStatesOptions<
@@ -3176,7 +3192,7 @@ export type ResourceLayoutShellComponent<
  * {@link defineResourceLayout} accepts, plus a required `shell`, and with the
  * per-resource `layout.render` made optional.
  */
-export type CreateResourceLayoutWithLayoutOptions<
+export interface CreateResourceLayoutWithLayoutOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources> = {},
   Composables extends ComposableComponents = {},
@@ -3187,20 +3203,10 @@ export type CreateResourceLayoutWithLayoutOptions<
   ShellCustomProps extends CustomPropsObject = {},
   Render = LayoutRenderFunction<Resources, Options, Composables, IncludeProps, CustomProps>,
   Namespace extends boolean = false,
-> = {
+> extends ResourceLayoutScope<Resources, Options, Namespace> {
   /**
-   * Default namespace mode for created layouts. Defaults to false.
-   */
-  namespace?: Namespace;
-  /**
-   * An array of valid resource names to support. Nested sub-resource slugs that
-   * collide with config keys (`component`, `detail`, `new`, …) are reserved.
-   */
-  resources: AssertUnreservedResources<Resources>;
-  /**
-   * The options that are passed into the created resource layout. Shared by the
-   * shell and the per-resource layout, so an `include` on either side can draw
-   * from the same definitions.
+   * Props that the shell and the per-resource layout can opt into through
+   * `props.include`, so either side can draw from the same definitions.
    */
   options?: Options;
   /**
@@ -3232,7 +3238,7 @@ export type CreateResourceLayoutWithLayoutOptions<
           ? never
           : Render & ContextualInlineRenderStates<Resources, Options, Composables>);
   };
-};
+}
 
 /**
  * {@link DefinedResourceLayout} plus the once-mounted `Shell`.
