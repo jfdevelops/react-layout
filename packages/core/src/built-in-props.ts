@@ -15,26 +15,42 @@ export type OptionalChildren = StandardSchemaV1<ReactNode, ReactNode>;
 export const requiredChildren: RequiredChildren = reactNode();
 
 /**
- * Wraps a schema so a missing value is accepted without consulting it. Any
- * supplied value is still validated by the original schema.
+ * Allows omitted values while preserving the schema's defaults and symbol metadata.
  */
-export function optionalDefinition<Input, Output>(
-  definition: StandardSchemaV1<Input, Output>,
-): StandardSchemaV1<Input | undefined, Output | undefined> {
+export function optionalDefinition<Definition extends StandardSchemaV1>(
+  definition: Definition,
+): StandardSchemaV1<
+  StandardSchemaV1.InferInput<Definition> | undefined,
+  StandardSchemaV1.InferOutput<Definition> | undefined
+> &
+  Pick<Definition, Extract<keyof Definition, symbol>> {
   const standard = definition['~standard'];
 
-  return {
+  const wrapped: StandardSchemaV1 = {
     '~standard': {
       version: 1,
       vendor: standard.vendor,
-      validate: (value) =>
-        value === undefined
+      validate(value) {
+        const result = standard.validate(value);
+
+        return value === undefined && !(result instanceof Promise) && result.issues
           ? {
               value: undefined,
             }
-          : standard.validate(value),
+          : result;
+      },
     },
   };
+
+  for (const symbol of Object.getOwnPropertySymbols(definition)) {
+    Object.defineProperty(wrapped, symbol, Object.getOwnPropertyDescriptor(definition, symbol)!);
+  }
+
+  return wrapped as StandardSchemaV1<
+    StandardSchemaV1.InferInput<Definition> | undefined,
+    StandardSchemaV1.InferOutput<Definition> | undefined
+  > &
+    Pick<Definition, Extract<keyof Definition, symbol>>;
 }
 
 export const optionalChildren: OptionalChildren = optionalDefinition(requiredChildren);
