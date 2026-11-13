@@ -2169,6 +2169,17 @@ function defineResourceLayoutImpl<
     const rootOptionSchema = isStandardSchema(resolvedOptions)
       ? (resolvedOptions as OptionSchema)
       : undefined;
+    // Include behavior is fixed for a created component, so resolve it once.
+    const includedProps = Object.keys(includeLayoutProps ?? {}).map((key) => {
+      const behavior = includeLayoutProps?.[key];
+
+      return {
+        key,
+        fromComponent: allowsComponentPassthrough(behavior),
+        fromConfig: allowsConfigPassthrough(behavior),
+        required: isIncludedPropRequired(behavior),
+      };
+    });
     const mergedResolvedInProps = rootOptionSchema
       ? Object.assign(
           schemaOptionDefinitions(
@@ -2285,6 +2296,15 @@ function defineResourceLayoutImpl<
       );
     }
 
+    // A root option schema adds field definitions during render; without one
+    // the definitions never change, so state composables can share one object.
+    const staticStateDefinitions = rootOptionSchema
+      ? undefined
+      : {
+          ...mergedResolvedInProps,
+          ...resolvedLayoutProps,
+        };
+
     function Component(
       props: Show<
         ResolveRenderProps<CustomProps> &
@@ -2312,28 +2332,26 @@ function defineResourceLayoutImpl<
         return () => publishResource?.(undefined, shellId);
       }, [publishResource, layoutContext.resource]);
 
-      const validatedProps = validateCustomProps(resolvedLayoutProps, props, {
-        ...validationContext,
-      });
-      const includedPropKeys = Object.keys(includeLayoutProps ?? {});
-      const rootInputs = {
-        ...(fallbackOptions?.owner === activeInspection.layout
+      const validatedProps = validateCustomProps(
+        resolvedLayoutProps,
+        props,
+        validationContext,
+      );
+      const callSiteProps = props as Record<string, unknown>;
+      const optionValues = (
+        fallbackOptions?.owner === activeInspection.layout
           ? fallbackOptions.props
-          : layoutOptionValues),
+          : layoutOptionValues
+      ) as Record<string, unknown> | undefined;
+      const rootInputs = {
+        ...optionValues,
       };
       delete rootInputs.resource;
-      for (const key of includedPropKeys) {
+      for (const { key, fromComponent } of includedProps) {
         const suppliedKey = suppliedPropKey(key, mergedResolvedInProps[key]);
 
-        if (
-          allowsComponentPassthrough(includeLayoutProps?.[key]) &&
-          hasSuppliedProp(props, key, suppliedKey)
-        ) {
-          rootInputs[key] = readSuppliedProp(
-            props as Record<string, unknown>,
-            key,
-            suppliedKey,
-          );
+        if (fromComponent && hasSuppliedProp(props, key, suppliedKey)) {
+          rootInputs[key] = readSuppliedProp(callSiteProps, key, suppliedKey);
         }
       }
       const rootValues = rootOptionSchema
@@ -2348,87 +2366,76 @@ function defineResourceLayoutImpl<
         );
       }
 
-      const includedPropDefinitions = pick(
-        mergedResolvedInProps,
-        includedPropKeys,
-      ) as Record<string, unknown>;
-      const includedPropValues = {
-        ...resolvePropDefinitionValues(includedPropDefinitions),
-      } as Record<string, unknown>;
+      const includedPropValues: Record<string, unknown> = {};
+      const requiredIncludedPropDefinitions: Record<string, PropDefinition> =
+        {};
+      const optionalIncludedPropDefinitions: Record<string, PropDefinition> =
+        {};
 
-      for (const key of includedPropKeys) {
+      for (const {
+        key,
+        fromComponent,
+        fromConfig,
+        required,
+      } of includedProps) {
+        const declared = key in mergedResolvedInProps;
         const definition = mergedResolvedInProps[key];
         const suppliedKey = suppliedPropKey(key, definition);
-        const includeBehavior = includeLayoutProps?.[key];
-        const callSiteValue = allowsComponentPassthrough(includeBehavior)
-          ? readSuppliedProp(props as Record<string, unknown>, key, suppliedKey)
-          : undefined;
-        const layoutOptionValue = allowsConfigPassthrough(includeBehavior)
-          ? readSuppliedProp(
-              (fallbackOptions?.owner === activeInspection.layout
-                ? fallbackOptions.props
-                : layoutOptionValues) as Record<string, unknown> | undefined,
-              key,
-              suppliedKey,
-            )
+        const isSchema = isStandardSchema(definition);
+
+        if (declared) {
+          includedPropValues[key] = isSchema ? undefined : definition;
+        }
+
+        const layoutOptionValue = fromConfig
+          ? readSuppliedProp(optionValues, key, suppliedKey)
           : undefined;
         const splitValue = readSuppliedProp(splitInProps, key, suppliedKey);
         const value = rootValues
           ? rootValues[key]
-          : isStandardSchema(definition)
-            ? allowsComponentPassthrough(includeBehavior) &&
-              hasSuppliedProp(props, key, suppliedKey)
-              ? readSuppliedProp(
-                  props as Record<string, unknown>,
-                  key,
-                  suppliedKey,
-                )
+          : isSchema
+            ? fromComponent && hasSuppliedProp(callSiteProps, key, suppliedKey)
+              ? readSuppliedProp(callSiteProps, key, suppliedKey)
               : layoutOptionValue !== undefined
                 ? layoutOptionValue
                 : splitValue
-            : (callSiteValue ?? layoutOptionValue ?? splitValue);
+            : ((fromComponent
+                ? readSuppliedProp(callSiteProps, key, suppliedKey)
+                : undefined) ??
+              layoutOptionValue ??
+              splitValue);
 
         if (value !== undefined) {
           includedPropValues[key] = value;
         }
+        if (!declared) {
+          continue;
+        }
+        if (required) {
+          requiredIncludedPropDefinitions[key] = definition as PropDefinition;
+        } else if (includedPropValues[key] !== undefined) {
+          optionalIncludedPropDefinitions[key] = definition as PropDefinition;
+        }
       }
 
-      const requiredIncludedPropDefinitions = Object.fromEntries(
-        Object.entries(includedPropDefinitions).filter(([key]) =>
-          isIncludedPropRequired(includeLayoutProps?.[key]),
-        ),
-      );
-      const optionalIncludedPropDefinitions = Object.fromEntries(
-        Object.entries(includedPropDefinitions).filter(
-          ([key]) =>
-            !isIncludedPropRequired(includeLayoutProps?.[key]) &&
-            includedPropValues[key] !== undefined,
-        ),
-      );
+      // Required definitions validate first, so their errors take precedence.
       const validatedIncludedProps = validateProps(
         {
           ...requiredIncludedPropDefinitions,
           ...optionalIncludedPropDefinitions,
-        } as Record<string, PropDefinition>,
+        },
         includedPropValues,
         validationContext,
-      );
-      const layoutRenderIncludedProps = Object.fromEntries(
-        includedPropKeys.flatMap((key) => {
-          if (!(key in validatedIncludedProps)) {
-            return [];
-          }
+      ) as Record<string, unknown>;
+      const layoutRenderIncludedProps: Record<string, unknown> = {};
 
-          return [
-            [
-              suppliedPropKey(key, mergedResolvedInProps[key]),
-              validatedIncludedProps[
-                key as keyof typeof validatedIncludedProps
-              ],
-            ],
-          ];
-        }),
-      );
+      for (const { key } of includedProps) {
+        if (key in validatedIncludedProps) {
+          layoutRenderIncludedProps[
+            suppliedPropKey(key, mergedResolvedInProps[key])
+          ] = validatedIncludedProps[key];
+        }
+      }
       const layoutRenderProps = {
         ...validatedProps,
         ...layoutRenderIncludedProps,
@@ -2449,7 +2456,7 @@ function defineResourceLayoutImpl<
                   value={{
                     scope: stateScope,
                     props: layoutRenderProps,
-                    definitions: {
+                    definitions: staticStateDefinitions ?? {
                       ...mergedResolvedInProps,
                       ...resolvedLayoutProps,
                     },

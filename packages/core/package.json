@@ -33,6 +33,7 @@
     "typecheck": "tsc --noEmit",
     "typecheck:budget": "node scripts/check-type-budget.mjs",
     "test": "vitest run",
+    "bench": "vitest bench --run --config vitest.bench.config.ts",
     "test:types:published": "REACT_LAYOUT_TYPE_ENTRY=dist vitest run tests/create-config/factory-naming-inference.test.ts",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
