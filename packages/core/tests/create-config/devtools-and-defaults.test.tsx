@@ -512,9 +512,9 @@ it('labels schemas by vendor in inspection details without running them', async 
     }),
   );
   expect(details.props).toEqual({
-    children: 'zod schema',
-    className: 'zod schema',
-    user: 'zod schema',
+    children: 'ReactNode (required) · zod',
+    className: 'string (optional) · zod',
+    user: '{ name: string } (required) · zod',
   });
 });
 

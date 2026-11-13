@@ -22,6 +22,28 @@ function isReactElement(value: unknown): value is ReactElement {
   return isValidElement(value);
 }
 
+/**
+ * Names a schema's type for tools that display it, such as the devtools.
+ * Predicate-based schemas otherwise describe themselves only as `unknown`.
+ */
+export const schemaTypeNameSymbol: unique symbol = Symbol.for(
+  '@jfdevelops/react-layout/schema-type-name',
+) as never;
+
+function nameSchemaType<Schema extends object>(schema: Schema, name: string) {
+  try {
+    Object.defineProperty(schema, schemaTypeNameSymbol, {
+      configurable: true,
+      enumerable: false,
+      value: name,
+    });
+  } catch {
+    // A frozen schema keeps working; it is simply displayed as `unknown`.
+  }
+
+  return schema;
+}
+
 /** Wrap React predicates in your schema library's native schema constructors. */
 export function createAdapter<
   TNode extends StandardSchemaV1<unknown, ReactNode>,
@@ -31,10 +53,10 @@ export function createAdapter<
 
   return {
     reactNode() {
-      return node(isReactNode);
+      return nameSchemaType(node(isReactNode), 'ReactNode');
     },
     reactElement() {
-      return element(isReactElement);
+      return nameSchemaType(element(isReactElement), 'ReactElement');
     },
   };
 }

@@ -22,8 +22,8 @@ it('formats repeated schemas independently and never invokes callbacks', () => {
       render,
     }),
   );
-  expect(result.first).toBe('zod schema');
-  expect(result.second).toBe('zod schema');
+  expect(result.first).toBe('unknown · zod');
+  expect(result.second).toBe('unknown · zod');
   expect(result.render).toMatch(/^\[function/);
   expect(validate).not.toHaveBeenCalled();
   expect(render).not.toHaveBeenCalled();
@@ -39,8 +39,10 @@ it('retains circular reference protection for ordinary details', () => {
   });
 });
 it('describes schemas by vendor and distinguishes plain functions', () => {
-  expect(describePropValidator(schema('valibot'))).toBe('valibot schema');
-  expect(describePropValidator(Object.assign(() => {}, schema('arktype')))).toBe('arktype schema');
+  expect(describePropValidator(schema('valibot'))).toBe('unknown · valibot');
+  expect(describePropValidator(Object.assign(() => {}, schema('arktype')))).toBe(
+    'unknown · arktype',
+  );
   expect(describePropValidator(() => {})).toBeUndefined();
   expect(
     describePropValidator({

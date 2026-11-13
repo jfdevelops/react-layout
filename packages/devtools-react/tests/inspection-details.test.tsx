@@ -7,6 +7,7 @@ function fixture() {
   const required = vi.fn<(value: unknown) => unknown>();
   const optional = vi.fn<(value: unknown) => unknown>();
   const node = {
+    expression: 'ReactNode',
     '~standard': {
       version: 1,
       vendor: 'arktype',
@@ -17,6 +18,11 @@ function fixture() {
     '~standard': {
       version: 1,
       vendor: 'zod',
+      jsonSchema: {
+        input: () => ({
+          type: 'string',
+        }),
+      },
       validate: optional,
     },
   };
@@ -74,7 +80,7 @@ it('lists readable prop contracts with configurable chips and shared accessible 
   expect(rows).toHaveLength(6);
   const title = within(rows[0]);
   expect(title.getByText('required').style.color).toBe('red');
-  expect(title.getByText('zod schema').style.background).toBe('pink');
+  expect(title.getByText('string').style.background).toBe('pink');
   expect(title.getByText('included').style.color).toBe('cyan');
   expect(title.getByText('config')).toBeTruthy();
   expect(title.queryByText('component')).toBeNull();
@@ -168,12 +174,12 @@ it('filters by available prop types alongside the other filters', () => {
 
   expect(
     within(types).getByRole('option', {
-      name: 'arktype schema',
+      name: 'ReactNode',
     }),
   ).toBeTruthy();
   expect(
     within(types).getByRole('option', {
-      name: 'zod schema',
+      name: 'string',
     }),
   ).toBeTruthy();
   expect(
@@ -184,7 +190,7 @@ it('filters by available prop types alongside the other filters', () => {
 
   fireEvent.change(types, {
     target: {
-      value: 'arktype schema',
+      value: 'ReactNode',
     },
   });
 
@@ -193,7 +199,7 @@ it('filters by available prop types alongside the other filters', () => {
 
   fireEvent.change(types, {
     target: {
-      value: 'zod schema',
+      value: 'string',
     },
   });
   fireEvent.change(screen.getByLabelText('Filter prop kind'), {

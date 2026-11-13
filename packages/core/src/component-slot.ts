@@ -74,5 +74,6 @@ export function componentSlot<
           : standard.validate(value),
     },
     [componentSlotSymbol]: (options.props ?? {}) as Shape,
+    [Symbol.for('@jfdevelops/react-layout/schema-type-name')]: 'Component',
   } as ComponentSlotDefinition<Shape, Optional>;
 }

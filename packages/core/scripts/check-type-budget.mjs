@@ -4,7 +4,8 @@ import { spawnSync } from 'node:child_process';
  * Upper bound on type instantiations for checking this package's source and
  * tests. Raise it deliberately, in the same change that needs the headroom.
  */
-const INSTANTIATION_BUDGET = 3_400_000;
+// Includes restored component slots, callback options, nested selections, and schema tests.
+const instantiationBudget = 3_600_000;
 
 const result = spawnSync('tsc --noEmit --extendedDiagnostics', {
   encoding: 'utf8',
@@ -25,9 +26,9 @@ if (!match) {
 }
 
 const instantiations = Number(match[1]);
-const summary = `${instantiations.toLocaleString('en')} of ${INSTANTIATION_BUDGET.toLocaleString('en')} type instantiations`;
+const summary = `${instantiations.toLocaleString('en')} of ${instantiationBudget.toLocaleString('en')} type instantiations`;
 
-if (instantiations > INSTANTIATION_BUDGET) {
+if (instantiations > instantiationBudget) {
   throw new Error(`Type-check budget exceeded: ${summary}.`);
 }
 

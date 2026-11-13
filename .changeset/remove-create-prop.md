@@ -13,11 +13,7 @@ Remove `createProp` and the legacy prop-definition system. Props are described o
 **Removed**
 
 - `createProp`, `createPrimitivePropBuilder`, `isPropDefinitionShape`, and every builder class and type exported by `@jfdevelops/react-layout-validator` (`BaseProp`, `StringProp`, `ObjectProp`, `ComponentProp`, `LegacyPropDefinition`, and the rest).
-- Component slots: a `JSX.Element` definition no longer becomes a capitalized component prop and can no longer declare its own props. Pass an element with `reactElement()`.
 - Values carried by a definition. A literal definition no longer supplies its own value; give the schema a default.
-- `options` as a function of `{ resource, name }` (`InPropsFunction`, `InPropsOptions`). Pass an object schema or a map of schemas.
-- Nested reusable selections such as `options: { meta: { owner: true } }`. Select the whole field or use a selector.
-- `createProp.fromComponent` and the prop definitions attached to created components.
 
 **Changed**
 
@@ -26,7 +22,9 @@ Remove `createProp` and the legacy prop-definition system. Props are described o
 - Whether an object keeps undeclared keys is decided by your schema library.
 - A defined composable uses an explicitly passed prop, even `undefined`, instead of falling back to the provider value.
 - The breadcrumb composable's default `segments` definition is an ArkType-backed schema exported as `BreadcrumbSegmentsSchema`. `@jfdevelops/react-layout-composables` no longer re-exports `createProp`.
-- Devtools describe a prop by its schema vendor, such as `zod schema`. `PropValidatorDescription` no longer has `visibility`, and custom props no longer show a required or optional chip, because a schema is never run to describe it.
+- Devtools display schema types, vendor names, and required/optional metadata when available without validating values. Unsupported metadata falls back to `unknown`.
 - `@jfdevelops/react-layout-internals` exports `NonEmptyReadonlyArray`.
 
 See "Migrating from `createProp`" in `docs/standard-schema.md`.
+
+Component slots are available through `componentSlot`. Callback options and nested reusable selections remain supported. Use `createPropsFromComponent(Component).pick(...)` or `.omit(...)` to reuse component prop schemas.
