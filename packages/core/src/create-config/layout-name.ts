@@ -1,13 +1,23 @@
 import { capitalize } from '@jfdevelops/react-layout-internals';
-import { InvalidPartError, InvalidPartTypeError, LayoutConfigurationError } from '../errors';
+import {
+  InvalidPartError,
+  InvalidPartTypeError,
+  LayoutConfigurationError,
+} from '../errors';
 /**
  * Each slot has a distinct type identity, so ordinary text cannot become a slot.
  */
 declare const layoutNamePlaceholder: unique symbol;
-type NamePlaceholder<Key extends string, Value extends string | number = string> = Value & {
+type NamePlaceholder<
+  Key extends string,
+  Value extends string | number = string,
+> = Value & {
   readonly [layoutNamePlaceholder]: Key;
 };
-type PatternNameContext = Omit<LayoutNameContext<NamePlaceholder<'resource'>>, 'capitalize'> & {
+type PatternNameContext = Omit<
+  LayoutNameContext<NamePlaceholder<'resource'>>,
+  'capitalize'
+> & {
   capitalize: <T extends string>(
     value: T,
   ) => T extends NamePlaceholder<'resource'>
@@ -35,7 +45,9 @@ export type LayoutNamePartType = 'string' | 'number';
 /**
  * Declares each naming part and the value kind accepted at call sites.
  */
-export type LayoutNamePartDefinitions = Readonly<Record<string, LayoutNamePartType>>;
+export type LayoutNamePartDefinitions = Readonly<
+  Record<string, LayoutNamePartType>
+>;
 
 /**
  * Defines the naming pattern and strict-checking policy. Strict defaults to true.
@@ -62,12 +74,16 @@ type UncheckedNamingParts<Definitions extends LayoutNamePartDefinitions> = {
   [Key in keyof Definitions]?: any;
 } & Record<string, any>;
 
-type PartValue<Type extends LayoutNamePartType> = Type extends 'number' ? number : string;
+type PartValue<Type extends LayoutNamePartType> = Type extends 'number'
+  ? number
+  : string;
 
 /**
  * Optional values for declared naming parts. Omitted slots render as empty text.
  */
-export type LayoutNamePartValues<Definitions extends LayoutNamePartDefinitions> = {
+export type LayoutNamePartValues<
+  Definitions extends LayoutNamePartDefinitions,
+> = {
   [Key in keyof Definitions]?: PartValue<Definitions[Key]>;
 };
 
@@ -83,7 +99,10 @@ type ResourcePlaceholderValues<Resource extends string> = {
   resource: Resource;
   capitalizedResource: Capitalize<Resource>;
 };
-type PlaceholderValues<Resource extends string, Parts> = ResourcePlaceholderValues<Resource> & {
+type PlaceholderValues<
+  Resource extends string,
+  Parts,
+> = ResourcePlaceholderValues<Resource> & {
   [Key in keyof Parts & string as `part:${Key}`]: ResolvePattern<
     Part<Parts, Key>,
     ResourcePlaceholderValues<Resource>
@@ -101,9 +120,11 @@ type MatchPlaceholder<Pattern extends string, Values> = {
         ? [Extract<Values[Key], string>, Rest]
         : never;
 }[keyof Values & string];
-type ResolvePattern<Pattern extends string, Values, Result extends string = ''> = [
-  MatchPlaceholder<Pattern, Values>,
-] extends [never]
+type ResolvePattern<
+  Pattern extends string,
+  Values,
+  Result extends string = '',
+> = [MatchPlaceholder<Pattern, Values>] extends [never]
   ? Pattern extends `${infer First}${infer Rest}`
     ? ResolvePattern<Rest, Values, `${Result}${First}`>
     : `${Result}${Pattern}`
@@ -119,7 +140,10 @@ export type ResolveNamePattern<
   Parts = {},
 > = ResolvePattern<Pattern, PlaceholderValues<Resource, Parts>>;
 export const layoutNamePattern: unique symbol = Symbol('layoutNamePattern');
-export interface LayoutNameResolver<Pattern extends string = string, Parts = {}> {
+export interface LayoutNameResolver<
+  Pattern extends string = string,
+  Parts = {},
+> {
   (context: LayoutNameContext): string;
   readonly [layoutNamePattern]: { pattern: Pattern; parts: Parts };
 }
@@ -137,7 +161,9 @@ export type LayoutNameInput<
   States extends string = string,
   Name extends string = string,
 > = Name | LayoutNameCallback<Resource, States, Name>;
-export type ResolvedLayoutName<Naming, Resource extends string> = [Naming] extends [undefined]
+export type ResolvedLayoutName<Naming, Resource extends string> = [
+  Naming,
+] extends [undefined]
   ? `${Capitalize<Resource>}Layout`
   : Naming extends LayoutNameResolver<infer Pattern, infer Parts>
     ? ResolveNamePattern<Pattern, Resource, Parts>
@@ -150,7 +176,9 @@ type NamingPartsInput<
   Definitions extends LayoutNamePartDefinitions,
   Parts extends LayoutNamePartValues<Definitions>,
 > = {
-  [Key in keyof (LayoutNamePartValues<Definitions> & Parts)]: Key extends keyof Definitions
+  [
+    Key in keyof (LayoutNamePartValues<Definitions> & Parts)
+  ]: Key extends keyof Definitions
     ? (LayoutNamePartValues<Definitions> & Parts)[Key]
     : never;
 };
@@ -170,7 +198,9 @@ type NamingPattern<
   Strict extends boolean = true,
 > = (
   context: PatternNameContext,
-  parts: [Strict] extends [false] ? UncheckedNamingParts<Definitions> : PatternParts<Definitions>,
+  parts: [Strict] extends [false]
+    ? UncheckedNamingParts<Definitions>
+    : PatternParts<Definitions>,
 ) => Pattern;
 
 /**
@@ -189,11 +219,15 @@ interface CheckedLayoutNameFactory<
    * @throws {InvalidPartTypeError} A supplied value has the wrong kind.
    */
   <const Parts extends LayoutNamePartValues<Definitions> = {}>(
-    parts?: NamingPartsInput<Definitions, Parts> | NamingPartsCallback<Definitions, Parts>,
+    parts?:
+      | NamingPartsInput<Definitions, Parts>
+      | NamingPartsCallback<Definitions, Parts>,
   ): LayoutNameResolver<Pattern, ResolvedParts<Definitions, Parts>>;
 }
 
-interface UncheckedLayoutNameFactory<Definitions extends LayoutNamePartDefinitions> {
+interface UncheckedLayoutNameFactory<
+  Definitions extends LayoutNamePartDefinitions,
+> {
   (
     parts?:
       | UncheckedNamingParts<Definitions>
@@ -213,7 +247,9 @@ export type LayoutNameFactory<
   ? UncheckedLayoutNameFactory<Definitions>
   : CheckedLayoutNameFactory<Definitions, Pattern>;
 
-interface DefinedLayoutNameParts<Definitions extends LayoutNamePartDefinitions> {
+interface DefinedLayoutNameParts<
+  Definitions extends LayoutNamePartDefinitions,
+> {
   /**
    * Defines the naming pattern and optional strict-checking policy.
    * Strict defaults to true; false accepts unchecked part keys and values.
@@ -263,7 +299,12 @@ function validatePartValues(
       throw new InvalidPartTypeError({
         part,
         expectedType,
-        receivedType: value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value,
+        receivedType:
+          value === null
+            ? 'null'
+            : Array.isArray(value)
+              ? 'array'
+              : typeof value,
       });
     }
   }
@@ -290,20 +331,28 @@ function createNamingFactory<
   }
   const { pattern } = definition;
   const strict = definition.strict !== false;
-  const defaults = Object.fromEntries(Object.keys(definitions).map((key) => [key, '']));
+  const defaults = Object.fromEntries(
+    Object.keys(definitions).map((key) => [key, '']),
+  );
   function name<const Parts extends LayoutNamePartValues<Definitions> = {}>(
-    parts?: NamingPartsInput<Definitions, Parts> | NamingPartsCallback<Definitions, Parts>,
+    parts?:
+      | NamingPartsInput<Definitions, Parts>
+      | NamingPartsCallback<Definitions, Parts>,
   ): LayoutNameResolver<Pattern, ResolvedParts<Definitions, Parts>> {
     if (strict && typeof parts !== 'function') {
       validatePartValues(definitions, parts);
     }
     const resolver = ((context: LayoutNameContext) => {
       const values =
-        typeof parts === 'function' ? parts(context as unknown as PatternNameContext) : parts;
+        typeof parts === 'function'
+          ? parts(context as unknown as PatternNameContext)
+          : parts;
       const supplied = strict
         ? validatePartValues(definitions, values)
         : Object.fromEntries(
-            Object.entries(values ?? {}).filter(([, value]) => value !== undefined),
+            Object.entries(values ?? {}).filter(
+              ([, value]) => value !== undefined,
+            ),
           );
 
       return pattern(
@@ -315,7 +364,10 @@ function createNamingFactory<
           ? UncheckedNamingParts<Definitions>
           : PatternParts<Definitions>,
       );
-    }) as unknown as LayoutNameResolver<Pattern, ResolvedParts<Definitions, Parts>>;
+    }) as unknown as LayoutNameResolver<
+      Pattern,
+      ResolvedParts<Definitions, Parts>
+    >;
     Object.defineProperty(resolver, layoutNamePattern, {
       value: {},
     });
@@ -451,7 +503,10 @@ function createNamingFactory<
  * const legacy = externalName({ version: 'legacy', extra: true });
  * ```
  */
-export function defineLayoutName<const Pattern extends string, const Strict extends boolean = true>(
+export function defineLayoutName<
+  const Pattern extends string,
+  const Strict extends boolean = true,
+>(
   definition: LayoutNameOptions<typeof defaultPartDefinitions, Pattern, Strict>,
 ): LayoutNameFactory<typeof defaultPartDefinitions, Pattern, Strict> {
   return createNamingFactory(defaultPartDefinitions, definition);

@@ -1,6 +1,10 @@
 import { usePanelTransition } from './use-panel-transition';
 import { GraphIcon, ChevronUpIcon, FloatingIcon, CloseIcon } from './icons';
-import { isEditable, matchesPanelShortcut, panelShortcutLabel } from './shortcuts';
+import {
+  isEditable,
+  matchesPanelShortcut,
+  panelShortcutLabel,
+} from './shortcuts';
 import {
   useEffect,
   useId,
@@ -63,7 +67,9 @@ function matches(
 function clampHeight(height: number) {
   const max = Math.max(
     minDrawerHeight,
-    (typeof window === 'undefined' ? 768 : window.innerHeight) - toolbarBarHeight - 48,
+    (typeof window === 'undefined' ? 768 : window.innerHeight) -
+      toolbarBarHeight -
+      48,
   );
 
   return Math.round(Math.max(minDrawerHeight, Math.min(max, height)));
@@ -84,7 +90,10 @@ export function ToolbarDevtools({
   const transition = usePanelTransition(initialIsOpen);
   const { open: expanded, setOpen: setExpanded } = transition;
   const [hidden, setHidden] = useState(false);
-  const [preferences, updatePreferences] = usePanelPreferences(content.config, content.storageKey);
+  const [preferences, updatePreferences] = usePanelPreferences(
+    content.config,
+    content.storageKey,
+  );
   const [draftHeight, setDraftHeight] = useState<number>();
   const drawerHeight = clampHeight(
     draftHeight ?? preferences.toolbar?.height ?? defaultDrawerHeight,
@@ -128,7 +137,9 @@ export function ToolbarDevtools({
   }, []);
 
   // Reserve space so the bar and drawer never cover the end of the page.
-  const reserved = hidden ? 0 : toolbarBarHeight + (transition.present ? drawerHeight : 0);
+  const reserved = hidden
+    ? 0
+    : toolbarBarHeight + (transition.present ? drawerHeight : 0);
 
   useEffect(() => {
     if (!mounted) {
@@ -151,7 +162,10 @@ export function ToolbarDevtools({
 
   useEffect(() => {
     if (mounted) {
-      document.documentElement.style.setProperty(toolbarHeightVariable, `${reserved}px`);
+      document.documentElement.style.setProperty(
+        toolbarHeightVariable,
+        `${reserved}px`,
+      );
     }
   }, [mounted, reserved]);
 
@@ -177,7 +191,9 @@ export function ToolbarDevtools({
       config={content.config}
       storageKey={content.storageKey}
       layout={
-        content.layout === 'compact' || (content.layout !== 'split' && narrow) ? 'compact' : 'split'
+        content.layout === 'compact' || (content.layout !== 'split' && narrow)
+          ? 'compact'
+          : 'split'
       }
     >
       <ToolbarShell
@@ -220,8 +236,14 @@ function ToolbarShell({
   className?: string;
   style?: CSSProperties;
 }) {
-  const { graph, inspector, palette, setHoverHighlight, highlighted, setHighlighted } =
-    useDevtoolsContext();
+  const {
+    graph,
+    inspector,
+    palette,
+    setHoverHighlight,
+    highlighted,
+    setHighlighted,
+  } = useDevtoolsContext();
   const summary = useMemo(() => summarizeGraph(graph), [graph]);
   useEffect(
     () => () => setHoverHighlight(undefined),
@@ -239,11 +261,13 @@ function ToolbarShell({
     fontSize: 12,
   };
   const instance = summary.current?.instance;
-  const stateLabel = (id: string) => graph.nodes.find((node) => node.id === id)?.label ?? id;
+  const stateLabel = (id: string) =>
+    graph.nodes.find((node) => node.id === id)?.label ?? id;
 
   function onResizeKey(event: KeyboardEvent<HTMLButtonElement>) {
     const step = event.shiftKey ? 64 : 16;
-    const delta = event.key === 'ArrowUp' ? step : event.key === 'ArrowDown' ? -step : 0;
+    const delta =
+      event.key === 'ArrowUp' ? step : event.key === 'ArrowDown' ? -step : 0;
 
     if (!delta) {
       return;
@@ -341,7 +365,9 @@ function ToolbarShell({
                 return;
               }
 
-              dragHeight.current = clampHeight(active.height + active.y - event.clientY);
+              dragHeight.current = clampHeight(
+                active.height + active.y - event.clientY,
+              );
 
               previewHeight(dragHeight.current);
             }}
@@ -434,7 +460,9 @@ function ToolbarShell({
             aria-pressed={highlighted === summary.current.layoutId}
             onClick={() =>
               setHighlighted((current) =>
-                current === summary.current!.layoutId ? undefined : summary.current!.layoutId,
+                current === summary.current!.layoutId
+                  ? undefined
+                  : summary.current!.layoutId,
               )
             }
             onPointerEnter={() => setHoverHighlight(summary.current!.layoutId)}
@@ -464,7 +492,9 @@ function ToolbarShell({
           <select
             aria-label='Override state'
             value={instance.forcedState ?? ''}
-            onChange={(event) => inspector.preview?.(instance.id, event.target.value || undefined)}
+            onChange={(event) =>
+              inspector.preview?.(instance.id, event.target.value || undefined)
+            }
             style={{
               ...barControl,
               padding: '0 4px',
@@ -491,7 +521,9 @@ function ToolbarShell({
             </Button>
           </HelpTooltip>
         )}
-        <HelpTooltip content={`Hide toolbar · ${toolbarShortcuts.hide.label} shows it again`}>
+        <HelpTooltip
+          content={`Hide toolbar · ${toolbarShortcuts.hide.label} shows it again`}
+        >
           <Button
             size='icon-sm'
             aria-label='Hide toolbar'
@@ -502,7 +534,9 @@ function ToolbarShell({
             <CloseIcon />
           </Button>
         </HelpTooltip>
-        <HelpTooltip content={`${expanded ? 'Collapse' : 'Expand'} devtools · Ctrl/Cmd+J`}>
+        <HelpTooltip
+          content={`${expanded ? 'Collapse' : 'Expand'} devtools · Ctrl/Cmd+J`}
+        >
           <Button
             size='icon-sm'
             ref={toggle}

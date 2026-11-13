@@ -24,18 +24,23 @@ import type {
   UnionToIntersection,
 } from '@jfdevelops/react-layout-internals';
 
-export const composablePresetMetaKey = Symbol.for('view-map.composable-preset-meta');
+export const composablePresetMetaKey = Symbol.for(
+  'view-map.composable-preset-meta',
+);
 
 const validatedComposableProps = Symbol('validatedComposableProps');
 
-export type ComposablePresetMeta<Props extends InPropsObject = InPropsObject> = {
-  key: string;
-  props: Props;
-};
+export type ComposablePresetMeta<Props extends InPropsObject = InPropsObject> =
+  {
+    key: string;
+    props: Props;
+  };
 
 export type ComposablePresetProps = Record<string, Record<string, unknown>>;
 
-const composablePresetPropsContext = createContext<ComposablePresetProps | undefined>(undefined);
+const composablePresetPropsContext = createContext<
+  ComposablePresetProps | undefined
+>(undefined);
 
 export function LayoutComposablePresetProvider({
   value,
@@ -55,7 +60,9 @@ function useComposablePresetProps(key: string) {
   return useContext(composablePresetPropsContext)?.[key];
 }
 
-export function collectComposablePresetEntries(composables: ComposableComponents | undefined) {
+export function collectComposablePresetEntries(
+  composables: ComposableComponents | undefined,
+) {
   if (!composables) {
     return [] as Array<{
       key: string;
@@ -64,7 +71,9 @@ export function collectComposablePresetEntries(composables: ComposableComponents
   }
 
   return Object.entries(composables).flatMap(([objectKey, component]) => {
-    const meta = (component as ComposablePresetComponent)[composablePresetMetaKey];
+    const meta = (component as ComposablePresetComponent)[
+      composablePresetMetaKey
+    ];
 
     if (!meta) {
       return [];
@@ -98,13 +107,20 @@ export function resolveComposablePresetProps(
       }),
     );
 
-    resolved[key] = validateProps(props as Record<string, PropDefinition>, values, context);
+    resolved[key] = validateProps(
+      props as Record<string, PropDefinition>,
+      values,
+      context,
+    );
   }
 
   return resolved;
 }
 
-export type ComposableNameContext<Resource extends string, LayoutName extends string = string> = {
+export type ComposableNameContext<
+  Resource extends string,
+  LayoutName extends string = string,
+> = {
   resource: Resource;
   name: LayoutName;
   capitalize: CapitalizeFn;
@@ -138,13 +154,23 @@ type ResolvedCreateComposableComponentOptions<
   InProps extends InPropsObject = {},
   OutProps = {},
 > = Omit<
-  CreateComposableComponentOptions<Name, Wrapper, Resource, LayoutName, InProps, OutProps>,
+  CreateComposableComponentOptions<
+    Name,
+    Wrapper,
+    Resource,
+    LayoutName,
+    InProps,
+    OutProps
+  >,
   'name'
 > & {
   name: Name;
 };
 
-export type CreateLayoutComposable<Resources extends string, LayoutName extends string = string> = <
+export type CreateLayoutComposable<
+  Resources extends string,
+  LayoutName extends string = string,
+> = <
   const Name extends string,
   Wrapper,
   InProps extends InPropsObject = {},
@@ -163,10 +189,13 @@ export type CreateLayoutComposable<Resources extends string, LayoutName extends 
 export type LayoutComposablesFactory<
   Resources extends string,
   LayoutName extends string = string,
-> = (create: CreateLayoutComposable<Resources, LayoutName>) => ComposableComponents;
+> = (
+  create: CreateLayoutComposable<Resources, LayoutName>,
+) => ComposableComponents;
 
-export type ResolveLayoutComposables<Factory extends LayoutComposablesFactory<string> | undefined> =
-  Factory extends LayoutComposablesFactory<string> ? ReturnType<Factory> : {};
+export type ResolveLayoutComposables<
+  Factory extends LayoutComposablesFactory<string> | undefined,
+> = Factory extends LayoutComposablesFactory<string> ? ReturnType<Factory> : {};
 
 type ComposableComponentWrapperProps<Wrapper> =
   Wrapper extends ComponentType<infer Props> ? Omit<Props, 'children'> : {};
@@ -199,7 +228,12 @@ export type ComposableResourceLayout<
   OutProps = {},
 > = Composables & ComposableComponent<Name, Wrapper, InProps, OutProps>;
 
-export type AnyComposableComponent = ComposableComponent<string, any, InPropsObject, any>;
+export type AnyComposableComponent = ComposableComponent<
+  string,
+  any,
+  InPropsObject,
+  any
+>;
 
 /**
  * Minimal callable shape shared by layout and preset composables.
@@ -238,10 +272,14 @@ export type RequiredPresetRenderProps<Props extends InPropsObject> = {
 };
 
 type SchemaDefinitions<Props extends InPropsObject> = {
-  [Key in keyof Props as Props[Key] extends StandardSchemaV1 ? Key : never]: Props[Key];
+  [
+    Key in keyof Props as Props[Key] extends StandardSchemaV1 ? Key : never
+  ]: Props[Key];
 };
 
-type PresetInputProps<Props extends InPropsObject> = ResolveInputProps<SchemaDefinitions<Props>> &
+type PresetInputProps<Props extends InPropsObject> = ResolveInputProps<
+  SchemaDefinitions<Props>
+> &
   RequiredPresetRenderProps<Omit<Props, keyof SchemaDefinitions<Props>>>;
 
 export type ComposablePresetComponentCallProps<
@@ -259,24 +297,27 @@ export type ComposablePresetComponent<
 } & ((props: ComposablePresetComponentCallProps<Props, Wrapper>) => ReactNode);
 
 type PresetPropDefinitions<Composables extends ComposableComponents> =
-  MergePresetProps<Composables> extends InPropsObject ? MergePresetProps<Composables> : {};
+  MergePresetProps<Composables> extends InPropsObject
+    ? MergePresetProps<Composables>
+    : {};
 
 type PresetLayoutInputProps<Props extends InPropsObject> = ResolveInputProps<
   SchemaDefinitions<Props>
 > & {
-  [Key in keyof ResolveProps<Omit<Props, keyof SchemaDefinitions<Props>>>]-?: ResolveProps<
-    Omit<Props, keyof SchemaDefinitions<Props>>
-  >[Key];
+  [
+    Key in keyof ResolveProps<Omit<Props, keyof SchemaDefinitions<Props>>>
+  ]-?: ResolveProps<Omit<Props, keyof SchemaDefinitions<Props>>>[Key];
 };
 
-export type RequiredPresetLayoutProps<Composables extends ComposableComponents> =
-  PresetLayoutInputProps<PresetPropDefinitions<Composables>>;
+export type RequiredPresetLayoutProps<
+  Composables extends ComposableComponents,
+> = PresetLayoutInputProps<PresetPropDefinitions<Composables>>;
 
 export type ComposableComponents = Record<string, ComposableComponentCallable>;
 
-export type ResolvedComposableComponents<Components extends ComposableComponents> = [
-  keyof Components,
-] extends [never]
+export type ResolvedComposableComponents<
+  Components extends ComposableComponents,
+> = [keyof Components] extends [never]
   ? never
   : Components extends { Layout: infer _ }
     ? Components
@@ -314,9 +355,10 @@ function resolveComposableComponentName<
   return typeof name === 'function' ? name(ctx) : name;
 }
 
-export function createLayoutComposableFactory<Resources extends string, LayoutName extends string>(
-  ctx: ComposableNameContext<Resources, LayoutName>,
-) {
+export function createLayoutComposableFactory<
+  Resources extends string,
+  LayoutName extends string,
+>(ctx: ComposableNameContext<Resources, LayoutName>) {
   const create: CreateLayoutComposable<Resources, LayoutName> = <
     const Name extends string,
     Wrapper,
@@ -352,7 +394,9 @@ export function resolveLayoutComposables<
   LayoutName extends string,
   Composables extends ComposableComponents,
 >(
-  factory: (create: CreateLayoutComposable<Resources, LayoutName>) => Composables,
+  factory: (
+    create: CreateLayoutComposable<Resources, LayoutName>,
+  ) => Composables,
   ctx: ComposableNameContext<Resources, LayoutName>,
 ): Composables {
   return factory(createLayoutComposableFactory(ctx));
@@ -379,7 +423,8 @@ export function createComposableComponent<
     children,
     ...props
   }: ComposableComponentProps<Wrapper, InProps, OutProps>) {
-    const inPropsKeys = Object.keys(inProps as object) as (keyof InProps & string)[];
+    const inPropsKeys = Object.keys(inProps as object) as (keyof InProps &
+      string)[];
     const mergedInProps = {
       ...inProps,
     };
@@ -399,22 +444,29 @@ export function createComposableComponent<
       delete (wrapperProps as Record<string, unknown>)[key];
     }
 
-    const mergedValues = resolvePropDefinitionValues(mergedInProps as Record<string, unknown>);
+    const mergedValues = resolvePropDefinitionValues(
+      mergedInProps as Record<string, unknown>,
+    );
     const alreadyValidated = (options as unknown as Record<symbol, unknown>)[
       validatedComposableProps
     ];
-    const mergedResolved = validateProps(alreadyValidated ? {} : inProps, mergedValues) as Show<
-      ResolveProps<InProps>
-    >;
+    const mergedResolved = validateProps(
+      alreadyValidated ? {} : inProps,
+      mergedValues,
+    ) as Show<ResolveProps<InProps>>;
 
-    const resolvedProps = outProps ? outProps(mergedResolved) : ({} as OutProps);
+    const resolvedProps = outProps
+      ? outProps(mergedResolved)
+      : ({} as OutProps);
     const resolvedChildren =
       children == null
         ? reactNodeFromSingleFieldOutProps(resolvedProps)
         : resolveComponent(children, resolvedProps);
 
     if (wrapWith) {
-      const Comp = wrapWith as ComponentType<ComposableComponentWrapperProps<Wrapper>>;
+      const Comp = wrapWith as ComponentType<
+        ComposableComponentWrapperProps<Wrapper>
+      >;
 
       return <Comp {...wrapperProps}>{resolvedChildren}</Comp>;
     }
@@ -489,7 +541,9 @@ type DefinedComposableComponentFactory<
     props?: Overrides | ((defaults: Props) => Overrides);
     wrapWith?: CustomWrapper;
     render: (
-      props: Show<WithChildren<ResolveProps<Omit<Props, keyof Overrides> & Overrides>>>,
+      props: Show<
+        WithChildren<ResolveProps<Omit<Props, keyof Overrides> & Overrides>>
+      >,
     ) => ReactNode;
   }): DefinedComposableComponentRecord<
     CustomName,
@@ -514,11 +568,14 @@ function resolvePresetComposableCallProps<Props extends InPropsObject>(
   // Context values have already been validated by the owning layout.
   const definitions = Object.fromEntries(
     Object.entries(propDefinitions).filter(
-      ([key]) => Object.hasOwn(callProps, key) || !Object.hasOwn(contextValues, key),
+      ([key]) =>
+        Object.hasOwn(callProps, key) || !Object.hasOwn(contextValues, key),
     ),
   );
 
-  return validateProps(definitions, presetValues) as Show<WithChildren<ResolveProps<Props>>>;
+  return validateProps(definitions, presetValues) as Show<
+    WithChildren<ResolveProps<Props>>
+  >;
 }
 
 export function defineComposableComponent<
@@ -542,7 +599,9 @@ export function defineComposableComponent<
   ): DefinedComposableComponentRecord<Name, Props, Wrapper> => {
     if (typeof definition !== 'function') {
       const overrides =
-        typeof definition.props === 'function' ? definition.props(props) : definition.props;
+        typeof definition.props === 'function'
+          ? definition.props(props)
+          : definition.props;
 
       return defineComposableComponent({
         ...options,
@@ -552,7 +611,11 @@ export function defineComposableComponent<
           ...overrides,
         },
         wrapWith: 'wrapWith' in definition ? definition.wrapWith : wrapWith,
-      })(definition.render) as unknown as DefinedComposableComponentRecord<Name, Props, Wrapper>;
+      })(definition.render) as unknown as DefinedComposableComponentRecord<
+        Name,
+        Props,
+        Wrapper
+      >;
     }
 
     const render = definition;
@@ -571,10 +634,16 @@ export function defineComposableComponent<
       },
     });
 
-    function PresetComposable(callProps: ComposablePresetComponentCallProps<Props, Wrapper>) {
+    function PresetComposable(
+      callProps: ComposablePresetComponentCallProps<Props, Wrapper>,
+    ) {
       const callPropsRecord = callProps as Record<string, unknown>;
       const presetKeys = Object.keys(props) as (keyof Props & string)[];
-      const validatedPresetProps = resolvePresetComposableCallProps(name, props, callPropsRecord);
+      const validatedPresetProps = resolvePresetComposableCallProps(
+        name,
+        props,
+        callPropsRecord,
+      );
       const wrapperProps = {
         ...callPropsRecord,
       };
@@ -616,7 +685,11 @@ export function defineComposableComponent<
         key: name,
         props,
       } satisfies ComposablePresetMeta<Props>,
-    }) as unknown as DefinedComposableComponentRecord<Name, Props, Wrapper>[Name];
+    }) as unknown as DefinedComposableComponentRecord<
+      Name,
+      Props,
+      Wrapper
+    >[Name];
 
     return {
       [name]: presetComponent,
@@ -631,21 +704,28 @@ export function defineComposableComponent<
   return factory as DefinedComposableComponentFactory<Name, Props, Wrapper>;
 }
 
-export type MakeComposableOptions<Composables extends ComposableComponents, Name extends string> = {
+export type MakeComposableOptions<
+  Composables extends ComposableComponents,
+  Name extends string,
+> = {
   components: Composables | undefined;
   name: Name;
 };
 
-export type MakeComposable<Composables extends ComposableComponents, Name extends string> = <
-  OverrideName extends string = Name,
->(
-  options?: Partial<Pick<MakeComposableOptions<Composables, OverrideName>, 'name'>>,
+export type MakeComposable<
+  Composables extends ComposableComponents,
+  Name extends string,
+> = <OverrideName extends string = Name>(
+  options?: Partial<
+    Pick<MakeComposableOptions<Composables, OverrideName>, 'name'>
+  >,
 ) => ComposableResourceLayout<Composables, Name, any, any, any>;
 
 export function makeComposable<Props>() {
-  return function <Composables extends ComposableComponents, Name extends string>(
-    options: MakeComposableOptions<Composables, Name>,
-  ) {
+  return function <
+    Composables extends ComposableComponents,
+    Name extends string,
+  >(options: MakeComposableOptions<Composables, Name>) {
     const { components, name: layoutName } = options;
 
     if (!components || typeof components !== 'object') {
@@ -655,7 +735,9 @@ export function makeComposable<Props>() {
     const componentNames = Object.keys(components);
 
     if (componentNames.length === 0) {
-      throw new EmptyComponentsError('components must have at least one component');
+      throw new EmptyComponentsError(
+        'components must have at least one component',
+      );
     }
 
     const create: MakeComposable<Composables, Name> = (overrideOptions) => {
@@ -666,7 +748,13 @@ export function makeComposable<Props>() {
         displayName: resolvedName,
         props: undefined as unknown as Props,
         ...rest,
-      }) as unknown as ComposableResourceLayout<Composables, Name, any, any, any>;
+      }) as unknown as ComposableResourceLayout<
+        Composables,
+        Name,
+        any,
+        any,
+        any
+      >;
     };
 
     return create;

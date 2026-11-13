@@ -35,7 +35,10 @@ export default defineConfig(({ command }) => ({
         rootDir,
         '../../packages/devtools-core/src/index.ts',
       ),
-      '@jfdevelops/react-layout': resolve(rootDir, '../../packages/core/src/index.ts'),
+      '@jfdevelops/react-layout': resolve(
+        rootDir,
+        '../../packages/core/src/index.ts',
+      ),
       '@': resolve(rootDir, './src'),
       'view-map': resolve(rootDir, '../../packages/core/src/index.ts'),
     },

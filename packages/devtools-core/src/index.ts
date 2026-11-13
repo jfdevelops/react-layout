@@ -1,8 +1,14 @@
 export * from './debug';
-import type { SourceLocation, PreviewInstance, PreviewController } from './debug';
+import type {
+  SourceLocation,
+  PreviewInstance,
+  PreviewController,
+} from './debug';
 
 /** Shared inspection protocol. This package has no React or DOM dependency. */
-export const layoutInspection = Symbol.for('@jfdevelops/react-layout/inspection');
+export const layoutInspection = Symbol.for(
+  '@jfdevelops/react-layout/inspection',
+);
 
 export type NodeKind =
   | 'definition'
@@ -48,7 +54,12 @@ export interface GraphEdge {
   readonly id: string;
   readonly source: string;
   readonly target: string;
-  readonly relationship: 'contains' | 'defines' | 'renders' | 'declares' | 'references';
+  readonly relationship:
+    | 'contains'
+    | 'defines'
+    | 'renders'
+    | 'declares'
+    | 'references';
 }
 
 export interface GraphSnapshot {
@@ -67,7 +78,10 @@ export interface InspectionSource {
 const maxCauseDepth = 5;
 
 /** Converts any thrown value into a JSON-safe {@link InspectionError}. */
-export function serializeInspectionError(error: unknown, depth = 0): InspectionError {
+export function serializeInspectionError(
+  error: unknown,
+  depth = 0,
+): InspectionError {
   if (error instanceof Error) {
     const code = (error as { code?: unknown }).code;
     const cause = (error as { cause?: unknown }).cause;
@@ -97,7 +111,8 @@ export function inspectionId(prefix: string): string {
 }
 
 export function getInspectionSource(value: object): InspectionSource {
-  const candidate = (value as Record<symbol, unknown>)[layoutInspection] ?? value;
+  const candidate =
+    (value as Record<symbol, unknown>)[layoutInspection] ?? value;
 
   if (
     candidate &&
@@ -138,15 +153,23 @@ export function createInspectionStore() {
   const store = {
     getSnapshot(): GraphSnapshot {
       if (!snapshot) {
-        const childSnapshots = [...children.keys()].map((child) => child.getSnapshot());
+        const childSnapshots = [...children.keys()].map((child) =>
+          child.getSnapshot(),
+        );
 
         snapshot = Object.freeze({
-          nodes: Object.freeze([...nodes.values(), ...childSnapshots.flatMap((s) => s.nodes)]),
+          nodes: Object.freeze([
+            ...nodes.values(),
+            ...childSnapshots.flatMap((s) => s.nodes),
+          ]),
           instances: Object.freeze([
             ...instances.values(),
             ...childSnapshots.flatMap((s) => s.instances ?? []),
           ]),
-          edges: Object.freeze([...edges.values(), ...childSnapshots.flatMap((s) => s.edges)]),
+          edges: Object.freeze([
+            ...edges.values(),
+            ...childSnapshots.flatMap((s) => s.edges),
+          ]),
         });
       }
 
@@ -187,7 +210,11 @@ export function createInspectionStore() {
 
       if (!instance) {
         for (const child of children.keys()) {
-          if (child.getSnapshot().instances?.some((entry) => entry.id === instanceId)) {
+          if (
+            child
+              .getSnapshot()
+              .instances?.some((entry) => entry.id === instanceId)
+          ) {
             child.preview?.(instanceId, state);
 
             return;
@@ -269,7 +296,8 @@ export function createInspectionStore() {
         Object.freeze({
           ...node,
           source: node.source ?? nodes.get(node.id)?.source,
-          registrationSource: node.registrationSource ?? nodes.get(node.id)?.registrationSource,
+          registrationSource:
+            node.registrationSource ?? nodes.get(node.id)?.registrationSource,
           active: nodes.get(node.id)?.active ?? node.active ?? 0,
           details:
             node.details &&
@@ -284,7 +312,11 @@ export function createInspectionStore() {
       return node.id;
     },
 
-    edge(source: string, target: string, relationship: GraphEdge['relationship']) {
+    edge(
+      source: string,
+      target: string,
+      relationship: GraphEdge['relationship'],
+    ) {
       const id = `${source}/${relationship}/${target}`;
 
       if (!edges.has(id)) {
@@ -405,7 +437,9 @@ export function layoutGraph(graph: GraphSnapshot): readonly PositionedNode[] {
     outgoing.set(edge.source, list);
   }
 
-  const queue = graph.nodes.filter((n) => incoming.get(n.id) === 0).map((n) => n.id);
+  const queue = graph.nodes
+    .filter((n) => incoming.get(n.id) === 0)
+    .map((n) => n.id);
 
   for (let index = 0; index < queue.length; index++) {
     const id = queue[index];
@@ -483,7 +517,9 @@ export interface InspectionTreeNode {
 }
 
 /** A spanning hierarchy; shared/reference relationships remain explicit leaf links. */
-export function buildInspectionTree(graph: GraphSnapshot): readonly InspectionTreeNode[] {
+export function buildInspectionTree(
+  graph: GraphSnapshot,
+): readonly InspectionTreeNode[] {
   const cached = treeCache.get(graph);
   if (cached) {
     return cached;
@@ -505,13 +541,20 @@ export function buildInspectionTree(graph: GraphSnapshot): readonly InspectionTr
   };
 
   for (const edge of graph.edges) {
-    if (edge.relationship === 'references' || !byId.has(edge.source) || !byId.has(edge.target)) {
+    if (
+      edge.relationship === 'references' ||
+      !byId.has(edge.source) ||
+      !byId.has(edge.target)
+    ) {
       continue;
     }
 
     const existing = parents.get(edge.target);
 
-    if (!existing || priority[edge.relationship] < priority[existing.relationship]) {
+    if (
+      !existing ||
+      priority[edge.relationship] < priority[existing.relationship]
+    ) {
       parents.set(edge.target, edge);
     }
   }

@@ -4,15 +4,18 @@ import * as icons from '../src/icons';
 
 afterEach(cleanup);
 
-it.each(Object.entries(icons))('%s uses the same decorative icon geometry', (_, Glyph) => {
-  const { container } = render(<Glyph />);
-  const svg = container.querySelector('svg')!;
-  expect(svg).toHaveAttribute('width', '18');
-  expect(svg).toHaveAttribute('height', '18');
-  expect(svg).toHaveAttribute('viewBox', '0 0 32 32');
-  expect(svg).toHaveAttribute('aria-hidden', 'true');
-  expect(svg).toHaveAttribute('focusable', 'false');
-});
+it.each(Object.entries(icons))(
+  '%s uses the same decorative icon geometry',
+  (_, Glyph) => {
+    const { container } = render(<Glyph />);
+    const svg = container.querySelector('svg')!;
+    expect(svg).toHaveAttribute('width', '18');
+    expect(svg).toHaveAttribute('height', '18');
+    expect(svg).toHaveAttribute('viewBox', '0 0 32 32');
+    expect(svg).toHaveAttribute('aria-hidden', 'true');
+    expect(svg).toHaveAttribute('focusable', 'false');
+  },
+);
 
 import { Button } from '../src/components/ui/button';
 import { EyeIcon } from '../src/icons';

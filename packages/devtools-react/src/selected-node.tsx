@@ -19,7 +19,10 @@ import { loadChip } from './load-status';
 import { LoadErrorDetails } from './load-error-details';
 
 function ancestry(graph: GraphSnapshot, id: string): GraphNode[] {
-  function find(branch: InspectionTreeNode, parents: GraphNode[]): GraphNode[] | undefined {
+  function find(
+    branch: InspectionTreeNode,
+    parents: GraphNode[],
+  ): GraphNode[] | undefined {
     if (branch.reference) {
       return;
     }
@@ -68,7 +71,9 @@ export function SelectedNode({
   onSelect: (id: string) => void;
 }) {
   const path = useMemo(() => ancestry(graph, node.id), [graph, node.id]);
-  const related = graph.edges.filter((edge) => edge.source === node.id || edge.target === node.id);
+  const related = graph.edges.filter(
+    (edge) => edge.source === node.id || edge.target === node.id,
+  );
   const status = node.active > 0 ? palette.active : palette.inactive;
   const loadStatus = loadChip(node);
 
@@ -126,7 +131,9 @@ export function SelectedNode({
                   textAlign: 'left',
                 }}
               >
-                {part.kind === 'resource' ? part.label.split('.').at(-1) : part.label}
+                {part.kind === 'resource'
+                  ? part.label.split('.').at(-1)
+                  : part.label}
               </Button>
             </li>
           ))}
@@ -169,7 +176,11 @@ export function SelectedNode({
             )}
             {node.label}
           </h3>
-          <HelpTooltip content={highlighted ? 'Stop highlighting on page' : 'Highlight on page'}>
+          <HelpTooltip
+            content={
+              highlighted ? 'Stop highlighting on page' : 'Highlight on page'
+            }
+          >
             <Button
               size='icon'
               aria-label={`Highlight ${node.label} on page`}
@@ -240,7 +251,11 @@ export function SelectedNode({
         inspector={inspector}
         palette={palette}
       />
-      <InspectionDetails key={node.id} details={node.details ?? {}} palette={palette} />
+      <InspectionDetails
+        key={node.id}
+        details={node.details ?? {}}
+        palette={palette}
+      />
       <section
         aria-label='Relationships'
         style={{

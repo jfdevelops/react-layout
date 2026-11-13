@@ -5,11 +5,17 @@ import {
   InvalidSubResourceError,
   MissingPathVariableError,
 } from '../../errors';
-import { isConfigNode, readComponentKeys, readSubResourceKeys } from '../component-keys';
+import {
+  isConfigNode,
+  readComponentKeys,
+  readSubResourceKeys,
+} from '../component-keys';
 import { readPathVariableName } from './variables';
 
 /** A `$subResource` value: a slug, or a slug plus the next `subResource` below it. */
-export type SubResourceParamValue = string | { value: string; subResource: SubResourceParamValue };
+export type SubResourceParamValue =
+  | string
+  | { value: string; subResource: SubResourceParamValue };
 
 /** Values supplied for the variables a path leaves open. */
 export type PathVariableValues = {
@@ -23,7 +29,9 @@ function readSubResourceParamKey(param: SubResourceParamValue): string {
 }
 
 /** Sub-resource slugs a param walks through, outermost first. */
-export function flattenSubResourceParam(param: SubResourceParamValue): string[] {
+export function flattenSubResourceParam(
+  param: SubResourceParamValue,
+): string[] {
   if (typeof param === 'string') {
     return [param];
   }
@@ -31,7 +39,9 @@ export function flattenSubResourceParam(param: SubResourceParamValue): string[] 
   return [param.value, ...flattenSubResourceParam(param.subResource)];
 }
 
-function isSubResourceParamValue(value: unknown): value is SubResourceParamValue {
+function isSubResourceParamValue(
+  value: unknown,
+): value is SubResourceParamValue {
   if (typeof value === 'string') {
     return value.length > 0;
   }
@@ -169,7 +179,8 @@ export function resolveParameterizedPath(
           throw new InvalidSubResourceError({
             subResource: value,
             resource,
-            reason: 'A sub-resource must be a slug or an object with `value` and `subResource`',
+            reason:
+              'A sub-resource must be a slug or an object with `value` and `subResource`',
           });
         }
 

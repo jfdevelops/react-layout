@@ -8,7 +8,11 @@ export function usePanelTransition(initialOpen = false) {
   const open = phase === 'opening' || phase === 'open';
   const finish = useCallback(() => {
     setPhase((current) =>
-      current === 'opening' ? 'open' : current === 'closing' ? 'closed' : current,
+      current === 'opening'
+        ? 'open'
+        : current === 'closing'
+          ? 'closed'
+          : current,
     );
   }, []);
   useEffect(() => {

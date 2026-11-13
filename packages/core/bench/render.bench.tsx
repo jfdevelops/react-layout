@@ -34,7 +34,10 @@ function defineLayout() {
           footer: reactNode().optional(),
         },
       },
-      render: ({ title, description, count, footer, children }, { composables }) => (
+      render: (
+        { title, description, count, footer, children },
+        { composables },
+      ) => (
         <composables.Layout>
           <composables.Header>{title}</composables.Header>
           <p>{description}</p>

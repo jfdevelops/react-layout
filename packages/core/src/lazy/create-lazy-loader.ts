@@ -33,7 +33,10 @@ export function createLazyLoader<Module, Selected>(options: {
   let promise: Promise<Selected> | undefined;
   let preloadPromise: Promise<void> | undefined;
   let status: LoadStatus = 'unresolved';
-  let settled: { ok: true; value: Selected } | { ok: false; error: unknown } | undefined;
+  let settled:
+    | { ok: true; value: Selected }
+    | { ok: false; error: unknown }
+    | undefined;
   const components = new Map<unknown, ComponentType<any>>();
   let generation = 0;
 
@@ -51,7 +54,10 @@ export function createLazyLoader<Module, Selected>(options: {
           throw cause;
         }
         if (process.env.NODE_ENV !== 'production') {
-          console.error(`[react-layout] lazy "${options.label}" failed to load`, cause);
+          console.error(
+            `[react-layout] lazy "${options.label}" failed to load`,
+            cause,
+          );
         }
         throw new ResourceModuleLoadError(options.label, cause);
       })
@@ -125,7 +131,10 @@ export function createLazyLoader<Module, Selected>(options: {
                   ? settled.value
                   : (settled.value as Record<PropertyKey, unknown>)[member];
               if (typeof candidate !== 'function') {
-                throw new LazyResourceStateNotFoundError(options.label, String(member));
+                throw new LazyResourceStateNotFoundError(
+                  options.label,
+                  String(member),
+                );
               }
               resolved = {
                 generation,

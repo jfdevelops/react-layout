@@ -41,7 +41,9 @@ it('narrows default naming to the selected resource and supports optional variat
       append: 'Preview',
     }),
   });
-  expectTypeOf(Users.displayName).toEqualTypeOf<'AdminUsersDetailResourceLayoutPreview'>();
+  expectTypeOf(
+    Users.displayName,
+  ).toEqualTypeOf<'AdminUsersDetailResourceLayoutPreview'>();
   expect(Users.displayName).toBe('AdminUsersDetailResourceLayoutPreview');
   const Inline = definition.createResourceLayout({
     resource: 'users',
@@ -147,14 +149,18 @@ it('collects factory definitions and tracks mounted state instances after openin
   );
   const source = getInspectionSource(factory);
   const loading = () =>
-    source.getSnapshot().nodes.find((n) => n.kind === 'state' && n.label === 'Loading')!;
+    source
+      .getSnapshot()
+      .nodes.find((n) => n.kind === 'state' && n.label === 'Loading')!;
   expect(loading().active).toBe(2);
   let notifications = 0;
   const stop = source.subscribe(() => notifications++);
   act(() => view.rerender(<Users />));
   expect(loading().active).toBe(0);
   expect(
-    source.getSnapshot().nodes.find((n) => n.kind === 'state' && n.label === 'default')?.active,
+    source
+      .getSnapshot()
+      .nodes.find((n) => n.kind === 'state' && n.label === 'default')?.active,
   ).toBe(1);
   expect(notifications).toBeGreaterThan(0);
   stop();
@@ -244,7 +250,9 @@ it('uses the naming context when computing call-site variations', () => {
       prefix: `${capitalize(resource)}Admin` as const,
     })),
   });
-  expectTypeOf(Users.displayName).toEqualTypeOf<'UsersAdminUsersResourceLayout'>();
+  expectTypeOf(
+    Users.displayName,
+  ).toEqualTypeOf<'UsersAdminUsersResourceLayout'>();
   expect(Users.displayName).toBe('UsersAdminUsersResourceLayout');
 });
 
@@ -301,9 +309,13 @@ it('shows explicit state references without executing render callbacks', () => {
   });
   const graph = getInspectionSource(factory).getSnapshot();
   expect(renders).toBe(0);
-  const reference = graph.nodes.find((n) => n.kind === 'composable' && n.label === 'Pending')!;
+  const reference = graph.nodes.find(
+    (n) => n.kind === 'composable' && n.label === 'Pending',
+  )!;
   expect(
-    graph.edges.some((e) => e.source === reference.id && e.relationship === 'references'),
+    graph.edges.some(
+      (e) => e.source === reference.id && e.relationship === 'references',
+    ),
   ).toBe(true);
 });
 
@@ -327,14 +339,20 @@ it('registers lazy declarations and resolves their metadata after loading', asyn
     },
   });
   const source = getInspectionSource(factory);
-  expect(source.getSnapshot().nodes.find((n) => n.kind === 'lazy')?.unresolved).toBe(true);
+  expect(
+    source.getSnapshot().nodes.find((n) => n.kind === 'lazy')?.unresolved,
+  ).toBe(true);
   const view = render(<LazyUsers />);
   await screen.findByText('Lazy users');
-  expect(source.getSnapshot().nodes.find((n) => n.kind === 'lazy')).toMatchObject({
+  expect(
+    source.getSnapshot().nodes.find((n) => n.kind === 'lazy'),
+  ).toMatchObject({
     unresolved: false,
     status: 'resolved',
   });
-  expect(source.getSnapshot().nodes.filter((n) => n.kind === 'layout')).toHaveLength(1);
+  expect(
+    source.getSnapshot().nodes.filter((n) => n.kind === 'layout'),
+  ).toHaveLength(1);
   view.unmount();
 });
 
@@ -360,7 +378,8 @@ it('reports lazy load failures and their cause to the inspection graph', async (
     },
   });
   const source = getInspectionSource(factory);
-  const lazyNode = () => source.getSnapshot().nodes.find((n) => n.kind === 'lazy');
+  const lazyNode = () =>
+    source.getSnapshot().nodes.find((n) => n.kind === 'lazy');
   expect(lazyNode()?.status).toBe('unresolved');
   const view = render(<LazyUsers />);
   expect(lazyNode()?.status).toBe('loading');
@@ -384,7 +403,9 @@ it('allows breadcrumb segments to be configured once as global component passthr
   const breadcrumbComposable = createBreadcrumbComposable(({ segments }) => (
     <nav>
       {Object.entries(segments).map(([key, segment]) => (
-        <span key={key}>{typeof segment === 'string' ? segment : segment.value}</span>
+        <span key={key}>
+          {typeof segment === 'string' ? segment : segment.value}
+        </span>
       ))}
     </nav>
   ));
@@ -499,7 +520,8 @@ it('infers an inline resource name without a const assertion', () => {
 });
 
 it('labels schemas by vendor in inspection details without running them', async () => {
-  const { formatInspectionDetails } = await import('@jfdevelops/react-layout-devtools-core');
+  const { formatInspectionDetails } =
+    await import('@jfdevelops/react-layout-devtools-core');
   const details = JSON.parse(
     formatInspectionDetails({
       props: {
@@ -554,7 +576,9 @@ it('counts actual composable instances and excludes unrendered declarations', ()
   const count = (label: string) =>
     getInspectionSource(factory)
       .getSnapshot()
-      .nodes.filter((node) => node.kind === 'composable' && node.label === label)
+      .nodes.filter(
+        (node) => node.kind === 'composable' && node.label === label,
+      )
       .reduce((total, node) => total + node.active, 0);
   expect(count('Item')).toBe(0);
   const view = render(
@@ -613,23 +637,30 @@ it('forwards merged factory layout and default-state custom props through scoped
       },
     },
   });
-  const Directory = definition.createResourceLayout.forResources('users').createComponent({
-    props: {
-      include: {
-        factoryValue: true,
-        layoutValue: true,
-        stateValue: 'optional',
+  const Directory = definition.createResourceLayout
+    .forResources('users')
+    .createComponent({
+      props: {
+        include: {
+          factoryValue: true,
+          layoutValue: true,
+          stateValue: 'optional',
+        },
       },
-    },
-    resources: {
-      users: {
-        render: () => null,
+      resources: {
+        users: {
+          render: () => null,
+        },
       },
-    },
-    render: (_props, { Root }) => createElement(Root),
-  });
+      render: (_props, { Root }) => createElement(Root),
+    });
   render(
-    <Directory resource='users' factoryValue='Factory' layoutValue='Layout' stateValue='State' />,
+    <Directory
+      resource='users'
+      factoryValue='Factory'
+      layoutValue='Layout'
+      stateValue='State'
+    />,
   );
   expect(
     screen.getByRole('heading', {

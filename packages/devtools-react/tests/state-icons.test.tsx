@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { createInspectionStore } from '@jfdevelops/react-layout-devtools-core';
 import { ReactLayoutDevtoolsContent } from '../src';
@@ -40,7 +46,8 @@ function storeWithStates() {
   return store;
 }
 
-const icon = (element: HTMLElement) => element.querySelector<SVGElement>('[data-state-icon]');
+const icon = (element: HTMLElement) =>
+  element.querySelector<SVGElement>('[data-state-icon]');
 
 it('shows built-in state icons, and a generic one for custom states, in the graph and tree', () => {
   render(<ReactLayoutDevtoolsContent source={storeWithStates()} />);

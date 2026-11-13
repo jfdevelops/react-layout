@@ -55,9 +55,9 @@ it('accepts custom component slots under their capitalized names', () => {
     name: 'Users',
   });
 
-  expect(renderToStaticMarkup(<Users Actions={() => <button>Run</button>} />)).toBe(
-    '<button>Run</button>',
-  );
+  expect(
+    renderToStaticMarkup(<Users Actions={() => <button>Run</button>} />),
+  ).toBe('<button>Run</button>');
 });
 
 it('retains slot branding when optional included definitions are lifted', () => {
@@ -97,9 +97,9 @@ it('retains slot branding when optional included definitions are lifted', () => 
     name: 'Target',
   });
 
-  expect(renderToStaticMarkup(<Target Actions={() => <button>Lifted</button>} />)).toBe(
-    '<button>Lifted</button>',
-  );
+  expect(
+    renderToStaticMarkup(<Target Actions={() => <button>Lifted</button>} />),
+  ).toBe('<button>Lifted</button>');
   expect(renderToStaticMarkup(<Target />)).toContain('>Empty</p>');
 });
 

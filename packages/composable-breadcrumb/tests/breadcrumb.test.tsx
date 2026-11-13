@@ -34,8 +34,12 @@ describe('createBreadcrumbComposable', () => {
       />,
     );
     expect(screen.getByText('Home / Docs')).toBeInTheDocument();
-    expect(Breadcrumb[composablePresetMetaKey].props.segments['~standard'].vendor).toBe('zod');
-    expect(createBreadcrumbComposable.props.segments['~standard'].vendor).toBe('arktype');
+    expect(
+      Breadcrumb[composablePresetMetaKey].props.segments['~standard'].vendor,
+    ).toBe('zod');
+    expect(createBreadcrumbComposable.props.segments['~standard'].vendor).toBe(
+      'arktype',
+    );
   });
 
   it('provides the default definitions to a customization callback', () => {
@@ -49,7 +53,9 @@ describe('createBreadcrumbComposable', () => {
     expect(Breadcrumb[composablePresetMetaKey].props.segments).toBe(
       createBreadcrumbComposable.props.segments,
     );
-    expect(Breadcrumb[composablePresetMetaKey].props.label['~standard'].vendor).toBe('zod');
+    expect(
+      Breadcrumb[composablePresetMetaKey].props.label['~standard'].vendor,
+    ).toBe('zod');
   });
 
   it('renders breadcrumb segments', () => {

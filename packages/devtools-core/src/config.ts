@@ -76,9 +76,14 @@ export interface DevtoolsConfig {
   showOutlines?: boolean;
 }
 
-export type ChipPalette = Record<DevtoolsChipKind, { color: string; background: string }>;
+export type ChipPalette = Record<
+  DevtoolsChipKind,
+  { color: string; background: string }
+>;
 
-export function resolveChipColors(overrides: DevtoolsConfig['chipColors']): ChipPalette {
+export function resolveChipColors(
+  overrides: DevtoolsConfig['chipColors'],
+): ChipPalette {
   const defaults = {
     ...defaultNodeColors,
     active: '#6ee7b7',
@@ -98,7 +103,8 @@ export function resolveChipColors(overrides: DevtoolsConfig['chipColors']): Chip
   return Object.fromEntries(
     Object.entries(defaults).map(([kind, fallback]) => {
       const override = overrides?.[kind as DevtoolsChipKind];
-      const color = typeof override === 'string' ? override : (override?.color ?? fallback);
+      const color =
+        typeof override === 'string' ? override : (override?.color ?? fallback);
 
       return [
         kind,

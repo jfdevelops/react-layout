@@ -254,7 +254,9 @@ it('keeps composition helpers callable when the definition defaults to namespace
           name: 'Layout',
         }),
       }),
-      render: (_props, { composables }) => <composables.Layout>Composition</composables.Layout>,
+      render: (_props, { composables }) => (
+        <composables.Layout>Composition</composables.Layout>
+      ),
     },
   });
   const Users = definition.createResourceLayout({
@@ -269,14 +271,16 @@ it('keeps composition helpers callable when the definition defaults to namespace
       name: 'Shared',
     }).displayName,
   ).toBe('Shared');
-  const Directory = definition.createResourceLayout.forResources('users').createComponent({
-    resources: {
-      users: {
-        render: () => <p>Entry</p>,
+  const Directory = definition.createResourceLayout
+    .forResources('users')
+    .createComponent({
+      resources: {
+        users: {
+          render: () => <p>Entry</p>,
+        },
       },
-    },
-    render: (_props, { Root }) => <Root />,
-  });
+      render: (_props, { Root }) => <Root />,
+    });
   render(<Directory resource='users' />);
   expect(screen.getByText('Composition')).toBeInTheDocument();
 });

@@ -11,7 +11,13 @@ import { control } from './theme';
 import { StateIcon } from './state-icon';
 import type { ChipPalette } from './config';
 
-function SourceLink({ label, location }: { label: string; location: SourceLocation }) {
+function SourceLink({
+  label,
+  location,
+}: {
+  label: string;
+  location: SourceLocation;
+}) {
   const [error, setError] = useState<string>();
   const url = location.editorUrl;
   const path = `${location.file}:${location.line}:${location.column}`;
@@ -110,7 +116,9 @@ export function NodeSource({ node }: { node: GraphNode }) {
         Source
       </h4>
       {node.source && <SourceLink label='Declaration' location={node.source} />}
-      {separate && <SourceLink label='Registration' location={node.registrationSource!} />}
+      {separate && (
+        <SourceLink label='Registration' location={node.registrationSource!} />
+      )}
     </section>
   );
 }
@@ -138,7 +146,9 @@ export function StatePreview({
   palette: ChipPalette;
 }) {
   const [chosen, setChosen] = useState<string>();
-  const instances = (graph.instances ?? []).filter((instance) => instance.layout === layout);
+  const instances = (graph.instances ?? []).filter(
+    (instance) => instance.layout === layout,
+  );
   const instance =
     instances.find((entry) => entry.id === chosen) ??
     instances.find((entry) => (entry.forcedState ?? entry.state) === state) ??
@@ -158,7 +168,8 @@ export function StatePreview({
           display: 'grid',
           gap: 10,
           '--react-layout-devtools-active-color': palette.active.color,
-          '--react-layout-devtools-active-background': palette.active.background,
+          '--react-layout-devtools-active-background':
+            palette.active.background,
         } as CSSProperties
       }
     >
@@ -177,8 +188,9 @@ export function StatePreview({
           fontSize: 12,
         }}
       >
-        Preview declared render states using current props and typed preview fixtures. This changes
-        rendering only; application data and requests continue normally.
+        Preview declared render states using current props and typed preview
+        fixtures. This changes rendering only; application data and requests
+        continue normally.
       </p>
       <label>
         Mounted instance{' '}
@@ -190,14 +202,16 @@ export function StatePreview({
         >
           {instances.map((entry, index) => (
             <option key={entry.id} value={entry.id}>
-              Instance {index + 1} · {byId.get(entry.state)?.label ?? entry.state}
+              Instance {index + 1} ·{' '}
+              {byId.get(entry.state)?.label ?? entry.state}
             </option>
           ))}
         </select>
       </label>
       {instance.forcedState && (
         <Badge style={palette.active}>
-          Forced: {byId.get(instance.forcedState)?.label ?? instance.forcedState}
+          Forced:{' '}
+          {byId.get(instance.forcedState)?.label ?? instance.forcedState}
         </Badge>
       )}
       <div
@@ -258,7 +272,8 @@ export function StatePreview({
             color: '#fca5a5',
           }}
         >
-          {instance.error} Supply the required props with defineLayoutPreview, or select Auto.
+          {instance.error} Supply the required props with defineLayoutPreview,
+          or select Auto.
         </p>
       )}
     </section>

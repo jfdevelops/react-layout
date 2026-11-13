@@ -6,7 +6,13 @@ type View = 'graph' | 'tree';
 
 const views: readonly View[] = ['graph', 'tree'];
 
-export function ViewSwitcher({ value, onChange }: { value: View; onChange: (view: View) => void }) {
+export function ViewSwitcher({
+  value,
+  onChange,
+}: {
+  value: View;
+  onChange: (view: View) => void;
+}) {
   return (
     <div
       role='tablist'
@@ -34,7 +40,11 @@ export function ViewSwitcher({ value, onChange }: { value: View; onChange: (view
               tabIndex={value === view ? 0 : -1}
               onClick={() => onChange(view)}
               onKeyDown={(event) => {
-                if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+                if (
+                  !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(
+                    event.key,
+                  )
+                ) {
                   return;
                 }
 

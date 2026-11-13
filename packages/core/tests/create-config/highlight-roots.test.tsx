@@ -47,8 +47,12 @@ it.each(['intrinsic', 'fragment', 'composable', 'unwrapped'] as const)(
       });
     const view = render(<Users />);
     const graph = getInspectionSource(factory).getSnapshot();
-    const layout = graph.nodes.find((node) => node.kind === 'layout' && node.label === 'Users')!;
-    const state = graph.nodes.find((node) => node.kind === 'state' && node.active > 0)!;
+    const layout = graph.nodes.find(
+      (node) => node.kind === 'layout' && node.label === 'Users',
+    )!;
+    const state = graph.nodes.find(
+      (node) => node.kind === 'state' && node.active > 0,
+    )!;
     expect(view.container.children).toHaveLength(root === 'fragment' ? 2 : 1);
     for (const element of Array.from(view.container.children)) {
       const owners = JSON.parse(element.getAttribute('data-rl-owners')!);
@@ -109,10 +113,13 @@ it('marks the actual Loading and Error state roots with their own state ids', ()
     view.rerender(<State />);
     const graph = getInspectionSource(factory).getSnapshot();
     const state = graph.nodes.find(
-      (node) => node.kind === 'state' && node.label === label && node.active > 0,
+      (node) =>
+        node.kind === 'state' && node.label === label && node.active > 0,
     )!;
-    expect(JSON.parse(view.container.firstElementChild!.getAttribute('data-rl-owners')!)).toContain(
-      state.id,
-    );
+    expect(
+      JSON.parse(
+        view.container.firstElementChild!.getAttribute('data-rl-owners')!,
+      ),
+    ).toContain(state.id);
   }
 });

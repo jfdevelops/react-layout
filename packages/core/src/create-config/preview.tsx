@@ -12,7 +12,9 @@ import {
   type InspectionStore,
 } from '@jfdevelops/react-layout-devtools-core';
 
-type PropsOf<T> = T extends (props: infer P, ...rest: never[]) => unknown ? Partial<P> : never;
+type PropsOf<T> = T extends (props: infer P, ...rest: never[]) => unknown
+  ? Partial<P>
+  : never;
 
 export type LayoutPreviewProps<T> = {
   [
@@ -58,8 +60,8 @@ class PreviewBoundary extends Component<
   render() {
     return this.state.error ? (
       <div role='alert'>
-        Unable to preview this render state: {this.state.error}. Supply preview props or return to
-        Auto in React Layout Devtools.
+        Unable to preview this render state: {this.state.error}. Supply preview
+        props or return to Auto in React Layout Devtools.
       </div>
     ) : (
       this.props.children
@@ -108,7 +110,10 @@ export function createPreviewComponent(
     }
 
     return (
-      <PreviewBoundary key={forced} onError={(message) => options.store.previewError(id, message)}>
+      <PreviewBoundary
+        key={forced}
+        onError={(message) => options.store.previewError(id, message)}
+      >
         {createElement(target, {
           ...props,
           ...options.fixtures()?.[name],

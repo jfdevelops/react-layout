@@ -33,12 +33,18 @@ export function useDraggableFab(
 ) {
   const [localPosition, setLocalPosition] = useState<Point>();
   const stored = onPositionChange ? savedPosition : localPosition;
-  const coordinates = stored && typeof window !== 'undefined' ? clamp(stored) : stored;
+  const coordinates =
+    stored && typeof window !== 'undefined' ? clamp(stored) : stored;
   function setCoordinates(
-    change: Point | undefined | ((previous: Point | undefined) => Point | undefined),
+    change:
+      | Point
+      | undefined
+      | ((previous: Point | undefined) => Point | undefined),
   ) {
     if (onPositionChange) {
-      onPositionChange(typeof change === 'function' ? change(coordinates) : change);
+      onPositionChange(
+        typeof change === 'function' ? change(coordinates) : change,
+      );
     } else {
       setLocalPosition(change);
     }
@@ -76,7 +82,11 @@ export function useDraggableFab(
     },
     handlers: {
       onPointerDown(event: PointerEvent<HTMLButtonElement>) {
-        if (gesture.current || event.button !== 0 || event.isPrimary === false) {
+        if (
+          gesture.current ||
+          event.button !== 0 ||
+          event.isPrimary === false
+        ) {
           return;
         }
         const rect = event.currentTarget.getBoundingClientRect();
@@ -121,7 +131,9 @@ export function useDraggableFab(
       onKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
         if (
           !event.altKey ||
-          !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)
+          !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(
+            event.key,
+          )
         ) {
           return;
         }
@@ -135,10 +147,18 @@ export function useDraggableFab(
           clamp({
             x:
               (point?.x ?? rect.left) +
-              (event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0),
+              (event.key === 'ArrowLeft'
+                ? -step
+                : event.key === 'ArrowRight'
+                  ? step
+                  : 0),
             y:
               (point?.y ?? rect.top) +
-              (event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0),
+              (event.key === 'ArrowUp'
+                ? -step
+                : event.key === 'ArrowDown'
+                  ? step
+                  : 0),
           }),
         );
       },

@@ -168,13 +168,14 @@ it('preserves render-state members through withLayout', () => {
 });
 
 it('infers included option props through a bound layout factory', () => {
-  const { defineResourceLayout: defineBoundLayout } = createDefinedResourceLayout({
-    resources: ['users'],
-    options: {
-      title: z.string(),
-      message: z.string(),
-    },
-  });
+  const { defineResourceLayout: defineBoundLayout } =
+    createDefinedResourceLayout({
+      resources: ['users'],
+      options: {
+        title: z.string(),
+        message: z.string(),
+      },
+    });
 
   defineBoundLayout({
     render: {
@@ -334,19 +335,20 @@ it('types compound render states independently', () => {
 });
 
 it('types dot-delimited nested lazy resource paths', () => {
-  const { defineResourceLayout: defineBoundLayout } = createDefinedResourceLayout({
-    resources: [
-      {
-        value: 'admin',
-        subResources: [
-          {
-            value: 'users',
-            subResources: ['detail'],
-          },
-        ],
-      },
-    ],
-  });
+  const { defineResourceLayout: defineBoundLayout } =
+    createDefinedResourceLayout({
+      resources: [
+        {
+          value: 'admin',
+          subResources: [
+            {
+              value: 'users',
+              subResources: ['detail'],
+            },
+          ],
+        },
+      ],
+    });
 
   defineBoundLayout.lazy({
     resource: 'admin.users.detail',
@@ -377,9 +379,10 @@ it('does not expose synchronous metadata on lazy resource proxies', () => {
     resource: 'users',
     name: 'LoadedUsers',
   });
-  const { defineResourceLayout: defineBoundLayout } = createDefinedResourceLayout({
-    resources: ['users'],
-  });
+  const { defineResourceLayout: defineBoundLayout } =
+    createDefinedResourceLayout({
+      resources: ['users'],
+    });
   const Users = defineBoundLayout.lazy({
     resource: 'users',
     load: async () => ({
@@ -443,9 +446,10 @@ it('rejects invalid render-state values across layout entry points', () => {
     default: () => <></>,
     Preview: 123,
   };
-  const { defineResourceLayout: defineBoundLayout } = createDefinedResourceLayout({
-    resources: ['users'],
-  });
+  const { defineResourceLayout: defineBoundLayout } =
+    createDefinedResourceLayout({
+      resources: ['users'],
+    });
 
   () => {
     defineResourceLayout({
@@ -479,9 +483,10 @@ it('rejects invalid render-state values across layout entry points', () => {
 });
 
 it('validates definitions with explicit state names', () => {
-  const { defineResourceLayout: defineBoundLayout } = createDefinedResourceLayout({
-    resources: ['users'],
-  });
+  const { defineResourceLayout: defineBoundLayout } =
+    createDefinedResourceLayout({
+      resources: ['users'],
+    });
   () => {
     const invalidOptions2 = {
       render: {
@@ -503,12 +508,13 @@ it('validates definitions with explicit state names', () => {
 });
 
 it('infers custom inline states from the complete render map', () => {
-  const { defineResourceLayout: defineBoundLayout } = createDefinedResourceLayout({
-    resources: ['users'],
-    options: {
-      title: z.string(),
-    },
-  });
+  const { defineResourceLayout: defineBoundLayout } =
+    createDefinedResourceLayout({
+      resources: ['users'],
+      options: {
+        title: z.string(),
+      },
+    });
   const definition = defineBoundLayout({
     render: {
       default: () => <></>,
@@ -582,12 +588,13 @@ it('infers custom inline states from the complete render map', () => {
 });
 
 it('preserves the function overload and its props and context', () => {
-  const { defineResourceLayout: defineBoundLayout } = createDefinedResourceLayout({
-    resources: ['users'],
-    options: {
-      title: z.string(),
-    },
-  });
+  const { defineResourceLayout: defineBoundLayout } =
+    createDefinedResourceLayout({
+      resources: ['users'],
+      options: {
+        title: z.string(),
+      },
+    });
   const definition = defineBoundLayout({
     props: {
       include: {
@@ -620,12 +627,13 @@ it('preserves the function overload and its props and context', () => {
 });
 
 it('validates option names in custom inline states', () => {
-  const { defineResourceLayout: defineBoundLayout } = createDefinedResourceLayout({
-    resources: ['users'],
-    options: {
-      title: z.string(),
-    },
-  });
+  const { defineResourceLayout: defineBoundLayout } =
+    createDefinedResourceLayout({
+      resources: ['users'],
+      options: {
+        title: z.string(),
+      },
+    });
   () => {
     const invalidOptions3 = {
       render: {

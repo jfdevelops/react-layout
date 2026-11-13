@@ -1,6 +1,9 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, expectTypeOf, it } from 'vitest';
-import { createDefinedResourceLayout, ResourceModuleLoadError } from '../../src';
+import {
+  createDefinedResourceLayout,
+  ResourceModuleLoadError,
+} from '../../src';
 import { reactNode } from '@jfdevelops/react-layout-adapter-zod';
 
 afterEach(cleanup);
@@ -175,7 +178,9 @@ it('infers inline state unions and exposes the active state in scoped render con
           Badge: {
             props: {},
             render: (_, { state }) => {
-              expectTypeOf(state).toEqualTypeOf<'default' | 'Error' | 'Audit'>();
+              expectTypeOf(state).toEqualTypeOf<
+                'default' | 'Error' | 'Audit'
+              >();
 
               return <span data-testid='badge'>{state}</span>;
             },
@@ -213,10 +218,14 @@ it('keeps directly rendered nested layouts independent from the enclosing state'
   const Inner = factory
     .defineResourceLayout({
       render: {
-        default: (_, { state }) => <span data-testid='direct-default'>{state}</span>,
+        default: (_, { state }) => (
+          <span data-testid='direct-default'>{state}</span>
+        ),
         ...factory.createRenderState({
           state: 'Error',
-          render: (_, { state }) => <span data-testid='direct-error'>{state}</span>,
+          render: (_, { state }) => (
+            <span data-testid='direct-error'>{state}</span>
+          ),
         }),
       },
     })
@@ -319,7 +328,9 @@ it('gives automatic fallbacks their own state while a shared lazy shell is pendi
   resolve({
     Shell,
   });
-  expect(await screen.findByTestId('resolved-shell')).toHaveTextContent('Error');
+  expect(await screen.findByTestId('resolved-shell')).toHaveTextContent(
+    'Error',
+  );
 });
 
 it('keeps unbound shared-state contexts safe for custom callers', () => {
@@ -372,38 +383,46 @@ it.each([
   ['deferred', 'asComposable'],
   ['lazy', 'states.default'],
   ['lazy', 'asComposable'],
-] as const)('preserves callers through %s defaults referenced via %s', async (kind, via) => {
-  const factory = createDefinedResourceLayout({
-    resources: ['users'],
-  });
-  const Definition = factory.createRenderState({
-    state: 'default',
-    render: (_, { state }) => <p data-testid='registered-default'>{state}</p>,
-  });
-  const Deferred = factory.createRenderState.defer(Definition.default);
-  const Lazy = factory.createRenderState.lazy(async () => ({
-    Definition,
-  }));
-  const source = kind === 'deferred' ? Deferred : Lazy;
-  const Users = factory
-    .defineResourceLayout({
-      composables: (_create, states) => ({
-        Default: via === 'states.default' ? states.default : source.asComposable(),
-      }),
-      render: {
-        default: kind === 'deferred' ? Deferred.default : Lazy,
-        Error: {
-          render: (_, { composables }) => <composables.Default />,
-        },
-      },
-    })
-    .createResourceLayout({
-      resource: 'users',
-      name: 'Users',
+] as const)(
+  'preserves callers through %s defaults referenced via %s',
+  async (kind, via) => {
+    const factory = createDefinedResourceLayout({
+      resources: ['users'],
     });
-  const view = render(<Users.Error />);
-  expect(await screen.findByTestId('registered-default')).toHaveTextContent('Error');
-  view.unmount();
-  render(<Users />);
-  expect(await screen.findByTestId('registered-default')).toHaveTextContent('default');
-});
+    const Definition = factory.createRenderState({
+      state: 'default',
+      render: (_, { state }) => <p data-testid='registered-default'>{state}</p>,
+    });
+    const Deferred = factory.createRenderState.defer(Definition.default);
+    const Lazy = factory.createRenderState.lazy(async () => ({
+      Definition,
+    }));
+    const source = kind === 'deferred' ? Deferred : Lazy;
+    const Users = factory
+      .defineResourceLayout({
+        composables: (_create, states) => ({
+          Default:
+            via === 'states.default' ? states.default : source.asComposable(),
+        }),
+        render: {
+          default: kind === 'deferred' ? Deferred.default : Lazy,
+          Error: {
+            render: (_, { composables }) => <composables.Default />,
+          },
+        },
+      })
+      .createResourceLayout({
+        resource: 'users',
+        name: 'Users',
+      });
+    const view = render(<Users.Error />);
+    expect(await screen.findByTestId('registered-default')).toHaveTextContent(
+      'Error',
+    );
+    view.unmount();
+    render(<Users />);
+    expect(await screen.findByTestId('registered-default')).toHaveTextContent(
+      'default',
+    );
+  },
+);

@@ -8,11 +8,18 @@ import {
   ToolbarIcon,
   CloseIcon,
 } from './icons';
-import { isEditable, matchesPanelShortcut, panelShortcutLabel } from './shortcuts';
+import {
+  isEditable,
+  matchesPanelShortcut,
+  panelShortcutLabel,
+} from './shortcuts';
 import { Button } from './components/ui/button';
 import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import { ReactLayoutDevtoolsContent, type ReactLayoutDevtoolsContentProps } from './content';
+import {
+  ReactLayoutDevtoolsContent,
+  type ReactLayoutDevtoolsContentProps,
+} from './content';
 import { control } from './theme';
 import { useDraggableFab } from './use-draggable-fab';
 import { HelpTooltip } from './components/ui/tooltip';
@@ -40,7 +47,10 @@ export function ReactLayoutDevtools({
   initialIsOpen,
   ...props
 }: ReactLayoutDevtoolsProps) {
-  const [preferences, updatePreferences] = usePanelPreferences(props.config, props.storageKey);
+  const [preferences, updatePreferences] = usePanelPreferences(
+    props.config,
+    props.storageKey,
+  );
   const active = preferences.variant ?? variant;
   // Toolbar mode starts collapsed when selected from the floating panel.
   const [openAfterSwitch, setOpenAfterSwitch] = useState<boolean>();
@@ -86,7 +96,10 @@ function FloatingDevtools({
   const hasOpened = useRef(initialIsOpen);
   const trigger = useRef<HTMLButtonElement>(null);
   const close = useRef<HTMLButtonElement>(null);
-  const [preferences, updatePreferences] = usePanelPreferences(content.config, content.storageKey);
+  const [preferences, updatePreferences] = usePanelPreferences(
+    content.config,
+    content.storageKey,
+  );
   const fab = useDraggableFab(trigger, preferences.fabPosition, (fabPosition) =>
     updatePreferences({
       fabPosition,
@@ -107,7 +120,11 @@ function FloatingDevtools({
 
   useEffect(() => {
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (event.repeat || isEditable(event.target) || !matchesPanelShortcut(event)) {
+      if (
+        event.repeat ||
+        isEditable(event.target) ||
+        !matchesPanelShortcut(event)
+      ) {
         return;
       }
       event.preventDefault();
@@ -236,23 +253,49 @@ function FloatingDevtools({
                 </HelpTooltip>
               )}
               <HelpTooltip
-                content={panel.mode === 'expanded' ? 'Restore compact panel' : 'Expand panel'}
+                content={
+                  panel.mode === 'expanded'
+                    ? 'Restore compact panel'
+                    : 'Expand panel'
+                }
               >
                 <Button
                   size='icon'
                   style={panelControl}
-                  aria-label={panel.mode === 'expanded' ? 'Restore compact panel' : 'Expand panel'}
-                  onClick={() => panel.setMode(panel.mode === 'expanded' ? 'floating' : 'expanded')}
+                  aria-label={
+                    panel.mode === 'expanded'
+                      ? 'Restore compact panel'
+                      : 'Expand panel'
+                  }
+                  onClick={() =>
+                    panel.setMode(
+                      panel.mode === 'expanded' ? 'floating' : 'expanded',
+                    )
+                  }
                 >
-                  {panel.mode === 'expanded' ? <CollapseIcon /> : <ExpandIcon />}
+                  {panel.mode === 'expanded' ? (
+                    <CollapseIcon />
+                  ) : (
+                    <ExpandIcon />
+                  )}
                 </Button>
               </HelpTooltip>
-              <HelpTooltip content={panel.mode === 'docked' ? 'Undock panel' : 'Dock panel'}>
+              <HelpTooltip
+                content={
+                  panel.mode === 'docked' ? 'Undock panel' : 'Dock panel'
+                }
+              >
                 <Button
                   size='icon'
                   style={panelControl}
-                  aria-label={panel.mode === 'docked' ? 'Undock panel' : 'Dock panel'}
-                  onClick={() => panel.setMode(panel.mode === 'docked' ? 'floating' : 'docked')}
+                  aria-label={
+                    panel.mode === 'docked' ? 'Undock panel' : 'Dock panel'
+                  }
+                  onClick={() =>
+                    panel.setMode(
+                      panel.mode === 'docked' ? 'floating' : 'docked',
+                    )
+                  }
                 >
                   <DockIcon />
                 </Button>
@@ -314,7 +357,9 @@ function FloatingDevtools({
               {...content}
               layout={
                 content.layout ??
-                (panel.mode === 'floating' && panel.rect.width < 760 ? 'compact' : 'auto')
+                (panel.mode === 'floating' && panel.rect.width < 760
+                  ? 'compact'
+                  : 'auto')
               }
               style={{
                 border: 0,

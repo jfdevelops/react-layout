@@ -146,7 +146,10 @@ describe.each(['object', 'callback'])('naming parts from an %s', (source) => {
           receivedType: 'string',
         },
       });
-      expect(error).toHaveProperty('message', expect.stringContaining('version'));
+      expect(error).toHaveProperty(
+        'message',
+        expect.stringContaining('version'),
+      );
     }
   });
 
@@ -240,7 +243,8 @@ it.each(['object', 'callback'])(
       version: 'two',
       extra: 'Extra',
     };
-    const resolver = source === 'callback' ? naming(() => values) : naming(values);
+    const resolver =
+      source === 'callback' ? naming(() => values) : naming(values);
     const Users = createDefinedResourceLayout({
       resources: ['users'],
       name: resolver,
@@ -335,11 +339,11 @@ it('defaults to strict checking with a pattern-only configuration object', () =>
 });
 
 it('rejects callback-only definitions at runtime', () => {
-  expect(() => Reflect.apply(defineLayoutName, undefined, [() => 'Users'])).toThrowError(
-    LayoutConfigurationError,
-  );
+  expect(() =>
+    Reflect.apply(defineLayoutName, undefined, [() => 'Users']),
+  ).toThrowError(LayoutConfigurationError);
   const builder = defineLayoutName.defineParts('prefix');
-  expect(() => Reflect.apply(builder.namingFn, undefined, [() => 'Users'])).toThrowError(
-    LayoutConfigurationError,
-  );
+  expect(() =>
+    Reflect.apply(builder.namingFn, undefined, [() => 'Users']),
+  ).toThrowError(LayoutConfigurationError);
 });

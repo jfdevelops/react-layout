@@ -7,7 +7,9 @@ export type Show<T> = { [K in keyof T]: T[K] } & {};
 /**
  * Like {@link Show}, but keeps the call signature of callable types.
  */
-export type ShowCallable<T> = T extends (...args: infer Arguments) => infer Result
+export type ShowCallable<T> = T extends (
+  ...args: infer Arguments
+) => infer Result
   ? ((...args: Arguments) => Result) & { [Key in keyof T]: T[Key] }
   : Show<T>;
 

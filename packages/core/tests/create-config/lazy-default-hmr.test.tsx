@@ -1,6 +1,9 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { createDefinedResourceLayout, ResourceModuleLoadError } from '../../src';
+import {
+  createDefinedResourceLayout,
+  ResourceModuleLoadError,
+} from '../../src';
 
 afterEach(() => {
   cleanup();

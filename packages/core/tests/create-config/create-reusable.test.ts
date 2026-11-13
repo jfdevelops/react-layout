@@ -83,7 +83,8 @@ describe('createReusable', () => {
           suffix: z.string(),
         },
       },
-      fn: ({ resources, nested, suffix }) => `${resources.join(',')}: ${nested.label}${suffix}`,
+      fn: ({ resources, nested, suffix }) =>
+        `${resources.join(',')}: ${nested.label}${suffix}`,
     });
     expect(
       format({
@@ -180,7 +181,10 @@ describe('createReusable', () => {
       resources: ['users', 'posts'],
       options: ({
         resource,
-      }: Pick<InPropsOptions<readonly ['users', 'posts'], never>, 'resource'>) => ({
+      }: Pick<
+        InPropsOptions<readonly ['users', 'posts'], never>,
+        'resource'
+      >) => ({
         target: resource,
       }),
     });

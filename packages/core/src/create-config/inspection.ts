@@ -29,7 +29,11 @@ export function inspectDefinition(
   });
   const resourceIds = new Map<string, string>();
 
-  function visit(items: ReadonlyArray<ResourceDefinition>, parent: string, prefix = '') {
+  function visit(
+    items: ReadonlyArray<ResourceDefinition>,
+    parent: string,
+    prefix = '',
+  ) {
     for (const item of items) {
       const slug = typeof item === 'string' ? item : item.value;
       const path = prefix ? `${prefix}.${slug}` : slug;
@@ -72,14 +76,21 @@ export interface ActiveInspection {
 const inspectedComposables = new WeakSet<object>();
 
 /** Mark existing roots only; never add wrappers or forward props to user components. */
-export function markInspectionRoots(children: ReactNode, owners: readonly string[]): ReactNode {
+export function markInspectionRoots(
+  children: ReactNode,
+  owners: readonly string[],
+): ReactNode {
   if (process.env.NODE_ENV === 'production') {
     return children;
   }
   if (Array.isArray(children)) {
     return children.map((child) => markInspectionRoots(child, owners));
   }
-  if (!isValidElement<{ children?: ReactNode; 'data-rl-owners'?: string }>(children)) {
+  if (
+    !isValidElement<{ children?: ReactNode; 'data-rl-owners'?: string }>(
+      children,
+    )
+  ) {
     return children;
   }
   if (children.type === Fragment) {
@@ -89,13 +100,16 @@ export function markInspectionRoots(children: ReactNode, owners: readonly string
   }
   if (
     typeof children.type !== 'string' &&
-    (typeof children.type !== 'object' || !inspectedComposables.has(children.type))
+    (typeof children.type !== 'object' ||
+      !inspectedComposables.has(children.type))
   ) {
     return children;
   }
   let previous: string[] = [];
   try {
-    const parsed: unknown = JSON.parse(children.props['data-rl-owners'] ?? '[]');
+    const parsed: unknown = JSON.parse(
+      children.props['data-rl-owners'] ?? '[]',
+    );
     if (Array.isArray(parsed)) {
       previous = parsed.filter((id): id is string => typeof id === 'string');
     }
@@ -123,7 +137,8 @@ export function trackComposable<T extends object>(
               ...props,
               'data-rl-node': id,
               'data-rl-composable':
-                (component as { displayName?: string }).displayName ?? 'Composable',
+                (component as { displayName?: string }).displayName ??
+                'Composable',
             };
 
       return createElement(

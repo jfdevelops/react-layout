@@ -4,7 +4,10 @@ import { vi } from 'vitest';
 import { defineResourceLayout } from '../../src';
 
 /** Factory bound to `users` + `posts`. Pass `resources` for extras. */
-export const testResourceLayout = defineResourceLayout.forResources('users', 'posts');
+export const testResourceLayout = defineResourceLayout.forResources(
+  'users',
+  'posts',
+);
 
 /** Minimal defined layout for tests that only need create* APIs. */
 export const testResourceLayoutWithRender = testResourceLayout({

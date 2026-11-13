@@ -1,5 +1,14 @@
-import { RenderStateNameContext, ReferencedRenderStateContext } from './render-state-context';
-import { createContext, createElement, useContext, type ComponentType, type JSX } from 'react';
+import {
+  RenderStateNameContext,
+  ReferencedRenderStateContext,
+} from './render-state-context';
+import {
+  createContext,
+  createElement,
+  useContext,
+  type ComponentType,
+  type JSX,
+} from 'react';
 import { LayoutConfigurationError } from '../errors';
 import type { IncludedProps } from '../props';
 import { isStandardSchema } from '@jfdevelops/react-layout-validator';
@@ -10,15 +19,16 @@ export type StateComposableOptions<
   IncludeProps extends IncludedProps<Props> = {},
 > = {
   props?: {
-    include?: IncludeProps & { [Key in Exclude<keyof IncludeProps, keyof Props>]: never };
+    include?: IncludeProps & {
+      [Key in Exclude<keyof IncludeProps, keyof Props>]: never;
+    };
   };
 };
 
-type StateComposableCallProps<Props extends object, Carried extends keyof Props> = Omit<
-  Props,
-  Carried
-> &
-  Partial<Pick<Props, Carried>>;
+type StateComposableCallProps<
+  Props extends object,
+  Carried extends keyof Props,
+> = Omit<Props, Carried> & Partial<Pick<Props, Carried>>;
 
 /** Non-enumerable state helpers; class methods stay out of object-spread types. */
 export declare class StateComposableHandle<Props extends object> {
@@ -28,7 +38,10 @@ export declare class StateComposableHandle<Props extends object> {
 }
 
 /** A state component usable in a composables map, optionally inheriting props. */
-export type StateComposable<Props extends object, Carried extends keyof Props = never> = {
+export type StateComposable<
+  Props extends object,
+  Carried extends keyof Props = never,
+> = {
   (props: StateComposableCallProps<Props, Carried>): JSX.Element;
   displayName: string;
   props: StateComposableCallProps<Props, Carried>;
@@ -52,12 +65,16 @@ export type StateComposableSource = {
   fallbackStateName?: string;
 };
 
-export const stateReferenceSource = Symbol.for('@jfdevelops/react-layout/state-reference');
+export const stateReferenceSource = Symbol.for(
+  '@jfdevelops/react-layout/state-reference',
+);
 
 /** @internal Shared by all states in one created resource layout. */
 export type RenderStateScope = {
   states: Record<string, StateComposable<Record<string, unknown>>>;
-  resolve: (source: StateComposableSource) => ComponentType<Record<string, unknown>>;
+  resolve: (
+    source: StateComposableSource,
+  ) => ComponentType<Record<string, unknown>>;
 };
 
 /** @internal Each rendered state supplies its own resolved values for carry-over. */
@@ -97,7 +114,9 @@ export function createStateComposable(
           ? (context.inputProps ?? context.props)
           : context.props;
 
-        return Object.hasOwn(values, key) && values[key] !== undefined ? [[key, values[key]]] : [];
+        return Object.hasOwn(values, key) && values[key] !== undefined
+          ? [[key, values[key]]]
+          : [];
       }),
     );
 
@@ -131,7 +150,9 @@ export function withStateComposable<Value extends object>(
   source: StateComposableSource,
 ): Value & { asComposable: AsStateComposable<Record<string, unknown>> } {
   if (Object.prototype.hasOwnProperty.call(value, 'asComposable')) {
-    throw new LayoutConfigurationError('Render state name "asComposable" is reserved');
+    throw new LayoutConfigurationError(
+      'Render state name "asComposable" is reserved',
+    );
   }
   Object.defineProperty(value, 'asComposable', {
     enumerable: false,
@@ -143,7 +164,9 @@ export function withStateComposable<Value extends object>(
     ) => createStateComposable(source, options),
   });
 
-  return value as Value & { asComposable: AsStateComposable<Record<string, unknown>> };
+  return value as Value & {
+    asComposable: AsStateComposable<Record<string, unknown>>;
+  };
 }
 
 /** @internal References are descriptors, so reading them never constructs a layout. */

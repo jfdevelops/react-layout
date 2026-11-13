@@ -12,7 +12,9 @@ import {
 
 it('shares defaults and accepts the existing preference schema without a browser', () => {
   expect(parseDevtoolsPreferences(null)).toEqual(defaultDevtoolsPreferences);
-  expect(defaultDevtoolsStorageKey).toBe('react-layout-devtools:preferences:v1');
+  expect(defaultDevtoolsStorageKey).toBe(
+    'react-layout-devtools:preferences:v1',
+  );
 
   const saved = JSON.stringify({
     initialView: 'tree',

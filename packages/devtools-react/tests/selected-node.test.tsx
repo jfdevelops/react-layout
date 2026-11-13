@@ -79,7 +79,9 @@ it('uses the same header and navigable path for every node kind', () => {
       })
       .getAttribute('aria-current'),
   ).toBe('page');
-  expect(within(details).getByLabelText('1 mounted instance')).toHaveTextContent('1 mounted');
+  expect(
+    within(details).getByLabelText('1 mounted instance'),
+  ).toHaveTextContent('1 mounted');
   fireEvent.click(
     within(path).getByRole('button', {
       name: 'admins',
@@ -121,7 +123,9 @@ it('uses the same header and navigable path for every node kind', () => {
       }),
     ).toBeTruthy();
   }
-  expect(within(screen.getByLabelText('Node details')).getByText('Not loaded')).toBeTruthy();
+  expect(
+    within(screen.getByLabelText('Node details')).getByText('Not loaded'),
+  ).toBeTruthy();
 });
 
 it('keeps ancestor paths available when filters hide the ancestors', () => {
@@ -179,7 +183,8 @@ it('shows the load status and cause chain for a failed lazy node', () => {
       cause: {
         name: 'TypeError',
         message: 'createCalendarPage is not a function',
-        stack: 'TypeError: createCalendarPage is not a function\n    at pages-config.tsx:20',
+        stack:
+          'TypeError: createCalendarPage is not a function\n    at pages-config.tsx:20',
       },
     },
   });

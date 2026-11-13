@@ -7,11 +7,15 @@ import {
 
 export type OptionSchema = StandardSchemaV1<object, object>;
 
-type Property<Value, Key extends PropertyKey> = Key extends keyof Value ? Value[Key] : undefined;
+type Property<Value, Key extends PropertyKey> = Key extends keyof Value
+  ? Value[Key]
+  : undefined;
 
 export type SchemaOptionDefinitions<Schema extends OptionSchema> = {
   [
-    Key in keyof StandardSchemaV1.InferInput<Schema> | keyof StandardSchemaV1.InferOutput<Schema>
+    Key in
+      | keyof StandardSchemaV1.InferInput<Schema>
+      | keyof StandardSchemaV1.InferOutput<Schema>
   ]-?: StandardSchemaV1<
     Property<StandardSchemaV1.InferInput<Schema>, Key>,
     Property<StandardSchemaV1.InferOutput<Schema>, Key>
@@ -19,7 +23,10 @@ export type SchemaOptionDefinitions<Schema extends OptionSchema> = {
 };
 
 /** Field definitions refer to output already validated by the whole option schema. */
-export function schemaOptionDefinitions(schema: OptionSchema, keys: Iterable<string> = []) {
+export function schemaOptionDefinitions(
+  schema: OptionSchema,
+  keys: Iterable<string> = [],
+) {
   const definitions = Object.create(null) as Record<string, PropDefinition>;
   function field(key: string) {
     return (definitions[key] ??= {

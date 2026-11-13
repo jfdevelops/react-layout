@@ -18,7 +18,10 @@ function CardHeader({ className, ...props }: ComponentProps<'div'>) {
   return (
     <div
       data-slot='card-header'
-      className={cn('grid auto-rows-min grid-rows-[auto_auto] gap-1.5 px-6', className)}
+      className={cn(
+        'grid auto-rows-min grid-rows-[auto_auto] gap-1.5 px-6',
+        className,
+      )}
       {...props}
     />
   );
@@ -45,13 +48,30 @@ function CardDescription({ className, ...props }: ComponentProps<'div'>) {
 }
 
 function CardContent({ className, ...props }: ComponentProps<'div'>) {
-  return <div data-slot='card-content' className={cn('px-6', className)} {...props} />;
+  return (
+    <div
+      data-slot='card-content'
+      className={cn('px-6', className)}
+      {...props}
+    />
+  );
 }
 
 function CardFooter({ className, ...props }: ComponentProps<'div'>) {
   return (
-    <div data-slot='card-footer' className={cn('flex items-center px-6', className)} {...props} />
+    <div
+      data-slot='card-footer'
+      className={cn('flex items-center px-6', className)}
+      {...props}
+    />
   );
 }
 
-export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle };
+export {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+};

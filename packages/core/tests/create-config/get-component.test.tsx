@@ -426,6 +426,8 @@ describe('getComponent with a sub-resource on a specific resource', () => {
     });
 
     expect(config.getComponent('templates.deleted.expired')).toBe(expired);
-    expect(config.getComponent('templates.deleted.expired.errorComponent')).toBe(expiredError);
+    expect(
+      config.getComponent('templates.deleted.expired.errorComponent'),
+    ).toBe(expiredError);
   });
 });

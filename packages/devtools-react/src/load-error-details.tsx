@@ -5,7 +5,11 @@ import type { ChipPalette } from './config';
 function causeChain(error: InspectionError): InspectionError[] {
   const chain: InspectionError[] = [];
 
-  for (let current: InspectionError | undefined = error; current; current = current.cause) {
+  for (
+    let current: InspectionError | undefined = error;
+    current;
+    current = current.cause
+  ) {
     chain.push(current);
   }
 

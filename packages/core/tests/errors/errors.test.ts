@@ -228,7 +228,9 @@ describe('React Layout errors', () => {
       path: '/users/$userId',
     }));
 
-    expect(() => MissingPathVariableError.invariant(true, context)).not.toThrow();
+    expect(() =>
+      MissingPathVariableError.invariant(true, context),
+    ).not.toThrow();
     expect(context).not.toHaveBeenCalled();
 
     expect(() => MissingPathVariableError.invariant(false, context)).toThrow(

@@ -5,5 +5,6 @@ export class MissingResourceProviderError extends createReactLayoutError({
   code: 'missingResourceProvider',
   scope: 'resourceContext',
 }).implement(
-  ({ scope }) => `[${scope}]: useResource must be called within its ResourceProvider.`,
+  ({ scope }) =>
+    `[${scope}]: useResource must be called within its ResourceProvider.`,
 ) {}

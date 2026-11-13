@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type PointerEvent, type KeyboardEvent } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent,
+  type KeyboardEvent,
+} from 'react';
 
 export interface PanelPreferences {
   x: number;
@@ -24,8 +30,14 @@ function clamp(rect: Rect, viewport: Viewport): Rect {
   const gap = Math.min(16, viewport.width / 4, viewport.height / 4);
   const maxWidth = Math.max(1, viewport.width - gap * 2);
   const maxHeight = Math.max(1, viewport.height - gap * 2);
-  const width = Math.max(Math.min(340, maxWidth), Math.min(maxWidth, rect.width));
-  const height = Math.max(Math.min(260, maxHeight), Math.min(maxHeight, rect.height));
+  const width = Math.max(
+    Math.min(340, maxWidth),
+    Math.min(maxWidth, rect.width),
+  );
+  const height = Math.max(
+    Math.min(260, maxHeight),
+    Math.min(maxHeight, rect.height),
+  );
 
   return {
     width,
@@ -202,7 +214,9 @@ export function useFloatingPanel(
 
       onKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
         if (
-          !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key) ||
+          !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(
+            event.key,
+          ) ||
           mode === 'expanded' ||
           (kind === 'move' && mode !== 'floating')
         ) {
@@ -214,8 +228,18 @@ export function useFloatingPanel(
         event.stopPropagation();
 
         const step = event.shiftKey ? 40 : 10;
-        const dx = event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0;
-        const dy = event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0;
+        const dx =
+          event.key === 'ArrowLeft'
+            ? -step
+            : event.key === 'ArrowRight'
+              ? step
+              : 0;
+        const dy =
+          event.key === 'ArrowUp'
+            ? -step
+            : event.key === 'ArrowDown'
+              ? step
+              : 0;
         const next =
           kind === 'move'
             ? {

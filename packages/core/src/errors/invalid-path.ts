@@ -17,7 +17,8 @@ export class InvalidPathError extends createReactLayoutError({
 })
   .defineContext(context)
   .implement(({ context, scope }) => {
-    const quotedPath = JSON.stringify(context.path) ?? `"${String(context.path)}"`;
+    const quotedPath =
+      JSON.stringify(context.path) ?? `"${String(context.path)}"`;
     const reasonMessage = context.reason ? ` ${context.reason}` : '';
     const validPathsMessage =
       context.validPaths && context.validPaths.length > 0

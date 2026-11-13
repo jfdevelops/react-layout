@@ -46,7 +46,9 @@ describe('default composable children', () => {
         children: reactNode(),
       },
     });
-    const { Required } = createRequired(({ children }) => <main>{children}</main>);
+    const { Required } = createRequired(({ children }) => (
+      <main>{children}</main>
+    ));
     render(<Required>Validated content</Required>);
     expect(screen.getByText('Validated content')).toBeInTheDocument();
   });

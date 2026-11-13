@@ -1,6 +1,12 @@
 import { writeFileSync } from 'node:fs';
 import { Profiler } from 'react';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { createInspectionStore } from '@jfdevelops/react-layout-devtools-core';
 import { ReactLayoutDevtools, ReactLayoutDevtoolsContent } from '../src';
@@ -59,7 +65,9 @@ it('profiles selection, search, view switching, zoom and mount storms on 672 nod
   render(
     <Profiler
       id='large-app'
-      onRender={(_id, _phase, duration) => (measurements[action] ??= []).push(duration)}
+      onRender={(_id, _phase, duration) =>
+        (measurements[action] ??= []).push(duration)
+      }
     >
       <ReactLayoutDevtoolsContent
         source={store}
@@ -117,11 +125,17 @@ it('profiles selection, search, view switching, zoom and mount storms on 672 nod
 
   // Worst commit per interaction; timings are reported rather than asserted.
   const worst = Object.fromEntries(
-    Object.entries(measurements).map(([key, values]) => [key, Math.max(...values)]),
+    Object.entries(measurements).map(([key, values]) => [
+      key,
+      Math.max(...values),
+    ]),
   );
 
   if (process.env.DEVTOOLS_BENCHMARK_OUTPUT) {
-    writeFileSync(process.env.DEVTOOLS_BENCHMARK_OUTPUT, JSON.stringify(worst, null, 2));
+    writeFileSync(
+      process.env.DEVTOOLS_BENCHMARK_OUTPUT,
+      JSON.stringify(worst, null, 2),
+    );
   }
 
   // 200 store changes coalesce into a couple of commits, not one per change.

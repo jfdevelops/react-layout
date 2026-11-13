@@ -30,10 +30,14 @@
     "@jfdevelops/skills": "0.1.0",
     "@stylistic/eslint-plugin": "5.10.0",
     "husky": "9.1.7",
+    "lint-staged": "16.4.0",
     "oxfmt": "0.78.0",
     "oxlint": "1.93.0",
     "portless": "^0.15.9",
     "typescript": "7.0.2"
+  },
+  "lint-staged": {
+    "*": "oxfmt --no-error-on-unmatched-pattern"
   },
   "packageManager": "pnpm@10.28.1"
 }

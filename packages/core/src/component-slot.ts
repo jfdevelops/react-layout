@@ -9,9 +9,9 @@ import { type } from 'arktype';
 import type { JSX } from 'react';
 
 /** The component a slot holds, receiving the props the slot declares. */
-export type ComponentSlotComponent<Shape extends PropDefinitions = {}> = [keyof Shape] extends [
-  never,
-]
+export type ComponentSlotComponent<Shape extends PropDefinitions = {}> = [
+  keyof Shape,
+] extends [never]
   ? () => JSX.Element
   : (props: ResolveProps<Shape>) => JSX.Element;
 
@@ -26,12 +26,17 @@ export interface ComponentSlotDefinition<
 >
   extends
     StandardSchemaV1<
-      ComponentSlotComponent<Shape> | (Optional extends true ? undefined : never),
-      ComponentSlotComponent<Shape> | (Optional extends true ? undefined : never)
+      | ComponentSlotComponent<Shape>
+      | (Optional extends true ? undefined : never),
+      | ComponentSlotComponent<Shape>
+      | (Optional extends true ? undefined : never)
     >,
     ComponentSlotBrand<Shape> {}
 
-export interface ComponentSlotOptions<Shape extends PropDefinitions, Optional extends boolean> {
+export interface ComponentSlotOptions<
+  Shape extends PropDefinitions,
+  Optional extends boolean,
+> {
   /**
    * The props the slot's component accepts.
    */
@@ -42,7 +47,10 @@ export interface ComponentSlotOptions<Shape extends PropDefinitions, Optional ex
   optional?: Optional;
 }
 
-const componentSchema = type('Function') as unknown as StandardSchemaV1<unknown, unknown>;
+const componentSchema = type('Function') as unknown as StandardSchemaV1<
+  unknown,
+  unknown
+>;
 
 /**
  * Declares a component slot. Use it for a prop whose value is a component the
@@ -59,7 +67,9 @@ const componentSchema = type('Function') as unknown as StandardSchemaV1<unknown,
 export function componentSlot<
   const Shape extends PropDefinitions = {},
   const Optional extends boolean = false,
->(options: ComponentSlotOptions<Shape, Optional> = {}): ComponentSlotDefinition<Shape, Optional> {
+>(
+  options: ComponentSlotOptions<Shape, Optional> = {},
+): ComponentSlotDefinition<Shape, Optional> {
   const standard = componentSchema['~standard'];
 
   return {

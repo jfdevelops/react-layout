@@ -5,12 +5,18 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   resolve: {
     alias: {
-      '@jfdevelops/react-layout-internals': path.resolve(__dirname, '../internals/src/index.ts'),
+      '@jfdevelops/react-layout-internals': path.resolve(
+        __dirname,
+        '../internals/src/index.ts',
+      ),
       '@jfdevelops/react-layout-devtools-core': path.resolve(
         __dirname,
         '../devtools-core/src/index.ts',
       ),
-      '@jfdevelops/react-layout-validator': path.resolve(__dirname, '../validators/src/index.ts'),
+      '@jfdevelops/react-layout-validator': path.resolve(
+        __dirname,
+        '../validators/src/index.ts',
+      ),
       '@jfdevelops/react-layout-composables': path.resolve(
         __dirname,
         '../composables/src/index.ts',

@@ -1,8 +1,15 @@
 import { StrictMode } from 'react';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { getInspectionSource, layoutDebug } from '@jfdevelops/react-layout-devtools-core';
-import { createDefinedResourceLayout, defineLayoutPreview, defineResourceLayout } from '../../src';
+import {
+  getInspectionSource,
+  layoutDebug,
+} from '@jfdevelops/react-layout-devtools-core';
+import {
+  createDefinedResourceLayout,
+  defineLayoutPreview,
+  defineResourceLayout,
+} from '../../src';
 import { z } from 'zod';
 
 afterEach(cleanup);
@@ -68,7 +75,9 @@ it('previews a declared render state for only the chosen mounted instance and re
 
   expect(instances).toHaveLength(2);
 
-  const loading = source.getSnapshot().nodes.find((node) => node.label === 'Loading')!;
+  const loading = source
+    .getSnapshot()
+    .nodes.find((node) => node.label === 'Loading')!;
 
   act(() => source.preview!(instances[0].id, loading.id));
 
@@ -76,7 +85,9 @@ it('previews a declared render state for only the chosen mounted instance and re
 
   expect(screen.getByText('Loading preview')).toBeTruthy();
 
-  expect(source.getSnapshot().nodes.find((node) => node.id === loading.id)?.active).toBe(1);
+  expect(
+    source.getSnapshot().nodes.find((node) => node.id === loading.id)?.active,
+  ).toBe(1);
 
   act(() => release());
 
@@ -114,7 +125,9 @@ it('accepts typed preview fixtures and leaves automatic rendering untouched', ()
 
   render(<Page />);
 
-  const state = source.getSnapshot().nodes.find((node) => node.label === 'Empty')!;
+  const state = source
+    .getSnapshot()
+    .nodes.find((node) => node.label === 'Empty')!;
 
   act(() => source.preview!(source.getSnapshot().instances![0].id, state.id));
 
@@ -134,7 +147,9 @@ it('contains missing preview props and permits recovery through Auto', () => {
     render(<Page />);
 
     const instance = source.getSnapshot().instances![0];
-    const state = source.getSnapshot().nodes.find((node) => node.label === 'Empty')!;
+    const state = source
+      .getSnapshot()
+      .nodes.find((node) => node.label === 'Empty')!;
 
     act(() => source.preview!(instance.id, state.id));
 
@@ -161,7 +176,9 @@ it('does not expose preview capabilities without opt-in', () => {
 it('preserves source locations for definitions, resources, layouts and states', () => {
   const { source } = setup();
 
-  for (const node of source.getSnapshot().nodes.filter((node) => node.kind !== 'composable')) {
+  for (const node of source
+    .getSnapshot()
+    .nodes.filter((node) => node.kind !== 'composable')) {
     expect(node.source?.file).toBe('base.ts');
   }
 });
@@ -226,8 +243,11 @@ it('supports namespace roots, explicit state mounts and shared typed fixtures', 
   act(() =>
     source.preview!(
       source.getSnapshot().instances![0].id,
-      source.getSnapshot().nodes.find((node) => node.kind === 'state' && node.label === 'default')!
-        .id,
+      source
+        .getSnapshot()
+        .nodes.find(
+          (node) => node.kind === 'state' && node.label === 'default',
+        )!.id,
     ),
   );
 
@@ -295,15 +315,18 @@ it('preserves imported state declarations separately from registration and page 
 
   const graph = getInspectionSource(factory).getSnapshot();
 
-  expect(graph.nodes.find((node) => node.kind === 'layout')?.source?.file).toBe('page.tsx');
-
-  expect(graph.nodes.find((node) => node.label === 'Loading')?.source?.file).toBe(
-    'states/loading.tsx',
+  expect(graph.nodes.find((node) => node.kind === 'layout')?.source?.file).toBe(
+    'page.tsx',
   );
 
-  expect(graph.nodes.find((node) => node.label === 'Loading')?.registrationSource?.file).toBe(
-    'layout.tsx',
-  );
+  expect(
+    graph.nodes.find((node) => node.label === 'Loading')?.source?.file,
+  ).toBe('states/loading.tsx');
+
+  expect(
+    graph.nodes.find((node) => node.label === 'Loading')?.registrationSource
+      ?.file,
+  ).toBe('layout.tsx');
 });
 
 it('can preview deferred states and return control to the mounted default', async () => {

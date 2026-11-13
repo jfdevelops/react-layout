@@ -5,9 +5,10 @@ import { createDefinedResourceLayout } from '../../src';
 afterEach(cleanup);
 
 it('exposes resource accessors in callback, object, deferred, and lazy builder states', async () => {
-  const { createRenderState, defineResourceLayout } = createDefinedResourceLayout({
-    resources: ['users', 'posts'],
-  });
+  const { createRenderState, defineResourceLayout } =
+    createDefinedResourceLayout({
+      resources: ['users', 'posts'],
+    });
   const Default = createRenderState((_props, { resources }) => {
     expectTypeOf(resources.current).toEqualTypeOf<'users' | 'posts'>();
     expectTypeOf(resources.raw()).toEqualTypeOf<readonly ['users', 'posts']>();

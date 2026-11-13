@@ -7,7 +7,11 @@ import type { InPropsDefinition, InPropsObject, PropsContract } from '../props';
 import type { ResourceDefinition } from '../resource';
 import { LayoutConfigurationError } from '../errors';
 import { createLayoutResourcesAccessor } from './define-layout';
-import { schemaOptionDefinitions, validateOptionSchema, type OptionSchema } from '../option-schema';
+import {
+  schemaOptionDefinitions,
+  validateOptionSchema,
+  type OptionSchema,
+} from '../option-schema';
 import type { CreateReusable, ReusableOverlap } from './reusable-types';
 import { type } from 'arktype';
 import { fieldDefinitions } from '../schema-fields';
@@ -101,7 +105,10 @@ function optionPlan(
       // selected keys become unvalidated parts of a value its schema validates.
       const fields =
         fieldDefinitions(definition) ??
-        schemaOptionDefinitions(definition as OptionSchema, Object.keys(value as object));
+        schemaOptionDefinitions(
+          definition as OptionSchema,
+          Object.keys(value as object),
+        );
       const optional = acceptsUndefined(definition);
       const nested = optionPlan(
         fields,
@@ -136,7 +143,9 @@ function optionPlan(
         definition,
       };
     } else {
-      throw new LayoutConfigurationError(`Invalid reusable selection for "${key}".`);
+      throw new LayoutConfigurationError(
+        `Invalid reusable selection for "${key}".`,
+      );
     }
   }
   const origins = new Set<PlanLocation['from']>();
@@ -244,7 +253,10 @@ function mergePlans(
   };
 }
 
-function withoutSharedCallerValues(left: ObjectPlan, right: ObjectPlan): ObjectPlan {
+function withoutSharedCallerValues(
+  left: ObjectPlan,
+  right: ObjectPlan,
+): ObjectPlan {
   const children = {
     ...left.children,
   };
@@ -266,11 +278,16 @@ function withoutSharedCallerValues(left: ObjectPlan, right: ObjectPlan): ObjectP
     ...left,
     children,
     whole:
-      left.whole && matchesWholeSelection(children, left.whole.children) ? left.whole : undefined,
+      left.whole && matchesWholeSelection(children, left.whole.children)
+        ? left.whole
+        : undefined,
   };
 }
 
-function planDefinitions(plan: ObjectPlan, from: 'props' | 'options'): InPropsObject {
+function planDefinitions(
+  plan: ObjectPlan,
+  from: 'props' | 'options',
+): InPropsObject {
   const definitions: InPropsObject = {};
   for (const [key, value] of Object.entries(plan.children)) {
     if (value.kind === 'value') {
@@ -289,7 +306,9 @@ function planDefinitions(plan: ObjectPlan, from: 'props' | 'options'): InPropsOb
       const nested = planDefinitions(value, from);
       if (Object.keys(nested).length) {
         const definition = objectDefinition(nested);
-        definitions[key] = value.optional ? optionalDefinition(definition) : definition;
+        definitions[key] = value.optional
+          ? optionalDefinition(definition)
+          : definition;
       }
     }
   }
@@ -297,7 +316,10 @@ function planDefinitions(plan: ObjectPlan, from: 'props' | 'options'): InPropsOb
   return definitions;
 }
 
-function sourceSelection(selection: unknown, callbacksOnly: boolean): true | RuntimeSelection {
+function sourceSelection(
+  selection: unknown,
+  callbacksOnly: boolean,
+): true | RuntimeSelection {
   if (typeof selection === 'function') {
     return true;
   }
@@ -305,7 +327,9 @@ function sourceSelection(selection: unknown, callbacksOnly: boolean): true | Run
     return callbacksOnly ? {} : true;
   }
   const source: RuntimeSelection = {};
-  for (const [key, value] of Object.entries((selection ?? {}) as RuntimeSelection)) {
+  for (const [key, value] of Object.entries(
+    (selection ?? {}) as RuntimeSelection,
+  )) {
     const nested = sourceSelection(value, callbacksOnly);
     if (nested === true || Object.keys(nested).length) {
       source[key] = nested;
@@ -327,7 +351,10 @@ function mergeSelections(
   };
   for (const [key, value] of Object.entries(right)) {
     merged[key] = Object.hasOwn(left, key)
-      ? mergeSelections(left[key] as true | RuntimeSelection, value as true | RuntimeSelection)
+      ? mergeSelections(
+          left[key] as true | RuntimeSelection,
+          value as true | RuntimeSelection,
+        )
       : value;
   }
 
@@ -341,7 +368,11 @@ function readLocation(
   resources: unknown,
 ) {
   let value: any =
-    location.from === 'props' ? props : location.from === 'options' ? options : resources;
+    location.from === 'props'
+      ? props
+      : location.from === 'options'
+        ? options
+        : resources;
   for (const key of location.path) {
     value = value?.[key];
   }
@@ -372,16 +403,24 @@ function resolvePlan(
       if (
         node.guards.some((group) =>
           group.every(
-            (location) => readLocation(location, props, options, resources) !== undefined,
+            (location) =>
+              readLocation(location, props, options, resources) !== undefined,
           ),
         )
       ) {
-        result[key] = resolvePlan(node, props, options, resources, resourceSelections);
+        result[key] = resolvePlan(
+          node,
+          props,
+          options,
+          resources,
+          resourceSelections,
+        );
       }
     } else {
       if (
         node.guards?.some(
-          (location) => readLocation(location, props, options, resources) === undefined,
+          (location) =>
+            readLocation(location, props, options, resources) === undefined,
         )
       ) {
         continue;
@@ -389,12 +428,17 @@ function resolvePlan(
       const value = readLocation(node, props, options, resources);
       if (node.selector) {
         const selected =
-          node.source === 'resource' ? resourceSelections.get(node.selector) : node.selector(value);
+          node.source === 'resource'
+            ? resourceSelections.get(node.selector)
+            : node.selector(value);
         result[key] =
           node.source === 'resource' && isSingleResourceInput(selected)
             ? props.resources
             : selected;
-      } else if (value !== undefined || !(node.definition && acceptsUndefined(node.definition))) {
+      } else if (
+        value !== undefined ||
+        !(node.definition && acceptsUndefined(node.definition))
+      ) {
         result[key] = value;
       }
     }
@@ -420,13 +464,22 @@ export function createReusableBuilder(
     }) {
       return function schemaReusable(props: Record<string, unknown> = {}) {
         const selection = definition.props?.include?.options;
-        const usesOptions = selection !== undefined || definition.select?.options !== undefined;
+        const usesOptions =
+          selection !== undefined || definition.select?.options !== undefined;
         if (!usesOptions) {
-          return createReusableBuilder(resources, {})(definition as never)(props);
+          return createReusableBuilder(resources, {})(definition as never)(
+            props,
+          );
         }
         const source = props.options ?? {};
-        if (source === null || typeof source !== 'object' || Array.isArray(source)) {
-          throw new LayoutConfigurationError('Reusable source options must be an object.');
+        if (
+          source === null ||
+          typeof source !== 'object' ||
+          Array.isArray(source)
+        ) {
+          throw new LayoutConfigurationError(
+            'Reusable source options must be an object.',
+          );
         }
         const callerKeys =
           selection === true
@@ -448,10 +501,18 @@ export function createReusableBuilder(
           }
         }
         const values = validateOptionSchema(options as OptionSchema, input);
-        const definitions = schemaOptionDefinitions(options as OptionSchema, Object.keys(values));
-        const reusable = createReusableBuilder(resources, definitions)(definition as never);
+        const definitions = schemaOptionDefinitions(
+          options as OptionSchema,
+          Object.keys(values),
+        );
+        const reusable = createReusableBuilder(
+          resources,
+          definitions,
+        )(definition as never);
         const callerValues = Object.fromEntries(
-          Object.entries(values).filter(([key]) => selection === true || callerKeys.includes(key)),
+          Object.entries(values).filter(
+            ([key]) => selection === true || callerKeys.includes(key),
+          ),
         );
 
         return reusable({
@@ -462,16 +523,21 @@ export function createReusableBuilder(
       };
     } as unknown;
   }
-  const keys = resources.map((entry) => (typeof entry === 'string' ? entry : entry.value));
+  const keys = resources.map((entry) =>
+    typeof entry === 'string' ? entry : entry.value,
+  );
   const selectedResources = type.enumerated(...keys).array();
   const singleResource = type.enumerated(...getResourcePaths(resources));
-  const resourcesAccessor = Object.assign(createLayoutResourcesAccessor(resources), {
-    single() {
-      return {
-        [singleResourceInput]: resources,
-      };
+  const resourcesAccessor = Object.assign(
+    createLayoutResourcesAccessor(resources),
+    {
+      single() {
+        return {
+          [singleResourceInput]: resources,
+        };
+      },
     },
-  });
+  );
 
   function createReusable(definition: {
     props?: PropsContract<RuntimeSelection, InPropsObject>;
@@ -488,7 +554,11 @@ export function createReusableBuilder(
     ) {
       throw new LayoutConfigurationError('Unknown reusable overlap policy.');
     }
-    const optionDefinitions = resolveOptionDefinitions(options, keys, 'Reusable') as InPropsObject;
+    const optionDefinitions = resolveOptionDefinitions(
+      options,
+      keys,
+      'Reusable',
+    ) as InPropsObject;
 
     function compile(selection: RuntimeSelection, from: 'props' | 'options') {
       let plan = objectPlan({});
@@ -500,7 +570,9 @@ export function createReusableBuilder(
             typeof value !== 'function' &&
             (!value || typeof value !== 'object' || Array.isArray(value))
           ) {
-            throw new LayoutConfigurationError('Invalid reusable options selection.');
+            throw new LayoutConfigurationError(
+              'Invalid reusable options selection.',
+            );
           }
           next =
             typeof value === 'function'
@@ -514,19 +586,30 @@ export function createReusableBuilder(
                   },
                 })
               : optionPlan(optionDefinitions, value, from);
-        } else if (key === 'resources' && (value === true || typeof value === 'function')) {
+        } else if (
+          key === 'resources' &&
+          (value === true || typeof value === 'function')
+        ) {
           next = objectPlan({
             resources: {
               kind: 'value',
               source: 'resource',
               from: value === true && from === 'props' ? 'props' : 'resources',
               path: value === true && from === 'props' ? ['resources'] : [],
-              selector: typeof value === 'function' ? (value as ValuePlan['selector']) : undefined,
-              definition: value === true && from === 'props' ? selectedResources : undefined,
+              selector:
+                typeof value === 'function'
+                  ? (value as ValuePlan['selector'])
+                  : undefined,
+              definition:
+                value === true && from === 'props'
+                  ? selectedResources
+                  : undefined,
             },
           });
         } else {
-          throw new LayoutConfigurationError(`Invalid reusable source "${key}".`);
+          throw new LayoutConfigurationError(
+            `Invalid reusable source "${key}".`,
+          );
         }
         plan = mergePlans(plan, next);
       }
@@ -565,20 +648,28 @@ export function createReusableBuilder(
     const sourceDefinitions =
       sources === true
         ? optionDefinitions
-        : planDefinitions(optionPlan(optionDefinitions, sources, 'options'), 'options');
+        : planDefinitions(
+            optionPlan(optionDefinitions, sources, 'options'),
+            'options',
+          );
     const resourceSelectors = new Set(
       [include.resources, select.resources].filter(
-        (selector): selector is ResourceSelector => typeof selector === 'function',
+        (selector): selector is ResourceSelector =>
+          typeof selector === 'function',
       ),
     );
     const needsOptions = Object.keys(sourceDefinitions).length > 0;
     if (needsOptions && Object.hasOwn(callerDefinitions, 'options')) {
-      throw new LayoutConfigurationError('Reusable prop "options" is reserved for source values.');
+      throw new LayoutConfigurationError(
+        'Reusable prop "options" is reserved for source values.',
+      );
     }
 
     return function reusable(props: Record<string, unknown> = {}) {
       // Validate configured caller props too when an explicit overlap policy discards their output.
-      const definitions = definition.overlap ? callerDefinitions : effectiveCallerDefinitions;
+      const definitions = definition.overlap
+        ? callerDefinitions
+        : effectiveCallerDefinitions;
       props = validateProps(definitions, props);
       if (
         needsOptions &&
@@ -587,7 +678,9 @@ export function createReusableBuilder(
           typeof props.options !== 'object' ||
           Array.isArray(props.options))
       ) {
-        throw new LayoutConfigurationError('Reusable source options must be an object.');
+        throw new LayoutConfigurationError(
+          'Reusable source options must be an object.',
+        );
       }
       const values = validateProps(
         sourceDefinitions,
@@ -608,7 +701,9 @@ export function createReusableBuilder(
         resourceSelections.set(selector, selected);
       }
 
-      return definition.fn(resolvePlan(plan, props, values, resourcesAccessor, resourceSelections));
+      return definition.fn(
+        resolvePlan(plan, props, values, resourcesAccessor, resourceSelections),
+      );
     };
   }
 

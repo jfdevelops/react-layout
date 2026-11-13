@@ -3,9 +3,16 @@ import { LazyResourceModuleShapeError } from '../errors/lazy-resource-error';
 import { componentPropDefinitionsSymbol } from '@jfdevelops/react-layout-validator';
 import type { ResourcePath, ResourceDefinition } from '../resource';
 import { definedResourceLayoutComponentSymbol } from './render-state';
-import { createLazyLoader, type LazyResourceLoadHooks } from '../lazy/create-lazy-loader';
+import {
+  createLazyLoader,
+  type LazyResourceLoadHooks,
+} from '../lazy/create-lazy-loader';
 import { LazyBoundary } from '../lazy/lazy-boundary';
-import type { LazyHandle, LazyOptions, LazyResourceStates } from '../lazy/types';
+import type {
+  LazyHandle,
+  LazyOptions,
+  LazyResourceStates,
+} from '../lazy/types';
 export type {
   LazyResourceErrorComponent,
   LazyResourceLoadingComponent,
@@ -23,7 +30,9 @@ type UnwrapDefinedLayout<Export> = Export extends DefinedLayoutComponent
     ? Root
     : never;
 
-type DefinedLayoutFromModule<Module> = UnwrapDefinedLayout<Module[keyof Module]>;
+type DefinedLayoutFromModule<Module> = UnwrapDefinedLayout<
+  Module[keyof Module]
+>;
 
 type LazyUnsupportedStatic =
   | 'makeComposable'
@@ -55,14 +64,20 @@ export type LazyResourceLayoutOptions<
   states?: LazyResourceStates<ResourcePath<Resources>>;
 };
 
-function findDefinedLayoutComponent(module: Record<string, unknown>, resource: string) {
+function findDefinedLayoutComponent(
+  module: Record<string, unknown>,
+  resource: string,
+) {
   const components = Object.values(module)
     .map((value) =>
-      typeof value === 'object' && value !== null && 'Root' in value ? value.Root : value,
+      typeof value === 'object' && value !== null && 'Root' in value
+        ? value.Root
+        : value,
     )
     .filter(
       (value): value is DefinedLayoutComponent =>
-        typeof value === 'function' && definedResourceLayoutComponentSymbol in value,
+        typeof value === 'function' &&
+        definedResourceLayoutComponentSymbol in value,
     );
   if (components.length !== 1) {
     throw new LazyResourceModuleShapeError(resource, components.length);

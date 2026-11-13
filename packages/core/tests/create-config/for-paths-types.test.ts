@@ -72,39 +72,53 @@ type Config = typeof config.config;
 
 describe('path variables', () => {
   it('extracts the variables a path leaves open', () => {
-    expectTypeOf<ExtractPathVariables<'$resource.$subResource.$component'>>().toEqualTypeOf<
-      'resource' | 'subResource' | 'component'
-    >();
-    expectTypeOf<ExtractPathVariables<'$resource.detail.$component'>>().toEqualTypeOf<
-      'resource' | 'component'
-    >();
-    expectTypeOf<ExtractPathVariables<'users.detail.component'>>().toEqualTypeOf<never>();
+    expectTypeOf<
+      ExtractPathVariables<'$resource.$subResource.$component'>
+    >().toEqualTypeOf<'resource' | 'subResource' | 'component'>();
+    expectTypeOf<
+      ExtractPathVariables<'$resource.detail.$component'>
+    >().toEqualTypeOf<'resource' | 'component'>();
+    expectTypeOf<
+      ExtractPathVariables<'users.detail.component'>
+    >().toEqualTypeOf<never>();
   });
 
   it('offers variable and literal segments as paths', () => {
-    expectTypeOf<'$resource'>().toExtend<ParameterizedResourcePath<Resources>>();
-    expectTypeOf<'$resource.$component'>().toExtend<ParameterizedResourcePath<Resources>>();
+    expectTypeOf<'$resource'>().toExtend<
+      ParameterizedResourcePath<Resources>
+    >();
+    expectTypeOf<'$resource.$component'>().toExtend<
+      ParameterizedResourcePath<Resources>
+    >();
     expectTypeOf<'$resource.$subResource.$component'>().toExtend<
       ParameterizedResourcePath<Resources>
     >();
-    expectTypeOf<'$resource.detail.$component'>().toExtend<ParameterizedResourcePath<Resources>>();
+    expectTypeOf<'$resource.detail.$component'>().toExtend<
+      ParameterizedResourcePath<Resources>
+    >();
     expectTypeOf<'users.managers.female.component'>().toExtend<
       ParameterizedResourcePath<Resources>
     >();
   });
 
   it('rejects segments that are not declared in the layout', () => {
-    expectTypeOf<'users.nope'>().not.toExtend<ParameterizedResourcePath<Resources>>();
-    expectTypeOf<'$resource.$nope'>().not.toExtend<ParameterizedResourcePath<Resources>>();
-    expectTypeOf<'groups.managers'>().not.toExtend<ParameterizedResourcePath<Resources>>();
+    expectTypeOf<'users.nope'>().not.toExtend<
+      ParameterizedResourcePath<Resources>
+    >();
+    expectTypeOf<'$resource.$nope'>().not.toExtend<
+      ParameterizedResourcePath<Resources>
+    >();
+    expectTypeOf<'groups.managers'>().not.toExtend<
+      ParameterizedResourcePath<Resources>
+    >();
   });
 });
 
 describe('resource narrowing', () => {
   it('keeps every resource for a bare $resource path', () => {
-    expectTypeOf<PathResourceCandidates<Resources, Config, '$resource'>>().toEqualTypeOf<
-      'users' | 'groups'
-    >();
+    expectTypeOf<
+      PathResourceCandidates<Resources, Config, '$resource'>
+    >().toEqualTypeOf<'users' | 'groups'>();
   });
 
   it('keeps only resources that configure the fixed segments', () => {
@@ -134,21 +148,23 @@ describe('component and sub-resource domains', () => {
     expectTypeOf<
       PathComponentKeys<Resources, Config, 'groups.detail.$component'>
     >().toEqualTypeOf<'component'>();
-    expectTypeOf<PathComponentKeys<Resources, Config, 'users.$component'>>().toEqualTypeOf<
-      'component' | 'errorComponent'
-    >();
+    expectTypeOf<
+      PathComponentKeys<Resources, Config, 'users.$component'>
+    >().toEqualTypeOf<'component' | 'errorComponent'>();
   });
 
   it('offers only the sub-resources configured at the path', () => {
-    expectTypeOf<PathSubResourceKeys<Resources, Config, '$resource.$subResource'>>().toEqualTypeOf<
-      'admins' | 'managers' | 'female'
-    >();
+    expectTypeOf<
+      PathSubResourceKeys<Resources, Config, '$resource.$subResource'>
+    >().toEqualTypeOf<'admins' | 'managers' | 'female'>();
   });
 });
 
 describe('path params', () => {
   it('requires one param per variable', () => {
-    expectTypeOf<PathVariables<Resources, Config, 'users.detail.component'>>().toEqualTypeOf<{}>();
+    expectTypeOf<
+      PathVariables<Resources, Config, 'users.detail.component'>
+    >().toEqualTypeOf<{}>();
     expectTypeOf<
       keyof PathVariables<Resources, Config, '$resource.detail.$component'>
     >().toEqualTypeOf<'resource' | 'component'>();
@@ -164,7 +180,9 @@ describe('path params', () => {
       { resource: 'groups' }
     >;
 
-    expectTypeOf<UsersDetail['component']>().toEqualTypeOf<'component' | 'errorComponent'>();
+    expectTypeOf<UsersDetail['component']>().toEqualTypeOf<
+      'component' | 'errorComponent'
+    >();
     expectTypeOf<GroupsDetail['component']>().toEqualTypeOf<'component'>();
   });
 
@@ -187,11 +205,15 @@ describe('createGetComponent', () => {
     expectTypeOf(config.createGetComponent('$resource')).toBeCallableWith({
       resource: 'users',
     });
-    expectTypeOf(config.createGetComponent('$resource.detail.$component')).toBeCallableWith({
+    expectTypeOf(
+      config.createGetComponent('$resource.detail.$component'),
+    ).toBeCallableWith({
       resource: 'groups',
       component: 'component',
     });
-    expectTypeOf(config.createGetComponent('$resource.$subResource.$component')).toBeCallableWith({
+    expectTypeOf(
+      config.createGetComponent('$resource.$subResource.$component'),
+    ).toBeCallableWith({
       resource: 'users',
       subResource: {
         value: 'managers',
@@ -226,13 +248,19 @@ describe('createGetComponent', () => {
     const getDetail = config.createGetComponent('$resource.detail.$component');
 
     expectTypeOf(getDetail.path).toEqualTypeOf<'$resource.detail.$component'>();
-    expectTypeOf(getDetail.variables).toEqualTypeOf<ReadonlyArray<'resource' | 'component'>>();
-    expectTypeOf(getDetail.resources).toEqualTypeOf<ReadonlyArray<'users' | 'groups'>>();
+    expectTypeOf(getDetail.variables).toEqualTypeOf<
+      ReadonlyArray<'resource' | 'component'>
+    >();
+    expectTypeOf(getDetail.resources).toEqualTypeOf<
+      ReadonlyArray<'users' | 'groups'>
+    >();
   });
 
   it('rejects params outside the config', () => {
     const getResource = config.createGetComponent('$resource');
-    const getGroupsDetail = config.createGetComponent('groups.detail.$component');
+    const getGroupsDetail = config.createGetComponent(
+      'groups.detail.$component',
+    );
     const getSubResource = config.createGetComponent('$resource.$subResource');
 
     () => {
@@ -364,7 +392,9 @@ describe('forPaths', () => {
     expectTypeOf(UsersView).toBeCallableWith({
       component: 'errorComponent',
     });
-    expectTypeOf<Parameters<typeof UsersView>[0]>().not.toHaveProperty('resource');
+    expectTypeOf<Parameters<typeof UsersView>[0]>().not.toHaveProperty(
+      'resource',
+    );
   });
 
   it('keeps remaining params after chaining asHOF', () => {
@@ -385,8 +415,12 @@ describe('forPaths', () => {
       },
     })('errorComponent');
 
-    expectTypeOf<Parameters<typeof UsersError>[0]>().toMatchTypeOf<{ children?: ReactNode }>();
-    expectTypeOf<Parameters<typeof UsersError>[0]['children']>().toEqualTypeOf<ReactNode>();
+    expectTypeOf<Parameters<typeof UsersError>[0]>().toMatchTypeOf<{
+      children?: ReactNode;
+    }>();
+    expectTypeOf<
+      Parameters<typeof UsersError>[0]['children']
+    >().toEqualTypeOf<ReactNode>();
   });
 
   it('closes over an object when several params are bound', () => {

@@ -11,10 +11,14 @@ it.each(['typescript-5-9', 'typescript-6'])(
   'suggests reusable sources and nested options with %s',
   (compiler) => {
     const ts: typeof TypeScript = require(compiler);
-    const root = resolve(fileURLToPath(new URL('../..', import.meta.url))).replaceAll('\\', '/');
+    const root = resolve(
+      fileURLToPath(new URL('../..', import.meta.url)),
+    ).replaceAll('\\', '/');
     const file = `${root}/tests/create-config/reusable-probe.ts`;
     const entry =
-      process.env.REACT_LAYOUT_TYPE_ENTRY === 'dist' ? '../../dist/index.mjs' : '../../src';
+      process.env.REACT_LAYOUT_TYPE_ENTRY === 'dist'
+        ? '../../dist/index.mjs'
+        : '../../src';
     const source = `
     import { z } from 'zod';
     import { createDefinedResourceLayout } from '${entry}';
@@ -127,7 +131,9 @@ it.each(['typescript-5-9', 'typescript-6'])(
       getScriptSnapshot: (name) => {
         const contents = isProbe(name) ? source : ts.sys.readFile(name);
 
-        return contents === undefined ? undefined : ts.ScriptSnapshot.fromString(contents);
+        return contents === undefined
+          ? undefined
+          : ts.ScriptSnapshot.fromString(contents);
       },
       getCurrentDirectory: () => root,
       getCompilationSettings: () => parsed.options,
@@ -143,8 +149,10 @@ it.each(['typescript-5-9', 'typescript-6'])(
           .map((d) => ts.flattenDiagnosticMessageText(d.messageText, '\n')),
       ).toEqual([]);
       const hover = ts.displayPartsToString(
-        service.getQuickInfoAtPosition(file, source.indexOf('/*hover*/') + '/*hover*/'.length)
-          ?.displayParts,
+        service.getQuickInfoAtPosition(
+          file,
+          source.indexOf('/*hover*/') + '/*hover*/'.length,
+        )?.displayParts,
       );
       const singleHover = ts.displayPartsToString(
         service.getQuickInfoAtPosition(
@@ -153,7 +161,9 @@ it.each(['typescript-5-9', 'typescript-6'])(
         )?.displayParts,
       );
       expect(singleHover).toMatch(/resources: ["']users["']/);
-      expect(singleHover).not.toMatch(/SingleResourceInput|ReusableInput|Expanded</);
+      expect(singleHover).not.toMatch(
+        /SingleResourceInput|ReusableInput|Expanded</,
+      );
       expect(hover).toContain('owner: string');
       expect(hover).toContain('length: number');
       expect(hover).not.toMatch(
@@ -167,10 +177,17 @@ it.each(['typescript-5-9', 'typescript-6'])(
         nested: ['owner', 'repo'],
         empty: ['resources'],
       })) {
-        const entries = service.getCompletionsAtPosition(file, source.indexOf(`/*${marker}*/`), {});
+        const entries = service.getCompletionsAtPosition(
+          file,
+          source.indexOf(`/*${marker}*/`),
+          {},
+        );
         expect(
           entries?.entries
-            .filter((entry) => entry.kind !== ts.ScriptElementKind.memberFunctionElement)
+            .filter(
+              (entry) =>
+                entry.kind !== ts.ScriptElementKind.memberFunctionElement,
+            )
             .map((entry) => entry.name)
             .sort(),
           marker,

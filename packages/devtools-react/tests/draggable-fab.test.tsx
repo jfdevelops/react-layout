@@ -27,7 +27,9 @@ it('moves the launcher without opening and preserves its location after closing 
     const button = screen.getByRole('button', {
       name: 'Open React Layout Devtools',
     });
-    vi.spyOn(button, 'getBoundingClientRect').mockReturnValue(new DOMRect(900, 650, 52, 52));
+    vi.spyOn(button, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(900, 650, 52, 52),
+    );
     pointer(button, 'pointerdown', 925, 675);
     pointer(button, 'pointermove', 225, 225);
     pointer(button, 'pointerup', 225, 225);
@@ -86,7 +88,9 @@ it('supports keyboard movement and keeps the button visible when the viewport sh
     const button = screen.getByRole('button', {
       name: 'Open React Layout Devtools',
     });
-    vi.spyOn(button, 'getBoundingClientRect').mockReturnValue(new DOMRect(300, 300, 52, 52));
+    vi.spyOn(button, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(300, 300, 52, 52),
+    );
     fireEvent.keyDown(button, {
       key: 'ArrowLeft',
       altKey: true,

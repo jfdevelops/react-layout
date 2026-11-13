@@ -10,7 +10,10 @@ type TestResources = readonly [
     readonly value: 'users';
     readonly subResources: readonly [
       { readonly value: 'admins'; readonly subResources: readonly ['members'] },
-      { readonly value: 'managers'; readonly subResources: readonly ['male', 'female'] },
+      {
+        readonly value: 'managers';
+        readonly subResources: readonly ['male', 'female'];
+      },
     ];
   },
   'groups',
@@ -31,7 +34,10 @@ type _AssertUserSubKeys = 'admins' | 'managers' extends _UserSubKeys
   : false;
 
 type _UserSubParam = SubResourceParamForResource<TestResources, 'users'>;
-type _AssertNestedSubParam = { value: 'admins'; subResource: 'members' } extends _UserSubParam
+type _AssertNestedSubParam = {
+  value: 'admins';
+  subResource: 'members';
+} extends _UserSubParam
   ? true
   : false;
 

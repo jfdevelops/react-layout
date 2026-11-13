@@ -2,7 +2,10 @@ import type { ComposableComponents } from '@jfdevelops/react-layout-composables'
 import type { CustomPropsObject } from '../custom-props';
 import { LayoutConfigurationError } from '../errors';
 import type { InPropsDefinition } from '../props';
-import { normalizeResourceDefinitions, type LayoutResourceKey } from '../resource';
+import {
+  normalizeResourceDefinitions,
+  type LayoutResourceKey,
+} from '../resource';
 import {
   createDefinedResourceLayout,
   type NonEmptyResources,
@@ -46,7 +49,9 @@ type OptionsOf<Entry> = Entry extends {
   ? Options
   : {};
 type ComposablesOf<Entry> = Entry extends {
-  composables: (...args: never[]) => infer Composables extends ComposableComponents;
+  composables: (
+    ...args: never[]
+  ) => infer Composables extends ComposableComponents;
 }
   ? Composables
   : {};
@@ -72,7 +77,9 @@ type NamespaceOf<Entry> = Entry extends {
   ? Namespace
   : false;
 type NameOf<Entry> = Entry extends {
-  name: infer Name extends LayoutNameInput<LayoutResourceKey<ResourcesOf<Entry>>>;
+  name: infer Name extends LayoutNameInput<
+    LayoutResourceKey<ResourcesOf<Entry>>
+  >;
 }
   ? Name
   : undefined;
@@ -85,7 +92,10 @@ type HostOf<Bag, Entry> = Entry extends {
       ? Resource
       : never
   : undefined;
-type BoundResources<Bag, Entry> = SurfaceResources<ResourcesOf<Entry>, HostOf<Bag, Entry>>;
+type BoundResources<Bag, Entry> = SurfaceResources<
+  ResourcesOf<Entry>,
+  HostOf<Bag, Entry>
+>;
 
 type SurfaceLayoutResult<Bag, Entry> = Entry extends {
   createResourceLayout: unknown;
@@ -154,10 +164,16 @@ type ValidateHost<Bag, Entry> = Entry extends {
     : { host: never }
   : {};
 
-type SurfaceBag = Record<string, SurfaceInput | { createResourceLayout: unknown }>;
+type SurfaceBag = Record<
+  string,
+  SurfaceInput | { createResourceLayout: unknown }
+>;
 
 type ContextualSurface<Entry extends SurfaceInput> = {
-  composables?: LayoutComposablesDefinition<ResourcesOf<Entry>, ComposablesOf<Entry>>;
+  composables?: LayoutComposablesDefinition<
+    ResourcesOf<Entry>,
+    ComposablesOf<Entry>
+  >;
   render?: Entry extends { render: infer Render extends { default: unknown } }
     ? CreateViewMapRenderStatesOptions<
         ResourcesOf<Entry>,
@@ -204,7 +220,13 @@ export function defineResourceSurfaces<
             {}
           >['layout']['render']
         | { default: unknown };
-      shell?: ShellLayoutDefinition<NonEmptyResources, Options[Key], {}, {}, {}>;
+      shell?: ShellLayoutDefinition<
+        NonEmptyResources,
+        Options[Key],
+        {},
+        {},
+        {}
+      >;
     };
   } & {
     [Key in keyof Includes]: SurfaceInput & {
@@ -212,12 +234,17 @@ export function defineResourceSurfaces<
     };
   },
 ): { [Key in keyof Bag]: SurfaceResult<Bag, Bag[Key]> };
-export function defineResourceSurfaces<const Bag extends Record<string, SurfaceInput>>(
+export function defineResourceSurfaces<
+  const Bag extends Record<string, SurfaceInput>,
+>(
   surfaces: Bag & {
-    [Key in keyof Bag]: ValidateHost<Bag, Bag[Key]> & ContextualSurface<Bag[Key]>;
+    [Key in keyof Bag]: ValidateHost<Bag, Bag[Key]> &
+      ContextualSurface<Bag[Key]>;
   },
 ): { [Key in keyof Bag]: SurfaceResult<Bag, Bag[Key]> };
-export function defineResourceSurfaces(surfaces: SurfaceBag): Record<string, unknown> {
+export function defineResourceSurfaces(
+  surfaces: SurfaceBag,
+): Record<string, unknown> {
   const result: Record<string, unknown> = {};
 
   for (const [key, entry] of Object.entries(surfaces)) {
@@ -237,25 +264,38 @@ export function defineResourceSurfaces(surfaces: SurfaceBag): Record<string, unk
             render,
           },
         } as never)
-      : createDefinedResourceLayout(configuration as never).defineResourceLayout({
+      : createDefinedResourceLayout(
+          configuration as never,
+        ).defineResourceLayout({
           render,
         } as never);
 
     if (host) {
       const parent = surfaces[host.surface];
 
-      if (!parent || !('resources' in parent) || !Array.isArray(parent.resources)) {
-        throw new LayoutConfigurationError(`Unknown host surface "${host.surface}".`);
+      if (
+        !parent ||
+        !('resources' in parent) ||
+        !Array.isArray(parent.resources)
+      ) {
+        throw new LayoutConfigurationError(
+          `Unknown host surface "${host.surface}".`,
+        );
       }
 
       const available = new Set(
-        normalizeResourceDefinitions(parent.resources).map((resource) => resource.value),
+        normalizeResourceDefinitions(parent.resources).map(
+          (resource) => resource.value,
+        ),
       );
-      const selected = host.resources === '*' ? available : new Set(host.resources);
+      const selected =
+        host.resources === '*' ? available : new Set(host.resources);
 
       for (const resource of selected) {
         if (!available.has(resource)) {
-          throw new LayoutConfigurationError(`Unknown host resource "${resource}".`);
+          throw new LayoutConfigurationError(
+            `Unknown host resource "${resource}".`,
+          );
         }
       }
 

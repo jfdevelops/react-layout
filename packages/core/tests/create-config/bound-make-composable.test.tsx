@@ -97,7 +97,9 @@ it('preserves the bound component and helper identity and uses per-resource defa
   const Availability = createCalendar('availability');
   expect(createCalendar('availability')).toBe(Availability);
   expect(Calendar.asHOF()('availability')).toBe(Availability);
-  expect(createCalendar('availability').makeComposable).toBe(Availability.makeComposable);
+  expect(createCalendar('availability').makeComposable).toBe(
+    Availability.makeComposable,
+  );
   expect(Availability.makeComposable().displayName).toBe('AvailabilityPage');
   expect(Availability.makeComposable({}).displayName).toBe('AvailabilityPage');
   const Appointments = createCalendar('appointments');
@@ -113,9 +115,11 @@ it('does not attach makeComposable when no composables are configured', () => {
       render: () => <section />,
     },
   });
-  const Calendar = definition.createResourceLayout.forResources('availability').createComponent({
-    render: () => <section />,
-  });
+  const Calendar = definition.createResourceLayout
+    .forResources('availability')
+    .createComponent({
+      render: () => <section />,
+    });
   const Availability = Calendar.asHOF()('availability');
   expect(Availability.makeComposable).toBeUndefined();
   expect(Object.hasOwn(Availability, 'makeComposable')).toBe(false);

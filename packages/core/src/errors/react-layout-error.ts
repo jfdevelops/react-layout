@@ -12,7 +12,10 @@ function makeJsonSafe(value: unknown): unknown {
 
   if (value && typeof value === 'object') {
     return Object.fromEntries(
-      Object.entries(value).map(([key, nestedValue]) => [key, makeJsonSafe(nestedValue)]),
+      Object.entries(value).map(([key, nestedValue]) => [
+        key,
+        makeJsonSafe(nestedValue),
+      ]),
     );
   }
 
@@ -44,10 +47,10 @@ export const createReactLayoutError = createError({
     code: definition.code,
     scope: definition.scope,
     renderMessage(
-      renderer: (scope: typeof definition.scope, context: typeof data) => string = (
-        scope,
-        context,
-      ) =>
+      renderer: (
+        scope: typeof definition.scope,
+        context: typeof data,
+      ) => string = (scope, context) =>
         implementation({
           context,
           scope,

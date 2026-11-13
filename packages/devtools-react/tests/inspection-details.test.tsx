@@ -101,7 +101,12 @@ it('lists readable prop contracts with configurable chips and shared accessible 
   expect(optional).not.toHaveBeenCalled();
 });
 it('combines search, kind, and requirement filters and explains empty results', () => {
-  render(<InspectionDetails details={fixture().details} palette={resolveChipColors(undefined)} />);
+  render(
+    <InspectionDetails
+      details={fixture().details}
+      palette={resolveChipColors(undefined)}
+    />,
+  );
   const list = screen.getByRole('list', {
     name: 'Prop list',
   });
@@ -165,7 +170,12 @@ it('handles empty contracts and safe non-prop descriptions', () => {
 it('filters by available prop types alongside the other filters', () => {
   const { details } = fixture();
 
-  render(<InspectionDetails details={details} palette={resolveChipColors(undefined)} />);
+  render(
+    <InspectionDetails
+      details={details}
+      palette={resolveChipColors(undefined)}
+    />,
+  );
 
   const list = screen.getByRole('list', {
     name: 'Prop list',

@@ -7,9 +7,10 @@ import { z } from 'zod';
 afterEach(cleanup);
 
 it('renders an unregistered builder state as a composable with isolated hooks', () => {
-  const { createRenderState, defineResourceLayout: defineLayout } = createDefinedResourceLayout({
-    resources: ['users'],
-  });
+  const { createRenderState, defineResourceLayout: defineLayout } =
+    createDefinedResourceLayout({
+      resources: ['users'],
+    });
   const Counter = createRenderState({
     state: 'Counter',
     props: {
@@ -74,9 +75,10 @@ it('renders an unregistered builder state as a composable with isolated hooks', 
 });
 
 it('inherits only selected props and lets JSX override inherited values', () => {
-  const { createRenderState, defineResourceLayout: defineLayout } = createDefinedResourceLayout({
-    resources: ['users'],
-  });
+  const { createRenderState, defineResourceLayout: defineLayout } =
+    createDefinedResourceLayout({
+      resources: ['users'],
+    });
   const Message = createRenderState({
     state: 'Message',
     props: {
@@ -195,7 +197,11 @@ it('allows conditional circular references without recursively constructing layo
             },
           },
           render: ({ depth }, { composables }) =>
-            depth > 0 ? <composables.ToOther depth={depth - 1} /> : <p>Default leaf</p>,
+            depth > 0 ? (
+              <composables.ToOther depth={depth - 1} />
+            ) : (
+              <p>Default leaf</p>
+            ),
         },
         Other: {
           props: {
@@ -204,7 +210,11 @@ it('allows conditional circular references without recursively constructing layo
             },
           },
           render: ({ depth }, { composables }) =>
-            depth > 0 ? <composables.ToDefault depth={depth - 1} /> : <p>Other leaf</p>,
+            depth > 0 ? (
+              <composables.ToDefault depth={depth - 1} />
+            ) : (
+              <p>Other leaf</p>
+            ),
         },
       },
     },
@@ -257,9 +267,10 @@ it('binds references to the current resource layout rather than a global compone
 });
 
 it('preserves deferred and lazy behavior when a builder state is referenced', async () => {
-  const { createRenderState, defineResourceLayout: defineLayout } = createDefinedResourceLayout({
-    resources: ['users'],
-  });
+  const { createRenderState, defineResourceLayout: defineLayout } =
+    createDefinedResourceLayout({
+      resources: ['users'],
+    });
   const Deferred = createRenderState.defer({
     state: 'Deferred',
     render: () => <p>Deferred child</p>,
@@ -336,9 +347,10 @@ it('merges bound shared composables with inline state references', () => {
 });
 
 it('supports builder references in a bound layout with a function render', () => {
-  const { createRenderState, defineResourceLayout: defineLayout } = createDefinedResourceLayout({
-    resources: ['users'],
-  });
+  const { createRenderState, defineResourceLayout: defineLayout } =
+    createDefinedResourceLayout({
+      resources: ['users'],
+    });
   const Message = createRenderState({
     state: 'Message',
     props: {

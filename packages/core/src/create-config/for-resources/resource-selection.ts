@@ -1,17 +1,22 @@
 import type { LayoutNameInput, ResolvedLayoutName } from '../layout-name';
 import type { LayoutResourceKey, ResourceDefinition } from '../../resource';
 
-export type CapitalizedResource<Resource extends string> = Resource extends Resource
-  ? {
-      toLowerCase: () => Lowercase<Capitalize<Resource>>;
-    } & Capitalize<Resource>
-  : never;
+export type CapitalizedResource<Resource extends string> =
+  Resource extends Resource
+    ? {
+        toLowerCase: () => Lowercase<Capitalize<Resource>>;
+      } & Capitalize<Resource>
+    : never;
 
-export type ResourceLayoutName<Resource extends string, Name extends string = string> =
-  | Name
-  | ((resource: CapitalizedResource<Resource>) => Name);
+export type ResourceLayoutName<
+  Resource extends string,
+  Name extends string = string,
+> = Name | ((resource: CapitalizedResource<Resource>) => Name);
 
-export type ResourceLayoutNames<Resource extends string, CallbackName extends string = string> = {
+export type ResourceLayoutNames<
+  Resource extends string,
+  CallbackName extends string = string,
+> = {
   [TargetResource in Resource]?:
     | string
     | ((resource: CapitalizedResource<TargetResource>) => CallbackName);
@@ -28,8 +33,12 @@ export type SelectedResourceLayoutNames<
   CallbackName extends string,
 > = {
   [
-    TargetResource in Resource as TargetResource extends SelectedResource ? TargetResource : never
-  ]?: string | ((resource: CapitalizedResource<TargetResource>) => CallbackName);
+    TargetResource in Resource as TargetResource extends SelectedResource
+      ? TargetResource
+      : never
+  ]?:
+    | string
+    | ((resource: CapitalizedResource<TargetResource>) => CallbackName);
 };
 
 export type ResourcesLayoutName<Resource extends string> =
@@ -67,7 +76,9 @@ export type SelectedLayoutResources<
       ? Resource & LayoutResourceKey<Resources>
       : keyof Arguments[0] & LayoutResourceKey<Resources>;
 
-export type ResolveResourceLayoutName<Name> = Name extends (...args: never[]) => infer Result
+export type ResolveResourceLayoutName<Name> = Name extends (
+  ...args: never[]
+) => infer Result
   ? Result & string
   : Name extends string
     ? Name
@@ -77,7 +88,10 @@ export type NormalizeCapitalizedResourceName<
   Name extends string,
   Resource extends string,
 > = Name extends Name
-  ? NormalizeCapitalizedResourceNameMatch<Name, Resource> extends infer Match extends string
+  ? NormalizeCapitalizedResourceNameMatch<
+      Name,
+      Resource
+    > extends infer Match extends string
     ? [Match] extends [never]
       ? Name
       : Match
@@ -123,7 +137,9 @@ type ConfiguredResourceLayoutName<Arguments, Resource extends string> =
       : string;
 
 export type NormalizeResourceLayoutNames<Names, CallbackName extends string> = {
-  [Resource in keyof Names]: Names[Resource] extends (...args: never[]) => unknown
+  [Resource in keyof Names]: Names[Resource] extends (
+    ...args: never[]
+  ) => unknown
     ? (
         resource: CapitalizedResource<Resource & string>,
       ) => NormalizeCapitalizedResourceName<CallbackName, Resource & string>

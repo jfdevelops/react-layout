@@ -40,9 +40,9 @@ it('retains circular reference protection for ordinary details', () => {
 });
 it('describes schemas by vendor and distinguishes plain functions', () => {
   expect(describePropValidator(schema('valibot'))).toBe('unknown · valibot');
-  expect(describePropValidator(Object.assign(() => {}, schema('arktype')))).toBe(
-    'unknown · arktype',
-  );
+  expect(
+    describePropValidator(Object.assign(() => {}, schema('arktype'))),
+  ).toBe('unknown · arktype');
   expect(describePropValidator(() => {})).toBeUndefined();
   expect(
     describePropValidator({

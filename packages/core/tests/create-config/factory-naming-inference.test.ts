@@ -6,7 +6,9 @@ import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
-const root = resolve(fileURLToPath(new URL('../..', import.meta.url))).replaceAll('\\', '/');
+const root = resolve(
+  fileURLToPath(new URL('../..', import.meta.url)),
+).replaceAll('\\', '/');
 const typeEntry = process.env.REACT_LAYOUT_TYPE_ENTRY;
 const declarationEntry = typeEntry
   ? resolve(root, typeEntry === 'dist' ? 'dist/index.d.mts' : typeEntry)
@@ -23,7 +25,9 @@ it.each(['typescript-5-9', 'typescript-6'])(
     const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, root);
     const paths = published
       ? {
-          '@jfdevelops/react-layout': [(declarationEntry ?? '').replaceAll('\\', '/')],
+          '@jfdevelops/react-layout': [
+            (declarationEntry ?? '').replaceAll('\\', '/'),
+          ],
         }
       : parsed.options.paths;
     const completionFile = `${root}/tests/create-config/naming-parts-probe.ts`;
@@ -48,14 +52,19 @@ it.each(['typescript-5-9', 'typescript-6'])(
         .namingFn({ pattern: ({ resource }, parts) => \`\${parts.section}\${resource}\${parts.suffix}\` });
       strings({ /*stringParts*/ });
     `;
-    const isProbe = (file: string) => file.replaceAll('\\', '/') === completionFile;
+    const isProbe = (file: string) =>
+      file.replaceAll('\\', '/') === completionFile;
     const service = ts.createLanguageService({
       getScriptFileNames: () => [completionFile],
       getScriptVersion: () => '1',
       getScriptSnapshot: (file) => {
-        const contents = isProbe(file) ? completionSource : ts.sys.readFile(file);
+        const contents = isProbe(file)
+          ? completionSource
+          : ts.sys.readFile(file);
 
-        return contents === undefined ? undefined : ts.ScriptSnapshot.fromString(contents);
+        return contents === undefined
+          ? undefined
+          : ts.ScriptSnapshot.fromString(contents);
       },
       getCurrentDirectory: () => root,
       getCompilationSettings: () => ({
@@ -64,7 +73,8 @@ it.each(['typescript-5-9', 'typescript-6'])(
       }),
       getDefaultLibFileName: ts.getDefaultLibFilePath,
       fileExists: (file) => isProbe(file) || ts.sys.fileExists(file),
-      readFile: (file) => (isProbe(file) ? completionSource : ts.sys.readFile(file)),
+      readFile: (file) =>
+        isProbe(file) ? completionSource : ts.sys.readFile(file),
       readDirectory: ts.sys.readDirectory,
     });
     try {
@@ -104,7 +114,9 @@ it.each(['typescript-5-9', 'typescript-6'])(
       },
     });
     expect(
-      program.getSourceFile((declarationEntry ?? `${root}/src/index.ts`).replaceAll('\\', '/')),
+      program.getSourceFile(
+        (declarationEntry ?? `${root}/src/index.ts`).replaceAll('\\', '/'),
+      ),
     ).toBeDefined();
     const fixtureRoot = `${root}/tests/create-config/fixtures/named-factory`;
     // Check the consumer modules with each compiler. The implementation itself
@@ -114,7 +126,9 @@ it.each(['typescript-5-9', 'typescript-6'])(
       ...program.getSyntacticDiagnostics(),
       ...program
         .getSourceFiles()
-        .filter((file) => file.fileName.replaceAll('\\', '/').startsWith(fixtureRoot))
+        .filter((file) =>
+          file.fileName.replaceAll('\\', '/').startsWith(fixtureRoot),
+        )
         .flatMap((file) => program.getSemanticDiagnostics(file)),
     ];
     expect(

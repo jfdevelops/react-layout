@@ -1,5 +1,8 @@
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
-import { createDefinedResourceLayout, type ReusableResourcesAccessor } from '../../src';
+import {
+  createDefinedResourceLayout,
+  type ReusableResourcesAccessor,
+} from '../../src';
 import { z } from 'zod';
 
 const factory = createDefinedResourceLayout({
@@ -32,7 +35,9 @@ describe('reusable selectors', () => {
         include: {
           resources: (resources) => {
             expectTypeOf(resources.raw()[0]).toEqualTypeOf<'users'>();
-            expectTypeOf(resources()[1].subResources[0].value).toEqualTypeOf<'comments'>();
+            expectTypeOf(
+              resources()[1].subResources[0].value,
+            ).toEqualTypeOf<'comments'>();
 
             return resources.pick('posts')()[0].value;
           },
@@ -192,11 +197,13 @@ describe('reusable selectors', () => {
   });
 
   it('evaluates each resource callback once per call while validating overlap contracts', () => {
-    const single = vi.fn((resources: ReusableResourcesAccessor<readonly ['users']>) =>
-      resources.single(),
+    const single = vi.fn(
+      (resources: ReusableResourcesAccessor<readonly ['users']>) =>
+        resources.single(),
     );
-    const derived = vi.fn((resources: ReusableResourcesAccessor<readonly ['users']>) =>
-      resources.raw(),
+    const derived = vi.fn(
+      (resources: ReusableResourcesAccessor<readonly ['users']>) =>
+        resources.raw(),
     );
     const { createReusable } = createDefinedResourceLayout({
       resources: ['users'],
@@ -255,7 +262,9 @@ describe('reusable selectors', () => {
         },
       },
       fn: (props) => {
-        expectTypeOf(props.resources).toEqualTypeOf<'users' | 'posts' | 'posts.comments'>();
+        expectTypeOf(props.resources).toEqualTypeOf<
+          'users' | 'posts' | 'posts.comments'
+        >();
 
         return props.resources;
       },
@@ -340,7 +349,12 @@ describe('reusable selectors', () => {
         resources: 'posts.comments.replies',
       }),
     ).toBe('posts.comments.replies');
-    for (const resources of ['comments', 'replies', 'posts.replies', 'posts.comments.missing']) {
+    for (const resources of [
+      'comments',
+      'replies',
+      'posts.replies',
+      'posts.comments.missing',
+    ]) {
       expect(() =>
         helper({
           resources,
@@ -476,7 +490,9 @@ describe('reusable selectors', () => {
   });
 
   it('deduplicates the same resource selector', () => {
-    const selector = vi.fn((resources: typeof factory.resources) => resources.raw()[0]);
+    const selector = vi.fn(
+      (resources: typeof factory.resources) => resources.raw()[0],
+    );
     const helper = factory.createReusable({
       props: {
         include: {
@@ -645,7 +661,9 @@ describe('reusable selectors', () => {
         },
       },
       fn: (props) => {
-        expectTypeOf(props.optional).toEqualTypeOf<{ label: string } | undefined>();
+        expectTypeOf(props.optional).toEqualTypeOf<
+          { label: string } | undefined
+        >();
 
         return props;
       },
@@ -787,7 +805,9 @@ describe('reusable selectors', () => {
       },
       overlap: 'preferProps',
       fn: (props) => {
-        expectTypeOf(props.optional).toEqualTypeOf<{ label: string } | undefined>();
+        expectTypeOf(props.optional).toEqualTypeOf<
+          { label: string } | undefined
+        >();
 
         return props;
       },
@@ -1021,8 +1041,12 @@ describe('reusable selectors', () => {
         },
       },
       fn: (props) => {
-        expectTypeOf(props.optional?.shared?.label).toEqualTypeOf<string | undefined>();
-        expectTypeOf(props.optional?.shared?.count).toEqualTypeOf<string | undefined>();
+        expectTypeOf(props.optional?.shared?.label).toEqualTypeOf<
+          string | undefined
+        >();
+        expectTypeOf(props.optional?.shared?.count).toEqualTypeOf<
+          string | undefined
+        >();
         if (props.optional?.caller) {
           expectTypeOf(props.optional.caller.title).toEqualTypeOf<string>();
         }
@@ -1100,7 +1124,8 @@ describe('reusable selectors', () => {
         resources: true,
         options: true,
       },
-      fn: (props) => props.resources.isResource('users') && props.title === 'Docs',
+      fn: (props) =>
+        props.resources.isResource('users') && props.title === 'Docs',
     });
     expect(
       helper({

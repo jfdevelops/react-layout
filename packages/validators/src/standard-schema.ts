@@ -2,7 +2,10 @@ import type { StandardSchemaV1 } from '@standard-schema/spec';
 import { PropError } from './prop-error';
 
 export function isStandardSchema(value: unknown): value is StandardSchemaV1 {
-  if ((typeof value !== 'object' && typeof value !== 'function') || value === null) {
+  if (
+    (typeof value !== 'object' && typeof value !== 'function') ||
+    value === null
+  ) {
     return false;
   }
   if (!('~standard' in value)) {
@@ -26,7 +29,10 @@ export function validateDefinition<Definition extends StandardSchemaV1>(
   value: unknown,
 ): StandardSchemaV1.InferOutput<Definition> {
   const result = definition['~standard'].validate(value);
-  if (result instanceof Promise || ('then' in result && typeof result.then === 'function')) {
+  if (
+    result instanceof Promise ||
+    ('then' in result && typeof result.then === 'function')
+  ) {
     // Handle rejected async refinements without leaking an unhandled rejection.
     void Promise.resolve(result).catch(() => {});
     throw new TypeError('React Layout schemas must validate synchronously.');
@@ -35,7 +41,9 @@ export function validateDefinition<Definition extends StandardSchemaV1>(
     const issue = result.issues[0];
     const path =
       issue?.path
-        ?.map((segment) => (typeof segment === 'object' ? String(segment.key) : String(segment)))
+        ?.map((segment) =>
+          typeof segment === 'object' ? String(segment.key) : String(segment),
+        )
         .join('.') || 'value';
     throw new PropError({
       path,

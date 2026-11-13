@@ -65,5 +65,7 @@ it('only exposes uppercase compound components in the type contract', () => {
   expectTypeOf<ScopedComponentCompoundStaticKey>().toEqualTypeOf<
     (typeof reservedScopedCompoundStaticKeys)[number]
   >();
-  expectTypeOf<keyof ScopedComponentCompoundStatics<Component>>().toEqualTypeOf<'Loading'>();
+  expectTypeOf<
+    keyof ScopedComponentCompoundStatics<Component>
+  >().toEqualTypeOf<'Loading'>();
 });

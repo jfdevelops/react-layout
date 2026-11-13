@@ -54,6 +54,10 @@ createRoot(root).render(
     </p>
     <ul id='style-violation-details' />
     <Page />
-    <ReactLayoutDevtools source={definition} initialIsOpen nonce='react-layout-csp-example' />
+    <ReactLayoutDevtools
+      source={definition}
+      initialIsOpen
+      nonce='react-layout-csp-example'
+    />
   </>,
 );

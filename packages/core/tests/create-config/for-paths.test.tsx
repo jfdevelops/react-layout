@@ -32,7 +32,9 @@ const { createResourceConfig } = defineResourceLayout({
 const usersList = <div data-testid='users-list'>users</div>;
 const usersError = <div data-testid='users-error'>users error</div>;
 const usersDetail = <div data-testid='users-detail'>users detail</div>;
-const usersDetailError = <div data-testid='users-detail-error'>detail error</div>;
+const usersDetailError = (
+  <div data-testid='users-detail-error'>detail error</div>
+);
 const adminsList = <div data-testid='admins-list'>admins</div>;
 const femaleList = <div data-testid='female-list'>female managers</div>;
 const groupsList = <div data-testid='groups-list'>groups</div>;
@@ -121,7 +123,9 @@ describe('createGetComponent', () => {
 
   it('resolves a $subResource variable one level deep', () => {
     const { createGetComponent } = createTestConfig();
-    const getSubResource = createGetComponent('$resource.$subResource.$component');
+    const getSubResource = createGetComponent(
+      '$resource.$subResource.$component',
+    );
 
     expect(
       getSubResource({
@@ -134,7 +138,9 @@ describe('createGetComponent', () => {
 
   it('resolves a nested $subResource param', () => {
     const { createGetComponent } = createTestConfig();
-    const getSubResource = createGetComponent('$resource.$subResource.$component');
+    const getSubResource = createGetComponent(
+      '$resource.$subResource.$component',
+    );
 
     expect(
       getSubResource({
@@ -169,7 +175,9 @@ describe('createGetComponent', () => {
 
   it('narrows values with the variable guards', () => {
     const { createGetComponent } = createTestConfig();
-    const getSubResource = createGetComponent('$resource.$subResource.$component');
+    const getSubResource = createGetComponent(
+      '$resource.$subResource.$component',
+    );
 
     expect(getSubResource.isResource('users')).toBe(true);
     expect(getSubResource.isResource('nope')).toBe(false);
@@ -188,15 +196,25 @@ describe('createGetComponent', () => {
     const getResource = createGetComponent('$resource');
 
     expect(() =>
-      (getResource as unknown as (variables?: Record<string, unknown>) => unknown)(),
+      (
+        getResource as unknown as (
+          variables?: Record<string, unknown>,
+        ) => unknown
+      )(),
     ).toThrowError(MissingPathVariableError);
   });
 
   it('throws typed errors for values outside the config', () => {
     const { createGetComponent } = createTestConfig();
-    const getSubResource = createGetComponent('$resource.$subResource.$component');
+    const getSubResource = createGetComponent(
+      '$resource.$subResource.$component',
+    );
     const call = (variables: Record<string, unknown>) =>
-      (getSubResource as unknown as (variables: Record<string, unknown>) => unknown)(variables);
+      (
+        getSubResource as unknown as (
+          variables: Record<string, unknown>,
+        ) => unknown
+      )(variables);
 
     expect(() =>
       call({
@@ -230,8 +248,12 @@ describe('forPaths', () => {
   it('rejects a path the config does not support', () => {
     const { forPaths } = createTestConfig();
 
-    expect(() => forPaths('users.missing.component' as never)).toThrowError(InvalidPathError);
-    expect(() => forPaths('users.missing.component' as never)).toThrowError(/Available paths are/);
+    expect(() => forPaths('users.missing.component' as never)).toThrowError(
+      InvalidPathError,
+    );
+    expect(() => forPaths('users.missing.component' as never)).toThrowError(
+      /Available paths are/,
+    );
   });
 
   it('renders a component built from the path params', () => {
@@ -331,10 +353,11 @@ describe('forPaths', () => {
 
   it('rejects a path the component was not built for', () => {
     const { forPaths } = createTestConfig();
-    const Detail = forPaths('$resource.detail.component').render(({ getComponentForPath }) =>
-      (getComponentForPath as unknown as (path: string) => () => JSX.Element)(
-        '$resource.$component',
-      )(),
+    const Detail = forPaths('$resource.detail.component').render(
+      ({ getComponentForPath }) =>
+        (getComponentForPath as unknown as (path: string) => () => JSX.Element)(
+          '$resource.$component',
+        )(),
     );
 
     expect(() =>

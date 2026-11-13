@@ -36,7 +36,9 @@ const virtual = 'virtual:react-layout-devtools';
 const resolvedVirtual = '\0' + virtual;
 
 /** Development instrumentation and production bundle selection. */
-export function reactLayoutDevtools(options: ReactLayoutDevtoolsOptions = {}): Plugin {
+export function reactLayoutDevtools(
+  options: ReactLayoutDevtoolsOptions = {},
+): Plugin {
   let root = process.cwd();
   let base = '/';
   let building = false;
@@ -130,7 +132,8 @@ export function annotate(value, metadata) {
       );
       const checker = program.getTypeChecker();
 
-      const binding = (node: ts.Node) => checker.getSymbolAtLocation(node) ?? node;
+      const binding = (node: ts.Node) =>
+        checker.getSymbolAtLocation(node) ?? node;
 
       const names = new Map<ts.Symbol | ts.Node, string>();
       const owners = new Set<ts.Symbol | ts.Node>();
@@ -170,7 +173,9 @@ export function annotate(value, metadata) {
               continue;
             }
 
-            const imported = (importedBinding.propertyName ?? importedBinding.name).text;
+            const imported = (
+              importedBinding.propertyName ?? importedBinding.name
+            ).text;
 
             if (api.has(imported)) {
               names.set(binding(importedBinding.name), imported);
@@ -194,7 +199,9 @@ export function annotate(value, metadata) {
         if (ts.isIdentifier(expression)) {
           const symbol = binding(expression);
 
-          return creators.has(symbol) ? 'createComposableComponent' : names.get(symbol);
+          return creators.has(symbol)
+            ? 'createComposableComponent'
+            : names.get(symbol);
         }
 
         if (!ts.isPropertyAccessExpression(expression)) {
@@ -216,13 +223,18 @@ export function annotate(value, metadata) {
 
           if (
             producer === 'createDefinedResourceLayout' ||
-            (producer === 'defineResourceLayout' && member === 'createResourceLayout')
+            (producer === 'defineResourceLayout' &&
+              member === 'createResourceLayout')
           ) {
             return member;
           }
         }
 
-        if (['lazy', 'defer', 'fromState', 'withLayout', 'forResource'].includes(member)) {
+        if (
+          ['lazy', 'defer', 'fromState', 'withLayout', 'forResource'].includes(
+            member,
+          )
+        ) {
           return callName(expression.expression);
         }
       }
@@ -326,7 +338,8 @@ export function annotate(value, metadata) {
           ts.isCallExpression(node.initializer) &&
           ts.isPropertyAccessExpression(node.initializer.expression) &&
           node.initializer.expression.name.text === 'forResources' &&
-          callName(node.initializer.expression.expression) === 'defineResourceLayout'
+          callName(node.initializer.expression.expression) ===
+            'defineResourceLayout'
         ) {
           names.set(binding(node.name), 'defineResourceLayout');
         }
@@ -392,7 +405,10 @@ export function annotate(value, metadata) {
             inlineStates(property.initializer);
           }
 
-          if (key !== 'render' || !ts.isObjectLiteralExpression(property.initializer)) {
+          if (
+            key !== 'render' ||
+            !ts.isObjectLiteralExpression(property.initializer)
+          ) {
             continue;
           }
 
@@ -403,7 +419,10 @@ export function annotate(value, metadata) {
 
             if (ts.isShorthandPropertyAssignment(state)) {
               // Preserve the shorthand's key while wrapping its value.
-              output.prependLeft(state.getStart(source), `${state.name.text}: `);
+              output.prependLeft(
+                state.getStart(source),
+                `${state.name.text}: `,
+              );
 
               annotate(state.name, state);
             }
@@ -435,7 +454,10 @@ export function annotate(value, metadata) {
       let importOffset = code.startsWith('#!') ? code.indexOf('\n') + 1 : 0;
 
       for (const statement of source.statements) {
-        if (ts.isExpressionStatement(statement) && ts.isStringLiteral(statement.expression)) {
+        if (
+          ts.isExpressionStatement(statement) &&
+          ts.isStringLiteral(statement.expression)
+        ) {
           importOffset = statement.end;
         } else {
           break;

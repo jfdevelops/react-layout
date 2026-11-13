@@ -7,7 +7,11 @@ export type {
 export type MergeIntersection<T> = {
   [Key in keyof T]: T[Key];
 };
-export type IsUnion<T, U = T> = T extends unknown ? ([U] extends [T] ? false : true) : never;
+export type IsUnion<T, U = T> = T extends unknown
+  ? [U] extends [T]
+    ? false
+    : true
+  : never;
 export type Updater<T> = T | ((prev: T) => T);
 export type OptionalRecord<K extends string, V = unknown> = {
   [key in K]?: V;
