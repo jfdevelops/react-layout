@@ -1,0 +1,12 @@
+{
+  "oxc.useExecPath": true,
+  "oxc.path.oxfmt": "${userHome}/Desktop/projects/jfdevelops/react-layout/node_modules/oxfmt/bin/oxfmt",
+  "oxc.path.oxlint": "${userHome}/Desktop/projects/jfdevelops/react-layout/node_modules/oxlint/bin/oxlint",
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "[typescript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  }
+}
