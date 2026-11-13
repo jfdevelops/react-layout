@@ -21,7 +21,10 @@ const { createResourceLayout } = testResourceLayout({
   },
 });
 
-const createDirectoryLayout = createResourceLayout.forResources('users', 'admins');
+const createDirectoryLayout = createResourceLayout.forResources(
+  'users',
+  'admins',
+);
 
 describe('defineResourceLayout types', () => {
   it('types the current resource provider and hook from declared resources', () => {
@@ -255,7 +258,9 @@ describe('defineResourceLayout types', () => {
         },
         render: (props) => {
           expectTypeOf(props.title).toEqualTypeOf<string>();
-          expectTypeOf(props.segments).toEqualTypeOf<Record<string, string> | undefined>();
+          expectTypeOf(props.segments).toEqualTypeOf<
+            Record<string, string> | undefined
+          >();
 
           return null as never;
         },
@@ -323,7 +328,9 @@ describe('defineResourceLayout types', () => {
         },
         render: (props) => {
           expectTypeOf(props.title).toEqualTypeOf<string>();
-          expectTypeOf(props.componentLabel).toEqualTypeOf<string | undefined>();
+          expectTypeOf(props.componentLabel).toEqualTypeOf<
+            string | undefined
+          >();
           expectTypeOf(props.configLabel).toEqualTypeOf<string | undefined>();
           expectTypeOf(props.requiredComponentLabel).toEqualTypeOf<string>();
           expectTypeOf(props.requiredConfigLabel).toEqualTypeOf<string>();
@@ -580,7 +587,9 @@ describe('createComponent types', () => {
           },
         },
         render: () => null as never,
-      } satisfies Parameters<typeof createDirectoryLayout.createComponent<{ users: {} }, never>>[0];
+      } satisfies Parameters<
+        typeof createDirectoryLayout.createComponent<{ users: {} }, never>
+      >[0];
 
       createDirectoryLayout.createComponent(invalidOptions1);
     };
@@ -675,40 +684,44 @@ describe('createComponent types', () => {
         render: () => null as never,
       },
     });
-    const JsxSlotDirectory = createJsxSlotLayout.forResources('users').createComponent({
-      props: {
-        include: {
-          actions: true,
-          title: true,
-        },
-        custom: {
-          badge: reactElement(),
-        },
-      },
-      resources: {
-        users: {
-          render: (props) => {
-            expectTypeOf(props.actions).toEqualTypeOf<ComponentSlotComponent>();
-            expectTypeOf(props.badge).toEqualTypeOf<ReactElement>();
-            () => {
-              // @ts-expect-error declared keys are not capitalized
-              props.Actions;
-            };
-
-            return null as never;
+    const JsxSlotDirectory = createJsxSlotLayout
+      .forResources('users')
+      .createComponent({
+        props: {
+          include: {
+            actions: true,
+            title: true,
+          },
+          custom: {
+            badge: reactElement(),
           },
         },
-      },
-      render: (props) => {
-        expectTypeOf(props.actions).toEqualTypeOf<ComponentSlotComponent>();
-        () => {
-          // @ts-expect-error declared keys are not capitalized
-          props.Badge;
-        };
+        resources: {
+          users: {
+            render: (props) => {
+              expectTypeOf(
+                props.actions,
+              ).toEqualTypeOf<ComponentSlotComponent>();
+              expectTypeOf(props.badge).toEqualTypeOf<ReactElement>();
+              () => {
+                // @ts-expect-error declared keys are not capitalized
+                props.Actions;
+              };
 
-        return null as never;
-      },
-    });
+              return null as never;
+            },
+          },
+        },
+        render: (props) => {
+          expectTypeOf(props.actions).toEqualTypeOf<ComponentSlotComponent>();
+          () => {
+            // @ts-expect-error declared keys are not capitalized
+            props.Badge;
+          };
+
+          return null as never;
+        },
+      });
 
     expectTypeOf(JsxSlotDirectory).toBeCallableWith({
       resource: 'users' as const,
@@ -729,14 +742,15 @@ describe('createComponent types', () => {
   });
 
   it('types setProps base props and forbids redefining them', () => {
-    const createSharedDirectory = createDirectoryLayout.createComponent.setProps({
-      include: {
-        title: true,
-      },
-      custom: {
-        heading: z.string(),
-      },
-    });
+    const createSharedDirectory =
+      createDirectoryLayout.createComponent.setProps({
+        include: {
+          title: true,
+        },
+        custom: {
+          heading: z.string(),
+        },
+      });
     const sharedUsersEntry = createSharedDirectory.createResourceComponents({
       resource: 'users',
       props: {
@@ -924,7 +938,9 @@ describe('createComponent types', () => {
           },
         },
         render: () => null as never,
-      } satisfies Parameters<typeof createDirectoryLayout.createComponent<{ users: {} }, never>>[0];
+      } satisfies Parameters<
+        typeof createDirectoryLayout.createComponent<{ users: {} }, never>
+      >[0];
 
       createDirectoryLayout.createComponent(invalidOptions4);
     };
@@ -946,10 +962,16 @@ describe('createComponent types', () => {
       });
 
       expectTypeOf(resources()[0].value).toEqualTypeOf<'users'>();
-      expectTypeOf(resources()[1].subResources[0].value).toEqualTypeOf<'comments'>();
+      expectTypeOf(
+        resources()[1].subResources[0].value,
+      ).toEqualTypeOf<'comments'>();
       expectTypeOf(resources.raw()[0]).toEqualTypeOf<'users'>();
-      expectTypeOf(resources((values) => values[1].value)).toEqualTypeOf<'posts'>();
-      expectTypeOf(resources.raw((values) => values[1].value)).toEqualTypeOf<'posts'>();
+      expectTypeOf(
+        resources((values) => values[1].value),
+      ).toEqualTypeOf<'posts'>();
+      expectTypeOf(
+        resources.raw((values) => values[1].value),
+      ).toEqualTypeOf<'posts'>();
     });
   });
 
@@ -995,7 +1017,9 @@ describe('createComponent types', () => {
         shell: {
           render: (_props, { resource, resources }) => {
             expectTypeOf(resource).toEqualTypeOf<'users' | undefined>();
-            expectTypeOf(resources.current).toEqualTypeOf<'users' | undefined>();
+            expectTypeOf(resources.current).toEqualTypeOf<
+              'users' | undefined
+            >();
 
             return null as never;
           },

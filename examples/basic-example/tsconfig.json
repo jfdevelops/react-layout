@@ -9,8 +9,12 @@
       "@jfdevelops/react-layout-composable-breadcrumb": [
         "../../packages/composable-breadcrumb/src/index.ts"
       ],
-      "@jfdevelops/react-layout-devtools-react": ["../../packages/devtools-react/src/index.ts"],
-      "@jfdevelops/react-layout-devtools-core": ["../../packages/devtools-core/src/index.ts"]
+      "@jfdevelops/react-layout-devtools-react": [
+        "../../packages/devtools-react/src/index.ts"
+      ],
+      "@jfdevelops/react-layout-devtools-core": [
+        "../../packages/devtools-core/src/index.ts"
+      ]
     },
     "types": ["node"]
   },

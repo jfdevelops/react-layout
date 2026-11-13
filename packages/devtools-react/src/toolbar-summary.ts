@@ -33,15 +33,22 @@ export function summarizeGraph(graph: GraphSnapshot): ToolbarSummary {
   const instances = graph.instances ?? [];
   // Instances register on mount, so the last active one is the newest.
   const instance =
-    [...instances].reverse().find((entry) => isActive(entry.layout)) ?? instances.at(-1);
+    [...instances].reverse().find((entry) => isActive(entry.layout)) ??
+    instances.at(-1);
   const layout = instance
     ? byId.get(instance.layout)
-    : [...graph.nodes].reverse().find((node) => node.kind === 'layout' && node.active > 0);
+    : [...graph.nodes]
+        .reverse()
+        .find((node) => node.kind === 'layout' && node.active > 0);
   let current: ToolbarSummary['current'];
 
   if (layout) {
     const resource = graph.edges
-      .filter((edge) => edge.target === layout.id && byId.get(edge.source)?.kind === 'resource')
+      .filter(
+        (edge) =>
+          edge.target === layout.id &&
+          byId.get(edge.source)?.kind === 'resource',
+      )
       .map((edge) => byId.get(edge.source)!)[0];
     const stateId = instance
       ? (instance.forcedState ?? instance.state)
@@ -63,7 +70,9 @@ export function summarizeGraph(graph: GraphSnapshot): ToolbarSummary {
   }
 
   return {
-    activeLayouts: graph.nodes.filter((node) => node.kind === 'layout' && node.active > 0).length,
+    activeLayouts: graph.nodes.filter(
+      (node) => node.kind === 'layout' && node.active > 0,
+    ).length,
     loading: graph.nodes.filter((node) => node.status === 'loading').length,
     failed: graph.nodes.filter((node) => node.status === 'error').length,
     current,
@@ -71,5 +80,7 @@ export function summarizeGraph(graph: GraphSnapshot): ToolbarSummary {
 }
 
 function shortLabel(node: GraphNode) {
-  return node.kind === 'resource' ? (node.label.split('.').at(-1) ?? node.label) : node.label;
+  return node.kind === 'resource'
+    ? (node.label.split('.').at(-1) ?? node.label)
+    : node.label;
 }

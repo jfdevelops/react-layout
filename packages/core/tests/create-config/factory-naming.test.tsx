@@ -51,7 +51,9 @@ it('keeps imported compound states, preset overrides, and required custom props'
   expect(screen.getByRole('navigation')).toHaveTextContent('Upcoming');
   expect(screen.getByText('Upcoming bookings')).toBeInTheDocument();
   view.rerender(ErrorState);
-  expect(screen.getByText('Appointments: Unable to load bookings')).toBeInTheDocument();
+  expect(
+    screen.getByText('Appointments: Unable to load bookings'),
+  ).toBeInTheDocument();
 });
 
 it('allows definition and component naming callbacks to override the factory', () => {

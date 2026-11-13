@@ -1,4 +1,10 @@
-import { Link, Outlet, createRootRoute, createRoute, createRouter } from '@tanstack/react-router';
+import {
+  Link,
+  Outlet,
+  createRootRoute,
+  createRoute,
+  createRouter,
+} from '@tanstack/react-router';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { type ComponentPropsWithRef } from 'react';
 import { createBreadcrumbComposable } from '@jfdevelops/react-layout-composable-breadcrumb';
@@ -43,11 +49,21 @@ function Card(props: ComponentPropsWithRef<'div'>) {
 }
 
 function Title({ className, ...props }: ComponentPropsWithRef<'h2'>) {
-  return <h2 className={cn('leading-none font-semibold tracking-tight', className)} {...props} />;
+  return (
+    <h2
+      className={cn('leading-none font-semibold tracking-tight', className)}
+      {...props}
+    />
+  );
 }
 
 function Description({ className, ...props }: ComponentPropsWithRef<'p'>) {
-  return <p className={cn('text-sm leading-6 text-muted-foreground', className)} {...props} />;
+  return (
+    <p
+      className={cn('text-sm leading-6 text-muted-foreground', className)}
+      {...props}
+    />
+  );
 }
 
 const layoutDefinition = defineResourceLayout({
@@ -86,7 +102,8 @@ const layoutDefinition = defineResourceLayout({
         wrapWith: Title,
       }),
       Description: create({
-        name: ({ resource, capitalize }) => `${capitalize(resource)}Description`,
+        name: ({ resource, capitalize }) =>
+          `${capitalize(resource)}Description`,
         wrapWith: CardDescription,
       }),
       Content: create({
@@ -100,12 +117,15 @@ const layoutDefinition = defineResourceLayout({
         >
           {Object.entries(segments).map(([key, segment], index) => {
             const label = typeof segment === 'string' ? segment : segment.value;
-            const isActive = typeof segment === 'string' ? false : (segment.isActive ?? false);
+            const isActive =
+              typeof segment === 'string' ? false : (segment.isActive ?? false);
 
             return (
               <span key={key} className='inline-flex items-center gap-1'>
                 {index > 0 ? <span aria-hidden='true'>/</span> : null}
-                <span className={cn(isActive && 'font-medium text-foreground')}>{label}</span>
+                <span className={cn(isActive && 'font-medium text-foreground')}>
+                  {label}
+                </span>
               </span>
             );
           })}
@@ -172,7 +192,8 @@ const createUsersPage = createResourceLayout.forResource({
 const UsersPage = createUsersPage({
   name: 'UsersPage',
   title: 'Users page',
-  description: 'A single layout factory can produce a page shell for the users resource.',
+  description:
+    'A single layout factory can produce a page shell for the users resource.',
   segments: {
     users: {
       value: 'Users',
@@ -183,7 +204,8 @@ const UsersPage = createUsersPage({
 const AdminUsersPage = createUsersPage({
   name: 'AdminUsersPage',
   title: 'Admin users page',
-  description: 'A single layout factory can produce a page shell for the users resource.',
+  description:
+    'A single layout factory can produce a page shell for the users resource.',
   segments: {
     users: 'Users',
     admins: {
@@ -200,7 +222,8 @@ const GroupsLayout = createResourceLayout({
   resource: 'groups',
   name: 'GroupsLayout',
   title: 'Groups page',
-  description: 'The same factory can map a different resource into a different page surface.',
+  description:
+    'The same factory can map a different resource into a different page surface.',
   segments: {
     groups: {
       value: 'Groups',
@@ -213,7 +236,8 @@ const RolesLayout = createResourceLayout({
   resource: 'roles',
   name: 'RolesLayout',
   title: 'Roles page',
-  description: 'Each page remains a normal React component backed by the shared layout definition.',
+  description:
+    'Each page remains a normal React component backed by the shared layout definition.',
   segments: {
     roles: {
       value: 'Roles',
@@ -238,12 +262,15 @@ function AppShell() {
       <header className='mb-7 flex flex-col gap-6 md:flex-row md:items-end md:justify-between'>
         <div className='space-y-3'>
           <div className='space-y-3'>
-            <h1 className='text-4xl font-semibold tracking-tight'>Basic Example</h1>
+            <h1 className='text-4xl font-semibold tracking-tight'>
+              Basic Example
+            </h1>
             <p className='max-w-2xl text-sm leading-6 text-muted-foreground md:text-base'>
-              A basic example where every page is built from <code>createResourceLayout</code>. This
-              example showcases the ability to create a page shell for a resource and then reuse it
-              for different pages. Navigate through the pages to see the different layouts in
-              action.
+              A basic example where every page is built from{' '}
+              <code>createResourceLayout</code>. This example showcases the
+              ability to create a page shell for a resource and then reuse it
+              for different pages. Navigate through the pages to see the
+              different layouts in action.
             </p>
           </div>
         </div>
@@ -367,9 +394,9 @@ function UserShowPage() {
           <div className='flex flex-col gap-2'>
             <UserDetailPage.Title>Users / {user.name}</UserDetailPage.Title>
             <UserDetailPage.Description>
-              This page is composed from <code>UsersPage.makeComposable</code>. This allows you to
-              customize the page any way you want. Here, we customized the title and added a back
-              button.
+              This page is composed from <code>UsersPage.makeComposable</code>.
+              This allows you to customize the page any way you want. Here, we
+              customized the title and added a back button.
             </UserDetailPage.Description>
           </div>
         </div>
@@ -386,8 +413,8 @@ function UserShowPage() {
               Layout reuse
             </p>
             <p className='text-sm leading-6 text-muted-foreground'>
-              This route is composed from <code>UsersPage.makeComposable</code>, so it keeps the
-              same users layout contract.
+              This route is composed from <code>UsersPage.makeComposable</code>,
+              so it keeps the same users layout contract.
             </p>
           </div>
         </UserDetailPage.Content>
@@ -399,8 +426,8 @@ function UserShowPage() {
 function GroupsPage() {
   return (
     <GroupsLayout>
-      Group-specific content can stay inside the generated layout while reusing the same composable
-      structure and prop mapping.
+      Group-specific content can stay inside the generated layout while reusing
+      the same composable structure and prop mapping.
     </GroupsLayout>
   );
 }
@@ -408,8 +435,8 @@ function GroupsPage() {
 function RolesPage() {
   return (
     <RolesLayout>
-      Roles can define their own route surface without rebuilding the shell, title wiring, or layout
-      composables.
+      Roles can define their own route surface without rebuilding the shell,
+      title wiring, or layout composables.
     </RolesLayout>
   );
 }

@@ -4,7 +4,10 @@ import type { CreateLayoutComposable } from '@jfdevelops/react-layout';
 type UntypedCall = (...args: unknown[]) => unknown;
 import { expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { createDefinedResourceLayout, defineResourceSurfaces } from '@jfdevelops/react-layout';
+import {
+  createDefinedResourceLayout,
+  defineResourceSurfaces,
+} from '@jfdevelops/react-layout';
 import { z } from 'zod';
 import { reactNode } from '@jfdevelops/react-layout-adapter-zod';
 
@@ -125,12 +128,16 @@ it('validates host selections at runtime', () => {
     ]),
   ).toThrow('hostedBy');
   expect(() =>
-    Reflect.apply(layout.createResourceLayout.forResource as UntypedCall, undefined, [
-      {
-        resource: 'create',
-        hostedBy: 'teams',
-      },
-    ]),
+    Reflect.apply(
+      layout.createResourceLayout.forResource as UntypedCall,
+      undefined,
+      [
+        {
+          resource: 'create',
+          hostedBy: 'teams',
+        },
+      ],
+    ),
   ).toThrow('hostedBy');
   expect(() =>
     Reflect.apply(root.defineResourceSurface, undefined, [
@@ -266,8 +273,12 @@ it('uses the existing persistent shell implementation', () => {
   );
   expect(Page.displayName).toBe('UsersPage');
   expect(Overridden.displayName).toBe('CustomUsersPage');
-  expect(screen.getByText('Shell page: UsersPage').closest('main')).toBeTruthy();
-  expect(screen.getByText('Shell page: CustomUsersPage').closest('main')).toBeTruthy();
+  expect(
+    screen.getByText('Shell page: UsersPage').closest('main'),
+  ).toBeTruthy();
+  expect(
+    screen.getByText('Shell page: CustomUsersPage').closest('main'),
+  ).toBeTruthy();
 });
 
 it('keeps surfaces without a host independent', () => {

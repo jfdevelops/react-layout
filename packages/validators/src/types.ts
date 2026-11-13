@@ -13,16 +13,22 @@ export interface PropDefinitions {
 
 /** A prop is optional when its schema output admits `undefined`. */
 export type DefinitionVisibility<Definition extends PropDefinition> =
-  undefined extends StandardSchemaV1.InferOutput<Definition> ? 'optional' : 'required';
+  undefined extends StandardSchemaV1.InferOutput<Definition>
+    ? 'optional'
+    : 'required';
 
 /**
  * Splits a value map into required keys and optional keys, where a key is
  * optional when its value admits `undefined`.
  */
 type OptionalByUndefined<Values> = {
-  [Key in keyof Values as undefined extends Values[Key] ? never : Key]: Values[Key];
+  [
+    Key in keyof Values as undefined extends Values[Key] ? never : Key
+  ]: Values[Key];
 } & {
-  [Key in keyof Values as undefined extends Values[Key] ? Key : never]?: Values[Key];
+  [
+    Key in keyof Values as undefined extends Values[Key] ? Key : never
+  ]?: Values[Key];
 };
 
 /**
@@ -34,7 +40,9 @@ export const componentSlotSymbol: unique symbol = Symbol.for(
 ) as never;
 
 /** The brand carried by a component-slot definition. */
-export interface ComponentSlotBrand<Shape extends PropDefinitions = PropDefinitions> {
+export interface ComponentSlotBrand<
+  Shape extends PropDefinitions = PropDefinitions,
+> {
   /**
    * The props the slot's component accepts.
    */
@@ -42,7 +50,9 @@ export interface ComponentSlotBrand<Shape extends PropDefinitions = PropDefiniti
 }
 
 /** Whether a value is a component-slot definition. */
-export function isComponentSlot(value: unknown): value is PropDefinition & ComponentSlotBrand {
+export function isComponentSlot(
+  value: unknown,
+): value is PropDefinition & ComponentSlotBrand {
   return (
     (typeof value === 'object' || typeof value === 'function') &&
     value !== null &&
@@ -59,26 +69,33 @@ type SlotKey<Key extends string, Definition> =
  * Component slots appear under their capitalized names.
  */
 export type ResolveProps<Shape extends PropDefinitions> = OptionalByUndefined<{
-  [Key in SafeKeyOf<Shape> as SlotKey<Key, Shape[Key]>]: StandardSchemaV1.InferOutput<Shape[Key]>;
+  [
+    Key in SafeKeyOf<Shape> as SlotKey<Key, Shape[Key]>
+  ]: StandardSchemaV1.InferOutput<Shape[Key]>;
 }>;
 
 /** Like {@link ResolveProps}, but every key stays exactly as it was declared. */
-export type ResolvePropsAsDefined<Shape extends PropDefinitions> = OptionalByUndefined<{
-  [Key in SafeKeyOf<Shape>]: StandardSchemaV1.InferOutput<Shape[Key]>;
-}>;
+export type ResolvePropsAsDefined<Shape extends PropDefinitions> =
+  OptionalByUndefined<{
+    [Key in SafeKeyOf<Shape>]: StandardSchemaV1.InferOutput<Shape[Key]>;
+  }>;
 
 /**
  * The values a caller supplies for a set of definitions. Component slots are
  * supplied under their capitalized names.
  */
-export type ResolveInputProps<Shape extends PropDefinitions> = OptionalByUndefined<{
-  [Key in SafeKeyOf<Shape> as SlotKey<Key, Shape[Key]>]: StandardSchemaV1.InferInput<Shape[Key]>;
-}>;
+export type ResolveInputProps<Shape extends PropDefinitions> =
+  OptionalByUndefined<{
+    [
+      Key in SafeKeyOf<Shape> as SlotKey<Key, Shape[Key]>
+    ]: StandardSchemaV1.InferInput<Shape[Key]>;
+  }>;
 
 /** Like {@link ResolveInputProps}, but every key stays exactly as it was declared. */
-export type ResolveInputPropsAsDefined<Shape extends PropDefinitions> = OptionalByUndefined<{
-  [Key in SafeKeyOf<Shape>]: StandardSchemaV1.InferInput<Shape[Key]>;
-}>;
+export type ResolveInputPropsAsDefined<Shape extends PropDefinitions> =
+  OptionalByUndefined<{
+    [Key in SafeKeyOf<Shape>]: StandardSchemaV1.InferInput<Shape[Key]>;
+  }>;
 
 /** Definitions whose output is the caller-facing input of `Shape`. */
 export type InputDefinitions<Shape extends PropDefinitions> = {

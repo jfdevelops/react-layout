@@ -37,7 +37,8 @@ export function optionalDefinition<Input, Output>(
   };
 }
 
-export const optionalChildren: OptionalChildren = optionalDefinition(requiredChildren);
+export const optionalChildren: OptionalChildren =
+  optionalDefinition(requiredChildren);
 
 /** Whether a schema accepts a missing value. */
 export function acceptsUndefined(definition: StandardSchemaV1) {
@@ -64,7 +65,11 @@ export function objectDefinition(
       version: 1,
       vendor: 'react-layout',
       validate(value) {
-        if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+        if (
+          value === null ||
+          typeof value !== 'object' ||
+          Array.isArray(value)
+        ) {
           return {
             issues: [
               {
@@ -84,7 +89,9 @@ export function objectDefinition(
 
           if (result instanceof Promise) {
             void result.catch(() => {});
-            throw new TypeError('React Layout schemas must validate synchronously.');
+            throw new TypeError(
+              'React Layout schemas must validate synchronously.',
+            );
           }
           if (result.issues) {
             issues.push(
@@ -117,7 +124,9 @@ export function objectDefinition(
 export function literalDefinition<const Value extends string>(
   value: Value,
 ): StandardSchemaV1<Value | undefined, Value> {
-  const standard = (type.unit(value) as unknown as StandardSchemaV1<Value, Value>)['~standard'];
+  const standard = (
+    type.unit(value) as unknown as StandardSchemaV1<Value, Value>
+  )['~standard'];
 
   return {
     '~standard': {
@@ -137,7 +146,10 @@ export function literalDefinition<const Value extends string>(
 export function enumDefinition<const Values extends ReadonlyArray<string>>(
   values: Values,
 ): StandardSchemaV1<Values[number], Values[number]> {
-  return type.enumerated(...values) as unknown as StandardSchemaV1<Values[number], Values[number]>;
+  return type.enumerated(...values) as unknown as StandardSchemaV1<
+    Values[number],
+    Values[number]
+  >;
 }
 
 /**

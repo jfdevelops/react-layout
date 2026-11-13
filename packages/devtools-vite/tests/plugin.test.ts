@@ -75,10 +75,14 @@ it('skips SSR, dependency files and unrelated APIs and applies only during devel
 
   expect(await transform(code, '/app/src/server.ts', true)).toBeUndefined();
 
-  expect(await transform(code, '/app/node_modules/library/index.ts')).toBeUndefined();
+  expect(
+    await transform(code, '/app/node_modules/library/index.ts'),
+  ).toBeUndefined();
 
   expect(
-    await transform('const defineResourceLayout = (x) => x; defineResourceLayout({});'),
+    await transform(
+      'const defineResourceLayout = (x) => x; defineResourceLayout({});',
+    ),
   ).toBeUndefined();
 
   const plugin = reactLayoutDevtools();
@@ -94,7 +98,9 @@ it('skips SSR, dependency files and unrelated APIs and applies only during devel
   if (typeof plugin.transform !== 'function') {
     throw new Error('Missing transform');
   }
-  expect(await Reflect.apply(plugin.transform, {}, [code, '/app/src/page.ts', {}])).toBeUndefined();
+  expect(
+    await Reflect.apply(plugin.transform, {}, [code, '/app/src/page.ts', {}]),
+  ).toBeUndefined();
 });
 
 it('preserves existing declaration metadata when an imported state is registered elsewhere', () => {
@@ -104,9 +110,12 @@ it('preserves existing declaration metadata when an imported state is registered
     throw new Error('Missing runtime');
   }
 
-  const runtime = Reflect.apply(plugin.load, {}, ['\0virtual:react-layout-devtools']) as string;
+  const runtime = Reflect.apply(plugin.load, {}, [
+    '\0virtual:react-layout-devtools',
+  ]) as string;
   const annotate = new Function(
-    runtime.replace('export function annotate', 'function annotate') + '; return annotate;',
+    runtime.replace('export function annotate', 'function annotate') +
+      '; return annotate;',
   )();
   const key = Symbol.for('@jfdevelops/react-layout/debug');
   const declaration = {
@@ -137,7 +146,8 @@ it('preserves existing declaration metadata when an imported state is registered
 });
 
 it('follows destructured definition helpers and resource-bound creators', async () => {
-  const result = await transform(`import { defineResourceLayout } from '@jfdevelops/react-layout';
+  const result =
+    await transform(`import { defineResourceLayout } from '@jfdevelops/react-layout';
 const define = defineResourceLayout.forResources('users');
 const definition = define({ layout: { render: () => null } });
 const { createResourceLayout } = definition;
@@ -150,7 +160,8 @@ const Page = createUsers({ name: 'Users' });`);
 });
 
 it('does not instrument calls to a shadowing function parameter', async () => {
-  const result = await transform(`import { defineResourceLayout } from '@jfdevelops/react-layout';
+  const result =
+    await transform(`import { defineResourceLayout } from '@jfdevelops/react-layout';
 function unrelated(defineResourceLayout) { return defineResourceLayout({}); }`);
 
   expect(result).toBeUndefined();
@@ -166,7 +177,11 @@ it('preserves module directives and can opt out of state controls', async () => 
     throw new Error('Missing transform');
   }
 
-  const result = (await Reflect.apply(plugin.transform, {}, [code, '/app/client.ts', {}])) as {
+  const result = (await Reflect.apply(plugin.transform, {}, [
+    code,
+    '/app/client.ts',
+    {},
+  ])) as {
     code: string;
   };
 
@@ -182,9 +197,12 @@ it('preserves function and frozen state-reference identities while supplying met
     throw new Error('Missing runtime');
   }
 
-  const runtime = Reflect.apply(plugin.load, {}, ['\0virtual:react-layout-devtools']) as string;
+  const runtime = Reflect.apply(plugin.load, {}, [
+    '\0virtual:react-layout-devtools',
+  ]) as string;
   const annotate = new Function(
-    runtime.replace('export function annotate', 'function annotate') + '; return annotate;',
+    runtime.replace('export function annotate', 'function annotate') +
+      '; return annotate;',
   )();
   const input = Object.freeze({
     render: () => null,
@@ -204,9 +222,9 @@ it('preserves function and frozen state-reference identities while supplying met
 
   expect(annotate(render, metadata)).toBe(render);
 
-  const registry = (globalThis as unknown as Record<symbol, WeakMap<object, unknown>>)[
-    Symbol.for('@jfdevelops/react-layout/debug-registry')
-  ];
+  const registry = (
+    globalThis as unknown as Record<symbol, WeakMap<object, unknown>>
+  )[Symbol.for('@jfdevelops/react-layout/debug-registry')];
 
   expect(registry.get(input)).toEqual(metadata);
 });
@@ -255,7 +273,9 @@ it('resolves the production inspector to an empty entry by default and supports 
 
 it('does not instrument unrelated composables callbacks', async () => {
   expect(
-    await transform('const config = { composables: (create) => create({ unrelated: true }) };'),
+    await transform(
+      'const config = { composables: (create) => create({ unrelated: true }) };',
+    ),
   ).toBeUndefined();
 });
 
@@ -292,7 +312,10 @@ it.each(['js', 'jsx', 'mjs', 'cjs'])(
   'binds JavaScript %s modules before inspecting their calls',
   async (extension) => {
     expect(
-      await transform('const value = {}; Object.keys(value);', `/app/src/dependency.${extension}`),
+      await transform(
+        'const value = {}; Object.keys(value);',
+        `/app/src/dependency.${extension}`,
+      ),
     ).toBeUndefined();
     const result = await transform(
       `import { defineResourceLayout } from '@jfdevelops/react-layout';
@@ -313,5 +336,7 @@ class ObjectProp extends BaseProp {
     }
   }
 }`;
-  expect(await transform(code, '/app/packages/validators/dist/object.mjs')).toBeUndefined();
+  expect(
+    await transform(code, '/app/packages/validators/dist/object.mjs'),
+  ).toBeUndefined();
 });

@@ -2,7 +2,10 @@ import type { ComposableComponents } from '@jfdevelops/react-layout-composables'
 import type { CustomPropsObject } from '../custom-props';
 import { LayoutConfigurationError } from '../errors';
 import type { InPropsDefinition } from '../props';
-import { normalizeResourceDefinitions, type LayoutResourceKey } from '../resource';
+import {
+  normalizeResourceDefinitions,
+  type LayoutResourceKey,
+} from '../resource';
 import {
   createDefinedResourceLayout,
   type CreateDefinedResourceLayoutOptions,
@@ -30,9 +33,15 @@ export type DefineResourceSurface<Parent extends NonEmptyResources> = <
   const Options extends InPropsDefinition<Resources> = {},
   Composables extends ComposableComponents = {},
   Namespace extends boolean = false,
-  const IncludeProps extends LayoutIncludeProps<Resources, Options, Composables> = {},
+  const IncludeProps extends LayoutIncludeProps<
+    Resources,
+    Options,
+    Composables
+  > = {},
   const CustomProps extends CustomPropsObject = {},
-  const Naming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = undefined,
+  const Naming extends
+    | LayoutNameInput<LayoutResourceKey<Resources>>
+    | undefined = undefined,
   const Host extends SurfaceHost<Parent> | undefined = undefined,
 >(
   configuration: CreateDefinedResourceLayoutOptions<
@@ -60,7 +69,9 @@ export type DefineResourceSurface<Parent extends NonEmptyResources> = <
 export function createResourceSurface<Parent extends NonEmptyResources>(
   parent: Parent,
 ): DefineResourceSurface<Parent> {
-  const available = new Set(normalizeResourceDefinitions(parent).map((resource) => resource.value));
+  const available = new Set(
+    normalizeResourceDefinitions(parent).map((resource) => resource.value),
+  );
 
   function defineSurface(
     configuration: Parameters<typeof createDefinedResourceLayout>[0] & {
@@ -68,11 +79,14 @@ export function createResourceSurface<Parent extends NonEmptyResources>(
     },
   ) {
     const host = configuration.host;
-    const selected = host?.resources === '*' ? available : new Set(host?.resources);
+    const selected =
+      host?.resources === '*' ? available : new Set(host?.resources);
 
     for (const resource of selected) {
       if (!available.has(resource)) {
-        throw new LayoutConfigurationError(`Unknown host resource "${resource}".`);
+        throw new LayoutConfigurationError(
+          `Unknown host resource "${resource}".`,
+        );
       }
     }
 
@@ -135,7 +149,9 @@ export function bindHostedFactory<Factory extends Function>(
       const value: unknown = Reflect.get(target, key, receiver);
 
       if (
-        (key === 'forResource' || key === 'forResources' || key === 'makeComposable') &&
+        (key === 'forResource' ||
+          key === 'forResources' ||
+          key === 'makeComposable') &&
         typeof value === 'function'
       ) {
         return bindHostedFactory(value, hosts);

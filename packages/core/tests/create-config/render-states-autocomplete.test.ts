@@ -8,7 +8,9 @@ import { expect, it } from 'vitest';
 it.each(['empty', 'populated'])(
   'suggests state and include keys in %s objects across every API',
   (stage) => {
-    const root = resolve(fileURLToPath(new URL('../..', import.meta.url))).replaceAll('\\', '/');
+    const root = resolve(
+      fileURLToPath(new URL('../..', import.meta.url)),
+    ).replaceAll('\\', '/');
     const file = `${root}/tests/create-config/autocomplete-probe.tsx`;
     const source = `
     import { z } from 'zod';
@@ -66,8 +68,9 @@ it.each(['empty', 'populated'])(
       render: { default: () => <></>, Preview: () => <></> },
     } });
   `
-      .replace(/\/\*(sharedInclude|localFunctionInclude|localStatesInclude)\*\//g, (marker) =>
-        stage === 'populated' ? `title: true, ${marker}` : marker,
+      .replace(
+        /\/\*(sharedInclude|localFunctionInclude|localStatesInclude)\*\//g,
+        (marker) => (stage === 'populated' ? `title: true, ${marker}` : marker),
       )
       .replace(/\/\*(top|bound|resources|shell)\*\//g, (marker) =>
         stage === 'populated' ? `default: () => <></>, ${marker}` : marker,
@@ -75,7 +78,8 @@ it.each(['empty', 'populated'])(
     const breadcrumbFile = `${root}/tests/create-config/devtools-and-defaults.test.tsx`;
     const breadcrumbTest = readFileSync(breadcrumbFile, 'utf8');
     const testStart = breadcrumbTest.indexOf("it('allows breadcrumb segments");
-    const includeStart = breadcrumbTest.indexOf('include: {', testStart) + 'include: {'.length;
+    const includeStart =
+      breadcrumbTest.indexOf('include: {', testStart) + 'include: {'.length;
     const includeEnd = breadcrumbTest.indexOf('\n      },', includeStart);
     const breadcrumbSource =
       breadcrumbTest.slice(0, includeStart) +
@@ -97,14 +101,21 @@ it.each(['empty', 'populated'])(
             ? breadcrumbSource
             : ts.sys.readFile(name);
 
-        return contents === undefined ? undefined : ts.ScriptSnapshot.fromString(contents);
+        return contents === undefined
+          ? undefined
+          : ts.ScriptSnapshot.fromString(contents);
       },
       getCurrentDirectory: () => root,
       getCompilationSettings: () => parsed.options,
       getDefaultLibFileName: ts.getDefaultLibFilePath,
-      fileExists: (name) => isProbe(name) || isBreadcrumb(name) || ts.sys.fileExists(name),
+      fileExists: (name) =>
+        isProbe(name) || isBreadcrumb(name) || ts.sys.fileExists(name),
       readFile: (name) =>
-        isProbe(name) ? source : isBreadcrumb(name) ? breadcrumbSource : ts.sys.readFile(name),
+        isProbe(name)
+          ? source
+          : isBreadcrumb(name)
+            ? breadcrumbSource
+            : ts.sys.readFile(name),
       readDirectory: ts.sys.readDirectory,
     });
 
@@ -120,7 +131,9 @@ it.each(['empty', 'populated'])(
         'actual breadcrumb test',
       ).toEqual(
         expect.arrayContaining(
-          stage === 'empty' ? ['title', 'description', 'segments'] : ['description', 'segments'],
+          stage === 'empty'
+            ? ['title', 'description', 'segments']
+            : ['description', 'segments'],
         ),
       );
       for (const marker of ['top', 'bound', 'resources', 'shell']) {
@@ -137,12 +150,25 @@ it.each(['empty', 'populated'])(
               : ['Loading', 'Error', 'NotFound'],
           ),
         );
-        expect(names, marker).not.toEqual(expect.arrayContaining(['apply', 'bind', 'call']));
+        expect(names, marker).not.toEqual(
+          expect.arrayContaining(['apply', 'bind', 'call']),
+        );
       }
-      for (const marker of ['topStates', 'boundStates', 'resourceStates', 'shellStates']) {
-        const entries = service.getCompletionsAtPosition(file, source.indexOf(`/*${marker}*/`), {});
+      for (const marker of [
+        'topStates',
+        'boundStates',
+        'resourceStates',
+        'shellStates',
+      ]) {
+        const entries = service.getCompletionsAtPosition(
+          file,
+          source.indexOf(`/*${marker}*/`),
+          {},
+        );
         const names = entries?.entries.map(({ name }) => name);
-        expect(names, marker).toEqual(expect.arrayContaining(['default', 'Preview']));
+        expect(names, marker).toEqual(
+          expect.arrayContaining(['default', 'Preview']),
+        );
         expect(names, marker).not.toContain('Loading');
       }
       const namespaceMembers = service.getCompletionsAtPosition(
@@ -150,8 +176,15 @@ it.each(['empty', 'populated'])(
         source.indexOf('/*namespaceMembers*/'),
         {},
       );
-      expect(namespaceMembers?.entries.map(({ name }) => name).sort()).toEqual(['Preview', 'Root']);
-      for (const marker of ['sharedInclude', 'localFunctionInclude', 'localStatesInclude']) {
+      expect(namespaceMembers?.entries.map(({ name }) => name).sort()).toEqual([
+        'Preview',
+        'Root',
+      ]);
+      for (const marker of [
+        'sharedInclude',
+        'localFunctionInclude',
+        'localStatesInclude',
+      ]) {
         const completions = service.getCompletionsAtPosition(
           file,
           source.indexOf(`/*${marker}*/`),
@@ -160,7 +193,11 @@ it.each(['empty', 'populated'])(
         expect(
           completions?.entries.map(({ name }) => name),
           marker,
-        ).toEqual(expect.arrayContaining(stage === 'empty' ? ['title', 'segments'] : ['segments']));
+        ).toEqual(
+          expect.arrayContaining(
+            stage === 'empty' ? ['title', 'segments'] : ['segments'],
+          ),
+        );
       }
       const behaviorEntries = service.getCompletionsAtPosition(
         file,

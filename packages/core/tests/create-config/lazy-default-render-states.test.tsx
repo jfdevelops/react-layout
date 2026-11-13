@@ -47,7 +47,9 @@ it('narrows lazy render params by state and validates included and custom props'
       },
     },
     render: ({ resource, title, showReload, ...rest }, { composables }) => {
-      expectTypeOf(resource).toEqualTypeOf<'users' | 'teams' | 'teams.members'>();
+      expectTypeOf(resource).toEqualTypeOf<
+        'users' | 'teams' | 'teams.members'
+      >();
       expectTypeOf(title).toEqualTypeOf<string>();
       expectTypeOf(showReload).toEqualTypeOf<boolean | undefined>();
       expectTypeOf(rest).not.toHaveProperty('error');
@@ -64,13 +66,17 @@ it('narrows lazy render params by state and validates included and custom props'
   expect(screen.getByText('teams.members:Members:true')).toBeInTheDocument();
   cleanup();
   vi.spyOn(console, 'error').mockImplementation(() => undefined);
-  expect(() => render(<Loading resource='users' title={123 as never} />)).toThrow(/title/);
   expect(() =>
-    render(<Loading resource='users' title='Users' showReload={'yes' as never} />),
+    render(<Loading resource='users' title={123 as never} />),
+  ).toThrow(/title/);
+  expect(() =>
+    render(
+      <Loading resource='users' title='Users' showReload={'yes' as never} />,
+    ),
   ).toThrow(/showReload/);
-  expect(() => render(<Loading resource='users' {...({} as { title: string })} />)).toThrow(
-    /title/,
-  );
+  expect(() =>
+    render(<Loading resource='users' {...({} as { title: string })} />),
+  ).toThrow(/title/);
   () => {
     defineLazyDefaults.createRenderState({
       // @ts-expect-error only lazy default state names are accepted
@@ -257,8 +263,12 @@ it('preserves config-only lazy includes and excludes them from component props',
   };
   render(<Loading resource='users' {...bypassProps} />);
   expect(screen.getByText('Configured title:No subtitle')).toBeInTheDocument();
-  expectTypeOf<React.ComponentProps<typeof Loading>>().not.toHaveProperty('title');
-  expectTypeOf<React.ComponentProps<typeof Loading>>().not.toHaveProperty('subtitle');
+  expectTypeOf<React.ComponentProps<typeof Loading>>().not.toHaveProperty(
+    'title',
+  );
+  expectTypeOf<React.ComponentProps<typeof Loading>>().not.toHaveProperty(
+    'subtitle',
+  );
   () => {
     <Loading resource='users' />;
     // @ts-expect-error config-only values are excluded from the call signature
@@ -286,7 +296,9 @@ it('keeps explicit component and optional lazy includes validated', () => {
   expect(screen.getByText('Caller title')).toBeInTheDocument();
   cleanup();
   vi.spyOn(console, 'error').mockImplementation(() => undefined);
-  expect(() => render(<Loading resource='users' title={123 as never} />)).toThrow(/title/);
+  expect(() =>
+    render(<Loading resource='users' title={123 as never} />),
+  ).toThrow(/title/);
 });
 
 it('keeps the exported legacy handler type callable with one argument', () => {

@@ -20,7 +20,10 @@ export function validateProps<T extends object>(
   let validatedProps = props;
   for (const key in shape) {
     try {
-      const value = validateDefinition(shape[key]!, (props as Record<string, unknown>)[key]);
+      const value = validateDefinition(
+        shape[key]!,
+        (props as Record<string, unknown>)[key],
+      );
       if (validatedProps === props) {
         validatedProps = {
           ...props,

@@ -1,7 +1,14 @@
 import type { WithChildren } from '@jfdevelops/react-layout-composables';
-import type { CustomPropsInput, CustomPropsObject, ResolveRenderProps } from './custom-props';
+import type {
+  CustomPropsInput,
+  CustomPropsObject,
+  ResolveRenderProps,
+} from './custom-props';
 import { LayoutConfigurationError } from './errors';
-import type { ComposableComponents, MergePresetProps } from '@jfdevelops/react-layout-composables';
+import type {
+  ComposableComponents,
+  MergePresetProps,
+} from '@jfdevelops/react-layout-composables';
 import type { InPropsObject } from '@jfdevelops/react-layout-composables';
 import {
   ResolveProps,
@@ -37,7 +44,10 @@ export interface PropsContract<
 export interface TypedPropsContract<
   IncludeProps extends object,
   CustomProps extends CustomPropsObject,
-> extends PropsContract<IncludeProps, CustomProps & CustomPropsInput<CustomProps>> {}
+> extends PropsContract<
+  IncludeProps,
+  CustomProps & CustomPropsInput<CustomProps>
+> {}
 
 /**
  * The `{ props?, composables?, render }` block shared by layouts, shells, and
@@ -101,11 +111,14 @@ export interface InPropsOptions<
   /**
    * Accepts any resource bound to the definition.
    */
-  resource: StandardSchemaV1<ResourceEnum<Resources>[number], ResourceEnum<Resources>[number]>;
+  resource: StandardSchemaV1<
+    ResourceEnum<Resources>[number],
+    ResourceEnum<Resources>[number]
+  >;
 }
-export type InPropsFunction<Resources extends ReadonlyArray<ResourceDefinition>> = <
-  Name extends string,
->(
+export type InPropsFunction<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> = <Name extends string>(
   props: InPropsOptions<Resources, Name>,
 ) => InPropsObject;
 /**
@@ -113,10 +126,9 @@ export type InPropsFunction<Resources extends ReadonlyArray<ResourceDefinition>>
  * a map of schemas keyed by option name, or a function that builds that map
  * from the bound resources and the component name.
  */
-export type InPropsDefinition<Resources extends ReadonlyArray<ResourceDefinition>> =
-  | InPropsObject
-  | OptionSchema
-  | InPropsFunction<Resources>;
+export type InPropsDefinition<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> = InPropsObject | OptionSchema | InPropsFunction<Resources>;
 export type InferredInProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
@@ -210,7 +222,9 @@ type GetPropsKey<
   Visibility extends InternalPropsType,
   Passthrough extends IncludedPropSource | 'render' = 'render',
 > = {
-  [Key in keyof IncludeProps]: IncludedPropVisibility<IncludeProps[Key]> extends Visibility
+  [Key in keyof IncludeProps]: IncludedPropVisibility<
+    IncludeProps[Key]
+  > extends Visibility
     ? Passthrough extends 'render'
       ? Key
       : Passthrough extends IncludedPropPassthrough<IncludeProps[Key]>
@@ -223,7 +237,10 @@ type SelectedIncludedProps<
   IncludeProps extends IncludedProps<Props>,
   Visibility extends InternalPropsType,
   Passthrough extends IncludedPropSource | 'render' = 'render',
-> = Pick<Props, PropsKeys<Props, GetPropsKey<IncludeProps, Visibility, Passthrough>>>;
+> = Pick<
+  Props,
+  PropsKeys<Props, GetPropsKey<IncludeProps, Visibility, Passthrough>>
+>;
 
 type OptionalPropDefinition<Definition> = Definition extends StandardSchemaV1
   ? StandardSchemaV1<
@@ -238,7 +255,12 @@ export type IncludedComponentPropDefinitions<
   IncludeProps extends IncludedProps<Props>,
 > = SelectedIncludedProps<Props, IncludeProps, 'required', 'component'> & {
   [
-    Key in keyof SelectedIncludedProps<Props, IncludeProps, 'optional', 'component'>
+    Key in keyof SelectedIncludedProps<
+      Props,
+      IncludeProps,
+      'optional',
+      'component'
+    >
   ]: OptionalPropDefinition<
     SelectedIncludedProps<Props, IncludeProps, 'optional', 'component'>[Key]
   >;
@@ -253,14 +275,26 @@ export type ResolvedIncludedProps<
 export type ResolvedIncludedConfigProps<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,
-> = ResolveInputProps<SelectedIncludedProps<Props, IncludeProps, 'required', 'config'>> &
-  Partial<ResolveInputProps<SelectedIncludedProps<Props, IncludeProps, 'optional', 'config'>>>;
+> = ResolveInputProps<
+  SelectedIncludedProps<Props, IncludeProps, 'required', 'config'>
+> &
+  Partial<
+    ResolveInputProps<
+      SelectedIncludedProps<Props, IncludeProps, 'optional', 'config'>
+    >
+  >;
 
 export type ResolvedIncludedComponentProps<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,
-> = ResolveInputProps<SelectedIncludedProps<Props, IncludeProps, 'required', 'component'>> &
-  Partial<ResolveInputProps<SelectedIncludedProps<Props, IncludeProps, 'optional', 'component'>>>;
+> = ResolveInputProps<
+  SelectedIncludedProps<Props, IncludeProps, 'required', 'component'>
+> &
+  Partial<
+    ResolveInputProps<
+      SelectedIncludedProps<Props, IncludeProps, 'optional', 'component'>
+    >
+  >;
 
 /**
  * Like {@link ResolvedIncludedProps}, but keeps included prop keys exactly as
@@ -269,8 +303,14 @@ export type ResolvedIncludedComponentProps<
 export type ResolvedIncludedPropsAsDefined<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,
-> = ResolvePropsAsDefined<SelectedIncludedProps<Props, IncludeProps, 'required'>> &
-  Partial<ResolvePropsAsDefined<SelectedIncludedProps<Props, IncludeProps, 'optional'>>>;
+> = ResolvePropsAsDefined<
+  SelectedIncludedProps<Props, IncludeProps, 'required'>
+> &
+  Partial<
+    ResolvePropsAsDefined<
+      SelectedIncludedProps<Props, IncludeProps, 'optional'>
+    >
+  >;
 export type LayoutRenderProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
@@ -279,7 +319,10 @@ export type LayoutRenderProps<
   CustomProps extends CustomPropsObject = {},
 > = Show<
   ResolveRenderProps<CustomProps> &
-    ResolvedIncludedProps<MergedLayoutInProps<Resources, Options, Composables>, IncludeProps>
+    ResolvedIncludedProps<
+      MergedLayoutInProps<Resources, Options, Composables>,
+      IncludeProps
+    >
 >;
 
 export function getIncludedPropBehavior(value: unknown): {
@@ -297,10 +340,15 @@ export function getIncludedPropBehavior(value: unknown): {
   }
 
   const required =
-    'required' in value && typeof value.required === 'boolean' ? value.required : undefined;
+    'required' in value && typeof value.required === 'boolean'
+      ? value.required
+      : undefined;
   const suppliedVia = 'suppliedVia' in value ? value.suppliedVia : undefined;
 
-  if (required === undefined || (suppliedVia !== 'component' && suppliedVia !== 'config')) {
+  if (
+    required === undefined ||
+    (suppliedVia !== 'component' && suppliedVia !== 'config')
+  ) {
     return null;
   }
 

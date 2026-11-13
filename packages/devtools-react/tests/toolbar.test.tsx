@@ -1,4 +1,12 @@
-import { act, cleanup, fireEvent, render, screen, within, waitFor } from '@testing-library/react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+  waitFor,
+} from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { createInspectionStore } from '@jfdevelops/react-layout-devtools-core';
 import { ReactLayoutDevtools } from '../src';
@@ -115,7 +123,9 @@ it('docks a bar with live counts, the current layout and quick toggles', async (
 
   expect(toolbar.getByText('1 failed')).toHaveAttribute('data-failed', 'true');
 
-  expect(toolbar.getByLabelText('Current layout')).toHaveTextContent('appointments · default');
+  expect(toolbar.getByLabelText('Current layout')).toHaveTextContent(
+    'appointments · default',
+  );
 
   expect(
     toolbar.getByRole('button', {
@@ -133,7 +143,9 @@ it('docks a bar with live counts, the current layout and quick toggles', async (
 
   await act(async () => {});
 
-  expect(toolbar.getByLabelText('Current layout')).toHaveTextContent('appointments · Loading');
+  expect(toolbar.getByLabelText('Current layout')).toHaveTextContent(
+    'appointments · Loading',
+  );
 
   expect(
     screen.queryByRole('region', {
@@ -185,7 +197,9 @@ it('expands into a resizable drawer whose height persists', async () => {
 
   view.unmount();
 
-  render(<ReactLayoutDevtools source={store} variant='toolbar' initialIsOpen />);
+  render(
+    <ReactLayoutDevtools source={store} variant='toolbar' initialIsOpen />,
+  );
 
   expect(
     screen.getByRole('region', {
@@ -202,7 +216,9 @@ it('reserves space at the bottom of the page and releases it on unmount', () => 
   const view = render(<ReactLayoutDevtools source={store} variant='toolbar' />);
   const root = document.documentElement;
 
-  expect(root.style.getPropertyValue('--react-layout-devtools-toolbar-height')).toBe('32px');
+  expect(
+    root.style.getPropertyValue('--react-layout-devtools-toolbar-height'),
+  ).toBe('32px');
 
   expect(document.body.style.paddingBottom).toBe(
     'calc(10px + var(--react-layout-devtools-toolbar-height, 0px))',
@@ -214,11 +230,15 @@ it('reserves space at the bottom of the page and releases it on unmount', () => 
     }),
   );
 
-  expect(root.style.getPropertyValue('--react-layout-devtools-toolbar-height')).toBe('392px');
+  expect(
+    root.style.getPropertyValue('--react-layout-devtools-toolbar-height'),
+  ).toBe('392px');
 
   view.unmount();
 
-  expect(root.style.getPropertyValue('--react-layout-devtools-toolbar-height')).toBe('');
+  expect(
+    root.style.getPropertyValue('--react-layout-devtools-toolbar-height'),
+  ).toBe('');
 
   expect(document.body.style.paddingBottom).toBe('10px');
 
@@ -296,7 +316,9 @@ it('toggles and hides with keyboard shortcuts, except while typing, and collapse
   ).toBeNull();
 
   expect(
-    document.documentElement.style.getPropertyValue('--react-layout-devtools-toolbar-height'),
+    document.documentElement.style.getPropertyValue(
+      '--react-layout-devtools-toolbar-height',
+    ),
   ).toBe('0px');
 
   shortcut('KeyH');

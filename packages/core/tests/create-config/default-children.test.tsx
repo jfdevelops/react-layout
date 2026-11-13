@@ -86,7 +86,9 @@ describe('default render children', () => {
     view.unmount();
     const missing = renderCapturingError(createElement(Users, {} as never));
     expect(missing?.message).toContain('children');
-    const missingState = renderCapturingError(createElement(Users.Preview, {} as never));
+    const missingState = renderCapturingError(
+      createElement(Users.Preview, {} as never),
+    );
     expect(missingState?.message).toContain('children');
   });
 
@@ -122,7 +124,9 @@ describe('default render children', () => {
     const view = render(<Shell>Required shell content</Shell>);
     expect(screen.getByText('Required shell content')).toBeInTheDocument();
     view.unmount();
-    expect(renderCapturingError(createElement(Shell, {} as never))?.message).toContain('children');
+    expect(
+      renderCapturingError(createElement(Shell, {} as never))?.message,
+    ).toContain('children');
   });
 
   it.each([false, true])(
@@ -140,7 +144,9 @@ describe('default render children', () => {
             : undefined,
           render: ({ children }, { resources }) => (
             <main>
-              <span data-testid='current-resource'>{resources.current ?? 'none'}</span>
+              <span data-testid='current-resource'>
+                {resources.current ?? 'none'}
+              </span>
               {children}
             </main>
           ),
@@ -191,7 +197,9 @@ describe('default render children', () => {
             children: z.string().optional(),
           },
         },
-        render: ({ children }) => <header>{children?.toUpperCase() ?? 'Empty'}</header>,
+        render: ({ children }) => (
+          <header>{children?.toUpperCase() ?? 'Empty'}</header>
+        ),
       },
     });
     const view = render(<Shell>Title</Shell>);
@@ -216,7 +224,9 @@ describe('default render children', () => {
     const Derived = factory.createRenderState.fromState({
       ref: Source,
       state: 'Derived',
-      render: ({ children }, { composables }) => <composables.Ref>{children}</composables.Ref>,
+      render: ({ children }, { composables }) => (
+        <composables.Ref>{children}</composables.Ref>
+      ),
     });
     const Deferred = factory.createRenderState.defer({
       state: 'Deferred',
@@ -247,19 +257,21 @@ describe('default render children', () => {
         render: ({ children }) => <main>{children}</main>,
       },
     });
-    const Directory = createResourceLayout.forResources('users').createComponent({
-      props: {
-        custom: {
-          children: 'required',
+    const Directory = createResourceLayout
+      .forResources('users')
+      .createComponent({
+        props: {
+          custom: {
+            children: 'required',
+          },
         },
-      },
-      resources: {
-        users: {
-          render: ({ children }) => <aside>{children}</aside>,
+        resources: {
+          users: {
+            render: ({ children }) => <aside>{children}</aside>,
+          },
         },
-      },
-      render: ({ children }, { Users }) => <Users>{children}</Users>,
-    });
+        render: ({ children }, { Users }) => <Users>{children}</Users>,
+      });
     const view = render(<Directory resource='users'>Scoped content</Directory>);
     expect(screen.getByText('Scoped content')).toBeInTheDocument();
     view.unmount();
@@ -284,7 +296,9 @@ describe('default render children', () => {
         component: <div />,
       },
     });
-    const PathView = config.forPaths('users').render(({ children }) => <main>{children}</main>);
+    const PathView = config
+      .forPaths('users')
+      .render(({ children }) => <main>{children}</main>);
     render(<PathView>Path content</PathView>);
     expect(screen.getByText('Path content')).toBeInTheDocument();
   });

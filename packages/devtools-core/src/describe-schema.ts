@@ -1,7 +1,8 @@
 type Metadata = Record<string, unknown>;
 
 function record(value: unknown): Metadata | undefined {
-  return (typeof value === 'object' || typeof value === 'function') && value !== null
+  return (typeof value === 'object' || typeof value === 'function') &&
+    value !== null
     ? (value as Metadata)
     : undefined;
 }
@@ -33,9 +34,13 @@ function namedType(schema: Metadata, depth = 0): string | undefined {
     return name;
   }
 
-  const inner = record(record(record(schema._zod)?.def)?.innerType) ?? record(schema.wrapped);
+  const inner =
+    record(record(record(schema._zod)?.def)?.innerType) ??
+    record(schema.wrapped);
 
-  return inner && depth < maximumDepth ? namedType(inner, depth + 1) : undefined;
+  return inner && depth < maximumDepth
+    ? namedType(inner, depth + 1)
+    : undefined;
 }
 
 function key(name: string) {
@@ -43,7 +48,9 @@ function key(name: string) {
 }
 
 function literal(value: unknown): string {
-  return typeof value === 'bigint' ? `${value}n` : (JSON.stringify(value) ?? String(value));
+  return typeof value === 'bigint'
+    ? `${value}n`
+    : (JSON.stringify(value) ?? String(value));
 }
 
 function union(parts: ReadonlyArray<string>) {
@@ -103,7 +110,9 @@ function fromJsonSchema(schema: unknown, depth = 0): string {
     }
     case 'object': {
       const properties = record(node.properties);
-      const required = new Set(Array.isArray(node.required) ? node.required : []);
+      const required = new Set(
+        Array.isArray(node.required) ? node.required : [],
+      );
       const fields = Object.entries(properties ?? {}).map(
         ([name, value]) =>
           `${key(name)}${required.has(name) ? '' : '?'}: ${fromJsonSchema(value, depth + 1)}`,
@@ -147,7 +156,9 @@ function fromValibot(schema: Metadata, depth = 0): string {
     const fields = Object.entries(entries).map(([name, value]) => {
       const entry = record(value);
       const optional =
-        entry?.type === 'optional' || entry?.type === 'exact_optional' || entry?.type === 'nullish';
+        entry?.type === 'optional' ||
+        entry?.type === 'exact_optional' ||
+        entry?.type === 'nullish';
 
       return `${key(name)}${optional ? '?' : ''}: ${entry ? fromValibot(entry, depth + 1) : 'unknown'}`;
     });
@@ -181,7 +192,11 @@ function fromValibot(schema: Metadata, depth = 0): string {
     );
   }
 
-  if (schema.type === 'custom' || schema.type === 'unknown' || schema.type === 'any') {
+  if (
+    schema.type === 'custom' ||
+    schema.type === 'unknown' ||
+    schema.type === 'any'
+  ) {
     return 'unknown';
   }
 
@@ -197,12 +212,18 @@ function optionalWrapper(schema: Metadata): boolean | undefined {
   const zod = record(record(schema._zod)?.def);
 
   if (zod && typeof zod.type === 'string') {
-    return zod.type === 'optional' || zod.type === 'default' || zod.type === 'prefault';
+    return (
+      zod.type === 'optional' ||
+      zod.type === 'default' ||
+      zod.type === 'prefault'
+    );
   }
 
   if (schema.kind === 'schema' && typeof schema.type === 'string') {
     return (
-      schema.type === 'optional' || schema.type === 'exact_optional' || schema.type === 'nullish'
+      schema.type === 'optional' ||
+      schema.type === 'exact_optional' ||
+      schema.type === 'nullish'
     );
   }
 
@@ -218,11 +239,17 @@ export function describeSchema(value: unknown): SchemaDescription | undefined {
   const schema = record(value);
   const standard = record(schema?.['~standard']);
 
-  if (!schema || !standard || standard.version !== 1 || typeof standard.validate !== 'function') {
+  if (
+    !schema ||
+    !standard ||
+    standard.version !== 1 ||
+    typeof standard.validate !== 'function'
+  ) {
     return undefined;
   }
 
-  const vendor = typeof standard.vendor === 'string' ? standard.vendor : 'unknown';
+  const vendor =
+    typeof standard.vendor === 'string' ? standard.vendor : 'unknown';
   let type = 'unknown';
   let visibility: SchemaDescription['visibility'];
 
@@ -243,7 +270,9 @@ export function describeSchema(value: unknown): SchemaDescription | undefined {
       }
     } else if (typeof schema.expression === 'string') {
       type = schema.expression;
-      visibility = /(^|\| )undefined($| \|)/.test(type) ? 'optional' : 'required';
+      visibility = /(^|\| )undefined($| \|)/.test(type)
+        ? 'optional'
+        : 'required';
     } else if (schema.kind === 'schema' && typeof schema.type === 'string') {
       type = fromValibot(schema);
     } else if (jsonSchema && typeof jsonSchema.input === 'function') {

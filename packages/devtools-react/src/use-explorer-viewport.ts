@@ -43,7 +43,10 @@ export function useExplorerViewport(ref: RefObject<HTMLElement | null>) {
 
     read();
 
-    const observer = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(read);
+    const observer =
+      typeof ResizeObserver === 'undefined'
+        ? undefined
+        : new ResizeObserver(read);
 
     observer?.observe(element);
 

@@ -1,6 +1,14 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "react", "react-hooks", "jsx-a11y", "import", "vitest", "oxc"],
+  "plugins": [
+    "typescript",
+    "react",
+    "react-hooks",
+    "jsx-a11y",
+    "import",
+    "vitest",
+    "oxc"
+  ],
   "jsPlugins": ["@stylistic/eslint-plugin", "./tools/oxlint-plugin.mjs"],
   "categories": {
     "correctness": "error"
@@ -34,7 +42,12 @@
       }
     ]
   },
-  "ignorePatterns": ["**/dist/**", "**/coverage/**", "**/node_modules/**", "**/routeTree.gen.ts"],
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/coverage/**",
+    "**/node_modules/**",
+    "**/routeTree.gen.ts"
+  ],
   "overrides": [
     {
       "files": [

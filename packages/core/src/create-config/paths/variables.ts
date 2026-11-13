@@ -7,7 +7,8 @@ export const PATH_VARIABLE_IDENTIFIER = '$';
 export type PathVariableIdentifier = typeof PATH_VARIABLE_IDENTIFIER;
 
 /** A single variable path segment, e.g. `PathVariable<'resource'>` is `'$resource'`. */
-export type PathVariable<Name extends string> = `${PathVariableIdentifier}${Name}`;
+export type PathVariable<Name extends string> =
+  `${PathVariableIdentifier}${Name}`;
 
 export type ResourcePathVariable = PathVariable<'resource'>;
 export type SubResourcePathVariable = PathVariable<'subResource'>;
@@ -37,17 +38,23 @@ export type ExtractPathVariables<Path extends string> =
     : ExtractSegmentVariable<Path>;
 
 /** Whether `Path` leaves any variable open. */
-export type PathHasVariables<Path extends string> = [ExtractPathVariables<Path>] extends [never]
+export type PathHasVariables<Path extends string> = [
+  ExtractPathVariables<Path>,
+] extends [never]
   ? false
   : true;
 
 /** First segment of a dot-separated path. */
-export type PathHead<Path extends string> = Path extends `${infer Head}.${string}` ? Head : Path;
+export type PathHead<Path extends string> =
+  Path extends `${infer Head}.${string}` ? Head : Path;
 
 /** Everything after the first segment of a dot-separated path (`''` when there is nothing left). */
-export type PathTail<Path extends string> = Path extends `${string}.${infer Rest}` ? Rest : '';
+export type PathTail<Path extends string> =
+  Path extends `${string}.${infer Rest}` ? Rest : '';
 
-export function createPathVariable<Name extends string>(name: Name): PathVariable<Name> {
+export function createPathVariable<Name extends string>(
+  name: Name,
+): PathVariable<Name> {
   return `${PATH_VARIABLE_IDENTIFIER}${name}`;
 }
 

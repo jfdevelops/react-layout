@@ -12,9 +12,12 @@ export class ResourceModuleLoadError extends Error {
         : typeof cause === 'string'
           ? cause
           : undefined;
-    super(`Unable to load resource module "${resource}"${detail ? `: ${detail}` : ''}`, {
-      cause,
-    });
+    super(
+      `Unable to load resource module "${resource}"${detail ? `: ${detail}` : ''}`,
+      {
+        cause,
+      },
+    );
     this.name = 'ResourceModuleLoadError';
   }
 }

@@ -7,12 +7,13 @@ import {
 import { z } from 'zod';
 
 it('preserves required props and narrows the carry-over configuration', () => {
-  const { createRenderState, defineResourceLayout: defineLayout } = createDefinedResourceLayout({
-    resources: ['users'],
-    options: {
-      title: z.string(),
-    },
-  });
+  const { createRenderState, defineResourceLayout: defineLayout } =
+    createDefinedResourceLayout({
+      resources: ['users'],
+      options: {
+        title: z.string(),
+      },
+    });
   const Target = createRenderState({
     state: 'Target',
     props: {
@@ -105,8 +106,12 @@ it('infers forward state references and their composable aliases in an inline ma
     layout: {
       composables: (create, states) => {
         expectTypeOf(states.Target).not.toBeAny();
-        expectTypeOf<typeof states.Target.props.label>().toEqualTypeOf<string>();
-        expectTypeOf<typeof states.Target.props.count>().toEqualTypeOf<number>();
+        expectTypeOf<
+          typeof states.Target.props.label
+        >().toEqualTypeOf<string>();
+        expectTypeOf<
+          typeof states.Target.props.count
+        >().toEqualTypeOf<number>();
         // @ts-expect-error unknown states cannot be referenced
         states.Missing;
         states.Target.asComposable({
@@ -199,7 +204,9 @@ it('types references and aliases in bound inline layouts', () => {
     render: {
       default: {
         render: (_props, { composables }) => {
-          expectTypeOf<typeof composables.Alias.props.label>().toEqualTypeOf<string>();
+          expectTypeOf<
+            typeof composables.Alias.props.label
+          >().toEqualTypeOf<string>();
           // @ts-expect-error declared target props are required
           composables.Alias({});
           // @ts-expect-error no unknown composable aliases
@@ -282,46 +289,49 @@ it('preserves preset prop requirements while inferring layout composables', () =
       render: ({ message }: { message: string }) => <p>{message}</p>,
     },
   } as const;
-  const definition = defineResourceLayout<['users'], typeof states, typeof options, typeof Message>(
-    {
-      resources: ['users'],
-      options,
-      layout: {
-        composables: (_create, refs) => {
-          expectTypeOf(refs.Target).toBeCallableWith({
-            message: 'Required',
-            title: 'Title',
-          });
-          expectTypeOf<typeof refs.Target.props.title>().toEqualTypeOf<string>();
-          expectTypeOf(
-            refs.Target.asComposable({
-              props: {
-                include: {
-                  message: true,
-                },
+  const definition = defineResourceLayout<
+    ['users'],
+    typeof states,
+    typeof options,
+    typeof Message
+  >({
+    resources: ['users'],
+    options,
+    layout: {
+      composables: (_create, refs) => {
+        expectTypeOf(refs.Target).toBeCallableWith({
+          message: 'Required',
+          title: 'Title',
+        });
+        expectTypeOf<typeof refs.Target.props.title>().toEqualTypeOf<string>();
+        expectTypeOf(
+          refs.Target.asComposable({
+            props: {
+              include: {
+                message: true,
               },
-            }),
-          ).toBeCallableWith({
-            title: 'Title',
+            },
+          }),
+        ).toBeCallableWith({
+          title: 'Title',
+        });
+        () => {
+          // @ts-expect-error a preset's required component prop cannot be omitted
+          refs.Target({});
+          // @ts-expect-error optional props cannot replace a required prop
+          refs.Target({
+            suffix: 'Optional',
           });
-          () => {
-            // @ts-expect-error a preset's required component prop cannot be omitted
-            refs.Target({});
-            // @ts-expect-error optional props cannot replace a required prop
-            refs.Target({
-              suffix: 'Optional',
-            });
-          };
+        };
 
-          return {
-            ...Message,
-            Direct: refs.Target,
-          };
-        },
-        render: states,
+        return {
+          ...Message,
+          Direct: refs.Target,
+        };
       },
+      render: states,
     },
-  );
+  });
   () => {
     const Users = definition.createResourceLayout({
       resource: 'users',
@@ -367,7 +377,9 @@ it('uses inferred layout presets in state-local reference callbacks', () => {
       render: {
         default: {
           composables: (_create, refs) => {
-            expectTypeOf<typeof refs.Target.props.message>().toEqualTypeOf<string>();
+            expectTypeOf<
+              typeof refs.Target.props.message
+            >().toEqualTypeOf<string>();
             () => {
               // @ts-expect-error inferred preset props keep their requiredness
               refs.Target({});

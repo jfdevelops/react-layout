@@ -53,7 +53,9 @@ it('switches between explorer and details instead of squeezing panes in compact 
     }),
   ).toBeTruthy();
 
-  expect(screen.getByLabelText('Scrollable relationship graph')).not.toBeVisible();
+  expect(
+    screen.getByLabelText('Scrollable relationship graph'),
+  ).not.toBeVisible();
 
   fireEvent.click(
     screen.getByRole('button', {
@@ -159,7 +161,9 @@ it('starts compact, supports keyboard move and resize, and persists panel geomet
 
   render(<ReactLayoutDevtools source={store} initialIsOpen />);
 
-  expect(parseFloat(screen.getByRole('dialog').style.width)).toBe(initialWidth + 10);
+  expect(parseFloat(screen.getByRole('dialog').style.width)).toBe(
+    initialWidth + 10,
+  );
 
   fireEvent.click(
     screen.getByRole('button', {
@@ -167,7 +171,9 @@ it('starts compact, supports keyboard move and resize, and persists panel geomet
     }),
   );
 
-  expect(parseFloat(screen.getByRole('dialog').style.width)).toBe(window.innerWidth - 32);
+  expect(parseFloat(screen.getByRole('dialog').style.width)).toBe(
+    window.innerWidth - 32,
+  );
 
   fireEvent.click(
     screen.getByRole('button', {
@@ -187,7 +193,9 @@ it('starts compact, supports keyboard move and resize, and persists panel geomet
     }),
   ).toBeTruthy();
 
-  expect(parseFloat(screen.getByRole('dialog').style.width)).toBe(window.innerWidth - 32);
+  expect(parseFloat(screen.getByRole('dialog').style.width)).toBe(
+    window.innerWidth - 32,
+  );
 });
 
 function pointer(target: HTMLElement, type: string, x: number, y: number) {
@@ -247,7 +255,9 @@ it('supports pointer resizing and cancels a drag without saving the draft', () =
 
 it('adapts embedded content to a narrow host without imposing floating dimensions', () => {
   class Observer {
-    constructor(private callback: (entries: { contentRect: { width: number } }[]) => void) {}
+    constructor(
+      private callback: (entries: { contentRect: { width: number } }[]) => void,
+    ) {}
 
     observe() {
       this.callback([
@@ -287,7 +297,9 @@ it('adapts embedded content to a narrow host without imposing floating dimension
       }),
     ).toBeTruthy();
 
-    expect(screen.getByLabelText('Scrollable relationship graph')).not.toBeVisible();
+    expect(
+      screen.getByLabelText('Scrollable relationship graph'),
+    ).not.toBeVisible();
   } finally {
     vi.unstubAllGlobals();
   }

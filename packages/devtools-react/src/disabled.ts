@@ -6,11 +6,15 @@ export function ReactLayoutDevtools(_props: ReactLayoutDevtoolsProps) {
   return null;
 }
 
-export function ReactLayoutDevtoolsContent(_props: ReactLayoutDevtoolsContentProps) {
+export function ReactLayoutDevtoolsContent(
+  _props: ReactLayoutDevtoolsContentProps,
+) {
   return null;
 }
 
-export function ReactLayoutDevtoolsProvider(_props: ReactLayoutDevtoolsProviderProps) {
+export function ReactLayoutDevtoolsProvider(
+  _props: ReactLayoutDevtoolsProviderProps,
+) {
   return null;
 }
 

@@ -434,7 +434,9 @@ it('forwards config through the floating component', () => {
 });
 
 it('dismisses a tooltip with Escape before closing the floating panel', async () => {
-  render(<ReactLayoutDevtools source={createInspectionStore()} initialIsOpen />);
+  render(
+    <ReactLayoutDevtools source={createInspectionStore()} initialIsOpen />,
+  );
 
   const graph = screen.getByRole('tab', {
     name: 'Graph',
@@ -492,7 +494,9 @@ it('shows the sliding details pane only after selection and hides it when the se
     }),
   ).toBeTruthy();
 
-  view.rerender(<ReactLayoutDevtoolsContent source={createInspectionStore()} />);
+  view.rerender(
+    <ReactLayoutDevtoolsContent source={createInspectionStore()} />,
+  );
 
   expect(screen.queryByLabelText('Node details')).toBeNull();
 });

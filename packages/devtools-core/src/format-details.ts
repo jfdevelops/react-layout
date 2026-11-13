@@ -8,12 +8,16 @@ function object(value: unknown): value is Metadata {
 
 export type PropValidatorDescription = SchemaDescription;
 /** Read validator metadata without validating a value. */
-export function inspectPropValidator(value: unknown): PropValidatorDescription | undefined {
+export function inspectPropValidator(
+  value: unknown,
+): PropValidatorDescription | undefined {
   return describeSchema(value);
 }
 
 function describe(description: PropValidatorDescription) {
-  const requirement = description.visibility ? ` (${description.visibility})` : '';
+  const requirement = description.visibility
+    ? ` (${description.visibility})`
+    : '';
 
   return `${description.type}${requirement} · ${description.vendor}`;
 }
@@ -55,7 +59,9 @@ export function mapInspectionDetails(
     }
 
     if (value instanceof Date) {
-      return Number.isNaN(value.getTime()) ? 'Invalid Date' : value.toISOString();
+      return Number.isNaN(value.getTime())
+        ? 'Invalid Date'
+        : value.toISOString();
     }
 
     if (value instanceof RegExp) {
@@ -68,7 +74,10 @@ export function mapInspectionDetails(
     }
 
     return Object.fromEntries(
-      Object.entries(value).map(([key, child]) => [key, visit(child, next, depth + 1)]),
+      Object.entries(value).map(([key, child]) => [
+        key,
+        visit(child, next, depth + 1),
+      ]),
     );
   }
 

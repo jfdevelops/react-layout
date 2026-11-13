@@ -100,11 +100,15 @@ describe('resource layout render states', () => {
     await Page.preload();
     for (const State of [Page.Loading, Page.Error, Page.NotFound]) {
       const view = render(<State />);
-      expect(await screen.findByText(/Pending|Failed|Missing/)).toBeInTheDocument();
+      expect(
+        await screen.findByText(/Pending|Failed|Missing/),
+      ).toBeInTheDocument();
       view.unmount();
     }
     const fallbacks = (
-      Users as unknown as { [lazyStatesSymbol]: import('../../src/lazy/types').LazyResourceStates }
+      Users as unknown as {
+        [lazyStatesSymbol]: import('../../src/lazy/types').LazyResourceStates;
+      }
     )[lazyStatesSymbol];
     const Loading = fallbacks.Loading!;
     const view = render(<Loading resource='users' />);
@@ -158,54 +162,57 @@ describe('resource layout render states', () => {
     expect(screen.getByText('No derived children')).toBeInTheDocument();
   });
 
-  it.each([true, false])('preserves config-only children when required is %s', (required) => {
-    const factory = createDefinedResourceLayout({
-      resources: ['users'],
-      options: {
-        children: reactNode().optional(),
-      },
-    });
-    const Loading = factory.createRenderState({
-      state: 'Loading',
-      props: {
-        include: {
-          children: {
-            required,
-            suppliedVia: 'config',
+  it.each([true, false])(
+    'preserves config-only children when required is %s',
+    (required) => {
+      const factory = createDefinedResourceLayout({
+        resources: ['users'],
+        options: {
+          children: reactNode().optional(),
+        },
+      });
+      const Loading = factory.createRenderState({
+        state: 'Loading',
+        props: {
+          include: {
+            children: {
+              required,
+              suppliedVia: 'config',
+            },
           },
         },
-      },
-      render: ({ children }) => <p>{children ?? 'No configured children'}</p>,
-    });
-    const layout = factory.defineResourceLayout({
-      render: {
-        default: () => <></>,
-        ...Loading,
-      },
-    });
-    const Users = layout.createResourceLayout({
-      resource: 'users',
-      name: 'Users',
-      children: 'Configured children',
-    });
-    const callProps = {
-      children: 'Component override',
-    };
-    const view = render(<Users.Loading {...callProps} />);
-    expect(screen.getByText('Configured children')).toBeInTheDocument();
-    expect(screen.queryByText('Component override')).not.toBeInTheDocument();
-    view.unmount();
-    const Empty = layout.createResourceLayout({
-      resource: 'users',
-      name: 'Empty',
-    });
-    render(<Empty.Loading />);
-    expect(screen.getByText('No configured children')).toBeInTheDocument();
-    () => {
-      // The built-in slot accepts children; config-only includes still own its value.
-      <Users.Loading children='Unexpected' />;
-    };
-  });
+        render: ({ children }) => <p>{children ?? 'No configured children'}</p>,
+      });
+      const layout = factory.defineResourceLayout({
+        render: {
+          default: () => <></>,
+          ...Loading,
+        },
+      });
+      const Users = layout.createResourceLayout({
+        resource: 'users',
+        name: 'Users',
+        children: 'Configured children',
+      });
+      const callProps = {
+        children: 'Component override',
+      };
+      const view = render(<Users.Loading {...callProps} />);
+      expect(screen.getByText('Configured children')).toBeInTheDocument();
+      expect(screen.queryByText('Component override')).not.toBeInTheDocument();
+      view.unmount();
+      const Empty = layout.createResourceLayout({
+        resource: 'users',
+        name: 'Empty',
+      });
+      render(<Empty.Loading />);
+      expect(screen.getByText('No configured children')).toBeInTheDocument();
+      () => {
+        // The built-in slot accepts children; config-only includes still own its value.
+        <Users.Loading children='Unexpected' />;
+      };
+    },
+  );
 
   it('keeps component-supplied children available after optionalizing includes', () => {
     const factory = createDefinedResourceLayout({
@@ -348,7 +355,9 @@ describe('resource layout render states', () => {
 
     render(<Users.Loading />);
 
-    expect(screen.getByText('Loading from defined options')).toBeInTheDocument();
+    expect(
+      screen.getByText('Loading from defined options'),
+    ).toBeInTheDocument();
   });
 
   it('passes factory composables to the render state context', () => {
@@ -645,10 +654,14 @@ describe('resource layout render states', () => {
       state: 'Audit',
       render: () => <p>Audit loaded</p>,
     });
-    let resolveStateModule!: (module: { auditState: typeof auditState }) => void;
-    const stateModule = new Promise<{ auditState: typeof auditState }>((resolve) => {
-      resolveStateModule = resolve;
-    });
+    let resolveStateModule!: (module: {
+      auditState: typeof auditState;
+    }) => void;
+    const stateModule = new Promise<{ auditState: typeof auditState }>(
+      (resolve) => {
+        resolveStateModule = resolve;
+      },
+    );
     const { createResourceLayout } = defineBoundLayout({
       render: {
         default: () => <h1>Users</h1>,
@@ -725,7 +738,9 @@ describe('resource layout render states', () => {
   });
 
   it('renders the configured Error state for default render failures', () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
     const definition = defineResourceLayout({
       resources: ['users'],
       layout: {

@@ -1,4 +1,9 @@
-import { isValidElement, version, type ReactElement, type ReactNode } from 'react';
+import {
+  isValidElement,
+  version,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 import { createReactNodeCheck } from './react-node';
 

@@ -1,12 +1,17 @@
 import type { WithChildren } from '@jfdevelops/react-layout-composables';
 import type { ComponentType, ReactNode } from 'react';
 import type { LoadStatus } from '@jfdevelops/react-layout-devtools-core';
-import type { LazyResourceError, LazyResourceErrorMap } from '../errors/lazy-resource-error';
+import type {
+  LazyResourceError,
+  LazyResourceErrorMap,
+} from '../errors/lazy-resource-error';
 
 export type { LoadStatus } from '@jfdevelops/react-layout-devtools-core';
 
 /** Options shared by lazy layouts, render states, and scoped content. */
-export type LazyOptions<Module extends Record<string, unknown> = Record<string, unknown>> = {
+export type LazyOptions<
+  Module extends Record<string, unknown> = Record<string, unknown>,
+> = {
   load: () => Promise<Module>;
   fallback?: ReactNode;
 };
@@ -33,9 +38,15 @@ export type LazyResourceStates<Resource = string> = {
   Loading?: LazyResourceLoadingComponent<Resource>;
 };
 
-type ErrorHandlerContext<Context> = [Context] extends [never] ? [] : [context: Context];
+type ErrorHandlerContext<Context> = [Context] extends [never]
+  ? []
+  : [context: Context];
 
-export type LazyErrorHandlers<Resource, CustomProps extends object = {}, Context = never> = {
+export type LazyErrorHandlers<
+  Resource,
+  CustomProps extends object = {},
+  Context = never,
+> = {
   [Code in LazyResourceError['code']]?: (
     props: WithChildren<CustomProps> &
       Omit<LazyResourceErrorProps<Resource>, 'error'> & {

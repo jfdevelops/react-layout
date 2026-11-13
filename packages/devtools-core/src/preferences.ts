@@ -27,21 +27,22 @@ export interface DevtoolsSessionState {
   selectedNode?: string;
 }
 
-export const defaultDevtoolsPreferences: Readonly<DevtoolsPreferences> = Object.freeze({
-  chipColors: Object.freeze({}),
-  initialView: 'graph',
-  initialZoom: 1,
-  initialFilters: Object.freeze({
-    activeOnly: false,
-    showComposables: false,
-  }),
-  tree: Object.freeze({
-    stickyScopes: true,
-    initialExpanded: true,
-  }),
-  showDetails: true,
-  showOutlines: false,
-});
+export const defaultDevtoolsPreferences: Readonly<DevtoolsPreferences> =
+  Object.freeze({
+    chipColors: Object.freeze({}),
+    initialView: 'graph',
+    initialZoom: 1,
+    initialFilters: Object.freeze({
+      activeOnly: false,
+      showComposables: false,
+    }),
+    tree: Object.freeze({
+      stickyScopes: true,
+      initialExpanded: true,
+    }),
+    showDetails: true,
+    showOutlines: false,
+  });
 
 const chipKinds = new Set<string>([
   ...Object.keys(defaultNodeColors),
@@ -100,7 +101,10 @@ function colors(value: unknown): DevtoolsPreferences['chipColors'] {
   return result;
 }
 
-function resolve(value: unknown, fallback: Readonly<DevtoolsPreferences>): DevtoolsPreferences {
+function resolve(
+  value: unknown,
+  fallback: Readonly<DevtoolsPreferences>,
+): DevtoolsPreferences {
   const saved = record(value);
   const filters = record(saved.initialFilters);
   const tree = record(saved.tree);
@@ -115,16 +119,26 @@ function resolve(value: unknown, fallback: Readonly<DevtoolsPreferences>): Devto
         ? saved.initialView
         : fallback.initialView,
     initialZoom:
-      typeof saved.initialZoom === 'number' && Number.isFinite(saved.initialZoom)
+      typeof saved.initialZoom === 'number' &&
+      Number.isFinite(saved.initialZoom)
         ? initialGraphZoom(saved.initialZoom)
         : fallback.initialZoom,
     initialFilters: {
-      activeOnly: boolean(filters.activeOnly, fallback.initialFilters.activeOnly),
-      showComposables: boolean(filters.showComposables, fallback.initialFilters.showComposables),
+      activeOnly: boolean(
+        filters.activeOnly,
+        fallback.initialFilters.activeOnly,
+      ),
+      showComposables: boolean(
+        filters.showComposables,
+        fallback.initialFilters.showComposables,
+      ),
     },
     tree: {
       stickyScopes: boolean(tree.stickyScopes, fallback.tree.stickyScopes),
-      initialExpanded: boolean(tree.initialExpanded, fallback.tree.initialExpanded),
+      initialExpanded: boolean(
+        tree.initialExpanded,
+        fallback.tree.initialExpanded,
+      ),
     },
     showDetails: boolean(saved.showDetails, fallback.showDetails),
     showOutlines: boolean(saved.showOutlines, fallback.showOutlines),
@@ -159,6 +173,8 @@ export function mergeDevtoolsPreferences(
 }
 
 /** Serialize only the shared schema, excluding session state and adapter-specific values. */
-export function serializeDevtoolsPreferences(preferences: DevtoolsPreferences): string {
+export function serializeDevtoolsPreferences(
+  preferences: DevtoolsPreferences,
+): string {
   return JSON.stringify(resolveDevtoolsPreferences(preferences));
 }

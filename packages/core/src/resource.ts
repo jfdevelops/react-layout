@@ -23,25 +23,31 @@ export type ResourceDefinition =
  * A resource definition normalized to an object with a stable `value` key.
  * `subResources` is present only when it existed on the declared resource.
  */
-export type NormalizedResourceDefinition<Resource extends ResourceDefinition = ResourceDefinition> =
-  Resource extends string
-    ? { value: Resource }
-    : Resource extends {
-          value: infer Value extends string;
-          subResources: infer SubResources extends ReadonlyArray<ResourceDefinition>;
-        }
-      ? {
-          value: Value;
-          subResources: NormalizedResourceDefinitions<SubResources>;
-        }
-      : never;
+export type NormalizedResourceDefinition<
+  Resource extends ResourceDefinition = ResourceDefinition,
+> = Resource extends string
+  ? { value: Resource }
+  : Resource extends {
+        value: infer Value extends string;
+        subResources: infer SubResources extends
+          ReadonlyArray<ResourceDefinition>;
+      }
+    ? {
+        value: Value;
+        subResources: NormalizedResourceDefinitions<SubResources>;
+      }
+    : never;
 
 /**
  * A tuple of resource definitions with strings converted to `{ value }`
  * objects and nested sub-resources normalized recursively.
  */
-export type NormalizedResourceDefinitions<Resources extends ReadonlyArray<ResourceDefinition>> = {
-  readonly [Index in keyof Resources]: Resources[Index] extends ResourceDefinition
+export type NormalizedResourceDefinitions<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> = {
+  readonly [
+    Index in keyof Resources
+  ]: Resources[Index] extends ResourceDefinition
     ? NormalizedResourceDefinition<Resources[Index]>
     : never;
 };
@@ -53,25 +59,30 @@ export type ResourceTree = Record<
   }
 >;
 
-export type NormalizeResource<Resource extends ResourceDefinition> = Resource extends string
-  ? {
-      [Key in Resource]: {
-        subResources: {};
-      };
-    }
-  : Resource extends {
-        value: infer Value extends string;
-        subResources: infer SubResources extends ReadonlyArray<ResourceDefinition>;
-      }
+export type NormalizeResource<Resource extends ResourceDefinition> =
+  Resource extends string
     ? {
-        [Key in Value]: {
-          subResources: NormalizeResources<SubResources>;
+        [Key in Resource]: {
+          subResources: {};
         };
       }
-    : never;
+    : Resource extends {
+          value: infer Value extends string;
+          subResources: infer SubResources extends
+            ReadonlyArray<ResourceDefinition>;
+        }
+      ? {
+          [Key in Value]: {
+            subResources: NormalizeResources<SubResources>;
+          };
+        }
+      : never;
 
-export type NormalizeResources<Resources extends ReadonlyArray<ResourceDefinition>> =
-  MergeIntersection<UnionToIntersection<NormalizeResource<Resources[number]>>>;
+export type NormalizeResources<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> = MergeIntersection<
+  UnionToIntersection<NormalizeResource<Resources[number]>>
+>;
 export type ResourceLayoutComponentProps = {
   children: ReactNode;
 };
@@ -94,7 +105,9 @@ function normalizeResourceTree(resource: ResourceDefinition): ResourceTree {
   };
 }
 
-function normalizeResourcesTree(resources: ReadonlyArray<ResourceDefinition>): ResourceTree {
+function normalizeResourcesTree(
+  resources: ReadonlyArray<ResourceDefinition>,
+): ResourceTree {
   const normalizedResources: ResourceTree = {};
 
   for (const resource of resources) {
@@ -108,9 +121,9 @@ export function normalizeResource(resource: ResourceDefinition): ResourceTree {
   return normalizeResourceTree(resource);
 }
 
-export function normalizeResources<Resources extends ReadonlyArray<ResourceDefinition>>(
-  resources: Resources,
-): NormalizeResources<Resources> {
+export function normalizeResources<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+>(resources: Resources): NormalizeResources<Resources> {
   return normalizeResourcesTree(resources) as NormalizeResources<Resources>;
 }
 
@@ -138,19 +151,23 @@ export function normalizeResourceDefinitions<
   }) as NormalizedResourceDefinitions<Resources>;
 }
 
-export function createIsValidResourceFn<Resources extends ReadonlyArray<ResourceDefinition>>(
-  resources: Resources,
-) {
+export function createIsValidResourceFn<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+>(resources: Resources) {
   return (value: unknown): value is LayoutResourceKey<Resources> => {
-    return typeof value === 'string' && Object.keys(normalizeResources(resources)).includes(value);
+    return (
+      typeof value === 'string' &&
+      Object.keys(normalizeResources(resources)).includes(value)
+    );
   };
 }
 
-export type ResourceDefinitionValue<Resource extends ResourceDefinition> = Resource extends string
-  ? Resource
-  : Resource extends { value: infer Value extends string }
-    ? Value
-    : never;
+export type ResourceDefinitionValue<Resource extends ResourceDefinition> =
+  Resource extends string
+    ? Resource
+    : Resource extends { value: infer Value extends string }
+      ? Value
+      : never;
 
 type NestedResourcePath<
   Definition extends ResourceDefinition,
@@ -161,24 +178,31 @@ type NestedResourcePath<
     : `${Prefix}.${Definition}`
   : Definition extends {
         value: infer Value extends string;
-        subResources: infer SubResources extends ReadonlyArray<ResourceDefinition>;
+        subResources: infer SubResources extends
+          ReadonlyArray<ResourceDefinition>;
       }
     ?
         | (Prefix extends '' ? Value : `${Prefix}.${Value}`)
-        | NestedResourcePath<SubResources[number], Prefix extends '' ? Value : `${Prefix}.${Value}`>
+        | NestedResourcePath<
+            SubResources[number],
+            Prefix extends '' ? Value : `${Prefix}.${Value}`
+          >
     : never;
 
 /** Dot-delimited paths for every resource and nested sub-resource. */
 export type ResourcePath<Resources extends ReadonlyArray<ResourceDefinition>> =
-  ResourceDefinition extends Resources[number] ? string : NestedResourcePath<Resources[number]>;
+  ResourceDefinition extends Resources[number]
+    ? string
+    : NestedResourcePath<Resources[number]>;
 
 /**
  * Top-level resource names declared in a `resources` array. Preserves string
  * literal unions for const resource definitions (unlike `keyof` on the
  * normalized resource tree, which tends to widen to `string` in hovers).
  */
-export type LayoutResourceKey<Resources extends ReadonlyArray<ResourceDefinition>> =
-  ResourceDefinitionValue<Resources[number]>;
+export type LayoutResourceKey<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> = ResourceDefinitionValue<Resources[number]>;
 
 export type ResourceDefinitionForKey<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -196,12 +220,10 @@ export type SubResourceDefinitionsFor<
     ? SubResources
     : readonly [];
 
-type CanNestSubResourceParam<MaxDepth extends number, DepthAcc extends readonly unknown[]> = [
-  ...DepthAcc,
-  unknown,
-]['length'] extends MaxDepth
-  ? false
-  : true;
+type CanNestSubResourceParam<
+  MaxDepth extends number,
+  DepthAcc extends readonly unknown[],
+> = [...DepthAcc, unknown]['length'] extends MaxDepth ? false : true;
 
 /**
  * `subResource` route param: a slug at the current depth, or `{ value, subResource }`
@@ -217,7 +239,8 @@ export type RecursiveSubResourceParam<
     ? Key extends LayoutResourceKey<SubDefs>
       ? CanNestSubResourceParam<MaxDepth, DepthAcc> extends true
         ? ResourceDefinitionForKey<SubDefs, Key> extends {
-            subResources: infer Nested extends ReadonlyArray<ResourceDefinition>;
+            subResources: infer Nested extends
+              ReadonlyArray<ResourceDefinition>;
           }
           ? [LayoutResourceKey<Nested>] extends [never]
             ? Key
@@ -243,7 +266,10 @@ export type SubResourceParamForResource<
   Resource extends LayoutResourceKey<Resources>,
 > = [SubResourceDefinitionsFor<Resources, Resource>] extends [readonly []]
   ? never
-  : RecursiveSubResourceParam<Resources, SubResourceDefinitionsFor<Resources, Resource>>;
+  : RecursiveSubResourceParam<
+      Resources,
+      SubResourceDefinitionsFor<Resources, Resource>
+    >;
 
 export type GetSubResourceKeys<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -256,9 +282,9 @@ export type GetSubResourceKeys<
     : never;
 export type ResourceEnum<Resources extends ReadonlyArray<ResourceDefinition>> =
   NonEmptyReadonlyArray<LayoutResourceKey<Resources>>;
-export function toResourceEnum<Resources extends ReadonlyArray<ResourceDefinition>>(
-  resources: NormalizeResources<Resources>,
-) {
+export function toResourceEnum<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+>(resources: NormalizeResources<Resources>) {
   const keys = Object.keys(resources);
 
   if (keys.length === 0) {
@@ -271,13 +297,17 @@ export function toResourceEnum<Resources extends ReadonlyArray<ResourceDefinitio
 /**
  * A resource tuple with at least one entry, preserving literal and nested paths.
  */
-export type NonEmptyResources = readonly [ResourceDefinition, ...ResourceDefinition[]];
+export type NonEmptyResources = readonly [
+  ResourceDefinition,
+  ...ResourceDefinition[],
+];
 
 /**
  * The nested sub-resource definitions declared on a resource definition.
  */
-export type NestedSubResourceDefinitions<Def extends ResourceDefinition> = Def extends {
-  subResources: infer Nested extends ReadonlyArray<ResourceDefinition>;
-}
-  ? Nested
-  : readonly [];
+export type NestedSubResourceDefinitions<Def extends ResourceDefinition> =
+  Def extends {
+    subResources: infer Nested extends ReadonlyArray<ResourceDefinition>;
+  }
+    ? Nested
+    : readonly [];

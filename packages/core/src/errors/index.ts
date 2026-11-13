@@ -40,4 +40,7 @@ export {
   LazyResourceStateNotFoundError,
   isLazyResourceError,
 } from './lazy-resource-error';
-export type { LazyResourceError, LazyResourceErrorMap } from './lazy-resource-error';
+export type {
+  LazyResourceError,
+  LazyResourceErrorMap,
+} from './lazy-resource-error';

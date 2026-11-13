@@ -39,7 +39,10 @@ type ResolveLayoutPropsWithDefaults<
   LayoutProps extends LayoutPropDefaults,
   Defaults extends LayoutPropDefaults,
 > = Omit<LayoutProps, keyof Defaults> & {
-  [Key in keyof Defaults & keyof LayoutProps]?: CreateTimeLayoutPropWithDefault<LayoutProps, Key>;
+  [Key in keyof Defaults & keyof LayoutProps]?: CreateTimeLayoutPropWithDefault<
+    LayoutProps,
+    Key
+  >;
 };
 
 /**
@@ -66,11 +69,8 @@ export type CreateResourceLayoutOptionsBase<
   Name extends string,
   Resource extends LayoutResourceKey<Resources>,
   Props extends InPropsObject = {},
-  Naming extends LayoutNameInput<Resource, any, Name> | undefined = LayoutNameInput<
-    Resource,
-    string,
-    Name
-  >,
+  Naming extends LayoutNameInput<Resource, any, Name> | undefined =
+    LayoutNameInput<Resource, string, Name>,
 > = HostedSelection<Resources> & ResourceLayoutTarget<Resource, Naming, Props>;
 
 export type CreateResourceLayoutOptions<
@@ -82,11 +82,8 @@ export type CreateResourceLayoutOptions<
   Resource extends LayoutResourceKey<Resources>,
   Props extends InPropsObject = {},
   Namespace extends boolean = false,
-  Naming extends LayoutNameInput<Resource, any, Name> | undefined = LayoutNameInput<
-    Resource,
-    string,
-    Name
-  >,
+  Naming extends LayoutNameInput<Resource, any, Name> | undefined =
+    LayoutNameInput<Resource, string, Name>,
 > = LayoutPropsForResource<Resources, Options, Composables, IncludeProps> &
   CreateResourceLayoutOptionsBase<Resources, Name, Resource, Props, Naming> & {
     /**
@@ -99,7 +96,8 @@ export type CreateLayoutForResourceOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Name extends string,
   Resource extends LayoutResourceKey<Resources>,
-> = HostedSelection<Resources> & Omit<ResourceLayoutTarget<Resource, Name>, 'props'>;
+> = HostedSelection<Resources> &
+  Omit<ResourceLayoutTarget<Resource, Name>, 'props'>;
 
 type CreatedLayoutForResourceOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -138,7 +136,11 @@ export type CreatedLayoutForResource<
   in out Resources extends ReadonlyArray<ResourceDefinition>,
   in out Options extends InPropsDefinition<Resources>,
   in out Composables extends ComposableComponents,
-  in out IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
+  in out IncludeProps extends LayoutIncludeProps<
+    Resources,
+    Options,
+    Composables
+  >,
   out Name extends string,
   out Resource extends LayoutResourceKey<Resources>,
   in out CustomProps extends CustomPropsObject = {},
@@ -203,18 +205,30 @@ type SetDefaultPropsForResource<
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents = {},
   IncludeProps extends LayoutIncludeProps<Resources, Options, Composables> = {},
-> = Partial<LayoutPropsForResource<Resources, Options, Composables, IncludeProps>>;
+> = Partial<
+  LayoutPropsForResource<Resources, Options, Composables, IncludeProps>
+>;
 
 type ResolvedSetDefaultProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
   IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
-  Defaults extends SetDefaultPropsForResource<Resources, Options, Composables, IncludeProps>,
+  Defaults extends SetDefaultPropsForResource<
+    Resources,
+    Options,
+    Composables,
+    IncludeProps
+  >,
 > = {
   [
     Key in keyof Defaults &
-      keyof LayoutPropsForResource<Resources, Options, Composables, IncludeProps>
+      keyof LayoutPropsForResource<
+        Resources,
+        Options,
+        Composables,
+        IncludeProps
+      >
   ]: LayoutPropsForResource<Resources, Options, Composables, IncludeProps>[Key];
 };
 
@@ -229,7 +243,12 @@ export type SetDefaultPropForResourceFn<
   DefaultNamespace extends boolean = false,
   States = {},
 > = <
-  const Defaults extends SetDefaultPropsForResource<Resources, Options, Composables, IncludeProps>,
+  const Defaults extends SetDefaultPropsForResource<
+    Resources,
+    Options,
+    Composables,
+    IncludeProps
+  >,
 >(
   /**
    * Default values for layout props. Each prop can only be set once.
@@ -243,7 +262,13 @@ export type SetDefaultPropForResourceFn<
   Name,
   Resource,
   CustomProps,
-  ResolvedSetDefaultProps<Resources, Options, Composables, IncludeProps, Defaults>,
+  ResolvedSetDefaultProps<
+    Resources,
+    Options,
+    Composables,
+    IncludeProps,
+    Defaults
+  >,
   DefaultNamespace,
   States
 >;
@@ -252,7 +277,11 @@ interface ResourceLayoutBuilder<
   in out Resources extends ReadonlyArray<ResourceDefinition>,
   in out Options extends InPropsDefinition<Resources>,
   in out Composables extends ComposableComponents,
-  in out IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
+  in out IncludeProps extends LayoutIncludeProps<
+    Resources,
+    Options,
+    Composables
+  >,
   out Name extends string,
   out Resource extends LayoutResourceKey<Resources>,
   in out CustomProps extends CustomPropsObject,
@@ -293,7 +322,9 @@ type SingleResourceLayoutSelection<
   [Resource in LayoutResourceKey<Resources>]: Record<
     Resource,
     {
-      name?: string | ((resource: CapitalizedResource<Resource>) => CallbackName);
+      name?:
+        | string
+        | ((resource: CapitalizedResource<Resource>) => CallbackName);
     }
   > &
     Partial<Record<Exclude<LayoutResourceKey<Resources>, Resource>, never>>;
@@ -308,7 +339,11 @@ type SelectedResourceName<Selection, Resource extends string> =
         : string
     : string;
 
-type MappedResourceName<Names, CallbackName extends string, Resource extends string> =
+type MappedResourceName<
+  Names,
+  CallbackName extends string,
+  Resource extends string,
+> =
   Names extends Record<Resource, infer Name>
     ? Name extends (...args: never[]) => unknown
       ? NormalizeCapitalizedResourceName<CallbackName, Resource>
@@ -333,7 +368,11 @@ type ResourceLayoutNameMapFn<
   in out Resources extends ReadonlyArray<ResourceDefinition>,
   in out Options extends InPropsDefinition<Resources>,
   in out Composables extends ComposableComponents,
-  in out IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
+  in out IncludeProps extends LayoutIncludeProps<
+    Resources,
+    Options,
+    Composables
+  >,
   in out CustomProps extends CustomPropsObject,
   in out Resource extends LayoutResourceKey<Resources>,
   out DefaultNamespace extends boolean = false,
@@ -341,7 +380,11 @@ type ResourceLayoutNameMapFn<
 > = <const CallbackName extends string, const Names>(
   options: {
     resource: Resource;
-    name: SelectedResourceLayoutNames<LayoutResourceKey<Resources>, Resource, CallbackName> &
+    name: SelectedResourceLayoutNames<
+      LayoutResourceKey<Resources>,
+      Resource,
+      CallbackName
+    > &
       AtLeastOneResourceLayoutNameKey<Resource> &
       Record<
         string,
@@ -371,7 +414,11 @@ type HostedResourceLayoutNameMapFn<
   in out Resources extends ReadonlyArray<ResourceDefinition>,
   in out Options extends InPropsDefinition<Resources>,
   in out Composables extends ComposableComponents,
-  in out IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
+  in out IncludeProps extends LayoutIncludeProps<
+    Resources,
+    Options,
+    Composables
+  >,
   in out CustomProps extends CustomPropsObject,
   out DefaultNamespace extends boolean = false,
   in out States = {},
@@ -382,7 +429,11 @@ type HostedResourceLayoutNameMapFn<
 >(
   options: {
     resource: Resource;
-    name: SelectedResourceLayoutNames<LayoutResourceKey<Resources>, Resource, CallbackName> &
+    name: SelectedResourceLayoutNames<
+      LayoutResourceKey<Resources>,
+      Resource,
+      CallbackName
+    > &
       AtLeastOneResourceLayoutNameKey<Resource> &
       Record<
         string,
@@ -476,7 +527,10 @@ export type CreateLayoutForResource<
    * @param options The resource and its default-name callback.
    * @returns A layout builder bound to the selected resource.
    */
-  <const Resource extends LayoutResourceKey<Resources>, const Name extends string>(
+  <
+    const Resource extends LayoutResourceKey<Resources>,
+    const Name extends string,
+  >(
     options: {
       name: (resource: CapitalizedResource<Resource>) => Name;
       resource: Resource;
@@ -535,7 +589,10 @@ export type CreateLayoutForResource<
    */
   <
     const CallbackName extends string,
-    const Selection extends SingleResourceLayoutSelection<Resources, CallbackName>,
+    const Selection extends SingleResourceLayoutSelection<
+      Resources,
+      CallbackName
+    >,
   >(
     options: Selection & UnhostedOnly<Resources>,
   ): ResourceLayoutBuilder<
@@ -543,7 +600,10 @@ export type CreateLayoutForResource<
     Options,
     Composables,
     IncludeProps,
-    SelectedResourceName<Selection, keyof Selection & LayoutResourceKey<Resources>>,
+    SelectedResourceName<
+      Selection,
+      keyof Selection & LayoutResourceKey<Resources>
+    >,
     keyof Selection & LayoutResourceKey<Resources>,
     CustomProps,
     DefaultNamespace,
@@ -583,13 +643,22 @@ export function createForResource<
   Composables extends ComposableComponents,
   IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
   CustomProps extends CustomPropsObject,
->({ createResourceLayout, resolveLayoutOptionDefaults }: CreateForResourceOptions) {
+>({
+  createResourceLayout,
+  resolveLayoutOptionDefaults,
+}: CreateForResourceOptions) {
   function createLayoutForResource<
     Name extends string,
     Resource extends LayoutResourceKey<Resources>,
     Defaults extends LayoutPropDefaults,
-  >(defaultName: Name | undefined, resource: Resource, defaults: Record<string, unknown>) {
-    return ((layoutOptions: { name?: string } & Record<string, unknown> = {}) => {
+  >(
+    defaultName: Name | undefined,
+    resource: Resource,
+    defaults: Record<string, unknown>,
+  ) {
+    return ((
+      layoutOptions: { name?: string } & Record<string, unknown> = {},
+    ) => {
       const { name, ...options } = layoutOptions;
 
       return createResourceLayout({
@@ -638,7 +707,9 @@ export function createForResource<
   const forResource = ((resourceOrOptions: unknown) => {
     type ResourceName =
       | string
-      | ((resource: CapitalizedResource<LayoutResourceKey<Resources>>) => string);
+      | ((
+          resource: CapitalizedResource<LayoutResourceKey<Resources>>,
+        ) => string);
     let name:
       | ResourceName
       | Partial<Record<LayoutResourceKey<Resources>, ResourceName>>
@@ -667,22 +738,33 @@ export function createForResource<
     }
 
     if (!resource) {
-      throw new LayoutConfigurationError('"resource" is required when calling "forResource"');
+      throw new LayoutConfigurationError(
+        '"resource" is required when calling "forResource"',
+      );
     }
 
-    const selectedName = name !== null && typeof name === 'object' ? name[resource] : name;
+    const selectedName =
+      name !== null && typeof name === 'object' ? name[resource] : name;
     let defaultName: string | undefined;
 
     if (typeof selectedName === 'function') {
       defaultName = selectedName(
-        capitalize(resource) as CapitalizedResource<LayoutResourceKey<Resources>>,
+        capitalize(resource) as CapitalizedResource<
+          LayoutResourceKey<Resources>
+        >,
       );
     } else if (typeof selectedName === 'string') {
       defaultName = selectedName;
     }
 
     return createLayoutForResourceBuilder(defaultName, resource);
-  }) as CreateLayoutForResource<Resources, Options, Composables, IncludeProps, CustomProps>;
+  }) as CreateLayoutForResource<
+    Resources,
+    Options,
+    Composables,
+    IncludeProps,
+    CustomProps
+  >;
 
   return {
     createLayoutForResourceBuilder,

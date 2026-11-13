@@ -1,6 +1,10 @@
 import { ChevronDownIcon, ChevronRightIcon } from './icons';
 import { useId, useState } from 'react';
-import type { GraphEdge, GraphNode, GraphSnapshot } from '@jfdevelops/react-layout-devtools-core';
+import type {
+  GraphEdge,
+  GraphNode,
+  GraphSnapshot,
+} from '@jfdevelops/react-layout-devtools-core';
 import type { ChipPalette } from './config';
 import { Button } from './components/ui/button';
 import { Badge } from './components/ui/badge';
@@ -63,7 +67,11 @@ function Branch({
             width: 12,
           }}
         >
-          {expanded ? <ChevronDownIcon size={12} /> : <ChevronRightIcon size={12} />}
+          {expanded ? (
+            <ChevronDownIcon size={12} />
+          ) : (
+            <ChevronRightIcon size={12} />
+          )}
         </span>
         {label}
         <span
@@ -87,7 +95,9 @@ function Branch({
         >
           {edges.map((edge) => {
             const other = graph.nodes.find(
-              (candidate) => candidate.id === (edge.source === node.id ? edge.target : edge.source),
+              (candidate) =>
+                candidate.id ===
+                (edge.source === node.id ? edge.target : edge.source),
             );
             if (!other) {
               return null;
@@ -103,7 +113,9 @@ function Branch({
                     if (event.key === 'ArrowLeft') {
                       event.preventDefault();
                       const parent =
-                        event.currentTarget.closest('[role="group"]')?.previousElementSibling;
+                        event.currentTarget.closest(
+                          '[role="group"]',
+                        )?.previousElementSibling;
                       if (parent instanceof HTMLElement) {
                         parent.focus();
                       }
@@ -150,7 +162,9 @@ export function RelationshipTree({
   palette: ChipPalette;
   onSelect: (id: string) => void;
 }) {
-  const related = graph.edges.filter((edge) => edge.source === node.id || edge.target === node.id);
+  const related = graph.edges.filter(
+    (edge) => edge.source === node.id || edge.target === node.id,
+  );
   const groups = new Map<string, GraphEdge[]>();
   for (const edge of related) {
     const label =
@@ -170,7 +184,9 @@ export function RelationshipTree({
         }
         event.preventDefault();
         const rows = Array.from(
-          event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="treeitem"]'),
+          event.currentTarget.querySelectorAll<HTMLButtonElement>(
+            '[role="treeitem"]',
+          ),
         );
         const index = rows.indexOf(event.target as HTMLButtonElement);
         const next =
@@ -180,7 +196,10 @@ export function RelationshipTree({
               ? rows.length - 1
               : Math.max(
                   0,
-                  Math.min(rows.length - 1, index + (event.key === 'ArrowDown' ? 1 : -1)),
+                  Math.min(
+                    rows.length - 1,
+                    index + (event.key === 'ArrowDown' ? 1 : -1),
+                  ),
                 );
         rows[next]?.focus();
       }}

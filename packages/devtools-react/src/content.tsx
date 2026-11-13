@@ -91,13 +91,20 @@ export function ReactLayoutDevtoolsToolbar() {
               gap: 10,
             }}
           >
-            {compact && pane === 'inspector' && selection && config.showDetails && (
-              <HelpTooltip content='Back to explorer'>
-                <Button size='icon' aria-label='Back to explorer' onClick={backToExplorer}>
-                  <BackIcon />
-                </Button>
-              </HelpTooltip>
-            )}
+            {compact &&
+              pane === 'inspector' &&
+              selection &&
+              config.showDetails && (
+                <HelpTooltip content='Back to explorer'>
+                  <Button
+                    size='icon'
+                    aria-label='Back to explorer'
+                    onClick={backToExplorer}
+                  >
+                    <BackIcon />
+                  </Button>
+                </HelpTooltip>
+              )}
             <div>
               <strong
                 style={{
@@ -113,12 +120,21 @@ export function ReactLayoutDevtoolsToolbar() {
                   marginTop: 2,
                 }}
               >
-                {graph.nodes.filter((n) => n.kind === 'layout').length} layouts ·{' '}
-                {graph.nodes.filter((n) => n.kind === 'state' && n.active > 0).length} active states
+                {graph.nodes.filter((n) => n.kind === 'layout').length} layouts
+                ·{' '}
+                {
+                  graph.nodes.filter((n) => n.kind === 'state' && n.active > 0)
+                    .length
+                }{' '}
+                active states
                 {graph.nodes.some((node) => node.kind === 'lazy') && (
                   <>
                     {' '}
-                    · {graph.nodes.filter((node) => node.kind === 'lazy').length} lazy declarations
+                    ·{' '}
+                    {
+                      graph.nodes.filter((node) => node.kind === 'lazy').length
+                    }{' '}
+                    lazy declarations
                     {graph.nodes.some(
                       (node) => node.kind === 'lazy' && node.status === 'error',
                     ) && (
@@ -127,7 +143,8 @@ export function ReactLayoutDevtoolsToolbar() {
                         ·{' '}
                         {
                           graph.nodes.filter(
-                            (node) => node.kind === 'lazy' && node.status === 'error',
+                            (node) =>
+                              node.kind === 'lazy' && node.status === 'error',
                           ).length
                         }{' '}
                         failed
@@ -360,7 +377,11 @@ const GraphCard = memo(function GraphCard({
             title={node.label}
           >
             {node.kind === 'state' && (
-              <StateIcon state={node.label} palette={palette} spinning={node.active > 0} />
+              <StateIcon
+                state={node.label}
+                palette={palette}
+                spinning={node.active > 0}
+              />
             )}
             <span
               style={{
@@ -419,7 +440,8 @@ export function ReactLayoutDevtoolsExplorer() {
     // The selected card always mounts so focus restore and locate can find it.
     return positioned.filter(
       ({ node, x, y }) =>
-        node.id === selected || (x + 228 >= left && x <= right && y + 74 >= top && y <= bottom),
+        node.id === selected ||
+        (x + 228 >= left && x <= right && y + 74 >= top && y <= bottom),
     );
   }, [virtual, positioned, viewport, zoom, selected]);
   const edgePaths = useMemo(() => {
@@ -440,7 +462,9 @@ export function ReactLayoutDevtoolsExplorer() {
         continue;
       }
 
-      paths[edge.relationship === 'references' ? 'references' : 'hierarchy'].push(
+      paths[
+        edge.relationship === 'references' ? 'references' : 'hierarchy'
+      ].push(
         `M${a.x + 224},${a.y + 32} C${a.x + 256},${a.y + 32} ${b.x - 32},${
           b.y + 32
         } ${b.x},${b.y + 32}`,
@@ -549,7 +573,9 @@ export function ReactLayoutDevtoolsExplorer() {
                         d={edgePaths[kind].join(' ')}
                         fill='none'
                         stroke='#64748b'
-                        strokeDasharray={kind === 'references' ? '5 4' : undefined}
+                        strokeDasharray={
+                          kind === 'references' ? '5 4' : undefined
+                        }
                         markerEnd={`url(#${arrowId})`}
                       />
                     ))}
@@ -574,7 +600,11 @@ export function ReactLayoutDevtoolsExplorer() {
                             },${targetY}`}
                             fill='none'
                             stroke='#64748b'
-                            strokeDasharray={edge.relationship === 'references' ? '5 4' : undefined}
+                            strokeDasharray={
+                              edge.relationship === 'references'
+                                ? '5 4'
+                                : undefined
+                            }
                             markerEnd={`url(#${arrowId})`}
                           />
                           <title>
@@ -629,7 +659,8 @@ export function ReactLayoutDevtoolsInspector() {
           aria-label='Node details'
           style={{
             flex: '2 1 0%',
-            animation: 'react-layout-details-enter 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both',
+            animation:
+              'react-layout-details-enter 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both',
             minHeight: 0,
             boxSizing: 'border-box',
             overscrollBehavior: 'contain',
@@ -642,7 +673,9 @@ export function ReactLayoutDevtoolsInspector() {
           <SelectedNode
             highlighted={highlighted === selection.id}
             onHighlight={() =>
-              setHighlighted((current) => (current === selection.id ? undefined : selection.id))
+              setHighlighted((current) =>
+                current === selection.id ? undefined : selection.id,
+              )
             }
             inspector={inspector}
             key={selection.id}
@@ -680,7 +713,8 @@ export function ReactLayoutDevtoolsFooter() {
 
 export function ReactLayoutDevtoolsWorkspace() {
   const { compact, pane, selection, config } = useDevtoolsContext();
-  const details = compact && pane === 'inspector' && selection && config.showDetails;
+  const details =
+    compact && pane === 'inspector' && selection && config.showDetails;
 
   return (
     <>
@@ -729,11 +763,17 @@ export function ReactLayoutDevtoolsContent({
   const [narrow, setNarrow] = useState(false);
 
   useEffect(() => {
-    if (layout !== 'auto' || !container || typeof ResizeObserver === 'undefined') {
+    if (
+      layout !== 'auto' ||
+      !container ||
+      typeof ResizeObserver === 'undefined'
+    ) {
       return;
     }
 
-    const observer = new ResizeObserver(([entry]) => setNarrow(entry.contentRect.width < 760));
+    const observer = new ResizeObserver(([entry]) =>
+      setNarrow(entry.contentRect.width < 760),
+    );
 
     observer.observe(container);
 

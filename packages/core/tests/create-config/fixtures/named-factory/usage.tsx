@@ -1,5 +1,8 @@
 import { expectTypeOf } from 'vitest';
-import { createDefinedResourceLayout, defineLayoutName } from '@jfdevelops/react-layout';
+import {
+  createDefinedResourceLayout,
+  defineLayoutName,
+} from '@jfdevelops/react-layout';
 import { resources, defineResourceLayout, type Resource } from './base';
 import { createResourceLayout, useResource } from './layout';
 
@@ -28,20 +31,26 @@ export const NamedState = (
     <p>Upcoming bookings</p>
   </Appointments.Layout>
 );
-export const ErrorState = <Appointments.Error error='Unable to load bookings' />;
+export const ErrorState = (
+  <Appointments.Error error='Unable to load bookings' />
+);
 
 expectTypeOf(useResource).returns.toEqualTypeOf<Resource>();
 expectTypeOf(resources.isResource).guards.toEqualTypeOf<Resource>();
 expectTypeOf(Appointments.displayName).not.toBeAny();
 expectTypeOf(Appointments.displayName).toBeString();
-expectTypeOf<typeof Appointments.Layout.props.showHeader>().toEqualTypeOf<boolean | undefined>();
+expectTypeOf<typeof Appointments.Layout.props.showHeader>().toEqualTypeOf<
+  boolean | undefined
+>();
 
 export const Dashboard = createResourceLayout({
   resource: 'dashboard',
   title: 'Dashboard',
   name: ({ resource, capitalize, states }) => {
     expectTypeOf(resource).toEqualTypeOf<'dashboard'>();
-    expectTypeOf(states).toEqualTypeOf<readonly ('default' | 'Layout' | 'Error')[]>();
+    expectTypeOf(states).toEqualTypeOf<
+      readonly ('default' | 'Layout' | 'Error')[]
+    >();
 
     return `${capitalize(resource)}Page`;
   },
@@ -55,7 +64,9 @@ export const overriddenDefinition = defineResourceLayout({
     return `${capitalize(resource)}Override`;
   },
   render: ({ segments }, { composables }) => {
-    expectTypeOf(segments).toEqualTypeOf<import('./base').Segments | undefined>();
+    expectTypeOf(segments).toEqualTypeOf<
+      import('./base').Segments | undefined
+    >();
 
     return <composables.Breadcrumb segments={segments ?? {}} />;
   },
@@ -77,18 +88,24 @@ export const Generated = unnamedDefinition.createResourceLayout({
   resource: 'users',
 });
 expectTypeOf(Generated.displayName).toEqualTypeOf<'UsersLayout'>();
-expectTypeOf(Generated.Loading.displayName).toEqualTypeOf<'UsersLayout.Loading'>();
-export const GeneratedScoped = unnamedDefinition.createResourceLayout.forResources('users')({
-  resource: 'users',
-});
+expectTypeOf(
+  Generated.Loading.displayName,
+).toEqualTypeOf<'UsersLayout.Loading'>();
+export const GeneratedScoped =
+  unnamedDefinition.createResourceLayout.forResources('users')({
+    resource: 'users',
+  });
 expectTypeOf(GeneratedScoped.displayName).toEqualTypeOf<'UsersLayout'>();
-export const GeneratedBound = unnamedDefinition.createResourceLayout.forResource('users')();
+export const GeneratedBound =
+  unnamedDefinition.createResourceLayout.forResource('users')();
 expectTypeOf(GeneratedBound.displayName).toEqualTypeOf<'UsersLayout'>();
 export const generatedNamespace = unnamedDefinition.createResourceLayout({
   resource: 'users',
   namespace: true,
 });
-expectTypeOf(generatedNamespace.Root.displayName).toEqualTypeOf<'UsersLayout'>();
+expectTypeOf(
+  generatedNamespace.Root.displayName,
+).toEqualTypeOf<'UsersLayout'>();
 
 const stringFactory = createDefinedResourceLayout({
   resources: ['users'],
@@ -190,10 +207,12 @@ export const EmptyParts = typedNamingDefinition.createResourceLayout({
   name: typedNaming(),
 });
 expectTypeOf(EmptyParts.displayName).toEqualTypeOf<'UsersV'>();
-const stringParts = defineLayoutName.defineParts('resource', 'suffix').namingFn({
-  pattern: ({ resource, capitalize }, parts) =>
-    `${parts.resource}${capitalize(resource)}${parts.suffix}`,
-});
+const stringParts = defineLayoutName
+  .defineParts('resource', 'suffix')
+  .namingFn({
+    pattern: ({ resource, capitalize }, parts) =>
+      `${parts.resource}${capitalize(resource)}${parts.suffix}`,
+  });
 export const StringParts = typedNamingDefinition.createResourceLayout({
   resource: 'users',
   name: stringParts({
@@ -209,7 +228,8 @@ const formattedNumberName = defineLayoutName
   })
   .namingFn({
     pattern: ({ resource, capitalize }, parts) => {
-      const version = typeof parts.version === 'number' ? parts.version.toFixed(0) : '';
+      const version =
+        typeof parts.version === 'number' ? parts.version.toFixed(0) : '';
 
       return `${capitalize(resource)}V${version}`;
     },
@@ -220,21 +240,23 @@ const formattedNumberDefinition = createDefinedResourceLayout({
 }).defineResourceLayout({
   render: () => <p>Optional numeric naming parts</p>,
 });
-export const OmittedNumericPart = formattedNumberDefinition.createResourceLayout({
-  resource: 'users',
-});
+export const OmittedNumericPart =
+  formattedNumberDefinition.createResourceLayout({
+    resource: 'users',
+  });
 export const ZeroNumericPart = formattedNumberDefinition.createResourceLayout({
   resource: 'users',
   name: formattedNumberName({
     version: 0,
   }),
 });
-export const SuppliedNumericPart = formattedNumberDefinition.createResourceLayout({
-  resource: 'users',
-  name: formattedNumberName({
-    version: 2,
-  }),
-});
+export const SuppliedNumericPart =
+  formattedNumberDefinition.createResourceLayout({
+    resource: 'users',
+    name: formattedNumberName({
+      version: 2,
+    }),
+  });
 
 const uncheckedNaming = defineLayoutName
   .defineParts({
@@ -290,7 +312,8 @@ uncheckedStringNaming({
 });
 
 const strictObjectNaming = defineLayoutName({
-  pattern: ({ resource, capitalize }, parts) => `${parts.prefix}${capitalize(resource)}Object`,
+  pattern: ({ resource, capitalize }, parts) =>
+    `${parts.prefix}${capitalize(resource)}Object`,
 });
 export const StrictObjectName = createDefinedResourceLayout({
   resources: ['users'],

@@ -5,13 +5,19 @@ import { createLazyLoader } from './create-lazy-loader';
 import { LazyBoundary } from './lazy-boundary';
 import { inspectLazy, withLazyHandle } from './inspection';
 import { LazyResourceModuleShapeError } from '../errors/lazy-resource-error';
-import { definedRenderStateSymbol, findDefinedRenderState } from '../create-config/render-state';
+import {
+  definedRenderStateSymbol,
+  findDefinedRenderState,
+} from '../create-config/render-state';
 import {
   isRenderableComponentType,
   resolveScopedRenderResult,
   type ScopedRenderResult,
 } from '../create-config/for-resources/scoped-render';
-import { inspectionId, type InspectionStore } from '@jfdevelops/react-layout-devtools-core';
+import {
+  inspectionId,
+  type InspectionStore,
+} from '@jfdevelops/react-layout-devtools-core';
 
 export type ScopedComponentRenderFn<
   Props = Record<string, unknown>,
@@ -67,7 +73,8 @@ export function createScopedLazyContent(
   }
   const inspection = inspectLazy(label, environment?.store, componentId);
   if (componentId) {
-    inspection.hooks.onMount = () => inspection.store.mount(componentId, inspection.id);
+    inspection.hooks.onMount = () =>
+      inspection.store.mount(componentId, inspection.id);
   }
   const loader = createLazyLoader({
     load: options.load,
@@ -77,14 +84,18 @@ export function createScopedLazyContent(
       const candidates = Object.values(module).filter(
         (value) =>
           isRenderableComponentType(value) ||
-          (typeof value === 'object' && value !== null && definedRenderStateSymbol in value),
+          (typeof value === 'object' &&
+            value !== null &&
+            definedRenderStateSymbol in value),
       );
       if (candidates.length !== 1) {
         throw new LazyResourceModuleShapeError(label, candidates.length);
       }
       const selected = candidates[0];
       const render =
-        typeof selected === 'object' && selected !== null && definedRenderStateSymbol in selected
+        typeof selected === 'object' &&
+        selected !== null &&
+        definedRenderStateSymbol in selected
           ? (
               await findDefinedRenderState(
                 {
@@ -104,8 +115,8 @@ export function createScopedLazyContent(
       }) {
         if (
           typeof render !== 'function' ||
-          (render as unknown as { prototype?: { isReactComponent?: unknown } }).prototype
-            ?.isReactComponent
+          (render as unknown as { prototype?: { isReactComponent?: unknown } })
+            .prototype?.isReactComponent
         ) {
           return createElement(render as ComponentType<any>, callProps);
         }
@@ -146,7 +157,8 @@ export function createScopedLazyContent(
       };
     }
     const Loading = nearest.Loading ?? defaults.Loading;
-    const fallback = input.fallback !== undefined ? input.fallback : options.fallback;
+    const fallback =
+      input.fallback !== undefined ? input.fallback : options.fallback;
 
     return (
       <LazyBoundary

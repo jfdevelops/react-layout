@@ -50,7 +50,9 @@ it('shows source locations and opens the adapter editor endpoint', async () => {
       ),
     );
 
-    expect(fetch).toHaveBeenCalledWith('/__open-in-editor?file=page.tsx%3A4%3A2');
+    expect(fetch).toHaveBeenCalledWith(
+      '/__open-in-editor?file=page.tsx%3A4%3A2',
+    );
   } finally {
     vi.unstubAllGlobals();
   }

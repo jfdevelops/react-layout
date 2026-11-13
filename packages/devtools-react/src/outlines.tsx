@@ -7,9 +7,13 @@ import { Button } from './components/ui/button';
 import { HelpTooltip } from './components/ui/tooltip';
 import type { ElementBounds } from './element-bounds';
 
-export function OutlineToggle({ size = 'icon' }: { size?: 'icon' | 'icon-sm' } = {}) {
+export function OutlineToggle({
+  size = 'icon',
+}: { size?: 'icon' | 'icon-sm' } = {}) {
   const { config, updatePreferences } = useDevtoolsContext();
-  const label = config.showOutlines ? 'Hide composable outlines' : 'Show composable outlines';
+  const label = config.showOutlines
+    ? 'Hide composable outlines'
+    : 'Show composable outlines';
 
   return (
     <HelpTooltip content={label}>
@@ -70,7 +74,8 @@ function layoutName(graph: GraphSnapshot, id: string) {
 
 /** A single non-interactive overlay layer; only the name labels accept input. */
 export function ComposableOutlines() {
-  const { config, graph, palette, setSelected, hovered, setHovered } = useDevtoolsContext();
+  const { config, graph, palette, setSelected, hovered, setHovered } =
+    useDevtoolsContext();
   const [targets, setTargets] = useState<Target[]>([]);
   const enabled = config.showOutlines && process.env.NODE_ENV !== 'production';
   useEffect(() => {
@@ -87,11 +92,16 @@ export function ComposableOutlines() {
         frame = requestAnimationFrame(scan);
       }
     };
-    const resize = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(schedule);
+    const resize =
+      typeof ResizeObserver === 'undefined'
+        ? undefined
+        : new ResizeObserver(schedule);
     const scan = () => {
       frame = undefined;
       const nodes = new Map(
-        graph.nodes.filter((node) => node.kind === 'composable').map((node) => [node.id, node]),
+        graph.nodes
+          .filter((node) => node.kind === 'composable')
+          .map((node) => [node.id, node]),
       );
       const next: Target[] = [];
       const present = new Set<Element>();
@@ -113,7 +123,11 @@ export function ComposableOutlines() {
             return;
           }
           let depth = 0;
-          for (let parent = element.parentElement; parent; parent = parent.parentElement) {
+          for (
+            let parent = element.parentElement;
+            parent;
+            parent = parent.parentElement
+          ) {
             if (parent.hasAttribute('data-rl-composable')) {
               depth++;
             }
@@ -162,7 +176,10 @@ export function ComposableOutlines() {
       if (
         records.some(
           (record) =>
-            !(record.target instanceof Element && record.target.closest('[data-rl-outline-layer]')),
+            !(
+              record.target instanceof Element &&
+              record.target.closest('[data-rl-outline-layer]')
+            ),
         )
       ) {
         schedule();
@@ -176,15 +193,22 @@ export function ComposableOutlines() {
     window.addEventListener('resize', schedule);
     // Passive listeners highlight the overlay without stealing app interactions.
     const hover = (event: Event) => {
-      if (event.target instanceof Element && event.target.closest('[data-rl-outline-layer]')) {
+      if (
+        event.target instanceof Element &&
+        event.target.closest('[data-rl-outline-layer]')
+      ) {
         return;
       }
       const element =
         event.target instanceof Element
-          ? event.target.closest<HTMLElement>('[data-rl-node][data-rl-composable]')
+          ? event.target.closest<HTMLElement>(
+              '[data-rl-node][data-rl-composable]',
+            )
           : null;
       setHovered(
-        element && nodesForHover.has(element.dataset.rlNode!) ? element.dataset.rlNode : undefined,
+        element && nodesForHover.has(element.dataset.rlNode!)
+          ? element.dataset.rlNode
+          : undefined,
       );
     };
     const nodesForHover = new Set(graph.nodes.map((node) => node.id));
@@ -223,7 +247,10 @@ export function ComposableOutlines() {
       }}
     >
       {targets.map((target, index) => {
-        const hash = [...target.name].reduce((value, char) => value + char.charCodeAt(0), 0);
+        const hash = [...target.name].reduce(
+          (value, char) => value + char.charCodeAt(0),
+          0,
+        );
         const color = colors[hash % colors.length]!;
 
         return (

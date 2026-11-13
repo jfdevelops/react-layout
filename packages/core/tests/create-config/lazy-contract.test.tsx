@@ -1,6 +1,27 @@
-import { Component, StrictMode, useState, type ComponentType, type ReactNode } from 'react';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import {
+  Component,
+  StrictMode,
+  useState,
+  type ComponentType,
+  type ReactNode,
+} from 'react';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  expectTypeOf,
+  it,
+  vi,
+} from 'vitest';
 import { getInspectionSource } from '@jfdevelops/react-layout-devtools-core';
 import {
   createDefinedResourceLayout,
@@ -28,7 +49,9 @@ type Kind = 'resource' | 'state' | 'scoped';
 function fixture(
   kind: Kind,
   options: {
-    load?: (module: Record<string, unknown>) => Promise<Record<string, unknown>>;
+    load?: (
+      module: Record<string, unknown>,
+    ) => Promise<Record<string, unknown>>;
     fallback?: ReactNode;
     nearest?: boolean;
     defaults?: boolean;
@@ -75,7 +98,9 @@ function fixture(
         : {
             Content,
           };
-  const load = vi.fn(() => (options.load ? options.load(module) : Promise.resolve(module)));
+  const load = vi.fn(() =>
+    options.load ? options.load(module) : Promise.resolve(module),
+  );
   const lazyOptions: LazyOptions = {
     load,
     fallback: options.fallback,
@@ -143,208 +168,239 @@ function fixture(
   };
 }
 
-describe.each<Kind>(['resource', 'state', 'scoped'])('%s shared lazy contract', (kind) => {
-  it('renders a preloaded entry immediately without a loading fallback', async () => {
-    const { View, handle, load } = fixture(kind);
-    await handle.preload();
-    render(<View />);
-    expect(screen.getByText('Loaded content')).toBeInTheDocument();
-    expect(screen.queryByText('Global loading users')).toBeNull();
-    expect(load).toHaveBeenCalledOnce();
-  });
+describe.each<Kind>(['resource', 'state', 'scoped'])(
+  '%s shared lazy contract',
+  (kind) => {
+    it('renders a preloaded entry immediately without a loading fallback', async () => {
+      const { View, handle, load } = fixture(kind);
+      await handle.preload();
+      render(<View />);
+      expect(screen.getByText('Loaded content')).toBeInTheDocument();
+      expect(screen.queryByText('Global loading users')).toBeNull();
+      expect(load).toHaveBeenCalledOnce();
+    });
 
-  it('caches preload and rendering, and reports declaration, loading, resolution and mounts', async () => {
-    let finish!: () => void;
-    const gate = new Promise<void>((resolve) => {
-      finish = resolve;
-    });
-    const { View, handle, load, source } = fixture(kind, {
-      load: async (module) => {
-        await gate;
+    it('caches preload and rendering, and reports declaration, loading, resolution and mounts', async () => {
+      let finish!: () => void;
+      const gate = new Promise<void>((resolve) => {
+        finish = resolve;
+      });
+      const { View, handle, load, source } = fixture(kind, {
+        load: async (module) => {
+          await gate;
 
-        return module;
-      },
-    });
-    expect(handle.status).toBe('unresolved');
-    expect(
-      source
-        .getSnapshot()
-        .nodes.some((node) => node.kind === 'lazy' && node.status === 'unresolved'),
-    ).toBe(true);
-    if (kind === 'scoped') {
-      const graph = source.getSnapshot();
-      const lazy = graph.nodes.find((node) => node.kind === 'lazy')!;
-      expect(
-        graph.edges.some(
-          (edge) =>
-            edge.target === lazy.id &&
-            graph.nodes.some((node) => node.id === edge.source && node.kind === 'component'),
-        ),
-      ).toBe(true);
-    }
-    const first = handle.preload();
-    const second = handle.preload();
-    expect(second).toBe(first);
-    render(<View />);
-    expect(handle.status).toBe('loading');
-    expect(screen.getByText('Global loading users')).toBeInTheDocument();
-    expect(
-      source
-        .getSnapshot()
-        .nodes.some((node) => node.kind === 'lazy' && node.status === 'loading' && node.active > 0),
-    ).toBe(true);
-    await act(async () => {
-      finish();
-      await first;
-      await second;
-    });
-    expect(await screen.findByText('Loaded content')).toBeInTheDocument();
-    expect(load).toHaveBeenCalledTimes(1);
-    expect(handle.status).toBe('resolved');
-    expect(
-      source
-        .getSnapshot()
-        .nodes.some(
-          (node) => node.kind === 'lazy' && node.status === 'resolved' && !node.unresolved,
-        ),
-    ).toBe(true);
-    cleanup();
-    expect(
-      source
-        .getSnapshot()
-        .nodes.filter((node) => node.kind === 'lazy')
-        .every((node) => node.active === 0),
-    ).toBe(true);
-  });
-
-  it('uses an explicit fallback before global defaults', async () => {
-    const { View } = fixture(kind, {
-      fallback: <p>Explicit fallback</p>,
-      load: () => new Promise(() => undefined),
-    });
-    render(<View />);
-    expect(screen.getByText('Explicit fallback')).toBeInTheDocument();
-    expect(screen.queryByText('Global loading users')).toBeNull();
-  });
-
-  it('uses null for an explicit empty fallback and when no Loading UI exists', () => {
-    const explicit = fixture(kind, {
-      fallback: null,
-      load: () => new Promise(() => undefined),
-    });
-    const view = render(<explicit.View />);
-    expect(view.container).toBeEmptyDOMElement();
-    cleanup();
-    const withoutDefaults = fixture(kind, {
-      defaults: false,
-      load: () => new Promise(() => undefined),
-    });
-    expect(render(<withoutDefaults.View />).container).toBeEmptyDOMElement();
-  });
-
-  it('preserves import causes, reports failure, and reimports on retry', async () => {
-    const cause = new TypeError('createCalendarPage is not a function');
-    let attempts = 0;
-    const { View, handle, load, source } = fixture(kind, {
-      load: async (module) => {
-        if (++attempts === 1) {
-          throw cause;
-        }
-
-        return module;
-      },
-    });
-    render(<View />);
-    expect(await screen.findByText('users:resourceModuleLoad')).toBeInTheDocument();
-    expect(handle.status).toBe('error');
-    expect(
-      vi
-        .mocked(console.error)
-        .mock.calls.filter(
-          ([message]) => typeof message === 'string' && message.startsWith('[react-layout]'),
-        ),
-    ).toHaveLength(1);
-    expect(
-      source.getSnapshot().nodes.find((node) => node.kind === 'lazy' && node.status === 'error'),
-    ).toMatchObject({
-      active: 1,
-      error: {
-        code: 'resourceModuleLoad',
-        cause: {
-          name: 'TypeError',
-          message: cause.message,
+          return module;
         },
-      },
+      });
+      expect(handle.status).toBe('unresolved');
+      expect(
+        source
+          .getSnapshot()
+          .nodes.some(
+            (node) => node.kind === 'lazy' && node.status === 'unresolved',
+          ),
+      ).toBe(true);
+      if (kind === 'scoped') {
+        const graph = source.getSnapshot();
+        const lazy = graph.nodes.find((node) => node.kind === 'lazy')!;
+        expect(
+          graph.edges.some(
+            (edge) =>
+              edge.target === lazy.id &&
+              graph.nodes.some(
+                (node) => node.id === edge.source && node.kind === 'component',
+              ),
+          ),
+        ).toBe(true);
+      }
+      const first = handle.preload();
+      const second = handle.preload();
+      expect(second).toBe(first);
+      render(<View />);
+      expect(handle.status).toBe('loading');
+      expect(screen.getByText('Global loading users')).toBeInTheDocument();
+      expect(
+        source
+          .getSnapshot()
+          .nodes.some(
+            (node) =>
+              node.kind === 'lazy' &&
+              node.status === 'loading' &&
+              node.active > 0,
+          ),
+      ).toBe(true);
+      await act(async () => {
+        finish();
+        await first;
+        await second;
+      });
+      expect(await screen.findByText('Loaded content')).toBeInTheDocument();
+      expect(load).toHaveBeenCalledTimes(1);
+      expect(handle.status).toBe('resolved');
+      expect(
+        source
+          .getSnapshot()
+          .nodes.some(
+            (node) =>
+              node.kind === 'lazy' &&
+              node.status === 'resolved' &&
+              !node.unresolved,
+          ),
+      ).toBe(true);
+      cleanup();
+      expect(
+        source
+          .getSnapshot()
+          .nodes.filter((node) => node.kind === 'lazy')
+          .every((node) => node.active === 0),
+      ).toBe(true);
     });
-    fireEvent.click(screen.getByText('Retry'));
-    expect(await screen.findByText('Loaded content')).toBeInTheDocument();
-    expect(handle.status).toBe('resolved');
-    expect(load).toHaveBeenCalledTimes(2);
-    expect(
-      source
-        .getSnapshot()
-        .nodes.filter((node) => node.kind === 'lazy')
-        .every((node) => node.error === undefined),
-    ).toBe(true);
-  });
 
-  it.each([0, 2])(
-    'reports %i matching exports as a shape error without wrapping it',
-    async (count) => {
-      const { View, source } = fixture(kind, {
-        load: async (module) =>
-          count
-            ? {
-                ...module,
-                Duplicate: Object.values(module)[0],
-              }
-            : {},
+    it('uses an explicit fallback before global defaults', async () => {
+      const { View } = fixture(kind, {
+        fallback: <p>Explicit fallback</p>,
+        load: () => new Promise(() => undefined),
       });
       render(<View />);
-      expect(await screen.findByText('users:lazyResourceModuleShape')).toBeInTheDocument();
-      expect(
-        source.getSnapshot().nodes.find((node) => node.kind === 'lazy' && node.status === 'error')
-          ?.error,
-      ).toMatchObject({
-        code: 'lazyResourceModuleShape',
-      });
-    },
-  );
-
-  it('passes ordinary content render errors through to the route boundary', async () => {
-    const failure = new Error('Content render failed');
-    const { View } = fixture(kind, {
-      content: () => {
-        throw failure;
-      },
+      expect(screen.getByText('Explicit fallback')).toBeInTheDocument();
+      expect(screen.queryByText('Global loading users')).toBeNull();
     });
-    const caught = vi.fn();
-    class RouteBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
-      state = {
-        failed: false,
-      };
-      static getDerivedStateFromError() {
-        return {
-          failed: true,
-        };
-      }
-      componentDidCatch(error: unknown) {
-        caught(error);
-      }
-      render() {
-        return this.state.failed ? <p>Route error</p> : this.props.children;
-      }
-    }
-    render(
-      <RouteBoundary>
-        <View />
-      </RouteBoundary>,
+
+    it('uses null for an explicit empty fallback and when no Loading UI exists', () => {
+      const explicit = fixture(kind, {
+        fallback: null,
+        load: () => new Promise(() => undefined),
+      });
+      const view = render(<explicit.View />);
+      expect(view.container).toBeEmptyDOMElement();
+      cleanup();
+      const withoutDefaults = fixture(kind, {
+        defaults: false,
+        load: () => new Promise(() => undefined),
+      });
+      expect(render(<withoutDefaults.View />).container).toBeEmptyDOMElement();
+    });
+
+    it('preserves import causes, reports failure, and reimports on retry', async () => {
+      const cause = new TypeError('createCalendarPage is not a function');
+      let attempts = 0;
+      const { View, handle, load, source } = fixture(kind, {
+        load: async (module) => {
+          if (++attempts === 1) {
+            throw cause;
+          }
+
+          return module;
+        },
+      });
+      render(<View />);
+      expect(
+        await screen.findByText('users:resourceModuleLoad'),
+      ).toBeInTheDocument();
+      expect(handle.status).toBe('error');
+      expect(
+        vi
+          .mocked(console.error)
+          .mock.calls.filter(
+            ([message]) =>
+              typeof message === 'string' &&
+              message.startsWith('[react-layout]'),
+          ),
+      ).toHaveLength(1);
+      expect(
+        source
+          .getSnapshot()
+          .nodes.find(
+            (node) => node.kind === 'lazy' && node.status === 'error',
+          ),
+      ).toMatchObject({
+        active: 1,
+        error: {
+          code: 'resourceModuleLoad',
+          cause: {
+            name: 'TypeError',
+            message: cause.message,
+          },
+        },
+      });
+      fireEvent.click(screen.getByText('Retry'));
+      expect(await screen.findByText('Loaded content')).toBeInTheDocument();
+      expect(handle.status).toBe('resolved');
+      expect(load).toHaveBeenCalledTimes(2);
+      expect(
+        source
+          .getSnapshot()
+          .nodes.filter((node) => node.kind === 'lazy')
+          .every((node) => node.error === undefined),
+      ).toBe(true);
+    });
+
+    it.each([0, 2])(
+      'reports %i matching exports as a shape error without wrapping it',
+      async (count) => {
+        const { View, source } = fixture(kind, {
+          load: async (module) =>
+            count
+              ? {
+                  ...module,
+                  Duplicate: Object.values(module)[0],
+                }
+              : {},
+        });
+        render(<View />);
+        expect(
+          await screen.findByText('users:lazyResourceModuleShape'),
+        ).toBeInTheDocument();
+        expect(
+          source
+            .getSnapshot()
+            .nodes.find(
+              (node) => node.kind === 'lazy' && node.status === 'error',
+            )?.error,
+        ).toMatchObject({
+          code: 'lazyResourceModuleShape',
+        });
+      },
     );
-    expect(await screen.findByText('Route error')).toBeInTheDocument();
-    expect(caught).toHaveBeenCalledWith(failure);
-    expect(screen.queryByText('Retry')).toBeNull();
-  });
-});
+
+    it('passes ordinary content render errors through to the route boundary', async () => {
+      const failure = new Error('Content render failed');
+      const { View } = fixture(kind, {
+        content: () => {
+          throw failure;
+        },
+      });
+      const caught = vi.fn();
+      class RouteBoundary extends Component<
+        { children: ReactNode },
+        { failed: boolean }
+      > {
+        state = {
+          failed: false,
+        };
+        static getDerivedStateFromError() {
+          return {
+            failed: true,
+          };
+        }
+        componentDidCatch(error: unknown) {
+          caught(error);
+        }
+        render() {
+          return this.state.failed ? <p>Route error</p> : this.props.children;
+        }
+      }
+      render(
+        <RouteBoundary>
+          <View />
+        </RouteBoundary>,
+      );
+      expect(await screen.findByText('Route error')).toBeInTheDocument();
+      expect(caught).toHaveBeenCalledWith(failure);
+      expect(screen.queryByText('Retry')).toBeNull();
+    });
+  },
+);
 
 it.each<Kind>(['state', 'scoped'])(
   '%s uses the nearest Loading state before factory defaults',
@@ -412,8 +468,12 @@ it('includes the cause in load messages and keeps configuration instanceof compa
   const error = new ResourceModuleLoadError('users', cause);
   expect(error.message).toContain('TypeError: broken import');
   expect(error.cause).toBe(cause);
-  expect(new ResourceModuleLoadError('users', 'offline').message).toContain('offline');
-  expect(new LazyResourceModuleShapeError('users', 0)).toBeInstanceOf(LayoutConfigurationError);
+  expect(new ResourceModuleLoadError('users', 'offline').message).toContain(
+    'offline',
+  );
+  expect(new LazyResourceModuleShapeError('users', 0)).toBeInstanceOf(
+    LayoutConfigurationError,
+  );
   expect(new LazyResourceStateNotFoundError('users', 'Detail')).toBeInstanceOf(
     LayoutConfigurationError,
   );
@@ -429,7 +489,9 @@ it('provides type-only errors and stable, typed error component factories with c
       },
     ],
   });
-  expectTypeOf<typeof defineLazyDefaults.errors>().toEqualTypeOf<LazyResourceError>();
+  expectTypeOf<
+    typeof defineLazyDefaults.errors
+  >().toEqualTypeOf<LazyResourceError>();
   expect(defineLazyDefaults.errors).toBeUndefined();
   expect(Object.keys(defineLazyDefaults)).not.toContain('errors');
   const Render = ({
@@ -451,7 +513,9 @@ it('provides type-only errors and stable, typed error component factories with c
     render: {
       lazyResourceStateNotFound: ({ error, resource }) => {
         expectTypeOf(error).toEqualTypeOf<LazyResourceStateNotFoundError>();
-        expectTypeOf(resource).toEqualTypeOf<'users' | 'teams' | 'teams.members'>();
+        expectTypeOf(resource).toEqualTypeOf<
+          'users' | 'teams' | 'teams.members'
+        >();
 
         return <p>{error.state}</p>;
       },
@@ -479,7 +543,9 @@ it('provides type-only errors and stable, typed error component factories with c
   defineLazyDefaults({
     Error: ({ error, resource }) => {
       expectTypeOf(error).toEqualTypeOf<LazyResourceError>();
-      expectTypeOf(resource).toEqualTypeOf<'users' | 'teams' | 'teams.members'>();
+      expectTypeOf(resource).toEqualTypeOf<
+        'users' | 'teams' | 'teams.members'
+      >();
 
       return null;
     },
@@ -495,9 +561,9 @@ it('rethrows errors with no code handler or fallback', () => {
     render: {},
   });
   const error = new ResourceModuleLoadError('users', 'offline');
-  expect(() => render(<ErrorUI error={error} resource='users' retry={() => undefined} />)).toThrow(
-    error,
-  );
+  expect(() =>
+    render(<ErrorUI error={error} resource='users' retry={() => undefined} />),
+  ).toThrow(error);
   expect(isLazyResourceError(error)).toBe(true);
   expect(isLazyResourceError(new Error())).toBe(false);
 });
@@ -578,7 +644,9 @@ it('preserves shell-declared scoped props, lazy options, handles, and render/laz
 it('imports a shell whose deferred content imports the shell back without a TDZ failure', async () => {
   const { Appointments } = await import('./fixtures/lazy-scoped-shell');
   render(<Appointments />);
-  expect(await screen.findByText('Appointments round-trip')).toBeInTheDocument();
+  expect(
+    await screen.findByText('Appointments round-trip'),
+  ).toBeInTheDocument();
 });
 
 it('reports missing lazy resource compound states through the typed error UI', async () => {
@@ -604,7 +672,9 @@ it('reports missing lazy resource compound states through the typed error UI', a
   // A stale imported module can lack a state promised by its declaration types.
   const Missing = (Lazy as unknown as { Missing: ComponentType }).Missing;
   render(<Missing />);
-  expect(await screen.findByText('lazyResourceStateNotFound')).toBeInTheDocument();
+  expect(
+    await screen.findByText('lazyResourceStateNotFound'),
+  ).toBeInTheDocument();
   expect(Lazy.status).toBe('error');
 });
 

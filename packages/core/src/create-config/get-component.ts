@@ -20,7 +20,10 @@ import {
   type CreateGetComponentForPath,
   type ForPaths,
 } from './for-paths';
-import { createIsSubResourceKey, type IsSubResourceKey } from './is-sub-resource-key';
+import {
+  createIsSubResourceKey,
+  type IsSubResourceKey,
+} from './is-sub-resource-key';
 import { readComponentKeys, readSubResourceKeys } from './component-keys';
 import { collectAllSubResourceKeys, collectConfigResources } from './paths';
 import type { ConfigSubResourceKeys, ParameterizedResourcePath } from './paths';
@@ -38,12 +41,16 @@ import type {
 type ResourceHasLayoutSubResources<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Resource extends LayoutResourceKey<Resources>,
-> = [SubResourceDefinitionsFor<Resources, Resource>] extends [readonly []] ? false : true;
+> = [SubResourceDefinitionsFor<Resources, Resource>] extends [readonly []]
+  ? false
+  : true;
 
 type SubResourceOptionForGenerics<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Resource extends LayoutResourceKey<Resources>,
-  SubResource extends SubResourceParamForResource<Resources, Resource> | undefined,
+  SubResource extends
+    | SubResourceParamForResource<Resources, Resource>
+    | undefined,
 > = [SubResource] extends [undefined]
   ? ResourceHasLayoutSubResources<Resources, Resource> extends true
     ? {
@@ -58,7 +65,9 @@ type SubResourceOptionForGenerics<
 export type GetComponentOptionsForResource<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Resource extends LayoutResourceKey<Resources>,
-  SubResource extends SubResourceParamForResource<Resources, Resource> | undefined = undefined,
+  SubResource extends
+    | SubResourceParamForResource<Resources, Resource>
+    | undefined = undefined,
 > = SubResourceOptionForGenerics<Resources, Resource, SubResource> & {
   resource: Resource;
   /**
@@ -70,7 +79,9 @@ export type GetComponentOptionsForResource<
 };
 
 /** Union of valid `getComponent` option shapes for each declared layout resource. */
-export type GetComponentOptions<Resources extends ReadonlyArray<ResourceDefinition>> =
+export type GetComponentOptions<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> =
   LayoutResourceKey<Resources> extends infer Resource
     ? Resource extends LayoutResourceKey<Resources>
       ? GetComponentOptionsForResource<Resources, Resource>
@@ -81,7 +92,9 @@ type ComponentSlotPathKey = keyof BaseResourceConfigComponents;
 
 /** `detail.errorComponent`, `new.component`, … — component slots inside a shared branch. */
 type SharedBranchPath = {
-  [Branch in keyof SharedResourceConfigOptions]: `${Branch}.${ComponentSlotPathKey}`;
+  [
+    Branch in keyof SharedResourceConfigOptions
+  ]: `${Branch}.${ComponentSlotPathKey}`;
 }[keyof SharedResourceConfigOptions];
 
 type SubResourceEntryPaths<
@@ -93,7 +106,9 @@ type SubResourceEntryPaths<
       ?
           | Key
           | `${Key}.${ResourceConfigEntryPath<
-              NestedSubResourceDefinitions<ResourceDefinitionForKey<SubDefs, Key>>,
+              NestedSubResourceDefinitions<
+                ResourceDefinitionForKey<SubDefs, Key>
+              >,
               readonly [...DepthAcc, unknown]
             >}`
       : never
@@ -117,7 +132,9 @@ type ResourceConfigEntryPath<
  * `'templates.deleted.expired.errorComponent'`. Sub-resource segments come from the
  * layout tree, so only declared sub-resources are allowed at each depth.
  */
-export type ResourceConfigPath<Resources extends ReadonlyArray<ResourceDefinition>> =
+export type ResourceConfigPath<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> =
   LayoutResourceKey<Resources> extends infer Resource extends string
     ? Resource extends LayoutResourceKey<Resources>
       ?
@@ -137,13 +154,17 @@ export type SubResourceFromGetComponentBound<Bound> = Bound extends {
 export type GetComponentForResourceOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Resource extends LayoutResourceKey<Resources>,
-  SubResource extends SubResourceParamForResource<Resources, Resource> | undefined = undefined,
+  SubResource extends
+    | SubResourceParamForResource<Resources, Resource>
+    | undefined = undefined,
 > = {
   resource: Resource;
 } & SubResourceOptionForGenerics<Resources, Resource, SubResource>;
 
 /** Valid bind shapes for {@link GetComponentForResource}. */
-export type GetComponentForResourceBound<Resources extends ReadonlyArray<ResourceDefinition>> =
+export type GetComponentForResourceBound<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> =
   LayoutResourceKey<Resources> extends infer Resource
     ? Resource extends LayoutResourceKey<Resources>
       ? GetComponentForResourceOptions<Resources, Resource>
@@ -168,7 +189,10 @@ export type ValidateForResourceBound<
   Bound extends { resource: LayoutResourceKey<Resources> },
 > =
   Bound extends GetComponentForResourceOptionsForBound<Resources, Bound>
-    ? keyof Bound extends keyof GetComponentForResourceOptionsForBound<Resources, Bound>
+    ? keyof Bound extends keyof GetComponentForResourceOptionsForBound<
+        Resources,
+        Bound
+      >
       ? Bound
       : never
     : never;
@@ -187,12 +211,19 @@ export type ResourceFromGetComponentBound<
 export type GetComponentAtBound<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Resource extends LayoutResourceKey<Resources>,
-  SubResource extends SubResourceParamForResource<Resources, Resource> | undefined = undefined,
+  SubResource extends
+    | SubResourceParamForResource<Resources, Resource>
+    | undefined = undefined,
 > = (
-  options?: Pick<GetComponentOptionsForResource<Resources, Resource, SubResource>, 'component'>,
+  options?: Pick<
+    GetComponentOptionsForResource<Resources, Resource, SubResource>,
+    'component'
+  >,
 ) => JSX.Element;
 
-export type GetComponentForResource<Resources extends ReadonlyArray<ResourceDefinition>> = <
+export type GetComponentForResource<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> = <
   const Bound extends {
     resource: LayoutResourceKey<Resources>;
   },
@@ -204,11 +235,15 @@ export type GetComponentForResource<Resources extends ReadonlyArray<ResourceDefi
   SubResourceFromGetComponentBound<Bound>
 >;
 
-export interface GetComponent<Resources extends ReadonlyArray<ResourceDefinition>> {
+export interface GetComponent<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> {
   /**
    * Looks up a component by resource / optional sub-resource / optional component slot.
    */
-  <const Options extends GetComponentOptions<Resources>>(options: Options): JSX.Element;
+  <const Options extends GetComponentOptions<Resources>>(
+    options: Options,
+  ): JSX.Element;
   /**
    * Looks up a component by a deep config path.
    * A path ending on a branch (e.g. `'templates.deleted.expired'`) returns that branch's
@@ -257,7 +292,11 @@ export interface CreatedResourceConfig<
   /**
    * Narrows an unknown value to a sub-resource key configured for a path or resource.
    */
-  isSubResourceKey: IsSubResourceKey<Resources, Config, ParameterizedResourcePath<Resources>>;
+  isSubResourceKey: IsSubResourceKey<
+    Resources,
+    Config,
+    ParameterizedResourcePath<Resources>
+  >;
   /**
    * Every sub-resource key configured in this config, at any depth.
    */
@@ -289,7 +328,9 @@ export type ComponentTypes<Created> = Created extends {
   config: infer Config extends object;
 }
   ? {
-      [Resource in keyof Config]: ComponentTypesFromEntry<NonNullable<Config[Resource]>>;
+      [Resource in keyof Config]: ComponentTypesFromEntry<
+        NonNullable<Config[Resource]>
+      >;
     }[keyof Config]
   : never;
 
@@ -297,7 +338,9 @@ export type ComponentTypes<Created> = Created extends {
  * One resource entry keyed for direct spreading into a resource config.
  * Preserves the precise component slots and sub-resource branches in `Config`.
  */
-export type ResourceConfigFragment<Resource extends string, Config> = { [Key in Resource]: Config };
+export type ResourceConfigFragment<Resource extends string, Config> = {
+  [Key in Resource]: Config;
+};
 
 /**
  * Creates one keyed config fragment for spreading into a resource config.
@@ -305,7 +348,9 @@ export type ResourceConfigFragment<Resource extends string, Config> = { [Key in 
  * @param resource - A top-level resource supported by the layout definition.
  * @param config - Components and declared sub-resource branches for that resource.
  */
-export type CreateResourceConfigForResource<Resources extends ReadonlyArray<ResourceDefinition>> = <
+export type CreateResourceConfigForResource<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> = <
   const Resource extends LayoutResourceKey<Resources>,
   const Config extends ResourceConfig<Resources>[Resource],
 >(
@@ -314,7 +359,9 @@ export type CreateResourceConfigForResource<Resources extends ReadonlyArray<Reso
 ) => ResourceConfigFragment<Resource, Config>;
 
 /** Creates a validated resource config and exposes helpers for config fragments. */
-export type CreateResourceConfigFn<Resources extends ReadonlyArray<ResourceDefinition>> = {
+export type CreateResourceConfigFn<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> = {
   /**
    * Validates and indexes a complete configuration assembled from one or more
    * resource entries.
@@ -391,7 +438,9 @@ function readResourceConfigComponent(
   return value;
 }
 
-function getComponentFromOptions<Resources extends ReadonlyArray<ResourceDefinition>>(
+function getComponentFromOptions<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+>(
   config: ResourceConfigMap<Resources>,
   options: GetComponentOptions<Resources>,
 ): JSX.Element {
@@ -414,10 +463,9 @@ function getComponentFromOptions<Resources extends ReadonlyArray<ResourceDefinit
   return readResourceConfigComponent(entry, componentKey);
 }
 
-function getComponentFromPath<Resources extends ReadonlyArray<ResourceDefinition>>(
-  config: ResourceConfigMap<Resources>,
-  path: string,
-): JSX.Element {
+function getComponentFromPath<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+>(config: ResourceConfigMap<Resources>, path: string): JSX.Element {
   let cursor: unknown = config;
 
   for (const segment of path.split('.')) {
@@ -447,9 +495,9 @@ function getComponentFromPath<Resources extends ReadonlyArray<ResourceDefinition
   return cursor as JSX.Element;
 }
 
-export function createGetComponent<Resources extends ReadonlyArray<ResourceDefinition>>(
-  config: ResourceConfigMap<Resources>,
-): GetComponent<Resources> {
+export function createGetComponent<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+>(config: ResourceConfigMap<Resources>): GetComponent<Resources> {
   function getComponent(options: GetComponentOptions<Resources>): JSX.Element;
   function getComponent(path: ResourceConfigPath<Resources>): JSX.Element;
   function getComponent(
@@ -478,7 +526,9 @@ export function createGetComponent<Resources extends ReadonlyArray<ResourceDefin
 function createResourceConfigImpl<
   Resources extends ReadonlyArray<ResourceDefinition>,
   const Config extends ResourceConfigMap<Resources>,
->(config: ResourceConfigInput<Resources, Config>): CreatedResourceConfig<Resources, Config> {
+>(
+  config: ResourceConfigInput<Resources, Config>,
+): CreatedResourceConfig<Resources, Config> {
   const configRecord = config as Record<string, unknown>;
 
   if (collectConfigResources(configRecord).length === 0) {
@@ -494,12 +544,17 @@ function createResourceConfigImpl<
     config,
     getComponent: createGetComponent(config),
     createGetComponent: ((path: string) =>
-      createGetComponentForPath(configRecord, path)) as unknown as Created['createGetComponent'],
+      createGetComponentForPath(
+        configRecord,
+        path,
+      )) as unknown as Created['createGetComponent'],
     forPaths: createForPaths(configRecord) as unknown as Created['forPaths'],
     isSubResourceKey: createIsSubResourceKey(
       configRecord,
     ) as unknown as Created['isSubResourceKey'],
-    subResources: collectAllSubResourceKeys(configRecord) as unknown as Created['subResources'],
+    subResources: collectAllSubResourceKeys(
+      configRecord,
+    ) as unknown as Created['subResources'],
   };
 }
 
@@ -507,7 +562,10 @@ function createResourceConfigForResource<
   Resources extends ReadonlyArray<ResourceDefinition>,
   const Resource extends LayoutResourceKey<Resources>,
   const Config extends ResourceConfig<Resources>[Resource],
->(resource: Resource, config: Config): ResourceConfigFragment<Resource, Config> {
+>(
+  resource: Resource,
+  config: Config,
+): ResourceConfigFragment<Resource, Config> {
   return {
     [resource]: config,
   } as ResourceConfigFragment<Resource, Config>;

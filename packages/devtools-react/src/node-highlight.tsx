@@ -8,7 +8,10 @@ interface Box extends ElementBounds {
 }
 
 /** Follow owned descendants, never unrelated nodes linked as references. */
-export function highlightNodeIds(graph: GraphSnapshot, id: string): Set<string> {
+export function highlightNodeIds(
+  graph: GraphSnapshot,
+  id: string,
+): Set<string> {
   const outgoing = new Map<string, string[]>();
   for (const edge of graph.edges) {
     if (edge.relationship === 'references') {
@@ -60,7 +63,10 @@ export function NodeHighlight({
         frame = requestAnimationFrame(scan);
       }
     };
-    const resize = typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(schedule);
+    const resize =
+      typeof ResizeObserver === 'undefined'
+        ? undefined
+        : new ResizeObserver(schedule);
     function scan() {
       frame = undefined;
       const exact: Element[] = [];
@@ -70,22 +76,33 @@ export function NodeHighlight({
         .forEach((element) => {
           let owners: string[] = [];
           try {
-            const parsed: unknown = JSON.parse(element.dataset.rlOwners ?? '[]');
+            const parsed: unknown = JSON.parse(
+              element.dataset.rlOwners ?? '[]',
+            );
             if (Array.isArray(parsed)) {
-              owners = parsed.filter((owner): owner is string => typeof owner === 'string');
+              owners = parsed.filter(
+                (owner): owner is string => typeof owner === 'string',
+              );
             }
           } catch {}
           const node = element.dataset.rlNode;
           if (node === id || owners.includes(id!)) {
             exact.push(element);
-          } else if ((node && ids.has(node)) || owners.some((owner) => ids.has(owner))) {
+          } else if (
+            (node && ids.has(node)) ||
+            owners.some((owner) => ids.has(owner))
+          ) {
             descendants.push(element);
           }
         });
       const matches = exact.length ? exact : descendants;
       const matched = new Set(matches);
       const roots = matches.filter((element) => {
-        for (let parent = element.parentElement; parent; parent = parent.parentElement) {
+        for (
+          let parent = element.parentElement;
+          parent;
+          parent = parent.parentElement
+        ) {
           if (matched.has(parent)) {
             return false;
           }
@@ -152,7 +169,9 @@ export function NodeHighlight({
           (record) =>
             !(
               record.target instanceof Element &&
-              record.target.closest('[data-rl-highlight-layer], [data-rl-outline-layer]')
+              record.target.closest(
+                '[data-rl-highlight-layer], [data-rl-outline-layer]',
+              )
             ),
         )
       ) {
@@ -163,7 +182,13 @@ export function NodeHighlight({
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['data-rl-node', 'data-rl-owners', 'class', 'style', 'hidden'],
+      attributeFilter: [
+        'data-rl-node',
+        'data-rl-owners',
+        'class',
+        'style',
+        'hidden',
+      ],
     });
     window.addEventListener('scroll', schedule, true);
     window.addEventListener('resize', schedule);

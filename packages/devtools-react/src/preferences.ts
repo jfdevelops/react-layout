@@ -35,7 +35,8 @@ type Preferences = DevtoolsPreferences & {
 
 const adapterKeys = ['fabPosition', 'panel', 'variant', 'toolbar'] as const;
 
-type PreferencesPatch = DevtoolsConfig & Pick<Preferences, (typeof adapterKeys)[number]>;
+type PreferencesPatch = DevtoolsConfig &
+  Pick<Preferences, (typeof adapterKeys)[number]>;
 
 function read(key: string): string | null {
   try {
@@ -66,7 +67,10 @@ function write(key: string, value: Preferences) {
   window.dispatchEvent(new Event(changeEvent));
 }
 
-function resolve(raw: string | null, defaults?: ReactLayoutDevtoolsConfig): Preferences {
+function resolve(
+  raw: string | null,
+  defaults?: ReactLayoutDevtoolsConfig,
+): Preferences {
   const shared: Preferences = parseDevtoolsPreferences(raw, defaults);
 
   try {
@@ -79,7 +83,11 @@ function resolve(raw: string | null, defaults?: ReactLayoutDevtoolsConfig): Pref
       shared.variant = saved.variant;
     }
 
-    if (typeof toolbarHeight === 'number' && Number.isFinite(toolbarHeight) && toolbarHeight > 0) {
+    if (
+      typeof toolbarHeight === 'number' &&
+      Number.isFinite(toolbarHeight) &&
+      toolbarHeight > 0
+    ) {
       shared.toolbar = {
         height: toolbarHeight,
       };
@@ -126,7 +134,10 @@ function resolve(raw: string | null, defaults?: ReactLayoutDevtoolsConfig): Pref
 }
 
 /** Storage is authoritative; all inspectors in this origin update together. */
-export function usePanelPreferences(defaults?: ReactLayoutDevtoolsConfig, key = defaultStorageKey) {
+export function usePanelPreferences(
+  defaults?: ReactLayoutDevtoolsConfig,
+  key = defaultStorageKey,
+) {
   const raw = useSyncExternalStore(
     useMemo(
       () => (listener: () => void) => {
@@ -164,7 +175,10 @@ export function usePanelPreferences(defaults?: ReactLayoutDevtoolsConfig, key = 
   function update(patch: PreferencesPatch) {
     const current = resolve(read(key), defaults);
     const adapter = Object.fromEntries(
-      adapterKeys.map((name) => [name, name in patch ? patch[name] : current[name]]),
+      adapterKeys.map((name) => [
+        name,
+        name in patch ? patch[name] : current[name],
+      ]),
     );
 
     write(key, {

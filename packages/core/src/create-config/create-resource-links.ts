@@ -6,15 +6,22 @@ import {
   type ResourceDefinition,
 } from '../resource';
 import { LayoutConfigurationError } from '../errors';
-import type { LayoutRenderResourcesAccessor, ResourceSelection } from './define-layout';
+import type {
+  LayoutRenderResourcesAccessor,
+  ResourceSelection,
+} from './define-layout';
 
-export type ResourceAnchorLinkFn<Resource extends string> = (resource: Resource) => string;
+export type ResourceAnchorLinkFn<Resource extends string> = (
+  resource: Resource,
+) => string;
 
-export type ResourceLinkHref<Resource extends string> = string | ResourceAnchorLinkFn<Resource>;
+export type ResourceLinkHref<Resource extends string> =
+  | string
+  | ResourceAnchorLinkFn<Resource>;
 
-export type ResourceLinkConfigResource<Resources extends ReadonlyArray<ResourceDefinition>> =
-  | LayoutResourceKey<Resources>
-  | (string & {});
+export type ResourceLinkConfigResource<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> = LayoutResourceKey<Resources> | (string & {});
 
 export type ResourceIconFn<Resource = any> = (resource: Resource) => ReactNode;
 
@@ -37,16 +44,26 @@ export type ResolveResourceIconInput<Definition> =
     : Definition extends ResourceIconInputMarker<infer Value>
       ? Value
       : Definition extends ReadonlyArray<unknown>
-        ? { [Index in keyof Definition]: ResolveResourceIconInput<Definition[Index]> }
+        ? {
+            [Index in keyof Definition]: ResolveResourceIconInput<
+              Definition[Index]
+            >;
+          }
         : Definition extends object
-          ? { [Key in keyof Definition]: ResolveResourceIconInput<Definition[Key]> }
+          ? {
+              [Key in keyof Definition]: ResolveResourceIconInput<
+                Definition[Key]
+              >;
+            }
           : Definition;
 
 export interface DefineResourceIconInputHelpers<
   Resources extends ReadonlyArray<ResourceDefinition>,
 > {
   resource(): ResourceIconInputMarker<LayoutResourceKey<Resources>>;
-  icon<Icon extends ElementType = ElementType>(): ResourceIconComponentInputMarker<Icon>;
+  icon<
+    Icon extends ElementType = ElementType,
+  >(): ResourceIconComponentInputMarker<Icon>;
 }
 
 export interface DefineResourceIconInputResult<
@@ -64,7 +81,9 @@ export interface DefineResourceIconInputResult<
   ) => ResourceIconFn<LayoutRenderResourcesAccessor<Resources>>;
 }
 
-export interface DefineResourceIconFn<Resources extends ReadonlyArray<ResourceDefinition>> {
+export interface DefineResourceIconFn<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> {
   <Icon extends ElementType = ElementType>(
     render: (options: {
       children?: ReactNode;
@@ -73,7 +92,9 @@ export interface DefineResourceIconFn<Resources extends ReadonlyArray<ResourceDe
     }) => ReactNode,
   ): (Icon: Icon) => ResourceIconFn<LayoutRenderResourcesAccessor<Resources>>;
   input<Definition>(
-    defineInput: (helpers: DefineResourceIconInputHelpers<Resources>) => Definition,
+    defineInput: (
+      helpers: DefineResourceIconInputHelpers<Resources>,
+    ) => Definition,
   ): DefineResourceIconInputResult<Resources, Definition>;
 }
 export interface CreateResourceLinkOptions<
@@ -110,7 +131,8 @@ export interface CreateResourceLinkOptions<
 
 export type CreateResourceLinkConfig<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  Resource extends ResourceLinkConfigResource<Resources> = ResourceLinkConfigResource<Resources>,
+  Resource extends ResourceLinkConfigResource<Resources> =
+    ResourceLinkConfigResource<Resources>,
   Icon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
 > = {
   [Key in Resource]?: CreateResourceLinkOptions<Resources, Key, Icon>;
@@ -136,7 +158,10 @@ export type CreatedResourceHref = {
   given: string;
 };
 
-export type CreatedResourceLinkBase<Resource extends string, Icon = ResourceIcon> = {
+export type CreatedResourceLinkBase<
+  Resource extends string,
+  Icon = ResourceIcon,
+> = {
   activeIcon?: ReactNode;
   href: CreatedResourceHref;
   label: string;
@@ -158,7 +183,9 @@ export type CreatedResourceLink<
   Config,
   Icon = ResourceIcon,
 > = {
-  [Resource in keyof Config]-?: Resource extends ResourceLinkConfigResource<Resources>
+  [
+    Resource in keyof Config
+  ]-?: Resource extends ResourceLinkConfigResource<Resources>
     ? Config[Resource] extends {
         hash: infer hash extends ResourceLinkHref<Resource>;
       }
@@ -168,17 +195,26 @@ export type CreatedResourceLink<
 }[keyof Config];
 
 type ResourceLinkConfigIcon<Config> = {
-  [Resource in keyof Config]-?: 'icon' extends keyof NonNullable<Config[Resource]>
+  [Resource in keyof Config]-?: 'icon' extends keyof NonNullable<
+    Config[Resource]
+  >
     ? NonNullable<Config[Resource]> extends { icon?: infer Icon }
       ? Icon
       : never
     : never;
 }[keyof Config];
 
-export interface CreateResourceLinksFn<Resources extends ReadonlyArray<ResourceDefinition>> {
-  <const Resource extends ResourceLinkConfigResource<Resources>, const Config extends object>(
+export interface CreateResourceLinksFn<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> {
+  <
+    const Resource extends ResourceLinkConfigResource<Resources>,
+    const Config extends object,
+  >(
     config: CreateResourceLinkConfig<Resources, Resource> & Config,
-  ): Array<CreatedResourceLink<Resources, Config, ResourceLinkConfigIcon<Config>>>;
+  ): Array<
+    CreatedResourceLink<Resources, Config, ResourceLinkConfigIcon<Config>>
+  >;
   createResourceMap: CreateResourceMapFn<Resources>;
   defineIcon: DefineResourceIconFn<Resources>;
   withGroups: CreateResourceLinksWithGroupsFn<Resources>;
@@ -219,7 +255,8 @@ export interface CreateResourceLinkGroupOptions<
 
 export type CreateResourceLinkGroupInput<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  Resource extends ResourceLinkConfigResource<Resources> = ResourceLinkConfigResource<Resources>,
+  Resource extends ResourceLinkConfigResource<Resources> =
+    ResourceLinkConfigResource<Resources>,
   Icon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
 > = CreateResourceLinkGroupOptions<
   Resources,
@@ -271,13 +308,18 @@ export type CreateResourceLinksWithGroups<
   links: Array<AnyCreatedResourceLink<Resources, LinkIcon>>;
 };
 
-type ResolveResourceIcon<Icon> = Icon extends (...args: any[]) => infer Result ? Result : Icon;
+type ResolveResourceIcon<Icon> = Icon extends (...args: any[]) => infer Result
+  ? Result
+  : Icon;
 
 export type ResolvedResourceLinksWithGroups<
   Resources extends ReadonlyArray<ResourceDefinition>,
   GroupIcon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
   LinkIcon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
-> = Omit<CreateResourceLinksWithGroups<Resources, GroupIcon, LinkIcon>, 'icon' | 'links'> & {
+> = Omit<
+  CreateResourceLinksWithGroups<Resources, GroupIcon, LinkIcon>,
+  'icon' | 'links'
+> & {
   icon: ResolveResourceIcon<GroupIcon> | null;
   links: Array<
     Omit<AnyCreatedResourceLink<Resources, LinkIcon>, 'icon'> & {
@@ -286,9 +328,10 @@ export type ResolvedResourceLinksWithGroups<
   >;
 };
 
-export type CreateResourceMap<Resources extends ReadonlyArray<ResourceDefinition>, Value> = Partial<
-  Record<LayoutResourceKey<Resources>, Value>
->;
+export type CreateResourceMap<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Value,
+> = Partial<Record<LayoutResourceKey<Resources>, Value>>;
 
 export type ValidateResource<Resource extends string, Map extends object> =
   Resource extends Extract<keyof Map, string> ? Resource : never;
@@ -300,14 +343,18 @@ export type CreatedResourceMap<Map extends object> = Map & {
   ): Map[typeof resource];
 };
 
-export interface CreateResourceMapFn<Resources extends ReadonlyArray<ResourceDefinition>> {
+export interface CreateResourceMapFn<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+> {
   /**
    * Creates a resource map for this layout.
    *
    * @param map Values keyed by this layout's resources. An unknown resource,
    * or a key that collides with a map helper, is rejected.
    */
-  <const Map extends CreateResourceMap<Resources, unknown>>(map: Map): CreatedResourceMap<Map>;
+  <const Map extends CreateResourceMap<Resources, unknown>>(
+    map: Map,
+  ): CreatedResourceMap<Map>;
 }
 
 export interface CreateResourceLinksWithGroupsFn<
@@ -323,7 +370,10 @@ export interface CreateResourceLinksWithGroupsFn<
     const Resource extends ResourceLinkConfigResource<Resources>,
     const Groups extends ReadonlyArray<unknown>,
   >(
-    groups: NonEmptyReadonlyArray<CreateResourceLinkGroupInput<Resources, Resource>> & Groups,
+    groups: NonEmptyReadonlyArray<
+      CreateResourceLinkGroupInput<Resources, Resource>
+    > &
+      Groups,
   ): CreateResourceLinksWithGroupsResult<
     Resources,
     ResourceLinkGroupResource<Groups>,
@@ -334,7 +384,8 @@ export interface CreateResourceLinksWithGroupsFn<
 
 export type CreateResourceLinksWithGroupsResult<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  Resource extends ResourceLinkConfigResource<Resources> = ResourceLinkConfigResource<Resources>,
+  Resource extends ResourceLinkConfigResource<Resources> =
+    ResourceLinkConfigResource<Resources>,
   GroupIcon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
   LinkIcon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
 > = Array<CreateResourceLinksWithGroups<Resources, GroupIcon, LinkIcon>> & {
@@ -348,7 +399,12 @@ export type CreateResourceLinksWithGroupsResult<
    */
   <TargetResource extends LayoutResourceKey<Resources>>(
     resource: TargetResource,
-  ): ResolvedResourceLinksWithGroupsResult<Resources, TargetResource, GroupIcon, LinkIcon>;
+  ): ResolvedResourceLinksWithGroupsResult<
+    Resources,
+    TargetResource,
+    GroupIcon,
+    LinkIcon
+  >;
   /**
    * Creates a resource map for this layout. Same helper as
    * `createResourceLinks.createResourceMap`.
@@ -365,23 +421,40 @@ export type CreateResourceLinksWithGroupsResult<
    *
    * @param resource The resource whose group should be returned.
    */
-  findResource<const RequestedResource extends LayoutResourceKey<Resources> | Resource>(
+  findResource<
+    const RequestedResource extends LayoutResourceKey<Resources> | Resource,
+  >(
     resource: RequestedResource,
-  ): FindResourceGroupResult<Resources, Resource, RequestedResource, GroupIcon, LinkIcon>;
+  ): FindResourceGroupResult<
+    Resources,
+    Resource,
+    RequestedResource,
+    GroupIcon,
+    LinkIcon
+  >;
 };
 
 export type ResolvedResourceLinksWithGroupsResult<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  Resource extends ResourceLinkConfigResource<Resources> = ResourceLinkConfigResource<Resources>,
+  Resource extends ResourceLinkConfigResource<Resources> =
+    ResourceLinkConfigResource<Resources>,
   GroupIcon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
   LinkIcon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
 > = Array<ResolvedResourceLinksWithGroups<Resources, GroupIcon, LinkIcon>> & {
   /**
    * Returns the resolved group whose links include `resource`.
    */
-  findResource<const RequestedResource extends LayoutResourceKey<Resources> | Resource>(
+  findResource<
+    const RequestedResource extends LayoutResourceKey<Resources> | Resource,
+  >(
     resource: RequestedResource,
-  ): FindResolvedResourceGroupResult<Resources, Resource, RequestedResource, GroupIcon, LinkIcon>;
+  ): FindResolvedResourceGroupResult<
+    Resources,
+    Resource,
+    RequestedResource,
+    GroupIcon,
+    LinkIcon
+  >;
 };
 
 export type FindResourceGroupResult<
@@ -486,7 +559,11 @@ function createResourceLinksFromConfig<
     }
 
     const givenHref = resolveResourceLinkHref(linkConfig.href, resource, '/');
-    const givenHash = resolveResourceLinkHref(linkConfig.hash, resource, resource);
+    const givenHash = resolveResourceLinkHref(
+      linkConfig.hash,
+      resource,
+      resource,
+    );
     const href = {
       given: givenHref,
       full: createFullResourceLinkHref(givenHref, givenHash),
@@ -547,17 +624,18 @@ function readResourceValue(resource: ResourceDefinition) {
 function createResourceSelection(
   definitions: ReadonlyArray<ResourceDefinition>,
 ): ResourceSelection<ReadonlyArray<ResourceDefinition>> {
-  const selection = (() => definitions) as ResourceSelection<ReadonlyArray<ResourceDefinition>>;
+  const selection = (() => definitions) as ResourceSelection<
+    ReadonlyArray<ResourceDefinition>
+  >;
 
   selection.isResource = createIsValidResourceFn(definitions);
 
   return selection;
 }
 
-function createRenderResourcesAccessor<Resources extends ReadonlyArray<ResourceDefinition>>(
-  resources: Resources,
-  current: LayoutResourceKey<Resources>,
-) {
+function createRenderResourcesAccessor<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+>(resources: Resources, current: LayoutResourceKey<Resources>) {
   const accessor = Object.assign(() => resources, {
     current,
   }) as LayoutRenderResourcesAccessor<Resources>;
@@ -565,27 +643,33 @@ function createRenderResourcesAccessor<Resources extends ReadonlyArray<ResourceD
   accessor.isResource = createIsValidResourceFn(resources);
   accessor.omit = ((...keys: string[]) =>
     createResourceSelection(
-      resources.filter((resource) => !keys.includes(readResourceValue(resource))),
+      resources.filter(
+        (resource) => !keys.includes(readResourceValue(resource)),
+      ),
     )) as LayoutRenderResourcesAccessor<Resources>['omit'];
   accessor.pick = ((...keys: string[]) =>
     createResourceSelection(
-      resources.filter((resource) => keys.includes(readResourceValue(resource))),
+      resources.filter((resource) =>
+        keys.includes(readResourceValue(resource)),
+      ),
     )) as LayoutRenderResourcesAccessor<Resources>['pick'];
 
   return accessor;
 }
 
-function createResourceMapFn<Resources extends ReadonlyArray<ResourceDefinition>>(
-  resources: Resources,
-): CreateResourceMapFn<Resources> {
+function createResourceMapFn<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+>(resources: Resources): CreateResourceMapFn<Resources> {
   const helperNames = new Set(['get', 'isValidResource']);
   const resourceKeys = new Set(
-    resources.map((resource) => (typeof resource === 'string' ? resource : resource.value)),
+    resources.map((resource) =>
+      typeof resource === 'string' ? resource : resource.value,
+    ),
   );
 
-  return function createResourceMap<const Map extends CreateResourceMap<Resources, unknown>>(
-    map: Map,
-  ) {
+  return function createResourceMap<
+    const Map extends CreateResourceMap<Resources, unknown>,
+  >(map: Map) {
     const configuredResources = Object.keys(map);
 
     for (const resource of configuredResources) {
@@ -604,7 +688,10 @@ function createResourceMapFn<Resources extends ReadonlyArray<ResourceDefinition>
 
     const configuredResourceKeys = new Set(configuredResources);
     const resourceValues = new Map(
-      configuredResources.map((resource) => [resource, (map as Record<string, unknown>)[resource]]),
+      configuredResources.map((resource) => [
+        resource,
+        (map as Record<string, unknown>)[resource],
+      ]),
     );
 
     Object.defineProperties(map, {
@@ -631,7 +718,8 @@ function createResourceLinksWithGroups<
 >(
   resources: Resources,
   createResourceMap: CreateResourceMapFn<Resources>,
-  groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources, Resource>> & Groups,
+  groups: ReadonlyArray<CreateResourceLinkGroupInput<Resources, Resource>> &
+    Groups,
 ): CreateResourceLinksWithGroupsResult<
   Resources,
   ResourceLinkGroupResource<Groups>,
@@ -663,13 +751,21 @@ function createResourceLinksWithGroups<
       );
     }
 
-    if ('label' in group && group.label !== undefined && typeof group.label !== 'string') {
+    if (
+      'label' in group &&
+      group.label !== undefined &&
+      typeof group.label !== 'string'
+    ) {
       throw new LayoutConfigurationError(
         `[createResourceLinks.withGroups]: "label" must be a string for group at index ${index}. Received ${typeof group.label}`,
       );
     }
 
-    if ('id' in group && group.id !== undefined && typeof group.id !== 'string') {
+    if (
+      'id' in group &&
+      group.id !== undefined &&
+      typeof group.id !== 'string'
+    ) {
       throw new LayoutConfigurationError(
         `[createResourceLinks.withGroups]: "id" must be a string for group at index ${index}. Received ${typeof group.id}`,
       );
@@ -681,7 +777,11 @@ function createResourceLinksWithGroups<
       );
     }
 
-    if (typeof group.links !== 'object' || group.links === null || Array.isArray(group.links)) {
+    if (
+      typeof group.links !== 'object' ||
+      group.links === null ||
+      Array.isArray(group.links)
+    ) {
       throw new LayoutConfigurationError(
         `[createResourceLinks.withGroups]: "links" must be an object for group at index ${index}. Received ${Array.isArray(group.links) ? 'array' : typeof group.links}`,
       );
@@ -711,10 +811,16 @@ function createResourceLinksWithGroups<
 
     const resolvedGroups = createdGroups.map((group) => ({
       ...group,
-      icon: typeof group.icon === 'function' ? group.icon(currentResources) : group.icon,
+      icon:
+        typeof group.icon === 'function'
+          ? group.icon(currentResources)
+          : group.icon,
       links: group.links.map((link) => ({
         ...link,
-        icon: typeof link.icon === 'function' ? link.icon(currentResources) : link.icon,
+        icon:
+          typeof link.icon === 'function'
+            ? link.icon(currentResources)
+            : link.icon,
       })),
     }));
 
@@ -766,7 +872,12 @@ function createResourceLinksWithGroups<
       return Array.prototype;
     },
     ownKeys(target) {
-      return [...new Set([...Reflect.ownKeys(target), ...Reflect.ownKeys(createdGroups)])];
+      return [
+        ...new Set([
+          ...Reflect.ownKeys(target),
+          ...Reflect.ownKeys(createdGroups),
+        ]),
+      ];
     },
     set(target, property, value, receiver) {
       if (property in createdGroups || /^\d+$/.test(String(property))) {
@@ -778,7 +889,9 @@ function createResourceLinksWithGroups<
   });
   Object.defineProperty(createdGroups, 'findResource', {
     value(resource: ResourceLinkConfigResource<Resources>) {
-      return createdGroups.find((group) => group.links.some((link) => link.resource === resource));
+      return createdGroups.find((group) =>
+        group.links.some((link) => link.resource === resource),
+      );
     },
   });
 
@@ -801,7 +914,9 @@ function createDefineIcon<
     }) => ReactNode,
   ) {
     return function createIcon(Icon: Icon) {
-      return function renderIcon(resource: LayoutRenderResourcesAccessor<Resources>) {
+      return function renderIcon(
+        resource: LayoutRenderResourcesAccessor<Resources>,
+      ) {
         return render({
           resource,
           Icon,
@@ -811,7 +926,9 @@ function createDefineIcon<
   }
 
   defineIcon.input = function defineIconInput<Definition>(
-    defineInput: (helpers: DefineResourceIconInputHelpers<Resources>) => Definition,
+    defineInput: (
+      helpers: DefineResourceIconInputHelpers<Resources>,
+    ) => Definition,
   ): DefineResourceIconInputResult<Resources, Definition> {
     const resourceMarker = {} as ResourceIconInputMarker<never>;
     const componentMarker = {} as ResourceIconComponentInputMarker<ElementType>;
@@ -833,8 +950,12 @@ function createDefineIcon<
           input: ResolveResourceIconInput<Definition>;
         }) => ReactNode,
       ) {
-        return function createIcon(input: ResolveResourceIconInput<Definition>) {
-          return function renderIcon(resource: LayoutRenderResourcesAccessor<Resources>) {
+        return function createIcon(
+          input: ResolveResourceIconInput<Definition>,
+        ) {
+          return function renderIcon(
+            resource: LayoutRenderResourcesAccessor<Resources>,
+          ) {
             return render({
               resource,
               input,
@@ -848,9 +969,9 @@ function createDefineIcon<
   return defineIcon;
 }
 
-export function createResourceLinksFn<const Resources extends ReadonlyArray<ResourceDefinition>>(
-  _resources: Resources,
-): CreateResourceLinksFn<Resources> {
+export function createResourceLinksFn<
+  const Resources extends ReadonlyArray<ResourceDefinition>,
+>(_resources: Resources): CreateResourceLinksFn<Resources> {
   const createResourceMap = createResourceMapFn(_resources);
   const defineIcon = createDefineIcon<Resources>();
 
@@ -864,7 +985,12 @@ export function createResourceLinksFn<const Resources extends ReadonlyArray<Reso
   function withGroups<
     const Resource extends ResourceLinkConfigResource<Resources>,
     const Groups extends ReadonlyArray<unknown>,
-  >(groups: NonEmptyReadonlyArray<CreateResourceLinkGroupInput<Resources, Resource>> & Groups) {
+  >(
+    groups: NonEmptyReadonlyArray<
+      CreateResourceLinkGroupInput<Resources, Resource>
+    > &
+      Groups,
+  ) {
     return createResourceLinksWithGroups(_resources, createResourceMap, groups);
   }
 

@@ -24,7 +24,8 @@ function defineAdminLayout(onSidebarMount?: () => void) {
     shell: {
       composables: (create) => ({
         Layout: create({
-          name: ({ capitalize, resource }) => (resource ? `${capitalize(resource)}Shell` : 'Shell'),
+          name: ({ capitalize, resource }) =>
+            resource ? `${capitalize(resource)}Shell` : 'Shell',
         }),
       }),
       props: {
@@ -109,18 +110,26 @@ describe('defineResourceLayout.withLayout', () => {
           <button type='button' onClick={() => setResource('posts')}>
             go
           </button>
-          {resource === 'users' ? <UsersPage>u</UsersPage> : <PostsPage>p</PostsPage>}
+          {resource === 'users' ? (
+            <UsersPage>u</UsersPage>
+          ) : (
+            <PostsPage>p</PostsPage>
+          )}
         </Shell>
       );
     }
 
     render(<App />);
-    const sidebarBefore = screen.getByText('sidebar').getAttribute('data-mounted-at');
+    const sidebarBefore = screen
+      .getByText('sidebar')
+      .getAttribute('data-mounted-at');
 
     fireEvent.click(screen.getByText('go'));
 
     // Same DOM node, same mount timestamp -> reconciled in place, not remounted.
-    expect(screen.getByText('sidebar').getAttribute('data-mounted-at')).toBe(sidebarBefore);
+    expect(screen.getByText('sidebar').getAttribute('data-mounted-at')).toBe(
+      sidebarBefore,
+    );
     expect(onSidebarMount).toHaveBeenCalledTimes(1);
     expect(screen.getByTestId('current')).toHaveTextContent('posts');
   });
@@ -174,17 +183,25 @@ describe('defineResourceLayout.withLayout', () => {
           <button type='button' onClick={() => setResource('posts')}>
             go
           </button>
-          {resource === 'users' ? <UsersPage>u</UsersPage> : <PostsPage>p</PostsPage>}
+          {resource === 'users' ? (
+            <UsersPage>u</UsersPage>
+          ) : (
+            <PostsPage>p</PostsPage>
+          )}
         </Shell>
       );
     }
 
     render(<App />);
-    const chromeBefore = screen.getByTestId('chrome').getAttribute('data-mounted-at');
+    const chromeBefore = screen
+      .getByTestId('chrome')
+      .getAttribute('data-mounted-at');
 
     fireEvent.click(screen.getByText('go'));
 
-    expect(screen.getByTestId('chrome').getAttribute('data-mounted-at')).toBe(chromeBefore);
+    expect(screen.getByTestId('chrome').getAttribute('data-mounted-at')).toBe(
+      chromeBefore,
+    );
     expect(onChromeMount).toHaveBeenCalledTimes(1);
     expect(screen.getByText('p')).toBeInTheDocument();
   });
@@ -305,7 +322,9 @@ describe('defineResourceLayout.withLayout', () => {
     const { createResourceLayout, Shell } = defineResourceLayout.withLayout({
       resources: ['users'],
       shell: {
-        render: (_props, { children }) => <div data-testid='shell'>{children}</div>,
+        render: (_props, { children }) => (
+          <div data-testid='shell'>{children}</div>
+        ),
       },
     });
     const UsersPage = createResourceLayout.forResource({

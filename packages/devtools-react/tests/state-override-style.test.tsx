@@ -75,7 +75,11 @@ it('moves the active style to the forced state override', async () => {
 
   expect(active()).toEqual(['Loading']);
 
-  expect(overrides().filter((button) => button.getAttribute('aria-pressed') === 'true')).toEqual([
+  expect(
+    overrides().filter(
+      (button) => button.getAttribute('aria-pressed') === 'true',
+    ),
+  ).toEqual([
     screen.getByRole('button', {
       name: 'Loading',
     }),

@@ -7,7 +7,9 @@
       "@jfdevelops/react-layout-internals": ["../internals/src/index.ts"],
       "@jfdevelops/react-layout-validator": ["../validators/src/index.ts"],
       "@jfdevelops/react-layout-composables": ["../composables/src/index.ts"],
-      "@jfdevelops/react-layout-devtools-core": ["../devtools-core/src/index.ts"]
+      "@jfdevelops/react-layout-devtools-core": [
+        "../devtools-core/src/index.ts"
+      ]
     }
   },
   "include": ["src", "tests", "vite.config.ts", "vitest.setup.ts"]

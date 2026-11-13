@@ -1,6 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { createComposableComponent, defineComposableComponent, makeComposable } from '../src';
+import {
+  createComposableComponent,
+  defineComposableComponent,
+  makeComposable,
+} from '../src';
 import { z } from 'zod';
 
 describe('composable helpers', () => {

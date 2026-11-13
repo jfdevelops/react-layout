@@ -1,5 +1,11 @@
 import { RenderStateFallback } from '../create-config/render-state-context';
-import { Component, Suspense, useEffect, useReducer, type ReactNode } from 'react';
+import {
+  Component,
+  Suspense,
+  useEffect,
+  useReducer,
+  type ReactNode,
+} from 'react';
 import { isLazyResourceError } from '../errors/lazy-resource-error';
 import type { LazyResourceErrorComponent } from './types';
 import type { LazyLoader } from './create-lazy-loader';
@@ -11,7 +17,10 @@ type BoundaryProps = {
   onRetry: () => void;
 };
 
-class LazyErrorBoundary extends Component<BoundaryProps, { failed: boolean; error?: unknown }> {
+class LazyErrorBoundary extends Component<
+  BoundaryProps,
+  { failed: boolean; error?: unknown }
+> {
   state = {
     failed: false,
     error: undefined as unknown,
@@ -40,7 +49,11 @@ class LazyErrorBoundary extends Component<BoundaryProps, { failed: boolean; erro
 
     return (
       <RenderStateFallback state='Error'>
-        <ErrorComponent error={this.state.error} retry={this.retry} resource={resource} />
+        <ErrorComponent
+          error={this.state.error}
+          retry={this.retry}
+          resource={resource}
+        />
       </RenderStateFallback>
     );
   }
@@ -79,7 +92,11 @@ export function LazyBoundary({
         rerender();
       }}
     >
-      <Suspense fallback={<RenderStateFallback state='Loading'>{fallback}</RenderStateFallback>}>
+      <Suspense
+        fallback={
+          <RenderStateFallback state='Loading'>{fallback}</RenderStateFallback>
+        }
+      >
         <Current {...componentProps} />
       </Suspense>
     </LazyErrorBoundary>

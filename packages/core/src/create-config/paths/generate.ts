@@ -16,8 +16,10 @@ import {
 export const MAX_PATH_DEPTH = 6;
 
 const RESOURCE_VARIABLE: ResourcePathVariable = createPathVariable('resource');
-const SUB_RESOURCE_VARIABLE: SubResourcePathVariable = createPathVariable('subResource');
-const COMPONENT_VARIABLE: ComponentPathVariable = createPathVariable('component');
+const SUB_RESOURCE_VARIABLE: SubResourcePathVariable =
+  createPathVariable('subResource');
+const COMPONENT_VARIABLE: ComponentPathVariable =
+  createPathVariable('component');
 
 /** Component tails on one node: its slots, its shared branches, and `$component`. */
 function collectComponentTails(node: Record<string, unknown>): string[] {
@@ -60,7 +62,10 @@ function collectComponentTails(node: Record<string, unknown>): string[] {
  * Component tails valid after a `$subResource` segment: one variable stands for the whole
  * sub-resource chain, so every descendant's tails are reachable.
  */
-function collectDescendantComponentTails(node: Record<string, unknown>, depth: number): string[] {
+function collectDescendantComponentTails(
+  node: Record<string, unknown>,
+  depth: number,
+): string[] {
   if (depth === 0) {
     return [];
   }
@@ -87,7 +92,10 @@ function collectDescendantComponentTails(node: Record<string, unknown>, depth: n
 }
 
 /** Every path tail valid below one config node. */
-function collectEntryPaths(node: Record<string, unknown>, depth: number): string[] {
+function collectEntryPaths(
+  node: Record<string, unknown>,
+  depth: number,
+): string[] {
   if (depth === 0) {
     return [];
   }
@@ -124,7 +132,9 @@ function collectEntryPaths(node: Record<string, unknown>, depth: number): string
  * Paths a config accepts, with resource and sub-resource segments available both as
  * literals and as variables. Runtime twin of `ParameterizedResourcePath`.
  */
-export function generateResourceConfigPaths(config: Record<string, unknown>): string[] {
+export function generateResourceConfigPaths(
+  config: Record<string, unknown>,
+): string[] {
   const paths = new Set<string>();
 
   for (const resource of Object.keys(config)) {

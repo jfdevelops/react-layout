@@ -1,5 +1,8 @@
 /** Check node containers without invoking components or awaiting promises. */
-export function createReactNodeCheck(isValidElement: (value: unknown) => boolean, version: string) {
+export function createReactNodeCheck(
+  isValidElement: (value: unknown) => boolean,
+  version: string,
+) {
   const supportsAsyncNodes = Number.parseInt(version, 10) >= 19;
 
   function checkReactNode(value: unknown, ancestors: Set<object>): boolean {
@@ -23,7 +26,11 @@ export function createReactNodeCheck(isValidElement: (value: unknown) => boolean
     if ('$$typeof' in value && value.$$typeof === Symbol.for('react.portal')) {
       return true;
     }
-    if (supportsAsyncNodes && 'then' in value && typeof value.then === 'function') {
+    if (
+      supportsAsyncNodes &&
+      'then' in value &&
+      typeof value.then === 'function'
+    ) {
       return true;
     }
     if (

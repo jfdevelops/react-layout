@@ -1,4 +1,10 @@
-import { CheckIcon, LoadingIcon, ErrorIcon, NotFoundIcon, CustomStateIcon } from './icons';
+import {
+  CheckIcon,
+  LoadingIcon,
+  ErrorIcon,
+  NotFoundIcon,
+  CustomStateIcon,
+} from './icons';
 import type { ChipPalette } from './config';
 
 const icons = {
@@ -13,7 +19,10 @@ type StateIconKind = keyof typeof icons;
 
 /** Built-in render states get their own icon; any other state is `custom`. */
 export function stateIconKind(state: string): StateIconKind {
-  return state === 'default' || state === 'Loading' || state === 'Error' || state === 'NotFound'
+  return state === 'default' ||
+    state === 'Loading' ||
+    state === 'Error' ||
+    state === 'NotFound'
     ? state
     : 'custom';
 }

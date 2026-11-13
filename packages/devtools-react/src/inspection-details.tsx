@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { inspectPropValidator, mapInspectionDetails } from '@jfdevelops/react-layout-devtools-core';
+import {
+  inspectPropValidator,
+  mapInspectionDetails,
+} from '@jfdevelops/react-layout-devtools-core';
 import type { ChipPalette, DevtoolsChipKind } from './config';
 import { Badge } from './components/ui/badge';
 import { HelpTooltip } from './components/ui/tooltip';
@@ -9,7 +12,9 @@ import { control } from './theme';
 type Bag = Record<string, unknown>;
 
 const bag = (value: unknown): Bag =>
-  value && typeof value === 'object' && !Array.isArray(value) ? (value as Bag) : {};
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Bag)
+    : {};
 
 const explanations = {
   included:
@@ -44,8 +49,11 @@ function propsFor(details: Bag): PropRow[] {
     ...Object.entries(bag(props.include)).map(([name, behavior]): PropRow => {
       const settings = bag(behavior);
       const visibility =
-        behavior === 'optional' || settings.required === false ? 'optional' : 'required';
-      const location = settings.suppliedVia === 'component' ? 'component' : 'config';
+        behavior === 'optional' || settings.required === false
+          ? 'optional'
+          : 'required';
+      const location =
+        settings.suppliedVia === 'component' ? 'component' : 'config';
       const description = inspectPropValidator(schemas[name]);
 
       return {
@@ -54,7 +62,8 @@ function propsFor(details: Bag): PropRow[] {
         visibility,
         type: description?.type,
         vendor: description?.vendor,
-        locations: visibility === 'optional' ? ['config', 'component'] : [location],
+        locations:
+          visibility === 'optional' ? ['config', 'component'] : [location],
       };
     }),
     ...Object.entries(bag(props.custom)).map(([name, validator]): PropRow => {
@@ -72,7 +81,13 @@ function propsFor(details: Bag): PropRow[] {
   ];
 }
 
-export function InspectionDetails({ details, palette }: { details: object; palette: ChipPalette }) {
+export function InspectionDetails({
+  details,
+  palette,
+}: {
+  details: object;
+  palette: ChipPalette;
+}) {
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState('all');
   const [visibility, setVisibility] = useState('all');
@@ -207,8 +222,9 @@ export function InspectionDetails({ details, palette }: { details: object; palet
               margin: '0 0 12px',
             }}
           >
-            Included props reuse existing options or composable props. Custom props define
-            additional inputs. Hover or focus a chip to learn what its setting means.
+            Included props reuse existing options or composable props. Custom
+            props define additional inputs. Hover or focus a chip to learn what
+            its setting means.
           </p>
           {rows.length > 0 && (
             <div
@@ -332,9 +348,15 @@ export function InspectionDetails({ details, palette }: { details: object; palet
                     } prop. Type: ${row.type}${row.vendor ? ` (${row.vendor} schema)` : ''}`,
                   )}
                 {row.visibility &&
-                  chip(row.visibility, row.visibility, explanations[row.visibility])}
+                  chip(
+                    row.visibility,
+                    row.visibility,
+                    explanations[row.visibility],
+                  )}
                 {chip(row.kind, row.kind, explanations[row.kind])}
-                {row.locations.map((location) => chip(location, location, explanations[location]))}
+                {row.locations.map((location) =>
+                  chip(location, location, explanations[location]),
+                )}
               </li>
             ))}
           </ul>
@@ -345,7 +367,9 @@ export function InspectionDetails({ details, palette }: { details: object; palet
                 fontSize: 12,
               }}
             >
-              {rows.length ? 'No props match these filters.' : 'No props declared for this node.'}
+              {rows.length
+                ? 'No props match these filters.'
+                : 'No props declared for this node.'}
             </p>
           )}
         </section>

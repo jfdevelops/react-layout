@@ -140,13 +140,18 @@ it('handles invalid or unavailable storage and lets callers isolate preferences'
 
   first.unmount();
 
-  const write = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-    throw new Error('Quota exceeded');
-  });
+  const write = vi
+    .spyOn(Storage.prototype, 'setItem')
+    .mockImplementation(() => {
+      throw new Error('Quota exceeded');
+    });
 
   try {
     render(
-      <ReactLayoutDevtoolsContent source={createInspectionStore()} storageKey='blocked-write' />,
+      <ReactLayoutDevtoolsContent
+        source={createInspectionStore()}
+        storageKey='blocked-write'
+      />,
     );
 
     fireEvent.click(
@@ -177,7 +182,10 @@ it('restores the dragged FAB location across remounts', () => {
   );
 
   const first = render(
-    <ReactLayoutDevtools source={createInspectionStore()} storageKey='fab-preferences' />,
+    <ReactLayoutDevtools
+      source={createInspectionStore()}
+      storageKey='fab-preferences'
+    />,
   );
   const button = screen.getByRole('button', {
     name: 'Open React Layout Devtools',
@@ -200,7 +208,12 @@ it('restores the dragged FAB location across remounts', () => {
 
   first.unmount();
 
-  render(<ReactLayoutDevtools source={createInspectionStore()} storageKey='fab-preferences' />);
+  render(
+    <ReactLayoutDevtools
+      source={createInspectionStore()}
+      storageKey='fab-preferences'
+    />,
+  );
 
   expect(
     screen.getByRole('button', {

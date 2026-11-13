@@ -31,25 +31,29 @@ describe('Standard Schema props', () => {
         render: ({ count }) => <p>{count + 1}</p>,
       },
     });
-    const Directory = createResourceLayout.forResources('users').createComponent({
-      props: {
-        include: {
-          count: true,
+    const Directory = createResourceLayout
+      .forResources('users')
+      .createComponent({
+        props: {
+          include: {
+            count: true,
+          },
         },
-      },
-      resources: {
-        users: {
-          render: () => <aside>Content</aside>,
+        resources: {
+          users: {
+            render: () => <aside>Content</aside>,
+          },
         },
-      },
-      render: ({ count }, { Root }) => (
-        <main>
-          {count + 1}
-          <Root />
-        </main>
-      ),
-    });
-    const markup = renderToStaticMarkup(<Directory resource='users' count='2' />);
+        render: ({ count }, { Root }) => (
+          <main>
+            {count + 1}
+            <Root />
+          </main>
+        ),
+      });
+    const markup = renderToStaticMarkup(
+      <Directory resource='users' count='2' />,
+    );
 
     expect(markup).toContain('>3<p');
     expect(markup).toContain('>3</p>');
@@ -77,7 +81,9 @@ describe('Standard Schema props', () => {
         },
         render: ({ title, description, icon, legacy }) => {
           expectTypeOf(title).toEqualTypeOf<string>();
-          expectTypeOf(description).toEqualTypeOf<Exclude<ReactNode, undefined>>();
+          expectTypeOf(description).toEqualTypeOf<
+            Exclude<ReactNode, undefined>
+          >();
           expectTypeOf(icon).toEqualTypeOf<ReactElement | undefined>();
 
           return (
@@ -135,7 +141,9 @@ describe('Standard Schema props', () => {
       name: 'Users',
       count: '2',
     });
-    expect(renderToStaticMarkup(<Users length='abc' />)).toContain('>Default:5</p>');
+    expect(renderToStaticMarkup(<Users length='abc' />)).toContain(
+      '>Default:5</p>',
+    );
     // @ts-expect-error Callers supply schema input, not transformed output.
     const invalid = <Users length={3} />;
     void invalid;
@@ -162,7 +170,9 @@ describe('Standard Schema props', () => {
       resource: 'users',
       name: 'Users',
     });
-    expect(renderToStaticMarkup(<Users title='Users' count={2} />)).toContain('>Users:2</p>');
+    expect(renderToStaticMarkup(<Users title='Users' count={2} />)).toContain(
+      '>Users:2</p>',
+    );
   });
 
   it('preserves explicit null overrides for schema-backed included props', () => {
@@ -188,7 +198,9 @@ describe('Standard Schema props', () => {
       name: 'Users',
       title: 'Default',
     });
-    expect(renderToStaticMarkup(<Users title={null} />)).toContain('>Empty</p>');
+    expect(renderToStaticMarkup(<Users title={null} />)).toContain(
+      '>Empty</p>',
+    );
   });
 
   it('passes defaults and transforms into reusable functions', () => {
@@ -284,20 +296,26 @@ describe('Standard Schema props', () => {
       resource: 'users',
       name: 'Users',
     });
-    expect(renderToStaticMarkup(<Users.Preview count='2' />)).toContain('>3</p>');
-    const Directory = createResourceLayout.forResources('users').createComponent({
-      props: {
-        custom: {
-          count: z.string().transform(Number),
+    expect(renderToStaticMarkup(<Users.Preview count='2' />)).toContain(
+      '>3</p>',
+    );
+    const Directory = createResourceLayout
+      .forResources('users')
+      .createComponent({
+        props: {
+          custom: {
+            count: z.string().transform(Number),
+          },
         },
-      },
-      render: ({ count }) => {
-        expectTypeOf(count).toEqualTypeOf<number>();
+        render: ({ count }) => {
+          expectTypeOf(count).toEqualTypeOf<number>();
 
-        return <p>{count + 1}</p>;
-      },
-    });
-    expect(renderToStaticMarkup(<Directory resource='users' count='2' />)).toContain('>3</p>');
+          return <p>{count + 1}</p>;
+        },
+      });
+    expect(
+      renderToStaticMarkup(<Directory resource='users' count='2' />),
+    ).toContain('>3</p>');
   });
 
   it('carries original schema inputs into referenced render states', () => {
@@ -358,28 +376,32 @@ describe('native React adapters', () => {
         },
       },
     });
-    const Directory = createResourceLayout.forResources('users').createComponent({
-      resources: {
-        users: {
-          render: () => <aside />,
+    const Directory = createResourceLayout
+      .forResources('users')
+      .createComponent({
+        resources: {
+          users: {
+            render: () => <aside />,
+          },
         },
-      },
-      props: {
-        include: {
-          content: true,
-          icon: true,
+        props: {
+          include: {
+            content: true,
+            icon: true,
+          },
         },
-      },
-      render: ({ content, icon }, { Root }) => {
-        expectTypeOf(content).toEqualTypeOf<Exclude<ReactNode, undefined>>();
-        expectTypeOf(icon).toEqualTypeOf<ReactElement>();
+        render: ({ content, icon }, { Root }) => {
+          expectTypeOf(content).toEqualTypeOf<Exclude<ReactNode, undefined>>();
+          expectTypeOf(icon).toEqualTypeOf<ReactElement>();
 
-        return <Root />;
-      },
-    });
+          return <Root />;
+        },
+      });
 
     expect(
-      renderToStaticMarkup(<Directory resource='users' content='Users' icon={<span />} />),
+      renderToStaticMarkup(
+        <Directory resource='users' content='Users' icon={<span />} />,
+      ),
     ).toContain('Users');
   });
 
@@ -489,7 +511,9 @@ describe('native React adapters', () => {
       node: Exclude<ReactNode, undefined>;
     }>();
     expectTypeOf(arktype.reactNode()).toEqualTypeOf<arktype.ReactNodeSchema>();
-    expectTypeOf(arktype.reactElement()).toEqualTypeOf<arktype.ReactElementSchema>();
+    expectTypeOf(
+      arktype.reactElement(),
+    ).toEqualTypeOf<arktype.ReactElementSchema>();
   });
 
   for (const [name, node, element, parse] of [
@@ -503,7 +527,8 @@ describe('native React adapters', () => {
       'valibot',
       valibot.reactNode(),
       valibot.reactElement(),
-      (schema: v.GenericSchema, value: unknown) => v.safeParse(schema, value).success,
+      (schema: v.GenericSchema, value: unknown) =>
+        v.safeParse(schema, value).success,
     ],
     [
       'arktype',
@@ -515,7 +540,8 @@ describe('native React adapters', () => {
       'effect',
       effect.reactNode(),
       effect.reactElement(),
-      (schema: Schema.Schema<unknown>, value: unknown) => Schema.is(schema)(value),
+      (schema: Schema.Schema<unknown>, value: unknown) =>
+        Schema.is(schema)(value),
     ],
   ] as const) {
     it(`${name} distinguishes nodes from elements`, () => {

@@ -18,7 +18,11 @@ import {
   subscribeInspectionBatched,
   type DevtoolsSessionState,
 } from '@jfdevelops/react-layout-devtools-core';
-import { initialGraphZoom, resolveChipColors, type ReactLayoutDevtoolsConfig } from './config';
+import {
+  initialGraphZoom,
+  resolveChipColors,
+  type ReactLayoutDevtoolsConfig,
+} from './config';
 import { DevtoolsStyles } from './styles';
 import { usePanelPreferences } from './preferences';
 
@@ -46,15 +50,14 @@ function useController({
 }: Omit<ReactLayoutDevtoolsProviderProps, 'children'>) {
   const compact = layout === 'compact';
   const [pane, setPane] = useState<'explorer' | 'inspector'>('explorer');
-  const [config, updatePreferences, resetSavedPreferences] = usePanelPreferences(
-    defaults,
-    storageKey,
-  );
+  const [config, updatePreferences, resetSavedPreferences] =
+    usePanelPreferences(defaults, storageKey);
   const arrowId = `layout-arrow-${useId().replaceAll(':', '')}`;
   const inspector = useMemo(() => getInspectionSource(source), [source]);
   const graph = useSyncExternalStore(
     useMemo(
-      () => (listener: () => void) => subscribeInspectionBatched(inspector, listener),
+      () => (listener: () => void) =>
+        subscribeInspectionBatched(inspector, listener),
       [inspector],
     ),
     inspector.getSnapshot,
@@ -133,7 +136,9 @@ function useController({
 
   const setZoom = (change: number | ((previous: number) => number)) =>
     updatePreferences({
-      initialZoom: initialGraphZoom(typeof change === 'function' ? change(zoom) : change),
+      initialZoom: initialGraphZoom(
+        typeof change === 'function' ? change(zoom) : change,
+      ),
     });
 
   const [treeRevision, setTreeRevision] = useState(0);
@@ -191,8 +196,16 @@ function useController({
     const viewport = pane.getBoundingClientRect();
 
     pane.scrollTo({
-      left: pane.scrollLeft + bounds.left - viewport.left - (pane.clientWidth - bounds.width) / 2,
-      top: pane.scrollTop + bounds.top - viewport.top - (pane.clientHeight - bounds.height) / 2,
+      left:
+        pane.scrollLeft +
+        bounds.left -
+        viewport.left -
+        (pane.clientWidth - bounds.width) / 2,
+      top:
+        pane.scrollTop +
+        bounds.top -
+        viewport.top -
+        (pane.clientHeight - bounds.height) / 2,
     });
 
     element.focus({
@@ -223,13 +236,17 @@ function useController({
     [chipColorsKey],
   );
   const displayGraph = useMemo(() => {
-    const candidates = graph.nodes.filter((node) => showComposables || node.kind !== 'composable');
+    const candidates = graph.nodes.filter(
+      (node) => showComposables || node.kind !== 'composable',
+    );
     const visible = new Set(
       candidates
         .filter(
           (node) =>
             (!activeOnly || node.active > 0) &&
-            `${node.label} ${node.kind}`.toLowerCase().includes(deferredQuery.toLowerCase()),
+            `${node.label} ${node.kind}`
+              .toLowerCase()
+              .includes(deferredQuery.toLowerCase()),
         )
         .map((node) => node.id),
     );
@@ -253,15 +270,24 @@ function useController({
 
     return {
       nodes,
-      edges: graph.edges.filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target)),
+      edges: graph.edges.filter(
+        (edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target),
+      ),
     };
   }, [graph, activeOnly, deferredQuery, showComposables]);
   const positioned = useMemo(() => layoutGraph(displayGraph), [displayGraph]);
-  const positions = useMemo(() => new Map(positioned.map((p) => [p.node.id, p])), [positioned]);
+  const positions = useMemo(
+    () => new Map(positioned.map((p) => [p.node.id, p])),
+    [positioned],
+  );
 
   // Retries as the deferred search catches up after locate clears filters.
   useEffect(() => {
-    if (!locateRequest || view !== 'graph' || revealedRequest.current === locateRequest) {
+    if (
+      !locateRequest ||
+      view !== 'graph' ||
+      revealedRequest.current === locateRequest
+    ) {
       return;
     }
 
@@ -343,7 +369,9 @@ function useController({
   };
 }
 
-const DevtoolsContext = createContext<ReturnType<typeof useController> | null>(null);
+const DevtoolsContext = createContext<ReturnType<typeof useController> | null>(
+  null,
+);
 
 export function ReactLayoutDevtoolsProvider({
   children,

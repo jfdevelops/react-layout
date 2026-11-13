@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { createInspectionStore } from '@jfdevelops/react-layout-devtools-core';
 import { ReactLayoutDevtools, ReactLayoutDevtoolsContent } from '../src';

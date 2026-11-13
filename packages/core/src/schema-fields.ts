@@ -1,10 +1,14 @@
-import { isStandardSchema, type StandardSchemaV1 } from '@jfdevelops/react-layout-validator';
+import {
+  isStandardSchema,
+  type StandardSchemaV1,
+} from '@jfdevelops/react-layout-validator';
 import { optionalDefinition } from './built-in-props';
 
 type Fields = Record<string, StandardSchemaV1>;
 
 function record(value: unknown): Record<string, unknown> | undefined {
-  return (typeof value === 'object' || typeof value === 'function') && value !== null
+  return (typeof value === 'object' || typeof value === 'function') &&
+    value !== null
     ? (value as Record<string, unknown>)
     : undefined;
 }
@@ -30,7 +34,10 @@ function schemaFields(candidate: unknown): Fields | undefined {
 function arktypeProps(
   schema: Record<string, unknown>,
 ): ReadonlyArray<Record<string, unknown>> | undefined {
-  if (schema['~standard'] === undefined || typeof schema.expression !== 'string') {
+  if (
+    schema['~standard'] === undefined ||
+    typeof schema.expression !== 'string'
+  ) {
     return undefined;
   }
 
@@ -63,7 +70,9 @@ export function fieldDefinitions(definition: unknown): Fields | undefined {
       return schemaFields(schema.shape);
     }
 
-    return zod.innerType === undefined ? undefined : fieldDefinitions(zod.innerType);
+    return zod.innerType === undefined
+      ? undefined
+      : fieldDefinitions(zod.innerType);
   }
 
   // Valibot: `v.object({...})`, optionally wrapped by `v.optional(...)`.
@@ -72,7 +81,9 @@ export function fieldDefinitions(definition: unknown): Fields | undefined {
       return schemaFields(schema.entries);
     }
 
-    return schema.wrapped === undefined ? undefined : fieldDefinitions(schema.wrapped);
+    return schema.wrapped === undefined
+      ? undefined
+      : fieldDefinitions(schema.wrapped);
   }
 
   // ArkType: `type({...})` lists its keys as `props`. Reading `props` throws
@@ -86,7 +97,8 @@ export function fieldDefinitions(definition: unknown): Fields | undefined {
       if (typeof prop.key !== 'string' || !isStandardSchema(prop.value)) {
         return undefined;
       }
-      fields[prop.key] = prop.kind === 'optional' ? optionalDefinition(prop.value) : prop.value;
+      fields[prop.key] =
+        prop.kind === 'optional' ? optionalDefinition(prop.value) : prop.value;
     }
 
     return fields;

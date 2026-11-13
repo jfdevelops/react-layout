@@ -1,19 +1,24 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { Component, type ReactNode } from 'react';
 import { afterEach, expect, expectTypeOf, it, vi } from 'vitest';
-import { componentSlot, createDefinedResourceLayout, defineComposableComponent } from '../../src';
+import {
+  componentSlot,
+  createDefinedResourceLayout,
+  defineComposableComponent,
+} from '../../src';
 import { z } from 'zod';
 import { reactElement } from '@jfdevelops/react-layout-adapter-zod';
 
 afterEach(cleanup);
 
 it('inherits all reference props and exposes a Ref composable', () => {
-  const { createRenderState, defineResourceLayout } = createDefinedResourceLayout({
-    resources: ['users'],
-    options: {
-      title: z.string(),
-    },
-  });
+  const { createRenderState, defineResourceLayout } =
+    createDefinedResourceLayout({
+      resources: ['users'],
+      options: {
+        title: z.string(),
+      },
+    });
   const Source = createRenderState({
     state: 'Source',
     props: {
@@ -43,7 +48,10 @@ it('inherits all reference props and exposes a Ref composable', () => {
         name: 'Frame',
       }),
     }),
-    render: ({ title, message, count, heading }, { composables, resources }) => {
+    render: (
+      { title, message, count, heading },
+      { composables, resources },
+    ) => {
       expectTypeOf(title).toEqualTypeOf<string>();
       expectTypeOf(message).toEqualTypeOf<string>();
       expectTypeOf(count).toEqualTypeOf<number | undefined>();
@@ -97,9 +105,10 @@ it.each([
 ] as const)(
   'selects inherited props and requires excluded Ref props explicitly (%j)',
   (behavior) => {
-    const { createRenderState, defineResourceLayout } = createDefinedResourceLayout({
-      resources: ['users'],
-    });
+    const { createRenderState, defineResourceLayout } =
+      createDefinedResourceLayout({
+        resources: ['users'],
+      });
     const Source = createRenderState({
       props: {
         custom: {
@@ -151,9 +160,10 @@ it.each([
 );
 
 it('supports config-passthrough selection and chained states', () => {
-  const { createRenderState, defineResourceLayout } = createDefinedResourceLayout({
-    resources: ['users'],
-  });
+  const { createRenderState, defineResourceLayout } =
+    createDefinedResourceLayout({
+      resources: ['users'],
+    });
   const Source = createRenderState({
     state: 'Source',
     props: {
@@ -199,9 +209,10 @@ it('supports config-passthrough selection and chained states', () => {
 });
 
 it('inherits from deferred states without eagerly rendering them', async () => {
-  const { createRenderState, defineResourceLayout } = createDefinedResourceLayout({
-    resources: ['users'],
-  });
+  const { createRenderState, defineResourceLayout } =
+    createDefinedResourceLayout({
+      resources: ['users'],
+    });
   const Source = createRenderState.defer({
     state: 'Deferred',
     props: {
@@ -228,16 +239,17 @@ it('inherits from deferred states without eagerly rendering them', async () => {
 });
 
 it('inherits source-local preset schemas and component-valued props', () => {
-  const { createRenderState, defineResourceLayout } = createDefinedResourceLayout({
-    resources: ['users'],
-    options: () => ({
-      content: componentSlot({
-        props: {
-          label: z.string(),
-        },
+  const { createRenderState, defineResourceLayout } =
+    createDefinedResourceLayout({
+      resources: ['users'],
+      options: () => ({
+        content: componentSlot({
+          props: {
+            label: z.string(),
+          },
+        }),
       }),
-    }),
-  });
+    });
   const Message = defineComposableComponent({
     name: 'Message',
     props: {
@@ -293,12 +305,13 @@ it('inherits source-local preset schemas and component-valued props', () => {
 });
 
 it('inherits source-local preset schemas and element-valued props', () => {
-  const { createRenderState, defineResourceLayout } = createDefinedResourceLayout({
-    resources: ['users'],
-    options: {
-      content: reactElement(),
-    },
-  });
+  const { createRenderState, defineResourceLayout } =
+    createDefinedResourceLayout({
+      resources: ['users'],
+      options: {
+        content: reactElement(),
+      },
+    });
   const Message = defineComposableComponent({
     name: 'Message',
     props: {
@@ -355,9 +368,10 @@ it('inherits source-local preset schemas and element-valued props', () => {
 it.each([false, true])(
   'inherits lazy references and supports further derivation (deferred source: %s)',
   async (deferred) => {
-    const { createRenderState, defineResourceLayout } = createDefinedResourceLayout({
-      resources: ['users'],
-    });
+    const { createRenderState, defineResourceLayout } =
+      createDefinedResourceLayout({
+        resources: ['users'],
+      });
     const sourceDefinition = {
       state: 'Source',
       props: {
@@ -412,9 +426,10 @@ it.each([false, true])(
 );
 
 it('does not require excluded preset props at layout creation', () => {
-  const { createRenderState, defineResourceLayout } = createDefinedResourceLayout({
-    resources: ['users'],
-  });
+  const { createRenderState, defineResourceLayout } =
+    createDefinedResourceLayout({
+      resources: ['users'],
+    });
   const Pair = defineComposableComponent({
     name: 'Pair',
     props: {
@@ -467,12 +482,13 @@ it('does not require excluded preset props at layout creation', () => {
 });
 
 it('supports custom overrides and rejects invalid reference configuration', () => {
-  const { createRenderState, defineResourceLayout } = createDefinedResourceLayout({
-    resources: ['users'],
-    options: {
-      title: z.string(),
-    },
-  });
+  const { createRenderState, defineResourceLayout } =
+    createDefinedResourceLayout({
+      resources: ['users'],
+      options: {
+        title: z.string(),
+      },
+    });
   const Source = createRenderState({
     props: {
       custom: {
@@ -550,12 +566,13 @@ it('supports custom overrides and rejects invalid reference configuration', () =
 });
 
 it('accepts excluded source configuration props directly on Ref', () => {
-  const { createRenderState, defineResourceLayout } = createDefinedResourceLayout({
-    resources: ['users'],
-    options: {
-      title: z.string(),
-    },
-  });
+  const { createRenderState, defineResourceLayout } =
+    createDefinedResourceLayout({
+      resources: ['users'],
+      options: {
+        title: z.string(),
+      },
+    });
   const Source = createRenderState({
     props: {
       include: {
@@ -604,67 +621,72 @@ it('accepts excluded source configuration props directly on Ref', () => {
   expect(screen.getByText('Explicit: Selected')).toBeInTheDocument();
 });
 
-it.each([undefined, false, true])('can defer only the Ref component (lazy: %s)', async (lazy) => {
-  const { createRenderState, defineResourceLayout } = createDefinedResourceLayout({
-    resources: ['users'],
-  });
-  const Source = createRenderState({
-    props: {
-      custom: {
-        message: z.string(),
+it.each([undefined, false, true])(
+  'can defer only the Ref component (lazy: %s)',
+  async (lazy) => {
+    const { createRenderState, defineResourceLayout } =
+      createDefinedResourceLayout({
+        resources: ['users'],
+      });
+    const Source = createRenderState({
+      props: {
+        custom: {
+          message: z.string(),
+        },
       },
-    },
-    render: ({ message }) => <p>{message}</p>,
-  });
-  const Derived = createRenderState.fromState({
-    ref: Source,
-    lazy,
-    render: ({ message }, { composables }) => {
-      expectTypeOf(message).toEqualTypeOf<string>();
-      expectTypeOf(composables.Ref).toBeCallableWith({});
+      render: ({ message }) => <p>{message}</p>,
+    });
+    const Derived = createRenderState.fromState({
+      ref: Source,
+      lazy,
+      render: ({ message }, { composables }) => {
+        expectTypeOf(message).toEqualTypeOf<string>();
+        expectTypeOf(composables.Ref).toBeCallableWith({});
 
-      return (
-        <section>
-          <h1>Derived ready</h1>
-          <composables.Ref />
-        </section>
-      );
-    },
-  });
-  const Users = defineResourceLayout({
-    render: {
-      ...Derived,
-      Loading: () => <p>Loading ref</p>,
-    },
-  }).createResourceLayout({
-    resource: 'users',
-    name: 'Users',
-  });
-  expectTypeOf(Users).toBeCallableWith({
-    message: 'Source ready',
-  });
-  () => {
-    // @ts-expect-error deferring the ref preserves inherited required props
-    <Users />;
-    // @ts-expect-error deferring the ref preserves inherited prop value types
-    <Users message={123} />;
-  };
-  render(<Users message='Source ready' />);
-  expect(screen.getByText('Derived ready')).toBeInTheDocument();
-  if (lazy) {
-    expect(screen.getByText('Loading ref')).toBeInTheDocument();
-    expect(screen.queryByText('Source ready')).not.toBeInTheDocument();
-  } else {
-    expect(screen.getByText('Source ready')).toBeInTheDocument();
-    expect(screen.queryByText('Loading ref')).not.toBeInTheDocument();
-  }
-  expect(await screen.findByText('Source ready')).toBeInTheDocument();
-});
+        return (
+          <section>
+            <h1>Derived ready</h1>
+            <composables.Ref />
+          </section>
+        );
+      },
+    });
+    const Users = defineResourceLayout({
+      render: {
+        ...Derived,
+        Loading: () => <p>Loading ref</p>,
+      },
+    }).createResourceLayout({
+      resource: 'users',
+      name: 'Users',
+    });
+    expectTypeOf(Users).toBeCallableWith({
+      message: 'Source ready',
+    });
+    () => {
+      // @ts-expect-error deferring the ref preserves inherited required props
+      <Users />;
+      // @ts-expect-error deferring the ref preserves inherited prop value types
+      <Users message={123} />;
+    };
+    render(<Users message='Source ready' />);
+    expect(screen.getByText('Derived ready')).toBeInTheDocument();
+    if (lazy) {
+      expect(screen.getByText('Loading ref')).toBeInTheDocument();
+      expect(screen.queryByText('Source ready')).not.toBeInTheDocument();
+    } else {
+      expect(screen.getByText('Source ready')).toBeInTheDocument();
+      expect(screen.queryByText('Loading ref')).not.toBeInTheDocument();
+    }
+    expect(await screen.findByText('Source ready')).toBeInTheDocument();
+  },
+);
 
 it('does not reuse the outer Loading state as a deferred Ref fallback', async () => {
-  const { createRenderState, defineResourceLayout } = createDefinedResourceLayout({
-    resources: ['users'],
-  });
+  const { createRenderState, defineResourceLayout } =
+    createDefinedResourceLayout({
+      resources: ['users'],
+    });
   const Source = createRenderState({
     state: 'Source',
     props: {
@@ -702,9 +724,10 @@ it('does not reuse the outer Loading state as a deferred Ref fallback', async ()
 });
 
 it('does not reuse the outer Error state as a deferred Ref fallback', async () => {
-  const { createRenderState, defineResourceLayout } = createDefinedResourceLayout({
-    resources: ['users'],
-  });
+  const { createRenderState, defineResourceLayout } =
+    createDefinedResourceLayout({
+      resources: ['users'],
+    });
   const Source = createRenderState({
     state: 'Source',
     render: () => {
@@ -755,7 +778,9 @@ it('does not reuse the outer Error state as a deferred Ref fallback', async () =
     }
   }
 
-  const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  const consoleError = vi
+    .spyOn(console, 'error')
+    .mockImplementation(() => undefined);
   const suppressWindowError = (event: ErrorEvent) => event.preventDefault();
   window.addEventListener('error', suppressWindowError);
   try {

@@ -9,9 +9,13 @@ export interface ReactNodeSchema extends StandardSchemaV1<
   Exclude<ReactNode, undefined>
 > {}
 
-export interface ReactElementSchema extends StandardSchemaV1<ReactElement, ReactElement> {}
+export interface ReactElementSchema extends StandardSchemaV1<
+  ReactElement,
+  ReactElement
+> {}
 
 export const { reactNode, reactElement } = createAdapter({
   node: (check) => type('unknown').narrow(check) as unknown as ReactNodeSchema,
-  element: (check) => type('unknown').narrow(check) as unknown as ReactElementSchema,
+  element: (check) =>
+    type('unknown').narrow(check) as unknown as ReactElementSchema,
 });

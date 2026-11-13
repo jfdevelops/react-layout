@@ -16,7 +16,9 @@ export const defaultState = createRenderState({
       // Reused state props allow children to be omitted.
       <composables.LayoutState />;
       // @ts-expect-error state composables retain their optional boolean prop type
-      <composables.LayoutState showHeader='yes'>Content</composables.LayoutState>;
+      <composables.LayoutState showHeader='yes'>
+        Content
+      </composables.LayoutState>;
     };
 
     return <composables.LayoutState {...props} />;

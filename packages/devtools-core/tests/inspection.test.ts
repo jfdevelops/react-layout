@@ -1,5 +1,9 @@
 import { expect, it } from 'vitest';
-import { createInspectionStore, getInspectionSource, layoutGraph } from '../src';
+import {
+  createInspectionStore,
+  getInspectionSource,
+  layoutGraph,
+} from '../src';
 
 it('keeps snapshots stable until a change and composes sources without duplicate registrations', () => {
   const parent = createInspectionStore(),
@@ -57,11 +61,15 @@ it('lays out shared descendants after both parents and tolerates cyclic referenc
 
   store.edge('d', 'a', 'references');
 
-  const positions = new Map(layoutGraph(store.getSnapshot()).map((p) => [p.node.id, p]));
+  const positions = new Map(
+    layoutGraph(store.getSnapshot()).map((p) => [p.node.id, p]),
+  );
 
   expect(positions.get('d')!.x).toBeGreaterThan(positions.get('c')!.x);
 
-  expect(new Set([...positions.values()].map((p) => `${p.x}:${p.y}`)).size).toBe(4);
+  expect(
+    new Set([...positions.values()].map((p) => `${p.x}:${p.y}`)).size,
+  ).toBe(4);
 });
 
 it('rejects an unsupported inspection source with an actionable error', () => {
@@ -101,7 +109,9 @@ it('builds a resource-owned tree and represents cycles as reference leaves', asy
 
   expect(tree[0].children[0].children[0].node.id).toBe('layout');
 
-  expect(tree[0].children[0].children[0].children[0].children[0].reference).toBe(true);
+  expect(
+    tree[0].children[0].children[0].children[0].children[0].reference,
+  ).toBe(true);
 });
 
 it('honors initial activity without resetting live mounts during metadata updates', () => {
@@ -156,7 +166,9 @@ it('routes preview commands through composed stores and resets only after the fi
 
   expect(parent.getSnapshot().instances?.[0].forcedState).toBe('loading');
 
-  expect(() => parent.preview('instance', 'unknown')).toThrow('Unknown render state');
+  expect(() => parent.preview('instance', 'unknown')).toThrow(
+    'Unknown render state',
+  );
 
   first();
 

@@ -16,5 +16,6 @@ export class InvalidConfigError extends createReactLayoutError({
 })
   .defineContext(context)
   .implement(
-    ({ context, scope }) => `[${scope}]: The layout configuration is invalid: ${context.reason}`,
+    ({ context, scope }) =>
+      `[${scope}]: The layout configuration is invalid: ${context.reason}`,
   ) {}

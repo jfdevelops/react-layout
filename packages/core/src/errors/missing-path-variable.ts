@@ -22,7 +22,9 @@ export class MissingPathVariableError extends createReactLayoutError({
         ? ` Provided variables were ${new Intl.ListFormat('en', {
             style: 'long',
             type: 'disjunction',
-          }).format(context.providedVariables.map((provided) => `$${provided}`))}.`
+          }).format(
+            context.providedVariables.map((provided) => `$${provided}`),
+          )}.`
         : ' No path variables were provided.';
 
     return `[${scope}]: Path "${context.path}" requires $${context.variable}.${providedMessage}`;

@@ -1,7 +1,10 @@
 import { getIncludedPropBehavior } from '../../src/props';
 import { render, screen } from '@testing-library/react';
 import { expect, expectTypeOf, it } from 'vitest';
-import { createDefinedResourceLayout, type IncludedPropBehavior } from '../../src';
+import {
+  createDefinedResourceLayout,
+  type IncludedPropBehavior,
+} from '../../src';
 import { z } from 'zod';
 
 it('supports canonical include requirements and supply sources', () => {
@@ -70,7 +73,9 @@ it('supports canonical include requirements and supply sources', () => {
   view.rerender(<Users label='Component' />);
   expect(screen.getByText('Configured: Component')).toBeInTheDocument();
   view.rerender(<Users.Preview label='Preview component' />);
-  expect(screen.getByText('Preview Configured: Preview component')).toBeInTheDocument();
+  expect(
+    screen.getByText('Preview Configured: Preview component'),
+  ).toBeInTheDocument();
   view.unmount();
   () => {
     const invalidOptions1 = {

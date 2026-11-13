@@ -68,7 +68,9 @@ it('accepts an aliased whole object schema and preserves object refinements and 
     description: null,
     count: '-1',
   });
-  expect(() => renderToStaticMarkup(<Invalid />)).toThrow('Count must be positive');
+  expect(() => renderToStaticMarkup(<Invalid />)).toThrow(
+    'Count must be positive',
+  );
 });
 
 it('combines bound options with component-supplied inputs before validating the whole object', () => {
@@ -276,7 +278,9 @@ it('validates whole schema options on scoped components and forwards original in
       </main>
     ),
   });
-  expect(renderToStaticMarkup(<Directory resource='users' count='2' />)).toContain('>3<p');
+  expect(
+    renderToStaticMarkup(<Directory resource='users' count='2' />),
+  ).toContain('>3<p');
 });
 
 it('validates whole object schemas on persistent shells', () => {
@@ -479,7 +483,10 @@ it('supplies transformed shell defaults to schema presets accepting the resolved
 it('builds options from the bound resources and component name', () => {
   const { createResourceLayout } = defineResourceLayout({
     resources: ['users', 'posts'],
-    options: ({ resource, name }: InPropsOptions<readonly ['users', 'posts'], string>) => ({
+    options: ({
+      resource,
+      name,
+    }: InPropsOptions<readonly ['users', 'posts'], string>) => ({
       target: resource,
       label: name,
     }),

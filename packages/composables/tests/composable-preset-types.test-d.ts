@@ -17,7 +17,9 @@ type BreadcrumbCallProps = ComposablePresetComponentCallProps<
   typeof createBreadcrumbComposable.props
 >;
 
-type AssertSegmentsProp = 'segments' extends keyof BreadcrumbCallProps ? true : never;
+type AssertSegmentsProp = 'segments' extends keyof BreadcrumbCallProps
+  ? true
+  : never;
 const _segmentsProp: AssertSegmentsProp = true;
 
 // Every composable accepts the built-in optional children slot.
