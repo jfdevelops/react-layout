@@ -84,6 +84,10 @@
       "options": {}
     },
     {
+      "name": "@jfdevelops/react-layout-adapter-effect",
+      "options": {}
+    },
+    {
       "name": "@jfdevelops/react-layout-adapter-valibot",
       "options": {}
     },

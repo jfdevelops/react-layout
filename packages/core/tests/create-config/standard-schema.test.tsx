@@ -4,6 +4,7 @@ import { createElement, type ReactElement, type ReactNode } from 'react';
 import { z } from 'zod';
 import * as v from 'valibot';
 import { type } from 'arktype';
+import { Schema } from 'effect';
 import {
   createDefinedResourceLayout,
   createProp,
@@ -13,6 +14,7 @@ import {
 import { reactNode, reactElement } from '@jfdevelops/react-layout-adapter-zod';
 import * as valibot from '@jfdevelops/react-layout-adapter-valibot';
 import * as arktype from '@jfdevelops/react-layout-adapter-arktype';
+import * as effect from '@jfdevelops/react-layout-adapter-effect';
 
 describe('Standard Schema props', () => {
   it('forwards raw map-form option inputs to Root while exposing outputs to scoped renders', () => {
@@ -382,6 +384,61 @@ describe('native React adapters', () => {
     ).toContain('Users');
   });
 
+  it('threads Effect schemas through layout inference and composes them natively', () => {
+    const optionsSchema = Schema.toStandardSchemaV1(
+      Schema.Struct({
+        content: effect.reactNode(),
+        icon: Schema.optional(effect.reactElement()),
+      }),
+    );
+    const { createResourceLayout } = defineResourceLayout({
+      resources: ['users'],
+      options: optionsSchema,
+      layout: {
+        props: {
+          include: {
+            content: true,
+            icon: 'optional',
+          },
+          custom: {
+            footer: effect.reactNode(),
+          },
+        },
+        render: ({ content, icon, footer }) => {
+          expectTypeOf(content).toEqualTypeOf<Exclude<ReactNode, undefined>>();
+          expectTypeOf(icon).toEqualTypeOf<ReactElement | undefined>();
+          expectTypeOf(footer).toEqualTypeOf<Exclude<ReactNode, undefined>>();
+
+          return (
+            <main>
+              {icon}
+              {content}
+              <footer>{footer}</footer>
+            </main>
+          );
+        },
+      },
+    });
+    const Users = createResourceLayout({
+      resource: 'users',
+      name: 'Users',
+      content: 'Users',
+    });
+
+    expect(renderToStaticMarkup(<Users footer='Footer' />)).toContain(
+      'Users<footer>Footer</footer>',
+    );
+    expect(() => renderToStaticMarkup(<Users footer={{} as never} />)).toThrow(
+      'Expected a React node',
+    );
+    expect(Schema.is(optionsSchema)({})).toBe(false);
+    expect(
+      Schema.is(optionsSchema)({
+        content: null,
+      }),
+    ).toBe(true);
+  });
+
   it('requires node keys unless explicitly wrapped as optional', () => {
     const zodSchema = z.object({
       node: reactNode(),
@@ -454,6 +511,12 @@ describe('native React adapters', () => {
       arktype.reactNode(),
       arktype.reactElement(),
       (schema: type.Any, value: unknown) => schema.allows(value),
+    ],
+    [
+      'effect',
+      effect.reactNode(),
+      effect.reactElement(),
+      (schema: Schema.Schema<unknown>, value: unknown) => Schema.is(schema)(value),
     ],
   ] as const) {
     it(`${name} distinguishes nodes from elements`, () => {

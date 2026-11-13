@@ -25,6 +25,10 @@ export default defineConfig({
         __dirname,
         '../adapter-arktype/src/index.ts',
       ),
+      '@jfdevelops/react-layout-adapter-effect': path.resolve(
+        __dirname,
+        '../adapter-effect/src/index.ts',
+      ),
 
       '@jfdevelops/react-layout': path.resolve(__dirname, 'src/index.ts'),
       '@jfdevelops/react-layout-composable-breadcrumb': path.resolve(

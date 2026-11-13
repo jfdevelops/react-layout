@@ -64,7 +64,7 @@ const options = { title: titleSchema, icon: reactElement().optional() };
 ## Native React schemas
 
 React Layout provides separate opt-in packages for Zod 4, Valibot 1,
-and ArkType 2. Each returns the library's own schema type so ordinary schema
+ArkType 2, and Effect 4. Each returns the library's own schema type so ordinary schema
 composition works. Install only the adapter and schema library you use:
 
 ```sh
@@ -72,6 +72,7 @@ pnpm add @jfdevelops/react-layout-adapter-zod zod
 # Or:
 pnpm add @jfdevelops/react-layout-adapter-valibot valibot
 pnpm add @jfdevelops/react-layout-adapter-arktype arktype
+pnpm add @jfdevelops/react-layout-adapter-effect effect
 ```
 
 Each adapter has React and its own schema library as peer dependencies. The
@@ -97,7 +98,7 @@ export const { reactNode, reactElement } = createAdapter({
 The callbacks receive typed React predicates and return Standard Schema
 definitions. The factory preserves each callback's exact native schema type;
 each returned helper constructs a new schema when called. Library-specific
-messages, optionality, and other behavior belong in the callbacks. The three
+messages, optionality, and other behavior belong in the callbacks. The four
 ready-made adapter packages use this same factory.
 
 ## Native schema composition
@@ -137,6 +138,24 @@ const content = type({
   'footer?': reactNode(),
 });
 ```
+
+```ts
+// Effect
+import { Schema } from 'effect';
+import { reactNode, reactElement } from '@jfdevelops/react-layout-adapter-effect';
+
+const content = Schema.toStandardSchemaV1(
+  Schema.Struct({
+    body: reactNode(),
+    icons: Schema.Array(reactElement()),
+    footer: Schema.optional(reactNode()),
+  }),
+);
+```
+
+The Effect helpers are already Standard Schemas. An Effect schema you compose
+yourself is not, so convert it with `Schema.toStandardSchemaV1` before passing
+it to React Layout.
 
 `reactElement()` infers `React.ReactElement` and uses `React.isValidElement`.
 It accepts elements such as `<Icon />`, including fragments, and rejects
