@@ -12,6 +12,44 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  test-packages:
+    name: Discover test packages
+    runs-on: ubuntu-latest
+    outputs:
+      packages: ${{ steps.matrix.outputs.packages }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Discover packages
+        id: matrix
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { appendFileSync, existsSync, readFileSync, readdirSync } from 'node:fs';
+          import { join } from 'node:path';
+
+          const packages = readdirSync('packages', { withFileTypes: true })
+            .filter((entry) => entry.isDirectory() && existsSync(join('packages', entry.name, 'package.json')))
+            .map((entry) => entry.name)
+            .sort();
+
+          for (const folder of packages) {
+            const manifest = JSON.parse(readFileSync(join('packages', folder, 'package.json'), 'utf8'));
+
+            if (!manifest.scripts?.test) {
+              throw new Error(`Package ${folder} must define a test script.`);
+            }
+          }
+
+          appendFileSync(process.env.GITHUB_OUTPUT, `packages=${JSON.stringify(packages)}\n`);
+          NODE
+
   packages:
     name: Packages Build & Test
     runs-on: ubuntu-latest
@@ -70,18 +108,12 @@ jobs:
 
   tests:
     name: Tests (${{ matrix.package }})
+    needs: test-packages
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        package:
-          - '@jfdevelops/react-layout-validator'
-          - '@jfdevelops/react-layout-composables'
-          - '@jfdevelops/react-layout-composable-breadcrumb'
-          - '@jfdevelops/react-layout'
-          - '@jfdevelops/react-layout-devtools-core'
-          - '@jfdevelops/react-layout-devtools-react'
-          - '@jfdevelops/react-layout-devtools-vite'
+        package: ${{ fromJSON(needs.test-packages.outputs.packages) }}
 
     steps:
       - name: Checkout repository
@@ -112,7 +144,7 @@ jobs:
           trap 'rm -f "$temp_summary"' EXIT
           test_status=0
 
-          GITHUB_STEP_SUMMARY="$temp_summary" pnpm --filter "$TEST_PACKAGE" test || test_status=$?
+          GITHUB_STEP_SUMMARY="$temp_summary" pnpm --filter "./packages/$TEST_PACKAGE" test || test_status=$?
 
           if [[ -n "${GITHUB_STEP_SUMMARY:-}" && -s "$temp_summary" ]]; then
             sed "1s|^## Vitest Test Report$|## ${TEST_PACKAGE} Test Report|" "$temp_summary" >> "$GITHUB_STEP_SUMMARY"
