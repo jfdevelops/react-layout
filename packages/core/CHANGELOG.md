@@ -1,5 +1,96 @@
 # @jfdevelops/react-layout
 
+## 3.0.0
+
+### Major Changes
+
+- 65da0eb: Release every React Layout package as part of the coordinated major release for the Standard Schema prop system and updated public types.
+- a418ac4: Consolidate types that were duplicated across the codebase.
+
+  - `Show`, `ShowCallable`, `UnionToIntersection`, `BaseComponent`, and `capitalize` now have one definition, shared by `@jfdevelops/react-layout` and `@jfdevelops/react-layout-composables`.
+  - **Breaking:** the composables `Show` previously reduced a callable type to its bare call signature. It is now the same plain mapped type as in core; use `ShowCallable` to keep a call signature.
+  - `LayoutIncludeProps` is defined once and replaces the hand-written `IncludedProps<MergedLayoutInProps<…>>` constraints.
+  - `NonEmptyResources` and `NestedSubResourceDefinitions` each have a single definition next to `ResourceDefinition`.
+
+- 65da0eb: Give React component custom props optional ReactNode children by default, including the schemas retained for component prop reuse. Reusable helpers and option schemas receive no implicit children. Explicit component children schemas replace the default without losing their input/output types, validation, defaults, or transforms.
+
+  Merge scoped custom declarations before applying implicit defaults so unrelated resource declarations cannot overwrite an explicit children schema.
+
+- a418ac4: Make the public generic types cheaper to type-check. Checking the core package and its tests takes about 45% fewer type instantiations and roughly half the check time.
+
+  - The large builder and result types (`DefinedResourceLayout`, `BoundDefineResourceLayout`, `CreateDefinedResourceLayoutResult`, `CreateRenderState`, `CreateViewMapRenderStatesOptions`, `DefinedResourceLayoutFromStates`, `RenderStateReferences`, `FromStateDefinition`, and the resource/scoped layout builders) declare the variance of their type parameters, so TypeScript no longer measures it structurally.
+  - **Breaking:** most of those parameters are declared invariant. Assigning one of these types to the same type with different type arguments, which could previously succeed structurally, is now an error. Inferred usage is unaffected.
+  - Internal implementation casts no longer compare two large generic types.
+  - **Breaking:** `Show` is now a plain mapped type and no longer preserves call signatures. Use the new `ShowCallable` for types that may be callable.
+  - `MergedLayoutInProps` resolves the inferred options once instead of twice.
+
+- a418ac4: Add `@jfdevelops/react-layout-internals`, the single home for types and helpers shared across React Layout packages (`Show`, `ShowCallable`, `UnionToIntersection`, `BaseComponent`, `capitalize`). It is a private workspace package. Core and composables bundle its helpers and types into their published output and keep re-exporting the public types. It is an implementation detail with no stability guarantee; do not import it directly.
+
+  The layout, render-state, and lazy-default `props` shapes now share one `PropsContract` interface, with `TypedPropsContract` for checked custom props, instead of repeating `{ include?, custom? }` inline.
+
+- c60ad4f: Remove `createProp` and the legacy prop-definition system. Props are described only with Standard Schema definitions (Zod, Valibot, ArkType, Effect, or any other Standard Schema library) and the React adapters.
+
+  **Removed**
+
+  - `createProp`, `createPrimitivePropBuilder`, `isPropDefinitionShape`, and every builder class and type exported by `@jfdevelops/react-layout-validator` (`BaseProp`, `StringProp`, `ObjectProp`, `ComponentProp`, `LegacyPropDefinition`, and the rest).
+  - Values carried by a definition. A literal definition no longer supplies its own value; give the schema a default.
+
+  **Changed**
+
+  - `@jfdevelops/react-layout-validator` now exports `PropDefinition`, `PropDefinitions`, `ResolveProps`, `ResolveInputProps`, `InputDefinitions`, `DefinitionVisibility`, `validateProps`, `validateDefinition`, `resolvePropDefinitionValues`, `isStandardSchema`, and `PropError`. `AnyBuiltPropDefinition` is now `PropDefinition`; `BuiltPropShape` is `PropDefinitions`; `ResolveLayoutProps`, `ResolveLayoutPropsAsDefined`, and `ResolvedBuiltPropShape` are `ResolveProps`; `ResolveLayoutInputProps` and `ResolvedInputShape` are `ResolveInputProps`. It no longer has a React peer dependency.
+  - A failed prop reports the schema's own message as `Invalid prop "<path>": <message>`, including for a missing required prop.
+  - Whether an object keeps undeclared keys is decided by your schema library.
+  - A defined composable uses an explicitly passed prop, even `undefined`, instead of falling back to the provider value.
+  - The breadcrumb composable's default `segments` definition is an ArkType-backed schema exported as `BreadcrumbSegmentsSchema`. `@jfdevelops/react-layout-composables` no longer re-exports `createProp`.
+  - Devtools display schema types, vendor names, and required/optional metadata when available without validating values. Unsupported metadata falls back to `unknown`.
+  - `@jfdevelops/react-layout-internals` exports `NonEmptyReadonlyArray`.
+
+  See "Migrating from `createProp`" in `docs/standard-schema.md`.
+
+  Component slots are available through `componentSlot`. Callback options and nested reusable selections remain supported. Use `createPropsFromComponent(Component).pick(...)` or `.omit(...)` to reuse component prop schemas.
+
+- a418ac4: Give the definition and context types shared bases, and one generic name per slot.
+
+  - New `RenderDefinition<Props, Composables, Render>` interface. `LayoutDefinition`, `ShellLayoutDefinition`, `TypedInlineRenderState`, and the render-state definitions now extend it, so they are interfaces with one documented `props`, `composables`, and `render`.
+  - **Breaking:** `RenderStateContext` takes its parameters as `<Resources, Composables, States>`, matching the layout and shell render contexts. It was `<Composables, Resources, States>`, and `Resources` no longer has a default.
+  - Every `createResourceLayout` call shape builds on one `{ resource, name?, props? }` base.
+  - The resource-selection helpers have a single definition.
+  - Type parameters use one name per slot: `Options`, `IncludeProps`, `CustomProps`, and `Resources`. Positions are unchanged.
+
+### Minor Changes
+
+- 7f503fe: Remove the deprecated `defineLazyDefaults.createErrorComponent` alias and the `CreateLazyErrorComponent` type. Use `defineLazyDefaults.createRenderState({ state: 'Error', render })`, which accepts the same render callback or code-keyed handlers.
+- 96b8647: Rebuild the layout option types as interfaces over shared bases.
+
+  - New `ResourceLayoutScope` (`namespace`, `resources`, `options`) and `ResourceLayoutConfig` (adds `name`) interfaces, exported alongside `CreateViewMapOptions`.
+  - `CreateViewMapOptions`, `CreateViewMapRenderStatesOptions`, `CreateViewMapInlineRenderStatesOptions`, and `CreateDefinedResourceLayoutOptions` are now interfaces extending `ResourceLayoutConfig`; `CreateResourceLayoutWithLayoutOptions` extends `ResourceLayoutScope`.
+  - `CreateDefinedResourceLayoutOptions['props']` reuses `LayoutProps`.
+  - `CreateViewMapInlineRenderStatesOptions` no longer passes its `Namespace` argument into the `Render` slot, so `namespace` is typed correctly.
+
+- a418ac4: `defineResourceLayout.withLayout` now accepts `name`, the default naming convention that `defineResourceLayout` already supported. The option was honored at runtime but missing from the types; created layouts now infer their names from it.
+
+### Patch Changes
+
+- 7a0ea53: Render created layouts with less work. Include behavior is resolved once per created component instead of on every render, included props are resolved in a single pass, and state composables share one definitions object when the options are not a single object schema. In the new client-render benchmark (`pnpm --filter @jfdevelops/react-layout bench`) mounting and re-rendering a layout are each about 8% faster.
+- 27941fc: Keep property documentation on its property in published declarations. The declaration bundler moved every single-line `/** … */` member comment onto the line of the member before it, so editors showed no docs (or the wrong docs) on hover. Member comments are now written in block form, which the bundler preserves.
+- a418ac4: Share more duplicated shapes.
+
+  - Layout and shell render contexts extend one internal base for `composables`, `inProps`, and `name`; `ShellRenderContext` is now an interface.
+  - Devtools core exports `DevtoolsView`, `DevtoolsFilters`, and `DevtoolsTreeOptions`. `DevtoolsConfig` and `DevtoolsPreferences` are both built from them instead of repeating the fields.
+  - The devtools overlay, outlines, and explorer viewport share one `ElementBounds` shape.
+
+- Updated dependencies [65da0eb]
+- Updated dependencies [a418ac4]
+- Updated dependencies [a418ac4]
+- Updated dependencies [27941fc]
+- Updated dependencies [c60ad4f]
+- Updated dependencies [c60ad4f]
+- Updated dependencies [a418ac4]
+  - @jfdevelops/react-layout-adapter-arktype@1.0.0
+  - @jfdevelops/react-layout-composables@1.0.0
+  - @jfdevelops/react-layout-devtools-core@1.0.0
+  - @jfdevelops/react-layout-validator@1.0.0
+
 ## 2.7.0
 
 ### Minor Changes

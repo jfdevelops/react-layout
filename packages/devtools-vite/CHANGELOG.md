@@ -1,5 +1,15 @@
 # @jfdevelops/react-layout-devtools-vite
 
+## 1.0.0
+
+### Major Changes
+
+- 65da0eb: Release every React Layout package as part of the coordinated major release for the Standard Schema prop system and updated public types.
+
+### Patch Changes
+
+- 27941fc: Keep property documentation on its property in published declarations. The declaration bundler moved every single-line `/** … */` member comment onto the line of the member before it, so editors showed no docs (or the wrong docs) on hover. Member comments are now written in block form, which the bundler preserves.
+
 ## 0.1.2
 
 ### Patch Changes

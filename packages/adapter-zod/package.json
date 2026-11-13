@@ -1,6 +1,6 @@
 {
   "name": "@jfdevelops/react-layout-adapter-zod",
-  "version": "0.1.1",
+  "version": "1.0.0",
   "description": "Native zod schemas for React nodes and elements in React Layout.",
   "repository": {
     "type": "git",

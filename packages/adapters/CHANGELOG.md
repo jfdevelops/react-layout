@@ -1,5 +1,17 @@
 # @jfdevelops/react-layout-adapters
 
+## 1.0.0
+
+### Major Changes
+
+- 65da0eb: Release every React Layout package as part of the coordinated major release for the Standard Schema prop system and updated public types.
+
+### Minor Changes
+
+- c60ad4f: Show prop types and schema vendors in inspection details using schema metadata without validating values. Recognize Zod JSON Schema metadata, Valibot structures, ArkType expressions, and React adapter type names. Unsupported schemas display `unknown`.
+
+  Expose `schemaTypeNameSymbol` from the adapter factory package so predicate schemas can retain readable React type names. Devtools search also matches schema vendors.
+
 ## 0.1.1
 
 ### Patch Changes

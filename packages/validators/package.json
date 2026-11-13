@@ -1,6 +1,6 @@
 {
   "name": "@jfdevelops/react-layout-validator",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "description": "Standard Schema prop validation for react-layout.",
   "repository": {
     "type": "git",
