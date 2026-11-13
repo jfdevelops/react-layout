@@ -6,6 +6,7 @@ import {
 } from '../option-schema';
 import {
   normalizeCustomProps,
+  validateCustomProps,
   type CustomPropsInput,
   type NormalizedCustomProps,
   type CustomPropsObject,
@@ -2311,7 +2312,7 @@ function defineResourceLayoutImpl<
         return () => publishResource?.(undefined, shellId);
       }, [publishResource, layoutContext.resource]);
 
-      const validatedProps = validateProps(resolvedLayoutProps, props, {
+      const validatedProps = validateCustomProps(resolvedLayoutProps, props, {
         ...validationContext,
       });
       const includedPropKeys = Object.keys(includeLayoutProps ?? {});
@@ -4183,7 +4184,7 @@ function createResourceLayoutShellComponent(
       ),
     );
 
-    const validatedCustomProps = validateProps(
+    const validatedCustomProps = validateCustomProps(
       shellCustomDefinitions,
       props,
       validationContext,

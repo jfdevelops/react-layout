@@ -246,7 +246,8 @@ type OptionalPropDefinition<Definition> = Definition extends StandardSchemaV1
   ? StandardSchemaV1<
       StandardSchemaV1.InferInput<Definition> | undefined,
       StandardSchemaV1.InferOutput<Definition> | undefined
-    >
+    > &
+      Pick<Definition, Extract<keyof Definition, symbol>>
   : Definition;
 
 /** Raw validator definitions accepted by a generated component call. */
