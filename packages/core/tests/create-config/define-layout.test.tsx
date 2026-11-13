@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   createComposableComponent,
   defineComposableComponent,
+  componentSlot,
   defineResourceLayout,
   MissingResourceProviderError,
 } from '../../src';
@@ -503,6 +504,105 @@ describe('defineResourceLayout', () => {
       }).textContent,
     ).toBe('Default title');
     expect(screen.getByText('Default description').textContent).toBe('Default description');
+  });
+
+  it('creates component slots at layout creation time with defined props', () => {
+    const { createResourceLayout } = testResourceLayout({
+      options: {
+        title: z.string(),
+        actions: componentSlot({
+          props: {
+            label: z.string(),
+          },
+        }),
+      },
+      layout: {
+        props: {
+          include: {
+            title: true,
+            actions: true,
+          },
+        },
+        render: (props) => (
+          <section>
+            <h1>{props.title}</h1>
+            <props.Actions label='Create user' />
+          </section>
+        ),
+      },
+    });
+
+    const UsersPage = createResourceLayout({
+      resource: 'users',
+      name: 'UsersPage',
+      title: 'Users page',
+      Actions: (componentProps) => <button type='button'>{componentProps.label}</button>,
+    });
+
+    render(<UsersPage />);
+
+    expect(
+      screen.getByRole('heading', {
+        name: 'Users page',
+      }).textContent,
+    ).toBe('Users page');
+    expect(
+      screen.getByRole('button', {
+        name: 'Create user',
+      }).textContent,
+    ).toBe('Create user');
+  });
+
+  it('allows setDefaults render functions for component slots', () => {
+    const { createResourceLayout } = testResourceLayout({
+      options: {
+        title: z.string(),
+        actions: componentSlot({
+          props: {
+            label: z.string(),
+          },
+        }),
+      },
+      layout: {
+        props: {
+          include: {
+            title: true,
+            actions: true,
+          },
+        },
+        render: (props) => (
+          <section>
+            <h1>{props.title}</h1>
+            <props.Actions label='Default action' />
+          </section>
+        ),
+      },
+    });
+
+    const createUsersPage = createResourceLayout
+      .forResource({
+        resource: 'users',
+      })
+      .setDefaults({
+        title: 'Users page',
+        Actions: (props) => <button>{props.label}</button>,
+      });
+    const UsersPage = createUsersPage({
+      name: 'UsersPage',
+    });
+
+    render(<UsersPage />);
+
+    expect(
+      screen.getByRole('heading', {
+        name: 'Users page',
+      }).textContent,
+    ).toBe('Users page');
+    expect(
+      screen.getByRole('button', {
+        name: 'Default action',
+      }).textContent,
+    ).toBe('Default action');
   });
 
   it('allows callers to transform setDefault values with updaters', () => {

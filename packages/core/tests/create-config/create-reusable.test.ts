@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createDefinedResourceLayout } from '../../src';
+import { createDefinedResourceLayout, type InPropsOptions } from '../../src';
 import { z } from 'zod';
 
 const { createReusable } = createDefinedResourceLayout({
@@ -68,13 +68,15 @@ describe('createReusable', () => {
     ).toThrow();
   });
 
-  it('combines resource selections, option selections, and custom props', () => {
+  it('combines resource selections, nested selections, and custom props', () => {
     const format = createReusable({
       props: {
         include: {
           resources: true,
           options: {
-            nested: true,
+            nested: {
+              label: true,
+            },
           },
         },
         custom: {
@@ -88,7 +90,6 @@ describe('createReusable', () => {
         resources: ['panedeck'],
         nested: {
           label: 'Docs',
-          hidden: 1,
         },
         suffix: '!',
       }),
@@ -98,7 +99,6 @@ describe('createReusable', () => {
         resources: ['other'],
         nested: {
           label: 'Docs',
-          hidden: 1,
         },
         suffix: '!',
       } as never),
@@ -108,7 +108,6 @@ describe('createReusable', () => {
         resources: [],
         nested: {
           label: 'Docs',
-          hidden: 1,
         },
       } as never),
     ).toThrow();
@@ -172,6 +171,37 @@ describe('createReusable', () => {
     expect(() =>
       custom({
         count: 'one',
+      } as never),
+    ).toThrow();
+  });
+
+  it('supports callback option definitions', () => {
+    const factory = createDefinedResourceLayout({
+      resources: ['users', 'posts'],
+      options: ({
+        resource,
+      }: Pick<InPropsOptions<readonly ['users', 'posts'], never>, 'resource'>) => ({
+        target: resource,
+      }),
+    });
+    const target = factory.createReusable({
+      props: {
+        include: {
+          options: {
+            target: true,
+          },
+        },
+      },
+      fn: ({ target }) => target,
+    });
+    expect(
+      target({
+        target: 'users',
+      }),
+    ).toBe('users');
+    expect(() =>
+      target({
+        target: 'other',
       } as never),
     ).toThrow();
   });

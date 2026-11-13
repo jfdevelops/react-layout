@@ -1,6 +1,7 @@
 import { expectTypeOf, it } from 'vitest';
 import {
   createDefinedResourceLayout,
+  createPropsFromComponent,
   createComposableComponent,
   defineComposableComponent,
   defineResourceLayout,
@@ -389,7 +390,52 @@ it('does not expose synchronous metadata on lazy resource proxies', () => {
   () => {
     // @ts-expect-error lazy proxies cannot synchronously expose resource metadata.
     Users.resource;
+    // @ts-expect-error lazy proxies cannot lift validators before loading.
+    createPropsFromComponent(Users);
   };
+});
+
+it('lifts included component props with their call-site optionality', () => {
+  const sourceDefinition = defineResourceLayout({
+    resources: ['users'],
+    options: {
+      title: z.string(),
+    },
+    layout: {
+      props: {
+        include: {
+          title: {
+            required: false,
+            suppliedVia: 'component',
+          },
+        },
+      },
+      render: () => <></>,
+    },
+  });
+  const Source = sourceDefinition.createResourceLayout({
+    resource: 'users',
+    name: 'Source',
+  });
+  const lifted = createPropsFromComponent(Source).pick('title');
+  const targetDefinition = defineResourceLayout({
+    resources: ['users'],
+    layout: {
+      props: {
+        custom: lifted,
+      },
+      render: () => <></>,
+    },
+  });
+  const Target = targetDefinition.createResourceLayout({
+    resource: 'users',
+    name: 'Target',
+  });
+
+  expectTypeOf(Target).toBeCallableWith({});
+  expectTypeOf(Target).toBeCallableWith({
+    title: 'Optional title',
+  });
 });
 
 it('rejects invalid render-state values across layout entry points', () => {

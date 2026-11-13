@@ -25,13 +25,58 @@ type OptionalByUndefined<Values> = {
   [Key in keyof Values as undefined extends Values[Key] ? Key : never]?: Values[Key];
 };
 
-/** The validated values a render callback receives for a set of definitions. */
+/**
+ * Marks a definition as a component slot: a prop that holds a component and is
+ * therefore exposed under its capitalized name, so it can be rendered as JSX.
+ */
+export const componentSlotSymbol: unique symbol = Symbol.for(
+  '@jfdevelops/react-layout/component-slot',
+) as never;
+
+/** The brand carried by a component-slot definition. */
+export interface ComponentSlotBrand<Shape extends PropDefinitions = PropDefinitions> {
+  /**
+   * The props the slot's component accepts.
+   */
+  readonly [componentSlotSymbol]: Shape;
+}
+
+/** Whether a value is a component-slot definition. */
+export function isComponentSlot(value: unknown): value is PropDefinition & ComponentSlotBrand {
+  return (
+    (typeof value === 'object' || typeof value === 'function') &&
+    value !== null &&
+    componentSlotSymbol in value
+  );
+}
+
+/** A component slot is exposed as `Actions` when it is declared as `actions`. */
+type SlotKey<Key extends string, Definition> =
+  Definition extends ComponentSlotBrand<any> ? Capitalize<Key> : Key;
+
+/**
+ * The validated values a render callback receives for a set of definitions.
+ * Component slots appear under their capitalized names.
+ */
 export type ResolveProps<Shape extends PropDefinitions> = OptionalByUndefined<{
+  [Key in SafeKeyOf<Shape> as SlotKey<Key, Shape[Key]>]: StandardSchemaV1.InferOutput<Shape[Key]>;
+}>;
+
+/** Like {@link ResolveProps}, but every key stays exactly as it was declared. */
+export type ResolvePropsAsDefined<Shape extends PropDefinitions> = OptionalByUndefined<{
   [Key in SafeKeyOf<Shape>]: StandardSchemaV1.InferOutput<Shape[Key]>;
 }>;
 
-/** The values a caller supplies for a set of definitions. */
+/**
+ * The values a caller supplies for a set of definitions. Component slots are
+ * supplied under their capitalized names.
+ */
 export type ResolveInputProps<Shape extends PropDefinitions> = OptionalByUndefined<{
+  [Key in SafeKeyOf<Shape> as SlotKey<Key, Shape[Key]>]: StandardSchemaV1.InferInput<Shape[Key]>;
+}>;
+
+/** Like {@link ResolveInputProps}, but every key stays exactly as it was declared. */
+export type ResolveInputPropsAsDefined<Shape extends PropDefinitions> = OptionalByUndefined<{
   [Key in SafeKeyOf<Shape>]: StandardSchemaV1.InferInput<Shape[Key]>;
 }>;
 

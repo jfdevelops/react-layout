@@ -10,7 +10,13 @@ import { createLayoutResourcesAccessor } from './define-layout';
 import { schemaOptionDefinitions, validateOptionSchema, type OptionSchema } from '../option-schema';
 import type { CreateReusable, ReusableOverlap } from './reusable-types';
 import { type } from 'arktype';
-import { acceptsUndefined, objectDefinition, optionalDefinition } from '../built-in-props';
+import { fieldDefinitions } from '../schema-fields';
+import {
+  acceptsUndefined,
+  objectDefinition,
+  optionalDefinition,
+  resolveOptionDefinitions,
+} from '../built-in-props';
 export type * from './reusable-types';
 import {
   singleResourceInput,
@@ -33,6 +39,7 @@ type ResourceSelections = Map<ResourceSelector, unknown>;
 
 type ObjectPlan = {
   kind: 'object';
+  whole?: ValuePlan & { children: Record<string, Plan> };
   children: Record<string, Plan>;
   optional: boolean;
   guards: PlanLocation[][];
@@ -86,6 +93,37 @@ function optionPlan(
         selector: value as ValuePlan['selector'],
         definition,
       };
+    } else if (
+      (value === true && fieldDefinitions(definition)) ||
+      (value && typeof value === 'object')
+    ) {
+      // Fields come from the schema library when it exposes them. Otherwise the
+      // selected keys become unvalidated parts of a value its schema validates.
+      const fields =
+        fieldDefinitions(definition) ??
+        schemaOptionDefinitions(definition as OptionSchema, Object.keys(value as object));
+      const optional = acceptsUndefined(definition);
+      const nested = optionPlan(
+        fields,
+        value,
+        from,
+        location.path,
+        optional ? [...optionalPaths, location.path] : optionalPaths,
+      );
+      children[key] = {
+        ...nested,
+        optional,
+        whole:
+          value === true
+            ? {
+                ...location,
+                kind: 'value',
+                source: 'option',
+                definition,
+                children: nested.children,
+              }
+            : undefined,
+      };
     } else if (value === true) {
       children[key] = {
         ...location,
@@ -135,6 +173,31 @@ function sameSelection(left: ValuePlan, right: ValuePlan) {
   );
 }
 
+function matchesWholeSelection(
+  children: Record<string, Plan>,
+  original: Record<string, Plan>,
+): boolean {
+  if (Object.keys(children).length !== Object.keys(original).length) {
+    return false;
+  }
+
+  return Object.entries(children).every(([key, child]) => {
+    const previous = original[key];
+
+    if (child.kind === 'object' && previous?.kind === 'object') {
+      return matchesWholeSelection(child.children, previous.children);
+    }
+
+    return (
+      child.kind === 'value' &&
+      previous?.kind === 'value' &&
+      child.from === previous.from &&
+      child.definition === previous.definition &&
+      sameSelection(child, previous)
+    );
+  });
+}
+
 function mergePlans(
   left: ObjectPlan,
   right: ObjectPlan,
@@ -173,6 +236,9 @@ function mergePlans(
   return {
     kind: 'object',
     children,
+    whole: [left.whole, right.whole].find(
+      (whole) => whole && matchesWholeSelection(children, whole.children),
+    ),
     optional: left.optional && right.optional,
     guards: [...left.guards, ...right.guards],
   };
@@ -199,6 +265,8 @@ function withoutSharedCallerValues(left: ObjectPlan, right: ObjectPlan): ObjectP
   return {
     ...left,
     children,
+    whole:
+      left.whole && matchesWholeSelection(children, left.whole.children) ? left.whole : undefined,
   };
 }
 
@@ -210,6 +278,14 @@ function planDefinitions(plan: ObjectPlan, from: 'props' | 'options'): InPropsOb
         definitions[key] = value.definition;
       }
     } else {
+      if (value.whole) {
+        if (value.whole.from === from && value.whole.definition) {
+          definitions[key] = value.whole.definition;
+        }
+
+        continue;
+      }
+
       const nested = planDefinitions(value, from);
       if (Object.keys(nested).length) {
         const definition = objectDefinition(nested);
@@ -283,6 +359,16 @@ function resolvePlan(
   const result: Record<string, unknown> = {};
   for (const [key, node] of Object.entries(plan.children)) {
     if (node.kind === 'object') {
+      if (node.whole) {
+        const value = readLocation(node.whole, props, options, resources);
+
+        if (value !== undefined) {
+          result[key] = value;
+        }
+
+        continue;
+      }
+
       if (
         node.guards.some((group) =>
           group.every(
@@ -323,7 +409,7 @@ export function createReusableBuilder<
 >(resources: Resources, options: Options): CreateReusable<Resources, Options>;
 export function createReusableBuilder(
   resources: ReadonlyArray<ResourceDefinition>,
-  options: InPropsObject | OptionSchema,
+  options: InPropsObject | OptionSchema | ((...args: any[]) => InPropsObject),
 ) {
   if (isStandardSchema(options)) {
     return function createSchemaReusable(definition: {
@@ -402,7 +488,7 @@ export function createReusableBuilder(
     ) {
       throw new LayoutConfigurationError('Unknown reusable overlap policy.');
     }
-    const optionDefinitions = options as InPropsObject;
+    const optionDefinitions = resolveOptionDefinitions(options, keys, 'Reusable') as InPropsObject;
 
     function compile(selection: RuntimeSelection, from: 'props' | 'options') {
       let plan = objectPlan({});

@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { createElement, useState, type ComponentType, type JSX, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { afterEach, describe, expect, it } from 'vitest';
-import { defineResourceLayout } from '../../src';
+import { componentSlot, defineResourceLayout } from '../../src';
 import { renderCapturingError, testResourceLayout, testResourceLayoutWithRender } from './helpers';
 import { z } from 'zod';
 import { reactNode, reactElement } from '@jfdevelops/react-layout-adapter-zod';
@@ -96,6 +96,77 @@ describe('createComponent', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('User content')).toBeInTheDocument();
     expect(screen.getByText('custom:users')).toBeInTheDocument();
+  });
+
+  it('keeps createComponent component slot names as declared', () => {
+    const { createResourceLayout } = testResourceLayout({
+      options: {
+        actions: componentSlot(),
+        title: z.string(),
+      },
+      layout: {
+        props: {
+          include: {
+            actions: true,
+            title: true,
+          },
+          custom: {
+            children: reactNode().optional(),
+          },
+        },
+        render: ({ children, title }) => (
+          <section>
+            <h1>{title}</h1>
+            {children}
+          </section>
+        ),
+      },
+    });
+    const Directory = createResourceLayout.forResources('users').createComponent({
+      props: {
+        include: {
+          actions: true,
+          title: true,
+        },
+        custom: {
+          badge: reactElement(),
+        },
+      },
+      resources: {
+        users: {
+          render: ({ actions, badge }) => (
+            <div>
+              {actions()}
+              {badge}
+            </div>
+          ),
+        },
+      },
+      render: ({ actions, badge, title }, context) => (
+        <context.Root>
+          <h2>{title}</h2>
+          {actions()}
+          {badge}
+          <context.Users title={title} actions={actions} badge={badge} />
+        </context.Root>
+      ),
+    });
+
+    render(
+      <Directory
+        resource='users'
+        title='Users'
+        actions={() => <button type='button'>Go</button>}
+        badge={<span>badge</span>}
+      />,
+    );
+
+    expect(
+      screen.getAllByRole('button', {
+        name: 'Go',
+      }).length,
+    ).toBeGreaterThan(0);
+    expect(screen.getAllByText('badge').length).toBeGreaterThan(0);
   });
 
   it('forwards props declared by an object-form default state to Root', () => {

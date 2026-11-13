@@ -139,7 +139,15 @@ export type {
   MissingPathVariableContext,
   ResourceStateError,
 } from './errors';
+export { componentSlot } from './component-slot';
+export type {
+  ComponentSlotComponent,
+  ComponentSlotDefinition,
+  ComponentSlotOptions,
+} from './component-slot';
 export {
+  createPropsFromComponent,
+  isComponentSlot,
   isStandardSchema,
   PropError,
   resolvePropDefinitionValues,
@@ -160,7 +168,9 @@ export type {
   InPropsDefinition,
   PropsContract,
   RenderDefinition,
+  InPropsFunction,
   InPropsObject,
+  InPropsOptions,
   LayoutRenderProps,
   MergedLayoutInProps,
   PropsContextRender,

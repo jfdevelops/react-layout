@@ -1,5 +1,6 @@
 import { reactNode } from '@jfdevelops/react-layout-adapter-arktype';
 import type { StandardSchemaV1 } from '@jfdevelops/react-layout-validator';
+import { type } from 'arktype';
 import type { ReactNode } from 'react';
 
 /** The schema behind the `children: 'required'` shorthand. */
@@ -14,26 +15,42 @@ export type OptionalChildren = StandardSchemaV1<ReactNode, ReactNode>;
 export const requiredChildren: RequiredChildren = reactNode();
 
 /**
- * Wraps a schema so a missing value is accepted without consulting it. Any
- * supplied value is still validated by the original schema.
+ * Allows omitted values while preserving the schema's defaults and symbol metadata.
  */
-export function optionalDefinition<Input, Output>(
-  definition: StandardSchemaV1<Input, Output>,
-): StandardSchemaV1<Input | undefined, Output | undefined> {
+export function optionalDefinition<Definition extends StandardSchemaV1>(
+  definition: Definition,
+): StandardSchemaV1<
+  StandardSchemaV1.InferInput<Definition> | undefined,
+  StandardSchemaV1.InferOutput<Definition> | undefined
+> &
+  Pick<Definition, Extract<keyof Definition, symbol>> {
   const standard = definition['~standard'];
 
-  return {
+  const wrapped: StandardSchemaV1 = {
     '~standard': {
       version: 1,
       vendor: standard.vendor,
-      validate: (value) =>
-        value === undefined
+      validate(value) {
+        const result = standard.validate(value);
+
+        return value === undefined && !(result instanceof Promise) && result.issues
           ? {
               value: undefined,
             }
-          : standard.validate(value),
+          : result;
+      },
     },
   };
+
+  for (const symbol of Object.getOwnPropertySymbols(definition)) {
+    Object.defineProperty(wrapped, symbol, Object.getOwnPropertyDescriptor(definition, symbol)!);
+  }
+
+  return wrapped as StandardSchemaV1<
+    StandardSchemaV1.InferInput<Definition> | undefined,
+    StandardSchemaV1.InferOutput<Definition> | undefined
+  > &
+    Pick<Definition, Extract<keyof Definition, symbol>>;
 }
 
 export const optionalChildren: OptionalChildren = optionalDefinition(requiredChildren);
@@ -107,4 +124,53 @@ export function objectDefinition(
       },
     },
   };
+}
+
+/**
+ * A definition for one fixed value. A missing value resolves to that value, so
+ * including the definition supplies it without the caller passing anything.
+ */
+export function literalDefinition<const Value extends string>(
+  value: Value,
+): StandardSchemaV1<Value | undefined, Value> {
+  const standard = (type.unit(value) as unknown as StandardSchemaV1<Value, Value>)['~standard'];
+
+  return {
+    '~standard': {
+      version: 1,
+      vendor: standard.vendor,
+      validate: (input) =>
+        input === undefined
+          ? {
+              value,
+            }
+          : standard.validate(input),
+    },
+  };
+}
+
+/** A definition that accepts any one of the given values. */
+export function enumDefinition<const Values extends ReadonlyArray<string>>(
+  values: Values,
+): StandardSchemaV1<Values[number], Values[number]> {
+  return type.enumerated(...values) as unknown as StandardSchemaV1<Values[number], Values[number]>;
+}
+
+/**
+ * Resolves `options` declared as a function of the bound resources and the
+ * component name. Schemas and maps of schemas are returned unchanged.
+ */
+export function resolveOptionDefinitions<Options>(
+  options: Options,
+  resourceKeys: ReadonlyArray<string>,
+  name: string,
+): Exclude<Options, (...args: never[]) => unknown> {
+  return (
+    typeof options === 'function' && !('~standard' in options)
+      ? options({
+          resource: enumDefinition(resourceKeys),
+          name: literalDefinition(name),
+        })
+      : options
+  ) as Exclude<Options, (...args: never[]) => unknown>;
 }

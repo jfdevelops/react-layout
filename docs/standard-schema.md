@@ -196,10 +196,9 @@ Errors remain contextual `PropError` instances. `path`, `layoutName`, and
 with its path prefixed by the prop name; the primary message uses the first
 issue's message.
 
-Standard Schema does not expose object-field introspection. Reusable
-selections therefore accept the entire field (`meta: true`) or a selector
-(`meta: (value) => value.owner`). No schema library registration is needed
-for ordinary validation.
+Reusable selections accept whole fields (`meta: true`), selectors
+(`meta: (value) => value.owner`), and nested selections
+(`meta: { owner: true }`). No schema library registration is needed for validation.
 
 Reusable functions with an object options schema validate the whole object
 before selecting output values. Inputs selected by `props.include.options`
@@ -237,22 +236,18 @@ React Layout adapters instead.
 
 Behavior that depended on the old definitions has changed:
 
-- **Component slots.** A `JSX.Element` definition used to become a
-  capitalized component prop (`actions` became `<props.Actions />`) and
-  could declare its own props. Pass an element with `reactElement()`, or
-  describe a render callback with a function schema.
+- **Component slots.** Use `componentSlot({ props: { label: z.string() } })`.
+  A slot named `actions` is still supplied and rendered as `Actions`.
 - **Values carried by a definition.** A literal definition used to supply its
   own value. Give the schema a default instead, for example
   `z.literal('docs').default('docs')`.
-- **`options` as a function.** `options: ({ resource, name }) => …` is no
-  longer accepted. Pass an object schema or a map of schemas.
-- **Nested reusable selections.** `options: { meta: { owner: true } }` is no
-  longer accepted. Select the whole field or use a selector.
-- **`createProp.fromComponent`.** Created components no longer expose their
-  definitions. Share the schemas through a constant.
+- **`options` as a function.** `options: ({ resource, name }) => ...` remains supported; return schemas.
+- **Nested reusable selections.** `options: { meta: { owner: true } }` remains supported.
+- **`createProp.fromComponent`.** Use `createPropsFromComponent(Component).pick(...)`
+  or `.omit(...)` to reuse retained prop schemas.
 - **Error messages.** A failed prop reports the schema's own message as
   `Invalid prop "<path>": <message>`, including for a missing required prop.
 - **Unknown keys.** Whether an object keeps undeclared keys is now decided by
   your schema library.
-- **Devtools.** A prop's type is shown as its schema vendor, such as
-  `zod schema`, because a schema is never run to describe it.
+- **Devtools.** Props show their type and schema vendor where metadata is available.
+  Unknown schemas show `unknown`; inspection never validates a value.

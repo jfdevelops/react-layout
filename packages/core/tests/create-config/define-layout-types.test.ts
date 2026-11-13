@@ -1,9 +1,14 @@
-import type { JSX, ReactNode } from 'react';
+import type { JSX, ReactElement, ReactNode } from 'react';
 import { describe, expectTypeOf, it } from 'vitest';
-import { defineComposableComponent, defineResourceLayout } from '../../src';
+import {
+  componentSlot,
+  defineComposableComponent,
+  defineResourceLayout,
+  type ComponentSlotComponent,
+} from '../../src';
 import { testResourceLayout } from './helpers';
 import { z } from 'zod';
-import { reactNode } from '@jfdevelops/react-layout-adapter-zod';
+import { reactNode, reactElement } from '@jfdevelops/react-layout-adapter-zod';
 
 const { createResourceLayout } = testResourceLayout({
   resources: ['admins'],
@@ -652,6 +657,75 @@ describe('createComponent types', () => {
         Loading: () => JSX.Element;
       }
     >();
+  });
+
+  it('keeps declared prop keys uncapitalized for component slots', () => {
+    const { createResourceLayout: createJsxSlotLayout } = testResourceLayout({
+      options: {
+        actions: componentSlot(),
+        title: z.string(),
+      },
+      layout: {
+        props: {
+          include: {
+            actions: true,
+            title: true,
+          },
+        },
+        render: () => null as never,
+      },
+    });
+    const JsxSlotDirectory = createJsxSlotLayout.forResources('users').createComponent({
+      props: {
+        include: {
+          actions: true,
+          title: true,
+        },
+        custom: {
+          badge: reactElement(),
+        },
+      },
+      resources: {
+        users: {
+          render: (props) => {
+            expectTypeOf(props.actions).toEqualTypeOf<ComponentSlotComponent>();
+            expectTypeOf(props.badge).toEqualTypeOf<ReactElement>();
+            () => {
+              // @ts-expect-error declared keys are not capitalized
+              props.Actions;
+            };
+
+            return null as never;
+          },
+        },
+      },
+      render: (props) => {
+        expectTypeOf(props.actions).toEqualTypeOf<ComponentSlotComponent>();
+        () => {
+          // @ts-expect-error declared keys are not capitalized
+          props.Badge;
+        };
+
+        return null as never;
+      },
+    });
+
+    expectTypeOf(JsxSlotDirectory).toBeCallableWith({
+      resource: 'users' as const,
+      title: 'Users',
+      actions: (() => null as never) as () => JSX.Element,
+      badge: null as never as JSX.Element,
+    });
+
+    () => {
+      JsxSlotDirectory({
+        resource: 'users',
+        title: 'Users',
+        // @ts-expect-error call site uses the declared key, not Actions
+        Actions: () => null as never,
+        badge: null as never,
+      });
+    };
   });
 
   it('types setProps base props and forbids redefining them', () => {
