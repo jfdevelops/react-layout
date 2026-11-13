@@ -6,7 +6,6 @@ import {
   createProp,
   ResourceModuleLoadError,
   LazyResourceStateNotFoundError,
-  type LazyResourceError,
 } from '../../src';
 
 afterEach(() => {
@@ -130,21 +129,6 @@ it('supports narrowed error handlers, fallback, retry, and composables on the al
   );
   fireEvent.click(screen.getByRole('button'));
   expect(retry).toHaveBeenCalledOnce();
-  cleanup();
-  const Legacy = defineLazyDefaults.createErrorComponent(({ error }, { composables }) => {
-    expectTypeOf(error).toEqualTypeOf<LazyResourceError>();
-    expectTypeOf(composables).toHaveProperty('Layout');
-
-    return <composables.Layout>Legacy:{error.code}</composables.Layout>;
-  });
-  render(
-    <Legacy
-      resource='users'
-      error={new ResourceModuleLoadError('users', 'offline')}
-      retry={retry}
-    />,
-  );
-  expect(screen.getByText('Legacy:resourceModuleLoad')).toBeInTheDocument();
 });
 
 it('uses composables in registered lazy defaults without remounting on prop updates', async () => {
@@ -216,10 +200,13 @@ it('shares render-state composables and keeps children optional in lazy defaults
 
 it('preserves hooks in existing error components', () => {
   const { defineLazyDefaults } = factory();
-  const ErrorUI = defineLazyDefaults.createErrorComponent(() => {
-    const [count, setCount] = useState(0);
+  const ErrorUI = defineLazyDefaults.createRenderState({
+    state: 'Error',
+    render: () => {
+      const [count, setCount] = useState(0);
 
-    return <button onClick={() => setCount(count + 1)}>{count}</button>;
+      return <button onClick={() => setCount(count + 1)}>{count}</button>;
+    },
   });
   render(
     <ErrorUI

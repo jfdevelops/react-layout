@@ -50,18 +50,6 @@ export type LazyErrorHandlers<Resource, Custom extends object = {}, Context = ne
   ) => ReactNode;
 };
 
-export type CreateLazyErrorComponent<Resource, Context = never> = {
-  <Custom extends object = {}>(
-    render: (
-      props: WithChildren<Custom> & LazyResourceErrorProps<Resource>,
-      ...context: ErrorHandlerContext<Context>
-    ) => ReactNode,
-  ): ComponentType<WithChildren<Custom> & LazyResourceErrorProps<Resource>>;
-  <Custom extends object = {}>(
-    handlers: LazyErrorHandlers<Resource, Custom, Context>,
-  ): ComponentType<WithChildren<Custom> & LazyResourceErrorProps<Resource>>;
-};
-
 /** Internal factory defaults propagated to layouts without publishing metadata. */
 export const lazyDefaultsSymbol = Symbol('lazyDefaults');
 

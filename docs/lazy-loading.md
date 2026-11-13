@@ -122,12 +122,9 @@ defineLazyDefaults({
 });
 ```
 
-`createErrorComponent` remains supported as a deprecated alias for
-`createRenderState({ state: 'Error', render })`, including its generic custom
-props and handler-map forms. It now wraps the callback to provide composables;
-it no longer returns the original callback by identity. Migrate custom props to
-`props.custom` to get runtime validation. The alias is retained for a minor
-release and scheduled for removal in the next major.
+The deprecated `createErrorComponent` alias has been removed. Use
+`createRenderState({ state: 'Error', render })`, which accepts the same render
+callback or code-keyed handler map; declare custom props in `props.custom`.
 
 **Migration:** lazy `Error` components handle lazy failures only. Put an error
 boundary around the route to handle ordinary page render exceptions. Compound

@@ -440,25 +440,23 @@ it('provides type-only errors and stable, typed error component factories with c
       {resource}:{error.message}
     </p>
   );
-  expect(defineLazyDefaults.createErrorComponent(Render)).toBeTypeOf('function');
-  const Custom = defineLazyDefaults.createErrorComponent<{ title: string }>(
-    ({ title, error, resource }) => (
-      <p>
-        {title}:{resource}:{error.code}
-      </p>
-    ),
-  );
-  expectTypeOf(Custom).toMatchTypeOf<
-    ComponentType<{ title: string } & LazyResourceErrorProps<'users' | 'teams' | 'teams.members'>>
-  >();
-  const ByCode = defineLazyDefaults.createErrorComponent({
-    lazyResourceStateNotFound: ({ error, resource }) => {
-      expectTypeOf(error).toEqualTypeOf<LazyResourceStateNotFoundError>();
-      expectTypeOf(resource).toEqualTypeOf<'users' | 'teams' | 'teams.members'>();
+  expect(
+    defineLazyDefaults.createRenderState({
+      state: 'Error',
+      render: Render,
+    }),
+  ).toBeTypeOf('function');
+  const ByCode = defineLazyDefaults.createRenderState({
+    state: 'Error',
+    render: {
+      lazyResourceStateNotFound: ({ error, resource }) => {
+        expectTypeOf(error).toEqualTypeOf<LazyResourceStateNotFoundError>();
+        expectTypeOf(resource).toEqualTypeOf<'users' | 'teams' | 'teams.members'>();
 
-      return <p>{error.state}</p>;
+        return <p>{error.state}</p>;
+      },
+      fallback: ({ error }) => <p>Fallback {error.code}</p>,
     },
-    fallback: ({ error }) => <p>Fallback {error.code}</p>,
   });
   const retry = vi.fn();
   render(
@@ -492,7 +490,10 @@ it('rethrows errors with no code handler or fallback', () => {
   const { defineLazyDefaults } = createDefinedResourceLayout({
     resources: ['users'],
   });
-  const ErrorUI = defineLazyDefaults.createErrorComponent({});
+  const ErrorUI = defineLazyDefaults.createRenderState({
+    state: 'Error',
+    render: {},
+  });
   const error = new ResourceModuleLoadError('users', 'offline');
   expect(() => render(<ErrorUI error={error} resource='users' retry={() => undefined} />)).toThrow(
     error,
