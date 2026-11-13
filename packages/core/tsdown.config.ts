@@ -2,8 +2,12 @@ import { defineConfig } from 'tsdown';
 
 export default defineConfig({
   deps: {
+    alwaysBundle: ['@jfdevelops/react-layout-internals'],
     dts: {
-      alwaysBundle: ['@jfdevelops/create-error'],
+      alwaysBundle: [
+        '@jfdevelops/create-error',
+        '@jfdevelops/react-layout-internals',
+      ],
     },
   },
   entry: {

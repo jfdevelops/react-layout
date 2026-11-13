@@ -45,7 +45,6 @@
     "@jfdevelops/react-layout-adapter-arktype": "workspace:*",
     "@jfdevelops/react-layout-composables": "workspace:*",
     "@jfdevelops/react-layout-devtools-core": "workspace:*",
-    "@jfdevelops/react-layout-internals": "workspace:*",
     "@jfdevelops/react-layout-validator": "workspace:*",
     "arktype": "2.2.8"
   },
@@ -54,6 +53,7 @@
     "@jfdevelops/react-layout-adapter-valibot": "workspace:*",
     "@jfdevelops/react-layout-adapter-zod": "workspace:*",
     "@jfdevelops/react-layout-composable-breadcrumb": "workspace:*",
+    "@jfdevelops/react-layout-internals": "workspace:*",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.2",
     "@types/node": "24.10.1",

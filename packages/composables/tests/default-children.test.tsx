@@ -52,4 +52,29 @@ describe('default composable children', () => {
     render(<Required>Validated content</Required>);
     expect(screen.getByText('Validated content')).toBeInTheDocument();
   });
+
+  it('allows an explicit non-ReactNode children schema to override the default', () => {
+    const createCustom = defineComposableComponent({
+      name: 'Custom',
+      props: {
+        children: z.object({
+          label: z.string(),
+        }),
+      },
+    });
+    const { Custom } = createCustom(({ children }) => {
+      expectTypeOf(children).toEqualTypeOf<{ label: string }>();
+
+      return <p>{children.label}</p>;
+    });
+
+    render(
+      <Custom>
+        {{
+          label: 'Custom children',
+        }}
+      </Custom>,
+    );
+    expect(screen.getByText('Custom children')).toBeInTheDocument();
+  });
 });

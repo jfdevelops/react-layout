@@ -279,11 +279,11 @@ export function createForResources<
       ...bags: Array<CreateComponentPropsBag | undefined>
     ): CreateComponentPropsBag {
       const include: Record<string, true | 'optional'> = {};
-      const custom: Record<string, PropDefinition> = {};
+      const custom: CustomPropsObject = {};
 
       for (const bag of bags) {
         Object.assign(include, bag?.include);
-        Object.assign(custom, normalizeCustomProps(bag?.custom ?? {}));
+        Object.assign(custom, bag?.custom);
 
         for (const key of Object.keys(bag?.defined ?? {})) {
           include[key] = true;

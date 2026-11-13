@@ -4,8 +4,8 @@ import { spawnSync } from 'node:child_process';
  * Upper bound on type instantiations for checking this package's source and
  * tests. Raise it deliberately, in the same change that needs the headroom.
  */
-// Includes restored APIs, schema regression tests, and render benchmark consumer types.
-const instantiationBudget = 3_650_000;
+// Includes implicit children contracts, schema regressions, and render benchmark consumer types.
+const instantiationBudget = 3_950_000;
 
 const result = spawnSync('tsc --noEmit --extendedDiagnostics', {
   encoding: 'utf8',

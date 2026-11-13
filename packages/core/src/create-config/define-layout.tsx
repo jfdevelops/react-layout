@@ -1427,17 +1427,19 @@ type CreateResourceLayoutFnImpl<
       States,
       Resources,
       Options,
-      CustomProps &
-        IncludedComponentPropDefinitions<
-          MergedLayoutInProps<Resources, Options, Composables>,
-          DefaultStateIncludes<
-            Resources,
-            Options,
-            Composables,
-            States,
-            IncludeProps
+      NormalizedCustomProps<
+        CustomProps &
+          IncludedComponentPropDefinitions<
+            MergedLayoutInProps<Resources, Options, Composables>,
+            DefaultStateIncludes<
+              Resources,
+              Options,
+              Composables,
+              States,
+              IncludeProps
+            >
           >
-        >
+      >
     >,
     Namespace
   >
@@ -1482,17 +1484,19 @@ type CreateResourceLayoutFnImpl<
         States,
         Resources,
         Options,
-        CustomProps &
-          IncludedComponentPropDefinitions<
-            MergedLayoutInProps<Resources, Options, Composables>,
-            DefaultStateIncludes<
-              Resources,
-              Options,
-              Composables,
-              States,
-              IncludeProps
+        NormalizedCustomProps<
+          CustomProps &
+            IncludedComponentPropDefinitions<
+              MergedLayoutInProps<Resources, Options, Composables>,
+              DefaultStateIncludes<
+                Resources,
+                Options,
+                Composables,
+                States,
+                IncludeProps
+              >
             >
-          >
+        >
       >,
       Namespace
     >
@@ -1534,17 +1538,19 @@ type CreateResourceLayoutFnImpl<
         States,
         Resources,
         Options,
-        CustomProps &
-          IncludedComponentPropDefinitions<
-            MergedLayoutInProps<Resources, Options, Composables>,
-            DefaultStateIncludes<
-              Resources,
-              Options,
-              Composables,
-              States,
-              IncludeProps
+        NormalizedCustomProps<
+          CustomProps &
+            IncludedComponentPropDefinitions<
+              MergedLayoutInProps<Resources, Options, Composables>,
+              DefaultStateIncludes<
+                Resources,
+                Options,
+                Composables,
+                States,
+                IncludeProps
+              >
             >
-          >
+        >
       >,
       Namespace
     >
@@ -3542,10 +3548,6 @@ export type ResourceLayoutShellProps<
        * the shell.
        */
       resource?: LayoutResourceKey<Resources>;
-      /**
-       * The shell's content region — typically a router `<Outlet />`.
-       */
-      children?: ReactNode;
     }
 >;
 
