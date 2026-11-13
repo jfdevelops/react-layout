@@ -8,7 +8,7 @@ import {
   defineResourceLayout,
   createDefinedResourceLayout,
   defineComposableComponent,
-  createProp,
+  type InPropsOptions,
 } from '../../src';
 import { reactNode, reactElement } from '@jfdevelops/react-layout-adapter-zod';
 
@@ -397,7 +397,7 @@ it('supplies resolved shell defaults to required legacy and schema presets witho
   const preset = defineComposableComponent({
     name: 'Summary',
     props: {
-      count: createProp.number(),
+      count: z.number(),
       label: z.string(),
       optional: z.string().optional(),
     },
@@ -474,4 +474,58 @@ it('supplies transformed shell defaults to schema presets accepting the resolved
 
   expect(markup).toContain('>3<span');
   expect(markup).toContain('>3</span>');
+});
+
+it('builds options from the bound resources and component name', () => {
+  const { createResourceLayout } = defineResourceLayout({
+    resources: ['users', 'posts'],
+    options: ({ resource, name }: InPropsOptions<readonly ['users', 'posts'], string>) => ({
+      target: resource,
+      label: name,
+    }),
+    layout: {
+      props: {
+        include: {
+          target: true,
+          label: true,
+        },
+      },
+      render: ({ target, label }) => {
+        expectTypeOf(target).toEqualTypeOf<'users' | 'posts'>();
+        expectTypeOf(label).toBeString();
+
+        return (
+          <p>
+            {label}:{target}
+          </p>
+        );
+      },
+    },
+  });
+  const Users = createResourceLayout({
+    resource: 'users',
+    name: 'UsersPage',
+    target: 'posts',
+  });
+
+  // The name definition supplies its own value; nothing is passed for `label`.
+  expect(renderToStaticMarkup(<Users />)).toContain('UsersPage:posts');
+  expect(() =>
+    createResourceLayout({
+      resource: 'users',
+      name: 'Invalid',
+      target: 'missing' as never,
+    }),
+  ).not.toThrow();
+  expect(() =>
+    renderToStaticMarkup(
+      createElement(
+        createResourceLayout({
+          resource: 'users',
+          name: 'Invalid',
+          target: 'missing' as never,
+        }),
+      ),
+    ),
+  ).toThrow(/target/);
 });

@@ -106,7 +106,7 @@ const ErrorCard = defineLazyDefaults.createRenderState({
   state: 'Error',
   props: {
     include: { title: true }, // title is declared in the factory's options
-    custom: { showReload: createProp.boolean().optional() },
+    custom: { showReload: z.boolean().optional() },
   },
   render: ({ title, resource, error, retry, showReload }, { composables }) => (
     <composables.Layout>
@@ -228,7 +228,7 @@ const { createRenderState, defineResourceLayout } = factory;
 const createState = createRenderState.forStates('default', 'Loading', 'Error', 'NotFound');
 const Shell = createState({
   state: 'Layout',
-  props: { custom: { children: createProp.component({ type: 'ReactNode' }).optional() } },
+  props: { custom: { children: reactNode().optional() } },
   composables: (create) => ({
     Layout: create({ name: 'Layout' }),
     Content: create({ name: 'Content' }),

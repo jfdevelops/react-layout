@@ -1,28 +1,29 @@
 import { describe, expect, it } from 'vitest';
-import { createDefinedResourceLayout, createProp, type InPropsOptions } from '../../src';
+import { createDefinedResourceLayout, type InPropsOptions } from '../../src';
+import { z } from 'zod';
 
 const { createReusable } = createDefinedResourceLayout({
   resources: ['panedeck', 'jfdevelops'],
   options: {
-    title: createProp.string(),
-    presentation: createProp.string.enum(['docs', 'article']),
-    meta: createProp
+    title: z.string(),
+    presentation: z.enum(['docs', 'article']),
+    meta: z
       .object({
-        source: createProp.string.literal('github'),
-        owner: createProp.string(),
-        repo: createProp.string(),
+        source: z.literal('github'),
+        owner: z.string(),
+        repo: z.string(),
       })
       .or(
-        createProp.object({
-          source: createProp.string.literal('npm'),
-          package: createProp.string(),
+        z.object({
+          source: z.literal('npm'),
+          package: z.string(),
         }),
       ),
-    nested: createProp.object({
-      label: createProp.string(),
-      hidden: createProp.number(),
+    nested: z.object({
+      label: z.string(),
+      hidden: z.number(),
     }),
-    subtitle: createProp.string().optional(),
+    subtitle: z.string().optional(),
   },
 });
 
@@ -79,7 +80,7 @@ describe('createReusable', () => {
           },
         },
         custom: {
-          suffix: createProp.string(),
+          suffix: z.string(),
         },
       },
       fn: ({ resources, nested, suffix }) => `${resources.join(',')}: ${nested.label}${suffix}`,
@@ -157,7 +158,7 @@ describe('createReusable', () => {
     const custom = createReusable({
       props: {
         custom: {
-          count: createProp.number(),
+          count: z.number(),
         },
       },
       fn: ({ count }) => count + 1,
@@ -237,7 +238,7 @@ describe('createReusable', () => {
             },
           },
           custom: {
-            title: createProp.number(),
+            title: z.number(),
           },
         },
         fn: () => null,

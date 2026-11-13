@@ -1,203 +1,89 @@
-import type { ReactNode, JSX } from 'react';
-import type { BaseProp } from './base';
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 
-export type PrimitiveTypesMap = PrimitiveValueTypes & {
-  object: object;
-  array: unknown[];
-  date: Date;
-  regex: RegExp;
-  error: Error;
-  symbol: symbol;
-  bigint: bigint;
-};
-
-export type PrimitiveValueTypes = {
-  string: string;
-  number: number;
-  boolean: boolean;
-};
-
 export type PropVisibility = 'optional' | 'required';
-export type PrimitivePropType = keyof PrimitiveValueTypes;
-export type NonEmptyReadonlyArray<Value> = readonly [Value, ...Value[]];
-export type PropConfig = Record<string, unknown>;
-export type ComponentPropType = 'ReactNode' | 'JSX.Element';
-export type ComponentPropTypeMap = {
-  ReactNode: ReactNode;
-  'JSX.Element': JSX.Element;
-};
-
-export type PropType =
-  | keyof PrimitiveTypesMap
-  | ComponentPropType
-  | 'union'
-  | 'function'
-  | 'record';
-
-export type BasePropOptions<
-  Type extends PropType,
-  Visibility extends PropVisibility,
-  Value = unknown,
-> = {
-  type: Type;
-  visibility: Visibility;
-  value?: Value;
-};
-
-export type AnyBaseProp = BaseProp<PropType, PropVisibility, unknown>;
 export type SafeKeyOf<T extends object> = keyof T & string;
 
-export type ExtractPropValue<Prop extends AnyBaseProp> =
-  Prop extends BaseProp<any, any, infer V> ? V : never;
+/** A prop definition: any synchronous Standard Schema v1 schema. */
+export type PropDefinition = StandardSchemaV1;
 
-export interface LegacyPropDefinition {
-  (value: unknown): unknown;
-  visibility: PropVisibility;
-  // Keep the public shape so definitions from another installed version do
-  // not inherit BaseProp's protected-member identity.
-  _baseProp?: Pick<AnyBaseProp, keyof AnyBaseProp>;
+/** Prop definitions keyed by prop name. */
+export interface PropDefinitions {
+  [key: string]: PropDefinition;
 }
 
-export type AnyBuiltPropDefinition =
-  | LegacyPropDefinition
-  | (StandardSchemaV1 & {
-      visibility?: never;
-      _baseProp?: never;
-    });
-
-export type DefinitionVisibility<Definition extends AnyBuiltPropDefinition> =
-  Definition extends StandardSchemaV1
-    ? undefined extends StandardSchemaV1.InferOutput<Definition>
-      ? 'optional'
-      : 'required'
-    : Definition extends LegacyPropDefinition
-      ? Definition['visibility']
-      : never;
-
-/** Preserve legacy slot metadata while resolving schema caller input separately. */
-export type InputDefinitions<Shape extends BuiltPropShape> = {
-  [Key in keyof Shape]: Shape[Key] extends StandardSchemaV1
-    ? ((value: unknown) => StandardSchemaV1.InferInput<Shape[Key]>) & {
-        visibility: undefined extends StandardSchemaV1.InferInput<Shape[Key]>
-          ? 'optional'
-          : 'required';
-      }
-    : Shape[Key];
-};
-
-export type ResolveInputProps<Shape extends BuiltPropShape> = ResolveProps<InputDefinitions<Shape>>;
-export type ResolvedInputShape<Shape extends BuiltPropShape> = ResolvedBuiltPropShape<
-  InputDefinitions<Shape>
->;
-export type ResolveLayoutInputProps<Shape extends BuiltPropShape> = ResolveLayoutProps<
-  InputDefinitions<Shape>
->;
-
-export interface BuiltPropShape {
-  [key: string]: AnyBuiltPropDefinition;
-}
-
-export type ResolveBuiltPropValue<Definition extends AnyBuiltPropDefinition> =
-  ExtractDefinitionValue<Definition>;
-
-export type ExtractDefinitionValue<D extends AnyBuiltPropDefinition> = D extends StandardSchemaV1
-  ? StandardSchemaV1.InferOutput<D>
-  : D extends {
-        _baseProp: infer P extends AnyBaseProp;
-      }
-    ? ExtractPropValue<P>
-    : D extends LegacyPropDefinition
-      ? ReturnType<D>
-      : never;
-
-export type ResolvedBuiltPropShape<Shape extends BuiltPropShape> = {
-  [
-    Key in keyof Shape as DefinitionVisibility<Shape[Key]> extends 'required' ? Key : never
-  ]: ExtractDefinitionValue<Shape[Key]>;
-} & {
-  [
-    Key in keyof Shape as DefinitionVisibility<Shape[Key]> extends 'required' ? never : Key
-  ]?: ExtractDefinitionValue<Shape[Key]>;
-};
-
-type IsJSXElementProp<D extends AnyBuiltPropDefinition> = D extends {
-  type: 'JSX.Element';
-}
-  ? true
-  : false;
-
-type ResolvedPropKey<K extends string, D extends AnyBuiltPropDefinition> =
-  IsJSXElementProp<D> extends true ? Capitalize<K> : K;
-
-export type ResolveProps<Shape extends Record<string, AnyBuiltPropDefinition>> = {
-  [
-    K in SafeKeyOf<Shape> as DefinitionVisibility<Shape[K]> extends 'required'
-      ? ResolvedPropKey<K, Shape[K]>
-      : never
-  ]: ExtractDefinitionValue<Shape[K]>;
-} & {
-  [
-    K in SafeKeyOf<Shape> as DefinitionVisibility<Shape[K]> extends 'required'
-      ? never
-      : ResolvedPropKey<K, Shape[K]>
-  ]?: ExtractDefinitionValue<Shape[K]>;
-};
-
-type ExtractLayoutMemberValue<P extends AnyBaseProp> = P extends {
-  type: 'JSX.Element';
-  properties: infer Shape extends Record<string, AnyBuiltPropDefinition>;
-}
-  ? (props: ResolveProps<Shape>) => JSX.Element
-  : P extends { type: 'JSX.Element' }
-    ? () => JSX.Element
-    : ExtractPropValue<P>;
-
-type ExtractLayoutDefinitionValue<D extends AnyBuiltPropDefinition> = D extends {
-  type: 'JSX.Element';
-  properties: infer Shape extends Record<string, AnyBuiltPropDefinition>;
-}
-  ? (props: ResolveProps<Shape>) => JSX.Element
-  : D extends { type: 'JSX.Element' }
-    ? () => JSX.Element
-    : D extends { members: infer Members extends readonly AnyBaseProp[] }
-      ? ExtractLayoutMemberValue<Members[number]>
-      : ExtractDefinitionValue<D>;
-
-type RequiredLayoutPropKeys<Shape extends Record<string, AnyBuiltPropDefinition>> = {
-  [K in SafeKeyOf<Shape>]: DefinitionVisibility<Shape[K]> extends 'required' ? K : never;
-}[SafeKeyOf<Shape>];
-
-type OptionalLayoutPropKeys<Shape extends Record<string, AnyBuiltPropDefinition>> = Exclude<
-  SafeKeyOf<Shape>,
-  RequiredLayoutPropKeys<Shape>
->;
-
-type LayoutPropKey<
-  Key extends string,
-  Definition extends AnyBuiltPropDefinition,
-  KeyMode extends 'resolved' | 'declared',
-> = KeyMode extends 'declared' ? Key : ResolvedPropKey<Key, Definition>;
-
-type ResolveLayoutPropsWithKeyMode<
-  Shape extends Record<string, AnyBuiltPropDefinition>,
-  KeyMode extends 'resolved' | 'declared',
-> = {
-  [
-    Key in RequiredLayoutPropKeys<Shape> as LayoutPropKey<Key, Shape[Key], KeyMode>
-  ]: ExtractLayoutDefinitionValue<Shape[Key]>;
-} & {
-  [
-    Key in OptionalLayoutPropKeys<Shape> as LayoutPropKey<Key, Shape[Key], KeyMode>
-  ]?: ExtractLayoutDefinitionValue<Shape[Key]>;
-};
-
-export type ResolveLayoutProps<Shape extends Record<string, AnyBuiltPropDefinition>> =
-  ResolveLayoutPropsWithKeyMode<Shape, 'resolved'>;
+/** A prop is optional when its schema output admits `undefined`. */
+export type DefinitionVisibility<Definition extends PropDefinition> =
+  undefined extends StandardSchemaV1.InferOutput<Definition> ? 'optional' : 'required';
 
 /**
- * Like {@link ResolveLayoutProps}, but keeps every prop key exactly as it was
- * declared — `JSX.Element` slots are not renamed to their capitalized form.
+ * Splits a value map into required keys and optional keys, where a key is
+ * optional when its value admits `undefined`.
  */
-export type ResolveLayoutPropsAsDefined<Shape extends Record<string, AnyBuiltPropDefinition>> =
-  ResolveLayoutPropsWithKeyMode<Shape, 'declared'>;
+type OptionalByUndefined<Values> = {
+  [Key in keyof Values as undefined extends Values[Key] ? never : Key]: Values[Key];
+} & {
+  [Key in keyof Values as undefined extends Values[Key] ? Key : never]?: Values[Key];
+};
+
+/**
+ * Marks a definition as a component slot: a prop that holds a component and is
+ * therefore exposed under its capitalized name, so it can be rendered as JSX.
+ */
+export const componentSlotSymbol: unique symbol = Symbol.for(
+  '@jfdevelops/react-layout/component-slot',
+) as never;
+
+/** The brand carried by a component-slot definition. */
+export interface ComponentSlotBrand<Shape extends PropDefinitions = PropDefinitions> {
+  /**
+   * The props the slot's component accepts.
+   */
+  readonly [componentSlotSymbol]: Shape;
+}
+
+/** Whether a value is a component-slot definition. */
+export function isComponentSlot(value: unknown): value is PropDefinition & ComponentSlotBrand {
+  return (
+    (typeof value === 'object' || typeof value === 'function') &&
+    value !== null &&
+    componentSlotSymbol in value
+  );
+}
+
+/** A component slot is exposed as `Actions` when it is declared as `actions`. */
+type SlotKey<Key extends string, Definition> =
+  Definition extends ComponentSlotBrand<any> ? Capitalize<Key> : Key;
+
+/**
+ * The validated values a render callback receives for a set of definitions.
+ * Component slots appear under their capitalized names.
+ */
+export type ResolveProps<Shape extends PropDefinitions> = OptionalByUndefined<{
+  [Key in SafeKeyOf<Shape> as SlotKey<Key, Shape[Key]>]: StandardSchemaV1.InferOutput<Shape[Key]>;
+}>;
+
+/** Like {@link ResolveProps}, but every key stays exactly as it was declared. */
+export type ResolvePropsAsDefined<Shape extends PropDefinitions> = OptionalByUndefined<{
+  [Key in SafeKeyOf<Shape>]: StandardSchemaV1.InferOutput<Shape[Key]>;
+}>;
+
+/**
+ * The values a caller supplies for a set of definitions. Component slots are
+ * supplied under their capitalized names.
+ */
+export type ResolveInputProps<Shape extends PropDefinitions> = OptionalByUndefined<{
+  [Key in SafeKeyOf<Shape> as SlotKey<Key, Shape[Key]>]: StandardSchemaV1.InferInput<Shape[Key]>;
+}>;
+
+/** Like {@link ResolveInputProps}, but every key stays exactly as it was declared. */
+export type ResolveInputPropsAsDefined<Shape extends PropDefinitions> = OptionalByUndefined<{
+  [Key in SafeKeyOf<Shape>]: StandardSchemaV1.InferInput<Shape[Key]>;
+}>;
+
+/** Definitions whose output is the caller-facing input of `Shape`. */
+export type InputDefinitions<Shape extends PropDefinitions> = {
+  [Key in keyof Shape]: StandardSchemaV1<
+    StandardSchemaV1.InferInput<Shape[Key]>,
+    StandardSchemaV1.InferInput<Shape[Key]>
+  >;
+};

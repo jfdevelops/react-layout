@@ -1,11 +1,11 @@
 import { expectTypeOf } from 'vitest';
-import { createProp } from '@jfdevelops/react-layout-composables';
 import { createBreadcrumbComposable } from '../src';
+import { z } from 'zod';
 
 const { Breadcrumb } = createBreadcrumbComposable({
   props: {
-    segments: createProp.array(createProp.string()),
-    separator: createProp.string().optional(),
+    segments: z.array(z.string()),
+    separator: z.string().optional(),
   },
   render: ({ segments, separator }) => {
     expectTypeOf(segments).toEqualTypeOf<string[]>();

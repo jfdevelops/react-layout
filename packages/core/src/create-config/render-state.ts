@@ -7,6 +7,7 @@ import {
   type ResolveCallProps,
 } from '../custom-props';
 import { createLazyLoader, type LazyLoader } from '../lazy/create-lazy-loader';
+import { acceptsUndefined } from '../built-in-props';
 import { inspectLazy, withLazyHandle } from '../lazy/inspection';
 import type { LazyHandle, LazyOptions, LazyResourceStates } from '../lazy/types';
 import { LazyResourceModuleShapeError } from '../errors/lazy-resource-error';
@@ -944,8 +945,7 @@ export function createRenderStateBuilder<
             Object.entries(source.props?.custom ?? {}).map(([key, prop]) => [
               key,
               {
-                required:
-                  typeof prop === 'string' ? prop === 'required' : prop.visibility !== 'optional',
+                required: typeof prop === 'string' ? prop === 'required' : !acceptsUndefined(prop),
                 suppliedVia: 'component',
               },
             ]),

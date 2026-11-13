@@ -2,7 +2,6 @@ import { RenderStateNameContext, ReferencedRenderStateContext } from './render-s
 import { createContext, createElement, useContext, type ComponentType, type JSX } from 'react';
 import { LayoutConfigurationError } from '../errors';
 import type { IncludedProps } from '../props';
-import { capitalize } from '@jfdevelops/react-layout-internals';
 import { isStandardSchema } from '@jfdevelops/react-layout-validator';
 
 /** Props selected here are inherited from the containing state's render props. */
@@ -91,28 +90,15 @@ export function createStateComposable(
       );
     }
     const inherited = Object.fromEntries(
-      Object.keys(options.props?.include ?? {})
-        .map((key) => {
-          const definition = context.definitions[key];
+      Object.keys(options.props?.include ?? {}).flatMap((key) => {
+        // References validate their own inputs. Carry the original schema input,
+        // rather than applying the source schema's transform to its output again.
+        const values = isStandardSchema(context.definitions[key])
+          ? (context.inputProps ?? context.props)
+          : context.props;
 
-          return options.normalizeIncludedKeys &&
-            typeof definition === 'function' &&
-            'type' in definition &&
-            definition.type === 'JSX.Element'
-            ? capitalize(key)
-            : key;
-        })
-        .flatMap((key) => {
-          // References validate their own inputs. Carry the original schema input,
-          // rather than applying the source schema's transform to its output again.
-          const values = isStandardSchema(context.definitions[key])
-            ? (context.inputProps ?? context.props)
-            : context.props;
-
-          return Object.hasOwn(values, key) && values[key] !== undefined
-            ? [[key, values[key]]]
-            : [];
-        }),
+        return Object.hasOwn(values, key) && values[key] !== undefined ? [[key, values[key]]] : [];
+      }),
     );
 
     return createElement(

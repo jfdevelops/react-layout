@@ -9,7 +9,7 @@ The optional [React devtools](../packages/devtools-react/README.md) accept a fac
 ```tsx
 const layouts = createDefinedResourceLayout({
   resources: ['users', 'settings'],
-  options: { title: createProp.string() },
+  options: { title: z.string() },
   composables: () => ({ ...Breadcrumb }),
   props: {
     include: {

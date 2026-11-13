@@ -1,5 +1,6 @@
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
-import { createDefinedResourceLayout, createProp, type ReusableResourcesAccessor } from '../../src';
+import { createDefinedResourceLayout, type ReusableResourcesAccessor } from '../../src';
+import { z } from 'zod';
 
 const factory = createDefinedResourceLayout({
   resources: [
@@ -10,17 +11,17 @@ const factory = createDefinedResourceLayout({
     },
   ],
   options: {
-    title: createProp.string(),
-    nested: createProp.object({
-      label: createProp.string(),
-      count: createProp.number(),
+    title: z.string(),
+    nested: z.object({
+      label: z.string(),
+      count: z.number(),
     }),
-    optional: createProp
+    optional: z
       .object({
-        label: createProp.string(),
+        label: z.string(),
       })
       .optional(),
-    subtitle: createProp.string().optional(),
+    subtitle: z.string().optional(),
   },
 });
 
@@ -37,7 +38,7 @@ describe('reusable selectors', () => {
           },
         },
         custom: {
-          title: createProp.string(),
+          title: z.string(),
         },
       },
       select: {
@@ -513,7 +514,7 @@ describe('reusable selectors', () => {
       factory.createReusable({
         props: {
           custom: {
-            title: createProp.string(),
+            title: z.string(),
           },
         },
         select: {
@@ -543,7 +544,7 @@ describe('reusable selectors', () => {
     const preferredProps = factory.createReusable({
       props: {
         custom: {
-          title: createProp.number(),
+          title: z.number(),
         },
       },
       select: {
@@ -561,7 +562,7 @@ describe('reusable selectors', () => {
     const preferredSelect = factory.createReusable({
       props: {
         custom: {
-          title: createProp.number(),
+          title: z.number(),
         },
       },
       select: {
@@ -786,7 +787,7 @@ describe('reusable selectors', () => {
       },
       overlap: 'preferProps',
       fn: (props) => {
-        expectTypeOf(props.optional).toEqualTypeOf<{ readonly label: string } | undefined>();
+        expectTypeOf(props.optional).toEqualTypeOf<{ label: string } | undefined>();
 
         return props;
       },
@@ -798,10 +799,10 @@ describe('reusable selectors', () => {
     const { createReusable } = createDefinedResourceLayout({
       resources: ['users'],
       options: {
-        optional: createProp
+        optional: z
           .object({
-            label: createProp.string(),
-            count: createProp.number(),
+            label: z.string(),
+            count: z.number(),
           })
           .optional(),
       },
@@ -881,10 +882,10 @@ describe('reusable selectors', () => {
     const { createReusable } = createDefinedResourceLayout({
       resources: ['users'],
       options: {
-        optional: createProp
+        optional: z
           .object({
-            label: createProp.string(),
-            count: createProp.number(),
+            label: z.string(),
+            count: z.number(),
           })
           .optional(),
       },
@@ -978,17 +979,17 @@ describe('reusable selectors', () => {
     const { createReusable } = createDefinedResourceLayout({
       resources: ['users'],
       options: {
-        optional: createProp
+        optional: z
           .object({
-            shared: createProp.object({
-              label: createProp.string(),
-              count: createProp.number(),
+            shared: z.object({
+              label: z.string(),
+              count: z.number(),
             }),
-            caller: createProp.object({
-              title: createProp.string(),
+            caller: z.object({
+              title: z.string(),
             }),
-            selected: createProp.object({
-              count: createProp.number(),
+            selected: z.object({
+              count: z.number(),
             }),
           })
           .optional(),
@@ -1158,7 +1159,7 @@ describe('reusable selectors', () => {
       factory.createReusable({
         props: {
           custom: {
-            options: createProp.string(),
+            options: z.string(),
           },
         },
         select: {

@@ -4,12 +4,10 @@ import { LayoutConfigurationError } from './errors';
 import type { ComposableComponents, MergePresetProps } from '@jfdevelops/react-layout-composables';
 import type { InPropsObject } from '@jfdevelops/react-layout-composables';
 import {
-  EnumWrappedProp,
-  LiteralWrappedProp,
-  ResolveLayoutProps,
-  ResolveLayoutInputProps,
-  ResolveLayoutPropsAsDefined,
   ResolveProps,
+  ResolvePropsAsDefined,
+  ResolveInputProps,
+  type StandardSchemaV1,
 } from '@jfdevelops/react-layout-validator';
 import { ResourceDefinition, ResourceEnum } from './resource';
 import { Show } from './utils';
@@ -91,18 +89,30 @@ export interface PropsRenderDefinition<
   render: PropsContextRender<RenderProps, Context, Result>;
 }
 
-export type InPropsOptions<
+/** The definitions handed to `options` when it is declared as a function. */
+export interface InPropsOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Name extends string,
-> = {
-  name: LiteralWrappedProp<Name, 'string', 'required'>;
-  resource: EnumWrappedProp<ResourceEnum<Resources>, 'string', 'required'>;
-};
+> {
+  /**
+   * The created component's name. Including it supplies the name itself.
+   */
+  name: StandardSchemaV1<Name | undefined, Name>;
+  /**
+   * Accepts any resource bound to the definition.
+   */
+  resource: StandardSchemaV1<ResourceEnum<Resources>[number], ResourceEnum<Resources>[number]>;
+}
 export type InPropsFunction<Resources extends ReadonlyArray<ResourceDefinition>> = <
   Name extends string,
 >(
-  props: Show<InPropsOptions<Resources, Name>>,
+  props: InPropsOptions<Resources, Name>,
 ) => InPropsObject;
+/**
+ * The options a definition declares: one object schema validated as a whole,
+ * a map of schemas keyed by option name, or a function that builds that map
+ * from the bound resources and the component name.
+ */
 export type InPropsDefinition<Resources extends ReadonlyArray<ResourceDefinition>> =
   | InPropsObject
   | OptionSchema
@@ -215,10 +225,12 @@ type SelectedIncludedProps<
   Passthrough extends IncludedPropSource | 'render' = 'render',
 > = Pick<Props, PropsKeys<Props, GetPropsKey<IncludeProps, Visibility, Passthrough>>>;
 
-type OptionalPropDefinition<Definition> = Definition extends {
-  optional(): infer OptionalDefinition;
-}
-  ? OptionalDefinition
+type OptionalPropDefinition<Definition> = Definition extends StandardSchemaV1
+  ? StandardSchemaV1<
+      StandardSchemaV1.InferInput<Definition> | undefined,
+      StandardSchemaV1.InferOutput<Definition> | undefined
+    > &
+      Pick<Definition, Extract<keyof Definition, symbol>>
   : Definition;
 
 /** Raw validator definitions accepted by a generated component call. */
@@ -236,34 +248,30 @@ export type IncludedComponentPropDefinitions<
 export type ResolvedIncludedProps<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,
-> = ResolveLayoutProps<SelectedIncludedProps<Props, IncludeProps, 'required'>> &
-  Partial<ResolveLayoutProps<SelectedIncludedProps<Props, IncludeProps, 'optional'>>>;
+> = ResolveProps<SelectedIncludedProps<Props, IncludeProps, 'required'>> &
+  Partial<ResolveProps<SelectedIncludedProps<Props, IncludeProps, 'optional'>>>;
 
 export type ResolvedIncludedConfigProps<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,
-> = ResolveLayoutInputProps<SelectedIncludedProps<Props, IncludeProps, 'required', 'config'>> &
-  Partial<
-    ResolveLayoutInputProps<SelectedIncludedProps<Props, IncludeProps, 'optional', 'config'>>
-  >;
+> = ResolveInputProps<SelectedIncludedProps<Props, IncludeProps, 'required', 'config'>> &
+  Partial<ResolveInputProps<SelectedIncludedProps<Props, IncludeProps, 'optional', 'config'>>>;
 
 export type ResolvedIncludedComponentProps<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,
-> = ResolveLayoutInputProps<SelectedIncludedProps<Props, IncludeProps, 'required', 'component'>> &
-  Partial<
-    ResolveLayoutInputProps<SelectedIncludedProps<Props, IncludeProps, 'optional', 'component'>>
-  >;
+> = ResolveInputProps<SelectedIncludedProps<Props, IncludeProps, 'required', 'component'>> &
+  Partial<ResolveInputProps<SelectedIncludedProps<Props, IncludeProps, 'optional', 'component'>>>;
 
 /**
  * Like {@link ResolvedIncludedProps}, but keeps included prop keys exactly as
- * declared (no `JSX.Element` capitalization).
+ * declared: component slots are not renamed to their capitalized form.
  */
 export type ResolvedIncludedPropsAsDefined<
   Props extends InPropsObject,
   IncludeProps extends IncludedProps<Props>,
-> = ResolveLayoutPropsAsDefined<SelectedIncludedProps<Props, IncludeProps, 'required'>> &
-  Partial<ResolveLayoutPropsAsDefined<SelectedIncludedProps<Props, IncludeProps, 'optional'>>>;
+> = ResolvePropsAsDefined<SelectedIncludedProps<Props, IncludeProps, 'required'>> &
+  Partial<ResolvePropsAsDefined<SelectedIncludedProps<Props, IncludeProps, 'optional'>>>;
 export type LayoutRenderProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,

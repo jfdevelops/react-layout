@@ -11,15 +11,19 @@ it.each(['empty', 'populated'])(
     const root = resolve(fileURLToPath(new URL('../..', import.meta.url))).replaceAll('\\', '/');
     const file = `${root}/tests/create-config/autocomplete-probe.tsx`;
     const source = `
-    import { defineResourceLayout, createDefinedResourceLayout, createProp } from '../../src';
+    import { z } from 'zod';
+    import { reactNode } from '@jfdevelops/react-layout-adapter-zod';
+    import { z } from 'zod';
+    import { reactNode } from '@jfdevelops/react-layout-adapter-zod';
+    import { defineResourceLayout, createDefinedResourceLayout } from '../../src';
     import { createBreadcrumbComposable } from '@jfdevelops/react-layout-composable-breadcrumb';
     const AdminLayout = ({ children }: { children?: import('react').ReactNode }) => <main>{children}</main>;
     const breadcrumb = createBreadcrumbComposable(({ segments }) => <nav>{Object.keys(segments).join(',')}</nav>);
     const { defineResourceLayout: shared, createRenderState, defineLazyDefaults, resources } = createDefinedResourceLayout({
       resources: ['users', { value: 'builder', subResources: ['homepage'] }],
       options: {
-        title: createProp.component({ type: 'ReactNode' }),
-        description: createProp.component({ type: 'ReactNode' }).optional(),
+        title: reactNode(),
+        description: reactNode().optional(),
       },
       composables: (create) => ({
         Layout: create({ name: ({ capitalize, resource }) => capitalize(resource) + 'Layout', wrapWith: AdminLayout }),
@@ -28,7 +32,7 @@ it.each(['empty', 'populated'])(
       }),
       props: { include: { /*sharedInclude*/ } },
     });
-    const { defineResourceLayout: bound } = createDefinedResourceLayout({ resources: ['users'], options: { title: createProp.string() } });
+    const { defineResourceLayout: bound } = createDefinedResourceLayout({ resources: ['users'], options: { title: z.string() } });
     bound({ composables: (create) => ({ Layout: create({ name: ({ capitalize, resource }) => capitalize(resource) + 'Layout', wrapWith: AdminLayout }), ...breadcrumb, Header: create({ name: ({ capitalize, resource }) => capitalize(resource) + 'Header', wrapWith: AdminLayout }) }), props: { include: { /*localFunctionInclude*/ } }, render: () => <></> });
     bound({ composables: (create) => ({ Layout: create({ name: ({ capitalize, resource }) => capitalize(resource) + 'Layout', wrapWith: AdminLayout }), ...breadcrumb, Header: create({ name: ({ capitalize, resource }) => capitalize(resource) + 'Header', wrapWith: AdminLayout }) }), props: { include: { /*localStatesInclude*/ } }, render: { default: () => <></> } });
     bound({ props: { include: { title: { /*includeBehavior*/ } } }, render: () => <></> });
@@ -44,7 +48,7 @@ it.each(['empty', 'populated'])(
     } });
     const Users = namespaceDefinition.createResourceLayout({ resource: 'users', name: 'Users' });
     const namespaceElement = <Users./*namespaceMembers*/ />;
-    bound({ props: { include: { title: true }, custom: { count: createProp.number() } }, render: ({ /*functionProps*/ }) => <></> });
+    bound({ props: { include: { title: true }, custom: { count: z.number() } }, render: ({ /*functionProps*/ }) => <></> });
     defineResourceLayout({ resources: ['users'], layout: {
       composables: (_create, states) => ({ Other: states./*topStates*/ }),
       render: { default: () => <></>, Preview: () => <></> },

@@ -1,18 +1,19 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { createBreadcrumbComposable } from '../src';
-import { createProp, composablePresetMetaKey } from '@jfdevelops/react-layout-composables';
+import { composablePresetMetaKey } from '@jfdevelops/react-layout-composables';
+import { z } from 'zod';
 
 describe('createBreadcrumbComposable', () => {
   it('adds props and replaces segments without changing the defaults', () => {
     const { Breadcrumb } = createBreadcrumbComposable({
       props: {
-        segments: createProp.array(
-          createProp.object({
-            label: createProp.string(),
+        segments: z.array(
+          z.object({
+            label: z.string(),
           }),
         ),
-        separator: createProp.string(),
+        separator: z.string(),
       },
       render: ({ segments, separator }) => (
         <nav>{segments.map((segment) => segment.label).join(separator)}</nav>
@@ -33,20 +34,22 @@ describe('createBreadcrumbComposable', () => {
       />,
     );
     expect(screen.getByText('Home / Docs')).toBeInTheDocument();
-    expect(Breadcrumb[composablePresetMetaKey].props.segments.type).toBe('array');
-    expect(createBreadcrumbComposable.props.segments.type).toBe('record');
+    expect(Breadcrumb[composablePresetMetaKey].props.segments['~standard'].vendor).toBe('zod');
+    expect(createBreadcrumbComposable.props.segments['~standard'].vendor).toBe('arktype');
   });
 
   it('provides the default definitions to a customization callback', () => {
     const { Breadcrumb } = createBreadcrumbComposable({
       props: (defaults) => ({
-        segments: defaults.segments.optional(),
-        label: createProp.string(),
+        segments: defaults.segments,
+        label: z.string(),
       }),
       render: ({ label }) => label,
     });
-    expect(Breadcrumb[composablePresetMetaKey].props.segments.visibility).toBe('optional');
-    expect(Breadcrumb[composablePresetMetaKey].props.label.type).toBe('string');
+    expect(Breadcrumb[composablePresetMetaKey].props.segments).toBe(
+      createBreadcrumbComposable.props.segments,
+    );
+    expect(Breadcrumb[composablePresetMetaKey].props.label['~standard'].vendor).toBe('zod');
   });
 
   it('renders breadcrumb segments', () => {

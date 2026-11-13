@@ -139,22 +139,26 @@ export type {
   MissingPathVariableContext,
   ResourceStateError,
 } from './errors';
+export { componentSlot } from './component-slot';
+export type {
+  ComponentSlotComponent,
+  ComponentSlotDefinition,
+  ComponentSlotOptions,
+} from './component-slot';
 export {
-  createProp,
-  createPrimitivePropBuilder,
-  isPropDefinitionShape,
+  createPropsFromComponent,
+  isComponentSlot,
+  isStandardSchema,
   PropError,
   resolvePropDefinitionValues,
   validateProps,
 } from '@jfdevelops/react-layout-validator';
 export type {
-  AnyBuiltPropDefinition,
-  ExtractDefinitionValue,
+  PropDefinition,
+  PropDefinitions,
+  ResolveInputProps,
   PropErrorOptions,
-  ResolveLayoutProps,
-  ResolveLayoutPropsAsDefined,
   ResolveProps,
-  ResolvedBuiltPropShape,
 } from '@jfdevelops/react-layout-validator';
 export type {
   IncludedProps,
@@ -174,7 +178,6 @@ export type {
   ResolvedIncludedProps,
   ResolvedIncludedComponentProps,
   ResolvedIncludedConfigProps,
-  ResolvedIncludedPropsAsDefined,
 } from './props';
 export {
   normalizeResource,

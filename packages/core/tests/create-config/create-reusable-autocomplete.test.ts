@@ -16,12 +16,13 @@ it.each(['typescript-5-9', 'typescript-6'])(
     const entry =
       process.env.REACT_LAYOUT_TYPE_ENTRY === 'dist' ? '../../dist/index.mjs' : '../../src';
     const source = `
-    import { createDefinedResourceLayout, createProp } from '${entry}';
+    import { z } from 'zod';
+    import { createDefinedResourceLayout } from '${entry}';
     const { createReusable } = createDefinedResourceLayout({
       resources: ['users'],
       options: {
-        title: createProp.string(),
-        meta: createProp.object({ owner: createProp.string(), repo: createProp.string() }),
+        title: z.string(),
+        meta: z.object({ owner: z.string(), repo: z.string() }),
       },
     });
     createReusable({ props: { include: { /*sources*/ } }, fn: () => null });
@@ -53,7 +54,7 @@ it.each(['typescript-5-9', 'typescript-6'])(
     // @ts-expect-error Every required selected field must be supplied.
     resolvedHelper({ options: { title: 'Docs', meta: {} } });
     // @ts-expect-error Sources are resolved values, not validators.
-    resolvedHelper({ options: { title: createProp.string(), meta: { owner: 'owner' } } });
+    resolvedHelper({ options: { title: z.string(), meta: { owner: 'owner' } } });
     // @ts-expect-error Unselected fields are not part of the input contract.
     resolvedHelper({ options: { title: 'Docs', meta: { owner: 'owner', repo: 'extra' } } });
     // @ts-expect-error Unknown option selections are rejected.
@@ -68,7 +69,7 @@ it.each(['typescript-5-9', 'typescript-6'])(
     empty.createReusable({ select: { options: true }, fn: () => null });
     const optionalFactory = createDefinedResourceLayout({
       resources: ['users'],
-      options: { optional: createProp.object({ label: createProp.string(), count: createProp.number() }).optional() },
+      options: { optional: z.object({ label: z.string(), count: z.number() }).optional() },
     });
     const splitOptional = optionalFactory.createReusable({
       props: { include: { options: { optional: { label: true } } } },

@@ -589,6 +589,7 @@ export {
   describePropValidator,
   formatInspectionDetails,
 } from './format-details';
+export { describeSchema, type SchemaDescription } from './describe-schema';
 
 export * from './config';
 export * from './preferences';

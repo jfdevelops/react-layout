@@ -1,7 +1,9 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { Component, type ReactNode } from 'react';
 import { afterEach, expect, expectTypeOf, it, vi } from 'vitest';
-import { createDefinedResourceLayout, createProp, defineComposableComponent } from '../../src';
+import { componentSlot, createDefinedResourceLayout, defineComposableComponent } from '../../src';
+import { z } from 'zod';
+import { reactElement } from '@jfdevelops/react-layout-adapter-zod';
 
 afterEach(cleanup);
 
@@ -9,7 +11,7 @@ it('inherits all reference props and exposes a Ref composable', () => {
   const { createRenderState, defineResourceLayout } = createDefinedResourceLayout({
     resources: ['users'],
     options: {
-      title: createProp.string(),
+      title: z.string(),
     },
   });
   const Source = createRenderState({
@@ -19,8 +21,8 @@ it('inherits all reference props and exposes a Ref composable', () => {
         title: true,
       },
       custom: {
-        message: createProp.string(),
-        count: createProp.number().optional(),
+        message: z.string(),
+        count: z.number().optional(),
       },
     },
     render: ({ title, message, count }) => (
@@ -33,7 +35,7 @@ it('inherits all reference props and exposes a Ref composable', () => {
     ref: Source,
     props: {
       custom: {
-        heading: createProp.string(),
+        heading: z.string(),
       },
     },
     composables: (create) => ({
@@ -101,8 +103,8 @@ it.each([
     const Source = createRenderState({
       props: {
         custom: {
-          message: createProp.string(),
-          count: createProp.number(),
+          message: z.string(),
+          count: z.number(),
         },
       },
       render: ({ message, count }) => (
@@ -156,7 +158,7 @@ it('supports config-passthrough selection and chained states', () => {
     state: 'Source',
     props: {
       custom: {
-        message: createProp.string(),
+        message: z.string(),
       },
     },
     render: ({ message }) => <p>{message}</p>,
@@ -204,7 +206,7 @@ it('inherits from deferred states without eagerly rendering them', async () => {
     state: 'Deferred',
     props: {
       custom: {
-        message: createProp.string(),
+        message: z.string(),
       },
     },
     render: ({ message }) => <p>{message}</p>,
@@ -229,19 +231,17 @@ it('inherits source-local preset schemas and component-valued props', () => {
   const { createRenderState, defineResourceLayout } = createDefinedResourceLayout({
     resources: ['users'],
     options: () => ({
-      content: createProp
-        .component({
-          type: 'JSX.Element',
-        })
-        .props({
-          label: createProp.string(),
-        }),
+      content: componentSlot({
+        props: {
+          label: z.string(),
+        },
+      }),
     }),
   });
   const Message = defineComposableComponent({
     name: 'Message',
     props: {
-      message: createProp.string(),
+      message: z.string(),
     },
   })(() => <></>);
   const Source = createRenderState({
@@ -292,6 +292,66 @@ it('inherits source-local preset schemas and component-valued props', () => {
   expect(screen.getByText('Preset')).toBeInTheDocument();
 });
 
+it('inherits source-local preset schemas and element-valued props', () => {
+  const { createRenderState, defineResourceLayout } = createDefinedResourceLayout({
+    resources: ['users'],
+    options: {
+      content: reactElement(),
+    },
+  });
+  const Message = defineComposableComponent({
+    name: 'Message',
+    props: {
+      message: z.string(),
+    },
+  })(() => <></>);
+  const Source = createRenderState({
+    composables: () => Message,
+    props: {
+      include: {
+        content: {
+          required: true,
+          suppliedVia: 'component',
+        },
+        message: {
+          required: true,
+          suppliedVia: 'component',
+        },
+      },
+    },
+    render: ({ content, message }) => (
+      <>
+        <section>{content}</section>
+        <p>{message}</p>
+      </>
+    ),
+  });
+  const Derived = createRenderState.fromState({
+    ref: Source,
+    render: ({ content }, { composables }) => {
+      expectTypeOf(composables.Ref).toBeCallableWith({});
+
+      return (
+        <>
+          <aside>{content}</aside>
+          <composables.Ref />
+        </>
+      );
+    },
+  });
+  const Users = defineResourceLayout({
+    render: {
+      ...Derived,
+    },
+  }).createResourceLayout({
+    resource: 'users',
+    name: 'Users',
+  });
+  render(<Users message='Preset' content={<span>Shared</span>} />);
+  expect(screen.getAllByText('Shared')).toHaveLength(2);
+  expect(screen.getByText('Preset')).toBeInTheDocument();
+});
+
 it.each([false, true])(
   'inherits lazy references and supports further derivation (deferred source: %s)',
   async (deferred) => {
@@ -302,7 +362,7 @@ it.each([false, true])(
       state: 'Source',
       props: {
         custom: {
-          message: createProp.string(),
+          message: z.string(),
         },
       },
       render: ({ message }: { message: string }) => <p>{message}</p>,
@@ -358,8 +418,8 @@ it('does not require excluded preset props at layout creation', () => {
   const Pair = defineComposableComponent({
     name: 'Pair',
     props: {
-      message: createProp.string(),
-      count: createProp.number(),
+      message: z.string(),
+      count: z.number(),
     },
   })(() => <></>);
   const Source = createRenderState({
@@ -409,14 +469,14 @@ it('does not require excluded preset props at layout creation', () => {
 it('supports custom overrides and rejects invalid reference configuration', () => {
   const { createRenderState, defineResourceLayout } = createDefinedResourceLayout({
     resources: ['users'],
-    options: () => ({
-      title: createProp.string(),
-    }),
+    options: {
+      title: z.string(),
+    },
   });
   const Source = createRenderState({
     props: {
       custom: {
-        message: createProp.string(),
+        message: z.string(),
       },
       include: {
         title: true,
@@ -428,7 +488,7 @@ it('supports custom overrides and rejects invalid reference configuration', () =
     ref: Source,
     props: {
       custom: {
-        message: createProp.number(),
+        message: z.number(),
       },
     },
     render: ({ message, title }, { composables }) => {
@@ -493,7 +553,7 @@ it('accepts excluded source configuration props directly on Ref', () => {
   const { createRenderState, defineResourceLayout } = createDefinedResourceLayout({
     resources: ['users'],
     options: {
-      title: createProp.string(),
+      title: z.string(),
     },
   });
   const Source = createRenderState({
@@ -502,7 +562,7 @@ it('accepts excluded source configuration props directly on Ref', () => {
         title: true,
       },
       custom: {
-        message: createProp.string(),
+        message: z.string(),
       },
     },
     render: ({ title, message }) => (
@@ -551,7 +611,7 @@ it.each([undefined, false, true])('can defer only the Ref component (lazy: %s)',
   const Source = createRenderState({
     props: {
       custom: {
-        message: createProp.string(),
+        message: z.string(),
       },
     },
     render: ({ message }) => <p>{message}</p>,
@@ -609,7 +669,7 @@ it('does not reuse the outer Loading state as a deferred Ref fallback', async ()
     state: 'Source',
     props: {
       custom: {
-        message: createProp.string(),
+        message: z.string(),
       },
     },
     render: ({ message }) => <p>{message}</p>,

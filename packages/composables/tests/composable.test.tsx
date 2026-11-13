@@ -1,14 +1,14 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { createProp } from '@jfdevelops/react-layout-validator';
 import { createComposableComponent, defineComposableComponent, makeComposable } from '../src';
+import { z } from 'zod';
 
 describe('composable helpers', () => {
   it('renders resolved out props into function children', () => {
     const Badge = createComposableComponent({
       name: 'Badge',
       inProps: {
-        tone: createProp.string().literal('info'),
+        tone: z.literal('info'),
       },
       outProps: () => ({
         label: 'Admin',
@@ -32,7 +32,7 @@ describe('composable helpers', () => {
     const createBreadcrumbComposable = defineComposableComponent({
       name: 'Breadcrumb',
       props: {
-        foo: createProp.string(),
+        foo: z.string(),
       },
     });
 

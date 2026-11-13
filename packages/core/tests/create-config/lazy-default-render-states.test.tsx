@@ -3,10 +3,11 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, expectTypeOf, it, vi } from 'vitest';
 import {
   createDefinedResourceLayout,
-  createProp,
   ResourceModuleLoadError,
   LazyResourceStateNotFoundError,
 } from '../../src';
+import { z } from 'zod';
+import { reactNode } from '@jfdevelops/react-layout-adapter-zod';
 
 afterEach(() => {
   cleanup();
@@ -23,7 +24,7 @@ function factory() {
       },
     ],
     options: {
-      title: createProp.string(),
+      title: z.string(),
     },
     composables: (create) => ({
       Layout: create({
@@ -42,7 +43,7 @@ it('narrows lazy render params by state and validates included and custom props'
         title: true,
       },
       custom: {
-        showReload: createProp.boolean().optional(),
+        showReload: z.boolean().optional(),
       },
     },
     render: ({ resource, title, showReload, ...rest }, { composables }) => {
@@ -89,7 +90,7 @@ it('supports narrowed error handlers, fallback, retry, and composables on the al
     state: 'Error',
     props: {
       custom: {
-        title: createProp.string(),
+        title: z.string(),
       },
     },
     render: {
@@ -176,9 +177,7 @@ it('shares render-state composables and keeps children optional in lazy defaults
     state: 'Layout',
     props: {
       custom: {
-        children: createProp.component({
-          type: 'ReactNode',
-        }),
+        children: reactNode(),
       },
     },
     render: ({ children }) => <section>{children ?? 'Shared shell'}</section>,
@@ -223,8 +222,8 @@ it('preserves config-only lazy includes and excludes them from component props',
   const { defineLazyDefaults } = createDefinedResourceLayout({
     resources: ['users'],
     options: {
-      title: createProp.string().literal('Configured title'),
-      subtitle: createProp.string().optional(),
+      title: z.literal('Configured title').default('Configured title'),
+      subtitle: z.string().optional(),
     },
   });
   const Loading = defineLazyDefaults.createRenderState({

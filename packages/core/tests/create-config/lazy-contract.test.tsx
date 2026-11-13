@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, expectTypeOf, it, vi } from 'v
 import { getInspectionSource } from '@jfdevelops/react-layout-devtools-core';
 import {
   createDefinedResourceLayout,
-  createProp,
   isLazyResourceError,
   LayoutConfigurationError,
   LazyResourceModuleShapeError,
@@ -15,6 +14,7 @@ import {
   type LazyResourceError,
   type LazyResourceErrorProps,
 } from '../../src';
+import { z } from 'zod';
 
 beforeEach(() => {
   vi.spyOn(console, 'error').mockImplementation(() => undefined);
@@ -515,7 +515,7 @@ it('preserves shell-declared scoped props, lazy options, handles, and render/laz
     components: {
       Grid: {
         props: {
-          title: createProp.string(),
+          title: z.string(),
         },
         lazy: {
           load: async () => ({
@@ -643,7 +643,7 @@ it('preserves resource prop contracts for raw lazy entries', async () => {
       users: {
         props: {
           custom: {
-            title: createProp.string(),
+            title: z.string(),
           },
         },
         lazy: async () => ({
@@ -752,7 +752,7 @@ it('isolates scoped loading options between callers and follows changed options'
   const factory = createDefinedResourceLayout({
     resources: ['users'],
     options: {
-      title: createProp.string(),
+      title: z.string(),
     },
   });
   const { createResourceLayout } = factory.defineResourceLayout({

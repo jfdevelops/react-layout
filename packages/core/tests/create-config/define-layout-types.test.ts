@@ -1,13 +1,20 @@
-import type { JSX, ReactNode } from 'react';
+import type { JSX, ReactElement, ReactNode } from 'react';
 import { describe, expectTypeOf, it } from 'vitest';
-import { createProp, defineComposableComponent, defineResourceLayout } from '../../src';
+import {
+  componentSlot,
+  defineComposableComponent,
+  defineResourceLayout,
+  type ComponentSlotComponent,
+} from '../../src';
 import { testResourceLayout } from './helpers';
+import { z } from 'zod';
+import { reactNode, reactElement } from '@jfdevelops/react-layout-adapter-zod';
 
 const { createResourceLayout } = testResourceLayout({
   resources: ['admins'],
   options: {
-    description: createProp.string(),
-    title: createProp.string(),
+    description: z.string(),
+    title: z.string(),
   },
   layout: {
     render: () => null as never,
@@ -222,17 +229,14 @@ describe('defineResourceLayout types', () => {
     const { createResourceLayout } = defineResourceLayout({
       resources: ['detail', 'create'],
       options: {
-        title: createProp.string(),
+        title: z.string(),
       },
       layout: {
         composables: () => {
           const Breadcrumb = defineComposableComponent({
             name: 'Breadcrumb',
             props: {
-              segments: createProp.record({
-                value: createProp.string(),
-                key: createProp.string(),
-              }),
+              segments: z.record(z.string(), z.string()),
             },
           })(() => null as never);
 
@@ -246,9 +250,7 @@ describe('defineResourceLayout types', () => {
             segments: 'optional',
           },
           custom: {
-            children: createProp.component({
-              type: 'ReactNode',
-            }),
+            children: reactNode(),
           },
         },
         render: (props) => {
@@ -291,11 +293,11 @@ describe('defineResourceLayout types', () => {
     const { createResourceLayout } = defineResourceLayout({
       resources: ['detail', 'create'],
       options: {
-        title: createProp.string(),
-        componentLabel: createProp.string(),
-        configLabel: createProp.string(),
-        requiredComponentLabel: createProp.string(),
-        requiredConfigLabel: createProp.string(),
+        title: z.string(),
+        componentLabel: z.string(),
+        configLabel: z.string(),
+        requiredComponentLabel: z.string(),
+        requiredConfigLabel: z.string(),
       },
       layout: {
         props: {
@@ -396,7 +398,7 @@ describe('createComponent types', () => {
         title: true,
       },
       custom: {
-        eyebrow: createProp.string().optional(),
+        eyebrow: z.string().optional(),
       },
     },
     resources: {
@@ -534,7 +536,7 @@ describe('createComponent types', () => {
             },
             Footer: {
               props: {
-                label: createProp.string(),
+                label: z.string(),
               },
               render: () => null as never,
             },
@@ -657,13 +659,11 @@ describe('createComponent types', () => {
     >();
   });
 
-  it('keeps declared prop keys uncapitalized for JSX.Element slots', () => {
+  it('keeps declared prop keys uncapitalized for component slots', () => {
     const { createResourceLayout: createJsxSlotLayout } = testResourceLayout({
       options: {
-        actions: createProp.component({
-          type: 'JSX.Element',
-        }),
-        title: createProp.string(),
+        actions: componentSlot(),
+        title: z.string(),
       },
       layout: {
         props: {
@@ -682,16 +682,14 @@ describe('createComponent types', () => {
           title: true,
         },
         custom: {
-          badge: createProp.component({
-            type: 'JSX.Element',
-          }),
+          badge: reactElement(),
         },
       },
       resources: {
         users: {
           render: (props) => {
-            expectTypeOf(props.actions).toEqualTypeOf<() => JSX.Element>();
-            expectTypeOf(props.badge).toEqualTypeOf<JSX.Element>();
+            expectTypeOf(props.actions).toEqualTypeOf<ComponentSlotComponent>();
+            expectTypeOf(props.badge).toEqualTypeOf<ReactElement>();
             () => {
               // @ts-expect-error declared keys are not capitalized
               props.Actions;
@@ -702,7 +700,7 @@ describe('createComponent types', () => {
         },
       },
       render: (props) => {
-        expectTypeOf(props.actions).toEqualTypeOf<() => JSX.Element>();
+        expectTypeOf(props.actions).toEqualTypeOf<ComponentSlotComponent>();
         () => {
           // @ts-expect-error declared keys are not capitalized
           props.Badge;
@@ -736,7 +734,7 @@ describe('createComponent types', () => {
         title: true,
       },
       custom: {
-        heading: createProp.string(),
+        heading: z.string(),
       },
     });
     const sharedUsersEntry = createSharedDirectory.createResourceComponents({

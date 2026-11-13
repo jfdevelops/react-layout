@@ -1,22 +1,21 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
-  createProp,
   createComposableComponent,
   defineComposableComponent,
+  componentSlot,
   defineResourceLayout,
   MissingResourceProviderError,
 } from '../../src';
 import { renderCapturingError, testResourceLayout, testResourceLayoutWithRender } from './helpers';
+import { z } from 'zod';
+import { reactNode } from '@jfdevelops/react-layout-adapter-zod';
 
 function createContactsComposableLayout() {
   const createBreadcrumbComposable = defineComposableComponent({
     name: 'Breadcrumbs',
     props: {
-      segments: createProp.record({
-        value: createProp.string(),
-        key: createProp.string().literal('contacts').or(createProp.string()),
-      }),
+      segments: z.record(z.literal('contacts').or(z.string()), z.string()),
     },
   });
 
@@ -27,7 +26,7 @@ function createContactsComposableLayout() {
   const { createResourceLayout } = defineResourceLayout({
     resources: ['contacts'],
     options: {
-      title: createProp.string(),
+      title: z.string(),
     },
     layout: {
       composables: () => ({
@@ -176,7 +175,7 @@ describe('defineResourceLayout', () => {
   it('creates layouts bound to a resource and uses the provided default name', () => {
     const { createResourceLayout } = testResourceLayout({
       options: {
-        title: createProp.string(),
+        title: z.string(),
       },
       layout: {
         props: {
@@ -348,7 +347,7 @@ describe('defineResourceLayout', () => {
     const { createResourceLayout } = testResourceLayout({
       resources: ['admins'],
       options: {
-        title: createProp.string(),
+        title: z.string(),
       },
       layout: {
         props: {
@@ -420,8 +419,8 @@ describe('defineResourceLayout', () => {
   it('resolves included option props before passing them to render', () => {
     const { createResourceLayout } = testResourceLayout({
       options: {
-        title: createProp.string(),
-        description: createProp.string(),
+        title: z.string(),
+        description: z.string(),
       },
       layout: {
         props: {
@@ -430,9 +429,7 @@ describe('defineResourceLayout', () => {
             description: true,
           },
           custom: {
-            children: createProp.component({
-              type: 'ReactNode',
-            }),
+            children: reactNode(),
           },
         },
         render: (props) => (
@@ -468,8 +465,8 @@ describe('defineResourceLayout', () => {
   it('applies setDefault values when props are omitted', () => {
     const { createResourceLayout } = testResourceLayout({
       options: {
-        title: createProp.string(),
-        description: createProp.string(),
+        title: z.string(),
+        description: z.string(),
       },
       layout: {
         props: {
@@ -509,17 +506,15 @@ describe('defineResourceLayout', () => {
     expect(screen.getByText('Default description').textContent).toBe('Default description');
   });
 
-  it('creates JSX.Element props at layout creation time with defined props', () => {
+  it('creates component slots at layout creation time with defined props', () => {
     const { createResourceLayout } = testResourceLayout({
       options: {
-        title: createProp.string(),
-        actions: createProp
-          .component({
-            type: 'JSX.Element',
-          })
-          .props({
-            label: createProp.string(),
-          }),
+        title: z.string(),
+        actions: componentSlot({
+          props: {
+            label: z.string(),
+          },
+        }),
       },
       layout: {
         props: {
@@ -558,17 +553,15 @@ describe('defineResourceLayout', () => {
     ).toBe('Create user');
   });
 
-  it('allows setDefaults render functions for JSX.Element props', () => {
+  it('allows setDefaults render functions for component slots', () => {
     const { createResourceLayout } = testResourceLayout({
       options: {
-        title: createProp.string(),
-        actions: createProp
-          .component({
-            type: 'JSX.Element',
-          })
-          .props({
-            label: createProp.string(),
-          }),
+        title: z.string(),
+        actions: componentSlot({
+          props: {
+            label: z.string(),
+          },
+        }),
       },
       layout: {
         props: {
@@ -615,8 +608,8 @@ describe('defineResourceLayout', () => {
   it('allows callers to transform setDefault values with updaters', () => {
     const { createResourceLayout } = testResourceLayout({
       options: {
-        title: createProp.string(),
-        description: createProp.string(),
+        title: z.string(),
+        description: z.string(),
       },
       layout: {
         props: {
@@ -662,7 +655,7 @@ describe('defineResourceLayout', () => {
   it('allows explicit values to override setDefault values', () => {
     const { createResourceLayout } = testResourceLayout({
       options: {
-        title: createProp.string(),
+        title: z.string(),
       },
       layout: {
         props: {
@@ -698,7 +691,7 @@ describe('defineResourceLayout', () => {
   it('passes split render options through the render context', () => {
     const { createResourceLayout } = testResourceLayout({
       options: {
-        title: createProp.string(),
+        title: z.string(),
       },
       layout: {
         props: {
@@ -735,10 +728,7 @@ describe('defineResourceLayout', () => {
     const createBreadcrumbComposable = defineComposableComponent({
       name: 'Breadcrumbs',
       props: {
-        segments: createProp.record({
-          value: createProp.string(),
-          key: createProp.string().literal('contacts').or(createProp.string()),
-        }),
+        segments: z.record(z.literal('contacts').or(z.string()), z.string()),
       },
     });
 
@@ -749,7 +739,7 @@ describe('defineResourceLayout', () => {
     const { createResourceLayout } = defineResourceLayout({
       resources: ['contacts'],
       options: {
-        title: createProp.string(),
+        title: z.string(),
       },
       layout: {
         composables: () => ({
@@ -796,10 +786,7 @@ describe('defineResourceLayout', () => {
     const createBreadcrumbComposable = defineComposableComponent({
       name: 'Breadcrumbs',
       props: {
-        segments: createProp.record({
-          value: createProp.string(),
-          key: createProp.string(),
-        }),
+        segments: z.record(z.string(), z.string()),
       },
     });
     const Breadcrumbs = createBreadcrumbComposable((props) => (
@@ -808,7 +795,7 @@ describe('defineResourceLayout', () => {
     const { createResourceLayout } = defineResourceLayout({
       resources: ['contacts'],
       options: {
-        title: createProp.string(),
+        title: z.string(),
       },
       layout: {
         composables: () => ({
@@ -871,17 +858,14 @@ describe('defineResourceLayout', () => {
     const createBreadcrumbComposable = defineComposableComponent({
       name: 'Breadcrumbs',
       props: {
-        segments: createProp.record({
-          value: createProp.string(),
-          key: createProp.string(),
-        }),
+        segments: z.record(z.string(), z.string()),
       },
     });
     const Breadcrumbs = createBreadcrumbComposable(() => null);
     const { createResourceLayout } = defineResourceLayout({
       resources: ['contacts'],
       options: {
-        configLabel: createProp.string(),
+        configLabel: z.string(),
       },
       layout: {
         composables: () => ({
@@ -932,7 +916,7 @@ describe('defineResourceLayout', () => {
     const { createResourceLayout } = defineResourceLayout({
       resources: ['contacts'],
       options: {
-        label: createProp.string().optional(),
+        label: z.string().optional(),
       },
       layout: {
         props: {
@@ -979,9 +963,7 @@ describe('defineResourceLayout', () => {
       layoutName: 'ContactsPage',
       path: 'segments',
       resource: 'contacts',
-      received: [],
-      expected: ['segments'],
-      message: 'Missing required prop "segments" in layout "ContactsPage" (resource: "contacts").',
+      message: expect.stringMatching(/^Invalid prop "segments": /),
     });
   });
 

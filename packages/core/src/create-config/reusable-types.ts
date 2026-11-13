@@ -1,10 +1,9 @@
 import {
-  type AnyBuiltPropDefinition,
+  type PropDefinition,
   type DefinitionVisibility,
   type InputDefinitions,
-  type ExtractDefinitionValue,
-  type ResolvedBuiltPropShape,
-  type ResolvedInputShape,
+  type ResolvePropsAsDefined,
+  type ResolveInputPropsAsDefined,
   type StandardSchemaV1,
 } from '@jfdevelops/react-layout-validator';
 import type { OptionSchema } from '../option-schema';
@@ -16,14 +15,46 @@ import type { SingleResourceInput, ReusableResourcesAccessor } from './reusable-
 export type { SingleResourceInput, ReusableResourcesAccessor } from './reusable-resource-input';
 
 type Selector<Source> = (source: Source) => unknown;
-type OptionValue<Definition extends AnyBuiltPropDefinition> =
-  | ExtractDefinitionValue<Definition>
+
+/**
+ * Standard Schema has no field introspection, so the fields of an object
+ * option are read from its output type. Arrays, functions, and built-in
+ * objects are values, not field containers.
+ */
+type IsFieldContainer<Value> = [Value] extends [object]
+  ? [Value] extends [
+      | ReadonlyArray<unknown>
+      | ((...args: never[]) => unknown)
+      | Date
+      | RegExp
+      | Map<unknown, unknown>
+      | Set<unknown>
+      | Promise<unknown>,
+    ]
+    ? false
+    : true
+  : false;
+
+/** One definition per field of an object value. */
+type FieldDefinitions<Value> = {
+  [Key in keyof Required<Value> & string]: StandardSchemaV1<Value[Key], Value[Key]>;
+};
+
+/** Exposes `properties` when an option's value is an object whose fields can be selected. */
+type ObjectOption<Definition> = Definition extends PropDefinition
+  ? NonNullable<StandardSchemaV1.InferOutput<Definition>> extends infer Value
+    ? IsFieldContainer<Value> extends true
+      ? { properties: FieldDefinitions<Value> }
+      : {}
+    : {}
+  : {};
+type OptionValue<Definition extends PropDefinition> =
+  | StandardSchemaV1.InferOutput<Definition>
   | (DefinitionVisibility<Definition> extends 'optional' ? undefined : never);
 
 /** Select or transform resolved option values, or drill into object values. */
 export type ReusableOptionSelection<Props extends InPropsObject> = {
-  [Key in keyof Props]?: Props[Key] extends {
-    type: 'object';
+  [Key in keyof Props]?: ObjectOption<Props[Key]> extends {
     properties: infer Shape extends InPropsObject;
   }
     ? true | Selector<OptionValue<Props[Key]>> | ReusableOptionSelection<Shape>
@@ -60,18 +91,15 @@ export type ReusableInclude<
   : {
       options?:
         | true
-        | Selector<ResolvedBuiltPropShape<OptionDefinitions<Resources, Options>>>
+        | Selector<ResolvePropsAsDefined<OptionDefinitions<Resources, Options>>>
         | ReusableOptionSelection<OptionDefinitions<Resources, Options>>;
     });
 
-type SelectedOptionValue<
-  Definition extends AnyBuiltPropDefinition,
-  Selection,
-> = Selection extends true
-  ? ExtractDefinitionValue<Definition>
+type SelectedOptionValue<Definition extends PropDefinition, Selection> = Selection extends true
+  ? StandardSchemaV1.InferOutput<Definition>
   : Selection extends (...args: any[]) => infer Result
     ? Result
-    : Definition extends { properties: infer Shape extends InPropsObject }
+    : ObjectOption<Definition> extends { properties: infer Shape extends InPropsObject }
       ? SelectedOptionProps<Shape, Selection>
       : never;
 
@@ -108,10 +136,10 @@ export type ReusableProps<
     ? Selection extends (...args: any[]) => infer Result
       ? { options: Result }
       : Selection extends true
-        ? ResolvedBuiltPropShape<OptionDefinitions<Resources, Options>>
+        ? ResolvePropsAsDefined<OptionDefinitions<Resources, Options>>
         : SelectedOptionProps<OptionDefinitions<Resources, Options>, Selection>
     : {}) &
-  ResolvedBuiltPropShape<CustomProps>;
+  ResolvePropsAsDefined<CustomProps>;
 
 /** Data selected for the reusable's single callback argument. */
 export type ReusableSelected<
@@ -141,7 +169,7 @@ type SelectionShape<Props extends InPropsObject, Selection> =
           Key in keyof Props & (Selection extends true ? keyof Props : keyof Selection)
         ]: SelectionAt<Selection, Key> extends Selector<any>
           ? 'value'
-          : Props[Key] extends { properties: infer Shape extends InPropsObject }
+          : ObjectOption<Props[Key]> extends { properties: infer Shape extends InPropsObject }
             ? SelectionShape<Shape, SelectionAt<Selection, Key>>
             : 'value';
       };
@@ -242,7 +270,7 @@ type GuardedFields<
   [Key in keyof Value]: Key extends keyof Props
     ? Key extends keyof Shape
       ? Shape[Key] extends object
-        ? Props[Key] extends { properties: infer Nested extends InPropsObject }
+        ? ObjectOption<Props[Key]> extends { properties: infer Nested extends InPropsObject }
           ?
               | GuardedObject<
                   NonNullable<Value[Key]>,
@@ -323,22 +351,18 @@ type SelectedValues<Props extends InPropsObject, Selection> = Selection extends 
 ) => infer Result
   ? Result
   : Selection extends true
-    ? ResolvedBuiltPropShape<Props>
+    ? ResolvePropsAsDefined<Props>
     : SelectedOptionProps<Props, Selection>;
 
 /** Sources are derived against the finite definition tree, not arbitrary input keys. */
-type SourceValue<
-  Definition extends AnyBuiltPropDefinition,
-  Selection,
-  CallbacksOnly extends boolean,
-> =
+type SourceValue<Definition extends PropDefinition, Selection, CallbacksOnly extends boolean> =
   Selection extends Selector<any>
     ? OptionValue<Definition>
     : Selection extends true
       ? CallbacksOnly extends true
         ? never
         : OptionValue<Definition>
-      : Definition extends { properties: infer Shape extends InPropsObject }
+      : ObjectOption<Definition> extends { properties: infer Shape extends InPropsObject }
         ? SourceValues<Shape, Selection, CallbacksOnly>
         : never;
 
@@ -349,7 +373,7 @@ type SourceKeys<Props extends InPropsObject, Selection, CallbacksOnly extends bo
       ? CallbacksOnly extends true
         ? never
         : Key
-      : Props[Key] extends { properties: infer Shape extends InPropsObject }
+      : ObjectOption<Props[Key]> extends { properties: infer Shape extends InPropsObject }
         ? keyof SourceValues<Shape, Selection[Key], CallbacksOnly> extends never
           ? never
           : Key
@@ -358,11 +382,11 @@ type SourceKeys<Props extends InPropsObject, Selection, CallbacksOnly extends bo
 
 type SourceValues<Props extends InPropsObject, Selection, CallbacksOnly extends boolean> =
   Selection extends Selector<any>
-    ? ResolvedBuiltPropShape<Props>
+    ? ResolvePropsAsDefined<Props>
     : Selection extends true
       ? CallbacksOnly extends true
         ? {}
-        : ResolvedBuiltPropShape<Props>
+        : ResolvePropsAsDefined<Props>
       : {
           [
             Key in SourceKeys<Props, Selection, CallbacksOnly> as DefinitionVisibility<
@@ -437,7 +461,7 @@ export type ReusableInput<
 > = Options extends OptionSchema
   ? Expanded<
       SchemaReusableInput<Options, IncludeProps, Select> &
-        ResolvedInputShape<CustomProps> &
+        ResolveInputPropsAsDefined<CustomProps> &
         ReusableProps<Resources, {}, Omit<IncludeProps, 'options'>, {}> &
         ResourceCallerInput<Resources, IncludeProps> &
         ResourceCallerInput<Resources, Select>
@@ -471,22 +495,20 @@ type CallerOptions<Props extends InPropsObject, IncludeProps, Select> = {
         : Value extends true
           ? SelectionAt<Select, Key> extends true
             ? never
-            : Props[Key] extends { properties: infer Shape extends InPropsObject }
+            : ObjectOption<Props[Key]> extends { properties: infer Shape extends InPropsObject }
               ? SelectionAt<Select, Key> extends object
                 ? keyof CallerOptions<Shape, true, SelectionAt<Select, Key>> extends never
                   ? never
                   : Key
                 : Key
               : Key
-          : Props[Key] extends { properties: infer Shape extends InPropsObject }
+          : ObjectOption<Props[Key]> extends { properties: infer Shape extends InPropsObject }
             ? keyof CallerOptions<Shape, Value, SelectionAt<Select, Key>> extends never
               ? never
               : Key
             : never
       : never
-  ]: Props[Key] extends {
-    properties: infer Shape extends InPropsObject;
-  }
+  ]: ObjectOption<Props[Key]> extends { properties: infer Shape extends InPropsObject }
     ? SelectionAt<IncludeProps, Key> extends true
       ? SelectionAt<Select, Key> extends object
         ? CallerOptions<Shape, true, SelectionAt<Select, Key>>

@@ -4,11 +4,11 @@ import type { InputDefinitions } from '@jfdevelops/react-layout-validator';
 import type {
   CustomPropsInput,
   NormalizedCustomProps,
-  ResolveRenderPropsAsDefined,
-  ResolveCallPropsAsDefined,
-  ResolveCallProps,
-  CustomPropsObject,
   ResolveRenderProps,
+  ResolveRenderPropsAsDefined,
+  ResolveCallProps,
+  ResolveCallPropsAsDefined,
+  CustomPropsObject,
 } from '../../custom-props';
 import type { BuiltinRenderStateName } from '../render-state';
 import type { LazyHandle } from '../../lazy/types';
@@ -17,7 +17,7 @@ export type { ScopedComponentRenderFn } from '../../lazy/scoped-content';
 
 import type { ComponentType, JSX, ReactNode } from 'react';
 import type { ComposableComponents, MakeComposable } from '@jfdevelops/react-layout-composables';
-import type { ResolvedBuiltPropShape, SafeKeyOf } from '@jfdevelops/react-layout-validator';
+import type { ResolvePropsAsDefined, SafeKeyOf } from '@jfdevelops/react-layout-validator';
 import type {
   IncludedProps,
   InPropsDefinition,
@@ -49,7 +49,7 @@ type ResourceComponentResolvedAvailableProps<
   LayoutCustomProps extends CustomPropsObject,
   ComponentCustomProps extends CustomPropsObject,
   EntryCustomProps extends CustomPropsObject,
-> = ResolvedBuiltPropShape<
+> = ResolvePropsAsDefined<
   NormalizedCustomProps<
     ScopedComponentAvailableProps<Resources, Options, Composables, LayoutCustomProps> &
       ComponentCustomProps &

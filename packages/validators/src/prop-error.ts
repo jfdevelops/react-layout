@@ -15,25 +15,6 @@ const propErrorContext = type({
 
 export type PropErrorOptions = typeof propErrorContext.infer;
 
-type PropMessageOptions = Pick<PropErrorOptions, 'path' | 'layoutName' | 'resource'>;
-
-type MismatchedPropMessageOptions = PropMessageOptions &
-  Pick<PropErrorOptions, 'received' | 'expected'>;
-
-function createPropLocation({ layoutName, resource }: PropMessageOptions) {
-  return layoutName === undefined || resource === undefined
-    ? ''
-    : ` in layout "${layoutName}" (resource: "${resource}")`;
-}
-
-export function createMissingPropMessage(options: PropMessageOptions) {
-  return `Missing required prop "${options.path}"${createPropLocation(options)}.`;
-}
-
-export function createMismatchedPropMessage(options: MismatchedPropMessageOptions) {
-  return `Invalid prop "${options.path}"${createPropLocation(options)}: expected "${options.expected}", received "${options.received}".`;
-}
-
 export class PropError extends validatorErrorFactory({
   code: 'invalidProp',
 })
@@ -65,16 +46,4 @@ export class PropError extends validatorErrorFactory({
   get issues() {
     return this.context.issues as readonly StandardSchemaV1.Issue[] | undefined;
   }
-}
-
-export function getPropValueType(value: unknown) {
-  if (value === null) {
-    return 'null';
-  }
-
-  if (Array.isArray(value)) {
-    return 'array';
-  }
-
-  return typeof value;
 }

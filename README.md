@@ -6,18 +6,20 @@ A React library for building resource-based page layouts. Define a shared layout
 
 - **Define layouts by resource** — group pages under resources like `users`, `settings`, or nested sub-resources.
 - **Reuse layout structure** — composable slots (e.g. `Layout`, `Title`, `Content`) keep markup consistent across pages.
-- **Type-safe props** — validate and infer layout props with Standard Schema libraries and native React adapters. See the [migration guide](./docs/standard-schema.md); the legacy prop builder remains supported during deprecation.
+- **Type-safe props** — validate and infer layout props with Standard Schema libraries and native React adapters. See the [Standard Schema guide](./docs/standard-schema.md), which also covers migrating from the removed `createProp` builders.
 
 ## Quick example
 
 ```tsx
-import { createProp, defineResourceLayout } from '@jfdevelops/react-layout';
+import { z } from 'zod';
+import { defineResourceLayout } from '@jfdevelops/react-layout';
+import { reactNode } from '@jfdevelops/react-layout-adapter-zod';
 
 const { createResourceLayout, useResource } = defineResourceLayout({
   resources: ['users', 'settings'],
   options: {
-    title: createProp.string(),
-    description: createProp.string(),
+    title: z.string(),
+    description: z.string(),
   },
   layout: {
     composables: (create) => ({
@@ -67,7 +69,7 @@ props and composables.
 const { createResourceLayout } = defineResourceLayout({
   resources: ['users'],
   options: {
-    title: createProp.string(),
+    title: z.string(),
   },
   layout: {
     render: {
@@ -79,7 +81,7 @@ const { createResourceLayout } = defineResourceLayout({
       Error: {
         props: {
           custom: {
-            error: createProp.object({ message: createProp.string() }),
+            error: z.object({ message: z.string() }),
           },
         },
         render: ({ error }) => <p>{error.message}</p>,
@@ -126,18 +128,18 @@ const Content = createRenderState({
 ```
 
 Omitting the declaration keeps children optional. The `'required'` shorthand is
-reserved for `children`; other custom props still use `createProp` definitions.
-Required children are checked both by TypeScript and at runtime. Existing
-validator-based children declarations remain supported, including their legacy
-fallback-state behavior. Defined composables also receive children in both
-factory overloads, without declaring a prop.
+reserved for `children`; other custom props use Standard Schema definitions.
+Required children are checked both by TypeScript and at runtime. A schema can
+also be declared for `children`; render states may still omit children unless
+the `'required'` shorthand is used. Defined composables also receive children
+in both factory overloads, without declaring a prop.
 
 ```tsx
 const { createRenderState, defineResourceLayout } = createDefinedResourceLayout(
   {
     resources: ['users'],
     options: {
-      title: createProp.string(),
+      title: z.string(),
     },
     composables: (create) => ({
       Layout: create({ name: 'PageLayout' }),
@@ -164,9 +166,9 @@ factory's option types and validators:
 const { createReusable } = createDefinedResourceLayout({
   resources: ['panedeck', 'material-ui-helper', 'jfdevelops'],
   options: {
-    meta: createProp.object({
-      owner: createProp.string(),
-      repo: createProp.string(),
+    meta: z.object({
+      owner: z.string(),
+      repo: z.string(),
     }),
   },
 });
@@ -174,7 +176,7 @@ const { createReusable } = createDefinedResourceLayout({
 export const createUrl = createReusable({
   props: {
     include: { options: { meta: true } },
-    custom: { protocol: createProp.string.enum(['https', 'http']) },
+    custom: { protocol: z.enum(['https', 'http']) },
   },
   fn: ({ meta, protocol }) =>
     `${protocol}://github.com/${meta.owner}/${meta.repo}`,
@@ -210,7 +212,7 @@ receive the complete resource accessor; option selectors receive resolved values
 const describeResource = createReusable({
   props: {
     include: { options: { meta: { owner: (owner) => owner.toUpperCase() } } },
-    custom: { title: createProp.string() },
+    custom: { title: z.string() },
   },
   select: {
     resources: (resources) => resources.raw(),
@@ -307,12 +309,12 @@ spreads, so it never becomes a compound state of its own:
 ```tsx
 const Message = createRenderState({
   state: 'Message',
-  props: { custom: { message: createProp.string() } },
+  props: { custom: { message: z.string() } },
   render: ({ message }) => <p>{message}</p>,
 });
 
 const Page = createRenderState({
-  props: { custom: { message: createProp.string() } },
+  props: { custom: { message: z.string() } },
   composables: () => ({
     Message: Message.asComposable({ props: { include: { message: true } } }),
   }),
@@ -337,7 +339,7 @@ defineResourceLayout({
   }),
   render: {
     default: {
-      props: { custom: { message: createProp.string() } },
+      props: { custom: { message: z.string() } },
       render: (_props, { composables }) => (
         <>
           <composables.Message />
@@ -346,7 +348,7 @@ defineResourceLayout({
       ),
     },
     Message: {
-      props: { custom: { message: createProp.string() } },
+      props: { custom: { message: z.string() } },
       render: ({ message }) => <p>{message}</p>,
     },
   },
@@ -402,14 +404,14 @@ Use `fromState` to reuse a created state's prop contract and render it through `
 ```tsx
 const Message = createRenderState({
   state: 'Message',
-  props: { custom: { message: createProp.string() } },
+  props: { custom: { message: z.string() } },
   render: ({ message }) => <p>{message}</p>,
 });
 
 const Notice = createRenderState.fromState({
   ref: Message,
   state: 'Notice',
-  props: { custom: { heading: createProp.string() } },
+  props: { custom: { heading: z.string() } },
   render: ({ heading }, { composables, resources }) => (
     <section>
       <h2>

@@ -1,4 +1,4 @@
-import type { BuiltPropShape } from './types';
+import type { PropDefinitions } from './types';
 
 /** Metadata key used by library-created components to retain prop validators. */
 export const componentPropDefinitionsSymbol: unique symbol = Symbol.for(
@@ -9,7 +9,7 @@ export const componentPropDefinitionsSymbol: unique symbol = Symbol.for(
  * A component created by the layout library with its runtime prop definitions
  * attached. Ordinary React components do not satisfy this contract.
  */
-export type ComponentWithPropDefinitions<Definitions extends BuiltPropShape = BuiltPropShape> = {
+export type ComponentWithPropDefinitions<Definitions extends PropDefinitions = PropDefinitions> = {
   readonly [componentPropDefinitionsSymbol]: Definitions;
 };
 
@@ -19,7 +19,7 @@ export type ComponentWithPropDefinitions<Definitions extends BuiltPropShape = Bu
  */
 export function attachComponentPropDefinitions<
   Component extends object,
-  const Definitions extends BuiltPropShape,
+  const Definitions extends PropDefinitions,
 >(component: Component, definitions: Definitions) {
   Object.defineProperty(component, componentPropDefinitionsSymbol, {
     configurable: false,
@@ -37,7 +37,7 @@ export function attachComponentPropDefinitions<
  * preserved, so the result can be reused directly as another state's `custom`
  * props.
  */
-export function createPropsFromComponent<const Definitions extends BuiltPropShape>(
+export function createPropsFromComponent<const Definitions extends PropDefinitions>(
   component: ComponentWithPropDefinitions<Definitions>,
 ) {
   const definitions = component[componentPropDefinitionsSymbol];

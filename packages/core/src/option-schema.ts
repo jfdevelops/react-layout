@@ -1,7 +1,7 @@
 import {
   isStandardSchema,
   validateProps,
-  type AnyBuiltPropDefinition,
+  type PropDefinition,
   type StandardSchemaV1,
 } from '@jfdevelops/react-layout-validator';
 
@@ -20,7 +20,7 @@ export type SchemaOptionDefinitions<Schema extends OptionSchema> = {
 
 /** Field definitions refer to output already validated by the whole option schema. */
 export function schemaOptionDefinitions(schema: OptionSchema, keys: Iterable<string> = []) {
-  const definitions = Object.create(null) as Record<string, AnyBuiltPropDefinition>;
+  const definitions = Object.create(null) as Record<string, PropDefinition>;
   function field(key: string) {
     return (definitions[key] ??= {
       '~standard': {
@@ -61,7 +61,7 @@ export function schemaOptionDefinitions(schema: OptionSchema, keys: Iterable<str
 export function optionDefinitions(value: unknown, keys: Iterable<string> = []) {
   return isStandardSchema(value)
     ? schemaOptionDefinitions(value as OptionSchema, keys)
-    : (value as Record<string, AnyBuiltPropDefinition>);
+    : (value as Record<string, PropDefinition>);
 }
 
 export function validateOptionSchema(

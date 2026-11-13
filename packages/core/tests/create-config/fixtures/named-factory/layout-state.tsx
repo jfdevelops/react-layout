@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { expectTypeOf } from 'vitest';
-import { createProp } from '@jfdevelops/react-layout';
 import { createRenderState, type Resource, type Segments } from './base';
+import { z } from 'zod';
+import { reactNode } from '@jfdevelops/react-layout-adapter-zod';
 
 export const layoutState = createRenderState({
   state: 'Layout',
@@ -12,22 +13,16 @@ export const layoutState = createRenderState({
       segments: 'optional',
     },
     custom: {
-      children: createProp.component({
-        type: 'ReactNode',
-      }),
-      actions: createProp
-        .component({
-          type: 'ReactNode',
-        })
-        .optional(),
-      showHeader: createProp.boolean().optional(),
+      children: reactNode(),
+      actions: reactNode().optional(),
+      showHeader: z.boolean().optional(),
     },
   },
   render: function Layout(
     { title, description, segments = {}, children, actions, showHeader = true },
     { composables, resources },
   ) {
-    expectTypeOf(title).toEqualTypeOf<ReactNode>();
+    expectTypeOf(title).toEqualTypeOf<Exclude<ReactNode, undefined>>();
     expectTypeOf(description).toEqualTypeOf<ReactNode>();
     expectTypeOf(segments).toEqualTypeOf<Segments>();
     expectTypeOf(children).toEqualTypeOf<ReactNode>();

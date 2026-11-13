@@ -11,6 +11,8 @@ export type ShowCallable<T> = T extends (...args: infer Arguments) => infer Resu
   ? ((...args: Arguments) => Result) & { [Key in keyof T]: T[Key] }
   : Show<T>;
 
+export type NonEmptyReadonlyArray<Value> = readonly [Value, ...Value[]];
+
 export type UnionToIntersection<Union> = (
   Union extends unknown ? (value: Union) => void : never
 ) extends (value: infer Intersection) => void

@@ -1,5 +1,4 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec';
-import type { AnyBuiltPropDefinition } from './types';
 import { PropError } from './prop-error';
 
 export function isStandardSchema(value: unknown): value is StandardSchemaV1 {
@@ -21,57 +20,11 @@ export function isStandardSchema(value: unknown): value is StandardSchemaV1 {
   );
 }
 
-export function containsStandardSchema(definition: unknown, visited = new Set<unknown>()): boolean {
-  if (isStandardSchema(definition)) {
-    return true;
-  }
-
-  if (
-    definition === null ||
-    (typeof definition !== 'object' && typeof definition !== 'function') ||
-    visited.has(definition)
-  ) {
-    return false;
-  }
-
-  visited.add(definition);
-  const children: unknown[] = [];
-
-  if (
-    'properties' in definition &&
-    typeof definition.properties === 'object' &&
-    definition.properties !== null
-  ) {
-    children.push(...Object.values(definition.properties));
-  }
-
-  if ('itemProp' in definition) {
-    children.push(definition.itemProp);
-  }
-
-  if ('valueProp' in definition) {
-    children.push(definition.valueProp);
-  }
-
-  if ('keyProp' in definition) {
-    children.push(definition.keyProp);
-  }
-
-  if ('members' in definition && Array.isArray(definition.members)) {
-    children.push(...definition.members);
-  }
-
-  return children.some((child) => containsStandardSchema(child, visited));
-}
-
-export function validateDefinition(definition: AnyBuiltPropDefinition, value: unknown) {
-  if (!isStandardSchema(definition)) {
-    const result = definition(value);
-
-    // Pure legacy validation preserves input instances and undeclared fields.
-    // Only schema-backed containers introduce parsed/defaulted output values.
-    return result === undefined || !containsStandardSchema(definition) ? value : result;
-  }
+/** Validates one value synchronously and returns the schema's output. */
+export function validateDefinition<Definition extends StandardSchemaV1>(
+  definition: Definition,
+  value: unknown,
+): StandardSchemaV1.InferOutput<Definition> {
   const result = definition['~standard'].validate(value);
   if (result instanceof Promise || ('then' in result && typeof result.then === 'function')) {
     // Handle rejected async refinements without leaking an unhandled rejection.
@@ -94,4 +47,19 @@ export function validateDefinition(definition: AnyBuiltPropDefinition, value: un
   }
 
   return result.value;
+}
+
+/**
+ * Reads the supplied values out of a record that may still hold definitions:
+ * an entry that is a schema has no value yet, so it resolves to `undefined`.
+ */
+export function resolvePropDefinitionValues(input: Record<string, unknown>) {
+  const values: Record<string, unknown> = {};
+
+  for (const key of Object.keys(input)) {
+    const value = input[key];
+    values[key] = isStandardSchema(value) ? undefined : value;
+  }
+
+  return values;
 }

@@ -1,10 +1,19 @@
 import { expect, it, vi } from 'vitest';
 import { describePropValidator, formatInspectionDetails } from '../src';
-it('formats repeated validators independently and never invokes callbacks', () => {
-  const validator = Object.assign(vi.fn(), {
-    type: 'string',
-    visibility: 'optional',
-  });
+
+function schema(vendor: string, validate = vi.fn()) {
+  return {
+    '~standard': {
+      version: 1,
+      vendor,
+      validate,
+    },
+  };
+}
+
+it('formats repeated schemas independently and never invokes callbacks', () => {
+  const validate = vi.fn();
+  const validator = schema('zod', validate);
   const render = vi.fn();
   const result = JSON.parse(
     formatInspectionDetails({
@@ -13,13 +22,13 @@ it('formats repeated validators independently and never invokes callbacks', () =
       render,
     }),
   );
-  expect(result.first).toBe('string (optional)');
-  expect(result.second).toBe('string (optional)');
+  expect(result.first).toBe('unknown · zod');
+  expect(result.second).toBe('unknown · zod');
   expect(result.render).toMatch(/^\[function/);
-  expect(validator).not.toHaveBeenCalled();
+  expect(validate).not.toHaveBeenCalled();
   expect(render).not.toHaveBeenCalled();
 });
-it('retains circular reference protection for schemas and ordinary details', () => {
+it('retains circular reference protection for ordinary details', () => {
   const details: Record<string, unknown> = {
     count: 5n,
   };
@@ -28,33 +37,18 @@ it('retains circular reference protection for schemas and ordinary details', () 
     count: '5',
     self: '[circular reference]',
   });
-  const base: Record<string, unknown> = {
-    type: 'object',
-    visibility: 'required',
-  };
-  const validator = Object.assign(() => {}, {
-    _baseProp: base,
-  });
-  base.properties = {
-    self: validator,
-  };
-  expect(describePropValidator(validator)).toBe('{ self: recursive } (required)');
 });
-it('describes render-prop signatures and distinguishes plain functions', () => {
-  const title = Object.assign(() => {}, {
-    type: 'string',
-    visibility: 'required',
-  });
-  const render = Object.assign(() => {}, {
-    _baseProp: {
-      type: 'function',
-      visibility: 'optional',
-      renderProps: {
-        title,
-      },
-      childrenType: 'ReactNode',
-    },
-  });
-  expect(describePropValidator(render)).toBe('(props: { title: string }) => ReactNode (optional)');
+it('describes schemas by vendor and distinguishes plain functions', () => {
+  expect(describePropValidator(schema('valibot'))).toBe('unknown · valibot');
+  expect(describePropValidator(Object.assign(() => {}, schema('arktype')))).toBe(
+    'unknown · arktype',
+  );
   expect(describePropValidator(() => {})).toBeUndefined();
+  expect(
+    describePropValidator({
+      '~standard': {
+        version: 2,
+      },
+    }),
+  ).toBeUndefined();
 });

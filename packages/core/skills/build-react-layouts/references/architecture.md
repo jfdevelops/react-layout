@@ -16,10 +16,9 @@ Create one central definition for resources that share the same application
 shell. Export the generated helpers from that module:
 
 ```tsx
-import {
-  createProp,
-  defineResourceLayout,
-} from '@jfdevelops/react-layout';
+import { z } from 'zod';
+import { defineResourceLayout } from '@jfdevelops/react-layout';
+import { reactNode } from '@jfdevelops/react-layout-adapter-zod';
 
 export const {
   createResourceConfig,
@@ -28,7 +27,7 @@ export const {
 } = defineResourceLayout({
   resources: ['appointments', 'locations', 'services', 'settings'],
   options: {
-    title: createProp.component({ type: 'ReactNode' }).optional(),
+    title: reactNode().optional(),
   },
   layout: {
     // Define the shared contract here.
@@ -51,9 +50,9 @@ layout: {
       segments: true,
     },
     custom: {
-      children: createProp.component({ type: 'ReactNode' }),
-      actions: createProp.component({ type: 'ReactNode' }).optional(),
-      showHeader: createProp.boolean().optional(),
+      children: reactNode(),
+      actions: reactNode().optional(),
+      showHeader: z.boolean().optional(),
     },
   },
 }
@@ -145,7 +144,7 @@ export const {
 } = defineResourceLayout.withLayout({
   resources: ['appointments', 'locations', 'services', 'settings'],
   options: {
-    title: createProp.component({ type: 'ReactNode' }).optional(),
+    title: reactNode().optional(),
   },
   shell: {
     composables: (create) => ({
@@ -168,8 +167,8 @@ export const {
     // the shell's outlet.
     props: {
       custom: {
-        children: createProp.component({ type: 'ReactNode' }),
-        actions: createProp.component({ type: 'ReactNode' }).optional(),
+        children: reactNode(),
+        actions: reactNode().optional(),
       },
     },
     render: ({ children, actions }, { composables }) => (
@@ -226,7 +225,7 @@ contract. A side pane is not merely a variation of the main page shell:
 export const resourcePaneLayout = defineResourceLayout({
   resources: ['create', 'detail'],
   options: {
-    title: createProp.component({ type: 'ReactNode' }),
+    title: reactNode(),
   },
   layout: {
     props: {
@@ -234,7 +233,7 @@ export const resourcePaneLayout = defineResourceLayout({
         title: true,
       },
       custom: {
-        children: createProp.component({ type: 'ReactNode' }),
+        children: reactNode(),
       },
     },
     render: function Render({ children, title }) {

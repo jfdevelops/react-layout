@@ -4,11 +4,9 @@ import type { CreateLayoutComposable } from '@jfdevelops/react-layout';
 type UntypedCall = (...args: unknown[]) => unknown;
 import { expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import {
-  createDefinedResourceLayout,
-  createProp,
-  defineResourceSurfaces,
-} from '@jfdevelops/react-layout';
+import { createDefinedResourceLayout, defineResourceSurfaces } from '@jfdevelops/react-layout';
+import { z } from 'zod';
+import { reactNode } from '@jfdevelops/react-layout-adapter-zod';
 
 const root = createDefinedResourceLayout({
   resources: ['users', 'teams'],
@@ -19,7 +17,7 @@ const pane = root.defineResourceSurface({
     resources: ['users'],
   },
   options: {
-    title: createProp.string(),
+    title: z.string(),
   },
 });
 const layout = pane.defineResourceLayout({
@@ -221,7 +219,7 @@ const bagWithProps = defineResourceSurfaces({
   page: {
     resources: ['users'],
     options: {
-      title: createProp.string(),
+      title: z.string(),
     },
     props: {
       include: {
@@ -294,7 +292,7 @@ function createPageComposables(create: CreateLayoutComposable<string>) {
 }
 
 const composedOptions = {
-  title: createProp.string(),
+  title: z.string(),
 };
 const composedDefinition = createDefinedResourceLayout({
   resources: ['users'],
@@ -304,11 +302,7 @@ const composedDefinition = createDefinedResourceLayout({
       title: true,
     },
     custom: {
-      children: createProp
-        .component({
-          type: 'ReactNode',
-        })
-        .optional(),
+      children: reactNode().optional(),
     },
   },
   composables: createPageComposables,
@@ -333,11 +327,7 @@ const composedBag = defineResourceSurfaces({
         title: true,
       },
       custom: {
-        children: createProp
-          .component({
-            type: 'ReactNode',
-          })
-          .optional(),
+        children: reactNode().optional(),
       },
     },
     render: {

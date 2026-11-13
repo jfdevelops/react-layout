@@ -20,7 +20,7 @@ state, or application business logic.
 1. Inspect the existing layout definition and resource list.
 2. Identify whether the requested surface belongs to an existing layout family.
 3. Add or reuse the resource in the central definition.
-4. Define shared configuration values with `createProp`.
+4. Define shared configuration values with Standard Schema definitions.
 5. Expose semantic layout regions through composables.
 6. Generate the narrowest suitable page factory.
 7. Connect navigation and route-state dispatch through the helpers returned by
@@ -41,8 +41,9 @@ not-found states.
 
 ## Apply the core conventions
 
-- Import `defineResourceLayout` and `createProp` from
-  `@jfdevelops/react-layout`.
+- Import `defineResourceLayout` from `@jfdevelops/react-layout`, and describe
+  props with a Standard Schema library (for example `zod`) plus its React
+  Layout adapter (`reactNode`, `reactElement`).
 - Import optional preset composables from their dedicated packages.
 - Export the helpers returned by the central `defineResourceLayout` call.
 - Keep the authoritative resource list in the central layout definition.
@@ -52,7 +53,7 @@ not-found states.
   renderer.
 - Use `layout.props.custom` for props passed when rendering the generated React
   component.
-- Use `createProp.component({ type: 'ReactNode' })` for React content.
+- Use `reactNode()` for React content.
 - Mark genuinely optional values with `.optional()`.
 - Give optional custom values defaults in the shared renderer when appropriate.
 - Name composables by semantic role rather than visual implementation.
@@ -92,7 +93,7 @@ Use `options` for values supplied while creating a resource layout:
 
 ```tsx
 options: {
-  title: createProp.component({ type: 'ReactNode' }).optional(),
+  title: reactNode().optional(),
 }
 ```
 
@@ -114,9 +115,9 @@ Use `custom` for values supplied when rendering the resulting component:
 layout: {
   props: {
     custom: {
-      children: createProp.component({ type: 'ReactNode' }),
-      actions: createProp.component({ type: 'ReactNode' }).optional(),
-      showHeader: createProp.boolean().optional(),
+      children: reactNode(),
+      actions: reactNode().optional(),
+      showHeader: z.boolean().optional(),
     },
   },
 }

@@ -53,8 +53,8 @@ rendering; it does not weaken the object schema's validation contract. Schemas
 can transform the object to a different output shape, and render props infer
 the selected output types.
 
-The existing map form remains supported, including mixed legacy definitions
-and schema aliases:
+Options can also be declared as a map of schemas keyed by option name, where
+each option is validated on its own:
 
 ```ts
 const titleSchema = z.string();
@@ -76,7 +76,7 @@ pnpm add @jfdevelops/react-layout-adapter-effect effect
 ```
 
 Each adapter has React and its own schema library as peer dependencies. The
-adapters share no runtime package dependency with core or the legacy validator.
+adapters depend only on the shared `@jfdevelops/react-layout-adapters` factory.
 
 ## Creating an adapter
 
@@ -160,8 +160,7 @@ it to React Layout.
 `reactElement()` infers `React.ReactElement` and uses `React.isValidElement`.
 It accepts elements such as `<Icon />`, including fragments, and rejects
 strings, portals, arbitrary objects, and component functions such as `Icon`.
-Schema-backed props keep their declared names; they do not become the
-capitalized component slots used by legacy `JSX.Element` definitions.
+Props keep the names they are declared with.
 
 `reactNode()` infers `React.ReactNode`. It accepts strings, numbers, booleans,
 null, undefined, elements, portals, and collections of nodes. React 19 also
@@ -169,8 +168,8 @@ accepts bigint and promise-like nodes. Validation never invokes components or
 awaits promises. One-shot iterators such as generators must be materialized
 into an array first, so validation cannot consume the children before React.
 A node schema permits empty content: use a narrower schema
-if a slot must contain a visible value. The existing `children: 'required'`
-shorthand remains available to require that the content slot is supplied.
+if a slot must contain a visible value. The `children: 'required'` shorthand
+requires that the content slot is supplied.
 
 ## Inputs, defaults, and transforms
 
@@ -197,11 +196,9 @@ Errors remain contextual `PropError` instances. `path`, `layoutName`, and
 with its path prefixed by the prop name; the primary message uses the first
 issue's message.
 
-Standard Schema does not expose object-field introspection. For schema-backed
-option fields, reusable selections accept the entire field (`meta: true`) or a
-selector (`meta: (value) => value.owner`). Recursive field selections remain
-available for legacy object definitions. No schema library registration is
-needed for ordinary validation.
+Reusable selections accept whole fields (`meta: true`), selectors
+(`meta: (value) => value.owner`), and nested selections
+(`meta: { owner: true }`). No schema library registration is needed for validation.
 
 Reusable functions with an object options schema validate the whole object
 before selecting output values. Inputs selected by `props.include.options`
@@ -219,24 +216,38 @@ const read = createReusable({
 read({ count: '2', options: { prefix: 'Items' } }); // 3
 ```
 
-## Deprecation
+## Migrating from `createProp`
 
-`createProp` and the custom `@jfdevelops/react-layout-validator` builder API
-are deprecated in favor of Standard Schema libraries and React adapters.
-Existing definitions remain supported and can coexist with schemas in the
-same prop map during migration. Removal is reserved for the next major
-release.
+`createProp` and the builder API of `@jfdevelops/react-layout-validator`
+have been removed. Describe props with a Standard Schema library and the
+React Layout adapters instead.
 
-| Legacy definition | Zod replacement |
+| Removed definition | Zod replacement |
 | --- | --- |
 | `createProp.string()` | `z.string()` |
 | `createProp.number().optional()` | `z.number().optional()` |
+| `createProp.string().literal('a')` | `z.literal('a')` |
+| `createProp.string().enum(['a', 'b'])` | `z.enum(['a', 'b'])` |
 | `createProp.array(createProp.string())` | `z.array(z.string())` |
 | `createProp.object({ name: createProp.string() })` | `z.object({ name: z.string() })` |
+| `createProp.record({ value: createProp.string() })` | `z.record(z.string(), z.string())` |
 | `createProp.component({ type: 'ReactNode' })` | `reactNode()` |
 | `createProp.component({ type: 'JSX.Element' })` | `reactElement()` for element values |
 
-Legacy component-valued slots and render-function declarations continue to
-work. An element schema validates an element value, not a component function
-or a render callback; retain the legacy definition for those contracts until
-you migrate them to an explicit function schema.
+Behavior that depended on the old definitions has changed:
+
+- **Component slots.** Use `componentSlot({ props: { label: z.string() } })`.
+  A slot named `actions` is still supplied and rendered as `Actions`.
+- **Values carried by a definition.** A literal definition used to supply its
+  own value. Give the schema a default instead, for example
+  `z.literal('docs').default('docs')`.
+- **`options` as a function.** `options: ({ resource, name }) => ...` remains supported; return schemas.
+- **Nested reusable selections.** `options: { meta: { owner: true } }` remains supported.
+- **`createProp.fromComponent`.** Use `createPropsFromComponent(Component).pick(...)`
+  or `.omit(...)` to reuse retained prop schemas.
+- **Error messages.** A failed prop reports the schema's own message as
+  `Invalid prop "<path>": <message>`, including for a missing required prop.
+- **Unknown keys.** Whether an object keeps undeclared keys is now decided by
+  your schema library.
+- **Devtools.** Props show their type and schema vendor where metadata is available.
+  Unknown schemas show `unknown`; inspection never validates a value.

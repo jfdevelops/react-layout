@@ -3,10 +3,11 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createComposableComponent,
-  createProp,
   defineComposableComponent,
   defineResourceLayout,
 } from '../../src';
+import { z } from 'zod';
+import { reactNode } from '@jfdevelops/react-layout-adapter-zod';
 
 afterEach(() => {
   cleanup();
@@ -18,7 +19,7 @@ function defineAdminLayout(onSidebarMount?: () => void) {
   return defineResourceLayout.withLayout({
     resources: ['users', 'posts'],
     options: {
-      title: createProp.string().optional(),
+      title: z.string().optional(),
     },
     shell: {
       composables: (create) => ({
@@ -47,9 +48,7 @@ function defineAdminLayout(onSidebarMount?: () => void) {
     layout: {
       props: {
         custom: {
-          children: createProp.component({
-            type: 'ReactNode',
-          }),
+          children: reactNode(),
         },
       },
       render: ({ children }, { resources }) => (
@@ -194,10 +193,7 @@ describe('defineResourceLayout.withLayout', () => {
     const createBreadcrumbComposable = defineComposableComponent({
       name: 'Breadcrumb',
       props: {
-        segments: createProp.record({
-          value: createProp.string(),
-          key: createProp.string(),
-        }),
+        segments: z.record(z.string(), z.string()),
       },
     });
     const Breadcrumb = createBreadcrumbComposable(({ segments }) => (
@@ -343,11 +339,7 @@ describe('defineResourceLayout.withLayout', () => {
       layout: {
         props: {
           custom: {
-            children: createProp
-              .component({
-                type: 'ReactNode',
-              })
-              .optional(),
+            children: reactNode().optional(),
           },
         },
         render: ({ children }) => <>{children}</>,

@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "@jfdevelops/create-error": "0.2.1",
+    "@jfdevelops/react-layout-adapter-arktype": "workspace:*",
     "@jfdevelops/react-layout-composables": "workspace:*",
     "@jfdevelops/react-layout-devtools-core": "workspace:*",
     "@jfdevelops/react-layout-internals": "workspace:*",
@@ -48,7 +49,6 @@
     "arktype": "2.2.8"
   },
   "devDependencies": {
-    "@jfdevelops/react-layout-adapter-arktype": "workspace:*",
     "@jfdevelops/react-layout-adapter-effect": "workspace:*",
     "@jfdevelops/react-layout-adapter-valibot": "workspace:*",
     "@jfdevelops/react-layout-adapter-zod": "workspace:*",

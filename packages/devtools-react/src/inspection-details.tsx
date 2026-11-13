@@ -29,6 +29,10 @@ interface PropRow {
   kind: 'included' | 'custom';
   visibility?: 'required' | 'optional';
   type?: string;
+  /**
+   * The schema library that declares the prop, such as `zod`.
+   */
+  vendor?: string;
   locations: ('component' | 'config')[];
 }
 
@@ -42,12 +46,14 @@ function propsFor(details: Bag): PropRow[] {
       const visibility =
         behavior === 'optional' || settings.required === false ? 'optional' : 'required';
       const location = settings.suppliedVia === 'component' ? 'component' : 'config';
+      const description = inspectPropValidator(schemas[name]);
 
       return {
         name,
         kind: 'included',
         visibility,
-        type: inspectPropValidator(schemas[name])?.type,
+        type: description?.type,
+        vendor: description?.vendor,
         locations: visibility === 'optional' ? ['config', 'component'] : [location],
       };
     }),
@@ -58,6 +64,7 @@ function propsFor(details: Bag): PropRow[] {
         name,
         kind: 'custom',
         visibility: description?.visibility,
+        vendor: description?.vendor,
         type: description?.type,
         locations: [],
       };
@@ -79,7 +86,9 @@ export function InspectionDetails({ details, palette }: { details: object; palet
       (propType === '' || (row.type ?? 'Unknown') === propType) &&
       (kind === 'all' || row.kind === kind) &&
       (visibility === 'all' || row.visibility === visibility) &&
-      `${row.name} ${row.type ?? ''}`.toLowerCase().includes(query.toLowerCase()),
+      `${row.name} ${row.type ?? ''} ${row.vendor ?? ''}`
+        .toLowerCase()
+        .includes(query.toLowerCase()),
   );
 
   function chip(label: string, color: DevtoolsChipKind, help: string) {
@@ -320,7 +329,7 @@ export function InspectionDetails({ details, palette }: { details: object; palet
                     row.visibility ?? 'optional',
                     `${
                       row.visibility === 'required' ? 'Required' : 'Optional'
-                    } prop. Type: ${row.type}`,
+                    } prop. Type: ${row.type}${row.vendor ? ` (${row.vendor} schema)` : ''}`,
                   )}
                 {row.visibility &&
                   chip(row.visibility, row.visibility, explanations[row.visibility])}

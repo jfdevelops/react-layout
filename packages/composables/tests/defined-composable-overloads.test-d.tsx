@@ -1,6 +1,7 @@
 import { expectTypeOf } from 'vitest';
 import type { ReactNode } from 'react';
-import { createProp, defineComposableComponent } from '../src';
+import { defineComposableComponent } from '../src';
+import { z } from 'zod';
 
 function Frame({ children, label }: { children?: ReactNode; label: string }) {
   return <section aria-label={label}>{children}</section>;
@@ -9,8 +10,8 @@ function Frame({ children, label }: { children?: ReactNode; label: string }) {
 const createLabel = defineComposableComponent({
   name: 'Label',
   props: {
-    value: createProp.string(),
-    suffix: createProp.string(),
+    value: z.string(),
+    suffix: z.string(),
   },
   wrapWith: Frame,
 });
@@ -33,8 +34,8 @@ const unchanged = createLabel({
 const renamed = createLabel({
   name: 'Count',
   props: {
-    value: createProp.number(),
-    tags: createProp.array(createProp.string()),
+    value: z.number(),
+    tags: z.array(z.string()),
   },
   render: ({ value, suffix, tags }) => {
     expectTypeOf(value).toEqualTypeOf<number>();
@@ -78,7 +79,7 @@ const empty = defineComposableComponent({
 });
 const { Empty } = empty({
   props: {
-    count: createProp.number(),
+    count: z.number(),
   },
   render: ({ count }) => count,
 });

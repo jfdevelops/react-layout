@@ -3,11 +3,13 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import {
   createDefinedResourceLayout,
+  createPropsFromComponent,
   createComposableComponent,
-  createProp,
   defineResourceLayout,
   ResourceModuleLoadError,
 } from '../../src';
+import { z } from 'zod';
+import { reactNode } from '@jfdevelops/react-layout-adapter-zod';
 
 describe('resource layout render states', () => {
   afterEach(cleanup);
@@ -21,9 +23,7 @@ describe('resource layout render states', () => {
       state: 'Layout',
       props: {
         custom: {
-          children: createProp.component({
-            type: 'ReactNode',
-          }),
+          children: reactNode(),
         },
       },
       render: ({ children }) => <main>{children}</main>,
@@ -64,9 +64,7 @@ describe('resource layout render states', () => {
     });
     const props = {
       custom: {
-        children: createProp.component({
-          type: 'ReactNode',
-        }),
+        children: reactNode(),
       },
     };
     const { createResourceLayout } = factory.defineResourceLayout({
@@ -136,7 +134,7 @@ describe('resource layout render states', () => {
       state: 'Error',
       props: {
         custom: {
-          children: createProp.string(),
+          children: z.string(),
         },
       },
       render: ({ children }) => {
@@ -164,11 +162,7 @@ describe('resource layout render states', () => {
     const factory = createDefinedResourceLayout({
       resources: ['users'],
       options: {
-        children: createProp
-          .component({
-            type: 'ReactNode',
-          })
-          .optional(),
+        children: reactNode().optional(),
       },
     });
     const Loading = factory.createRenderState({
@@ -217,11 +211,7 @@ describe('resource layout render states', () => {
     const factory = createDefinedResourceLayout({
       resources: ['users'],
       options: {
-        children: createProp
-          .component({
-            type: 'ReactNode',
-          })
-          .optional(),
+        children: reactNode().optional(),
       },
     });
     const Loading = factory.createRenderState({
@@ -257,11 +247,7 @@ describe('resource layout render states', () => {
     const factory = createDefinedResourceLayout({
       resources: ['users'],
       options: {
-        children: createProp
-          .component({
-            type: 'ReactNode',
-          })
-          .optional(),
+        children: reactNode().optional(),
       },
     });
     const Loading = factory.createRenderState({
@@ -336,7 +322,7 @@ describe('resource layout render states', () => {
       createDefinedResourceLayout({
         resources: ['users'],
         options: {
-          message: createProp.string(),
+          message: z.string(),
         },
       });
     const Loading = createRenderState({
@@ -412,8 +398,8 @@ describe('resource layout render states', () => {
     const { createResourceLayout } = defineResourceLayout({
       resources: ['users'],
       options: {
-        title: createProp.string(),
-        message: createProp.string(),
+        title: z.string(),
+        message: z.string(),
       },
       layout: {
         render: {
@@ -469,7 +455,7 @@ describe('resource layout render states', () => {
           default: {
             props: {
               custom: {
-                label: createProp.string(),
+                label: z.string(),
               },
             },
             render: ({ label }) => <p>{label}</p>,
@@ -551,43 +537,6 @@ describe('resource layout render states', () => {
     expect(await screen.findByText('Lazy default')).toBeInTheDocument();
   });
 
-  it('lifts runtime prop definitions from created components', () => {
-    const first = defineResourceLayout({
-      resources: ['users'],
-      layout: {
-        props: {
-          custom: {
-            title: createProp.string(),
-            count: createProp.number().optional(),
-          },
-        },
-        render: ({ title }) => <h1>{title}</h1>,
-      },
-    });
-    const Source = first.createResourceLayout({
-      resource: 'users',
-      name: 'Source',
-    });
-    const lifted = createProp.fromComponent(Source).pick('title');
-    const second = defineResourceLayout({
-      resources: ['users'],
-      layout: {
-        props: {
-          custom: lifted,
-        },
-        render: ({ title }) => <p>{title}</p>,
-      },
-    });
-    const Target = second.createResourceLayout({
-      resource: 'users',
-      name: 'Target',
-    });
-
-    render(<Target title='Lifted title' />);
-
-    expect(screen.getByText('Lifted title')).toBeInTheDocument();
-  });
-
   it('uses created state components as state-local composables', () => {
     const sourceDefinition = defineResourceLayout({
       resources: ['users'],
@@ -664,7 +613,7 @@ describe('resource layout render states', () => {
       state: 'Audit',
       props: {
         custom: {
-          label: createProp.string(),
+          label: z.string(),
         },
       },
       render: ({ label }) => <p>{label}</p>,
@@ -730,8 +679,8 @@ describe('resource layout render states', () => {
       state: 'Error',
       props: {
         custom: {
-          error: createProp.object({
-            message: createProp.string(),
+          error: z.object({
+            message: z.string(),
           }),
         },
       },
@@ -787,12 +736,10 @@ describe('resource layout render states', () => {
           Error: {
             props: {
               custom: {
-                error: createProp.object({
-                  message: createProp.string(),
-                }),
+                error: z.instanceof(Error),
               },
             },
-            render: ({ error }) => <p>{((error as Error).cause as Error).message}</p>,
+            render: ({ error }) => <p>{(error.cause as Error).message}</p>,
           },
         },
       },
@@ -806,6 +753,43 @@ describe('resource layout render states', () => {
 
     expect(screen.getByText('render failed')).toBeInTheDocument();
     consoleError.mockRestore();
+  });
+
+  it('lifts runtime prop definitions from created components', () => {
+    const first = defineResourceLayout({
+      resources: ['users'],
+      layout: {
+        props: {
+          custom: {
+            title: z.string(),
+            count: z.number().optional(),
+          },
+        },
+        render: ({ title }) => <h1>{title}</h1>,
+      },
+    });
+    const Source = first.createResourceLayout({
+      resource: 'users',
+      name: 'Source',
+    });
+    const lifted = createPropsFromComponent(Source).pick('title');
+    const second = defineResourceLayout({
+      resources: ['users'],
+      layout: {
+        props: {
+          custom: lifted,
+        },
+        render: ({ title }) => <p>{title}</p>,
+      },
+    });
+    const Target = second.createResourceLayout({
+      resource: 'users',
+      name: 'Target',
+    });
+
+    render(<Target title='Lifted title' />);
+
+    expect(screen.getByText('Lifted title')).toBeInTheDocument();
   });
 
   it('lazy loads an entire created component and exposes proxied states', async () => {
@@ -868,7 +852,7 @@ describe('resource layout render states', () => {
           default: {
             props: {
               custom: {
-                title: createProp.string(),
+                title: z.string(),
               },
             },
             render: ({ title }) => <h1>{title}</h1>,
@@ -876,7 +860,7 @@ describe('resource layout render states', () => {
           Detail: {
             props: {
               custom: {
-                count: createProp.number(),
+                count: z.number(),
               },
             },
             render: ({ count }) => <p>Detail {count}</p>,

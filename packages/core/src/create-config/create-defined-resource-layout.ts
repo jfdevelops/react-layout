@@ -317,7 +317,7 @@ type DefinedFactoryNaming<Naming> = undefined extends Naming ? undefined : Namin
  * const { createRenderState, defineResourceLayout } =
  *   createDefinedResourceLayout({
  *     resources: ['users'],
- *     options: { title: createProp.string() },
+ *     options: { title: z.string() },
  *   });
  *
  * const Loading = createRenderState({

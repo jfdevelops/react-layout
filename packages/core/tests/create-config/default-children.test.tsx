@@ -1,8 +1,9 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, expectTypeOf, it } from 'vitest';
 import { createElement, type ReactNode } from 'react';
-import { createDefinedResourceLayout, createProp, defineResourceLayout } from '../../src';
+import { createDefinedResourceLayout, defineResourceLayout } from '../../src';
 import { renderCapturingError } from './helpers';
+import { z } from 'zod';
 
 afterEach(cleanup);
 
@@ -167,7 +168,7 @@ describe('default render children', () => {
       shell: {
         props: {
           custom: {
-            children: createProp.string(),
+            children: z.string(),
           },
         },
         render: ({ children }) => {
@@ -187,7 +188,7 @@ describe('default render children', () => {
       shell: {
         props: {
           custom: {
-            children: createProp.string().optional(),
+            children: z.string().optional(),
           },
         },
         render: ({ children }) => <header>{children?.toUpperCase() ?? 'Empty'}</header>,

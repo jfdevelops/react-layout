@@ -7,9 +7,10 @@ import {
   createDefinedResourceLayout,
   defineResourceLayout,
   defineLayoutName,
-  createProp,
   defineComposableComponent,
 } from '../../src';
+import { z } from 'zod';
+import { reactNode } from '@jfdevelops/react-layout-adapter-zod';
 
 const naming = defineLayoutName({
   pattern: ({ resource, capitalize }, parts) =>
@@ -88,8 +89,8 @@ it('merges factory props and local overrides by key', () => {
   const factory = createDefinedResourceLayout({
     resources: ['users'],
     options: {
-      title: createProp.string(),
-      subtitle: createProp.string(),
+      title: z.string(),
+      subtitle: z.string(),
     },
     props: {
       include: {
@@ -165,8 +166,8 @@ it('exposes globally included props in inline states and separately created stat
   const factory = createDefinedResourceLayout({
     resources: ['users'],
     options: {
-      title: createProp.string(),
-      count: createProp.number(),
+      title: z.string(),
+      count: z.number(),
     },
     props: {
       include: {
@@ -390,14 +391,8 @@ it('allows breadcrumb segments to be configured once as global component passthr
   const factory = createDefinedResourceLayout({
     resources: ['users'],
     options: {
-      title: createProp.component({
-        type: 'ReactNode',
-      }),
-      description: createProp
-        .component({
-          type: 'ReactNode',
-        })
-        .optional(),
+      title: reactNode(),
+      description: reactNode().optional(),
     },
     composables: (create) => ({
       Layout: create({
@@ -503,47 +498,23 @@ it('infers an inline resource name without a const assertion', () => {
   expect(Users.displayName).toBe('UsersPage');
 });
 
-it('renders real validator schemas as human-readable types in inspection details', async () => {
+it('labels schemas by vendor in inspection details without running them', async () => {
   const { formatInspectionDetails } = await import('@jfdevelops/react-layout-devtools-core');
   const details = JSON.parse(
     formatInspectionDetails({
       props: {
-        children: createProp.component({
-          type: 'ReactNode',
+        children: reactNode(),
+        className: z.string().optional(),
+        user: z.object({
+          name: z.string(),
         }),
-        className: createProp.string().optional(),
-        status: createProp.string().enum(['draft', 'published']),
-        role: createProp.string().literal('admin'),
-        user: createProp.object({
-          name: createProp.string(),
-          age: createProp.number().optional(),
-        }),
-        segments: createProp.record({
-          value: createProp.string().or(
-            createProp.object({
-              value: createProp.string(),
-              isActive: createProp.boolean().optional(),
-            }),
-          ),
-        }),
-        element: createProp
-          .component({
-            type: 'JSX.Element',
-          })
-          .props({
-            title: createProp.string(),
-          }),
       },
     }),
   );
   expect(details.props).toEqual({
-    children: 'ReactNode (required)',
-    className: 'string (optional)',
-    status: '"draft" | "published" (required)',
-    role: '"admin" (required)',
-    user: '{ name: string; age?: number } (required)',
-    segments: 'Record<string, string | { value: string; isActive?: boolean }> (required)',
-    element: 'JSX.Element<{ title: string }> (required)',
+    children: 'ReactNode (required) · zod',
+    className: 'string (optional) · zod',
+    user: '{ name: string } (required) · zod',
   });
 });
 
@@ -551,13 +522,13 @@ it('counts actual composable instances and excludes unrendered declarations', ()
   const Item = defineComposableComponent({
     name: 'Item',
     props: {
-      label: createProp.string().optional(),
+      label: z.string().optional(),
     },
   })(({ label }) => <span>{label}</span>);
   const Hidden = defineComposableComponent({
     name: 'Hidden',
     props: {
-      label: createProp.string().optional(),
+      label: z.string().optional(),
     },
   })(({ label }) => <span>{label}</span>);
   const factory = createDefinedResourceLayout({
@@ -617,21 +588,21 @@ it('forwards merged factory layout and default-state custom props through scoped
     resources: ['users'],
     props: {
       custom: {
-        factoryValue: createProp.string(),
+        factoryValue: z.string(),
       },
     },
   });
   const definition = factory.defineResourceLayout({
     props: {
       custom: {
-        layoutValue: createProp.string(),
+        layoutValue: z.string(),
       },
     },
     render: {
       default: {
         props: {
           custom: {
-            stateValue: createProp.string().optional(),
+            stateValue: z.string().optional(),
           },
         },
         render: ({ factoryValue, layoutValue, stateValue }) => (

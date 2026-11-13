@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { expectTypeOf } from 'vitest';
-import { createDefinedResourceLayout, createProp } from '../../src';
+import { createDefinedResourceLayout } from '../../src';
+import { z } from 'zod';
 
 const factory = createDefinedResourceLayout({
   resources: ['users'],
@@ -31,7 +32,7 @@ const Required = factory
     props: {
       custom: {
         children: 'required',
-        title: createProp.string(),
+        title: z.string(),
       },
     },
     render: ({ children, title }) => (

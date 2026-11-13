@@ -1,13 +1,11 @@
-import { createProp } from '@jfdevelops/react-layout-validator';
 import { defineComposableComponent } from '../src';
 import type { ComposablePresetComponentCallProps } from '../src';
+import { z } from 'zod';
 
 const createBreadcrumbComposable = defineComposableComponent({
   name: 'Breadcrumb',
   props: {
-    segments: createProp.record({
-      value: createProp.string(),
-    }),
+    segments: z.record(z.string(), z.string()),
   },
 });
 
