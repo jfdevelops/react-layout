@@ -218,6 +218,19 @@ read({ count: '2', options: { prefix: 'Items' } }); // 3
 
 ## Migrating from `createProp`
 
+Every custom-prop surface includes optional `children: ReactNode` automatically,
+including layouts, shells, render states, scoped components, and reusable helpers.
+You do not need to declare `props.custom.children: reactNode()`. To use a different
+type, declare a children schema explicitly; it replaces the default:
+
+```tsx
+props: { custom: { children: z.object({ label: z.string() }) } },
+render: ({ children }) => <p>{children.label}</p>,
+```
+
+Explicit schema inputs, outputs, defaults, and transforms are preserved. Implicit
+children also appear in schemas returned by `createPropsFromComponent`.
+
 `createProp` and the builder API of `@jfdevelops/react-layout-validator`
 have been removed. Describe props with a Standard Schema library and the
 React Layout adapters instead.

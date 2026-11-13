@@ -15,6 +15,7 @@ import {
 import type { CreateReusable, ReusableOverlap } from './reusable-types';
 import { type } from 'arktype';
 import { fieldDefinitions } from '../schema-fields';
+import { normalizeCustomProps } from '../custom-props';
 import {
   acceptsUndefined,
   objectDefinition,
@@ -487,7 +488,9 @@ export function createReusableBuilder(
                 (key) =>
                   key !== 'options' &&
                   key !== 'resources' &&
-                  !Object.hasOwn(definition.props?.custom ?? {}, key),
+                  !Object.hasOwn(definition.props?.custom ?? {}, key) &&
+                  (key !== 'children' ||
+                    Object.hasOwn(fieldDefinitions(options) ?? {}, 'children')),
               )
             : Object.entries((typeof selection === 'object' && selection) || {})
                 .filter(([, value]) => value === true)
@@ -515,11 +518,13 @@ export function createReusableBuilder(
           ),
         );
 
-        return reusable({
+        const callProps: Record<string, unknown> = {
           ...props,
           ...callerValues,
           options: values,
-        });
+        };
+
+        return reusable(callProps);
       };
     } as unknown;
   }
@@ -618,9 +623,15 @@ export function createReusableBuilder(
     }
 
     let included = compile(include, 'props');
+    const selected = compile(select, 'options');
+    const customDefinitions =
+      Object.hasOwn(included.children, 'children') ||
+      Object.hasOwn(selected.children, 'children')
+        ? (definition.props?.custom ?? {})
+        : normalizeCustomProps(definition.props?.custom ?? {});
     const custom = objectPlan(
       Object.fromEntries(
-        Object.entries(definition.props?.custom ?? {}).map(([key, value]) => [
+        Object.entries(customDefinitions).map(([key, value]) => [
           key,
           {
             kind: 'value',
@@ -633,7 +644,6 @@ export function createReusableBuilder(
       ),
     );
     included = mergePlans(included, custom);
-    const selected = compile(select, 'options');
     const plan = mergePlans(included, selected, definition.overlap);
     const callerDefinitions = planDefinitions(
       withoutSharedCallerValues(included, selected),

@@ -46,6 +46,14 @@ type ScopedPropsRenderDefinition<Props, RenderProps, Result, Context> = {
   props?: Props;
 } & ScopedLazyContent<PropsContextRender<RenderProps, Context, Result>>;
 
+type ScopedComponentRenderProps<Props, Own extends CustomPropsObject> = Omit<
+  Props,
+  keyof Own
+> &
+  ('children' extends keyof Own
+    ? ResolveRenderPropsAsDefined<Own>
+    : Omit<ResolveRenderPropsAsDefined<Own>, 'children'>);
+
 export type ScopedComponentAvailableProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
@@ -228,7 +236,6 @@ export type ScopedResourceComponentProps<
         : ResolveRenderPropsAsDefined<ComponentCustomProps>),
     'resource'
   > & {
-    children?: ReactNode;
     resource: Resource;
   }
 >;
@@ -623,23 +630,21 @@ export type ScopedComponentResourceEntry<
        */
       ScopedPropsRenderDefinition<
         CustomPropsObject,
-        ScopedResourceComponentProps<
-          Resources,
-          Options,
-          Composables,
-          LayoutCustomProps,
-          WithDefinedIncluded<
-            ComponentIncludeProps & ResourceEntryInclude<EntryProps>,
-            ResourceEntryDefined<EntryProps>
+        ScopedComponentRenderProps<
+          ScopedResourceComponentProps<
+            Resources,
+            Options,
+            Composables,
+            LayoutCustomProps,
+            WithDefinedIncluded<
+              ComponentIncludeProps & ResourceEntryInclude<EntryProps>,
+              ResourceEntryDefined<EntryProps>
+            >,
+            ComponentCustomProps & ResourceEntryCustom<EntryProps>,
+            Resource
           >,
-          ComponentCustomProps & ResourceEntryCustom<EntryProps>,
-          Resource
-        > &
-          Show<
-            ResolveRenderPropsAsDefined<
-              ScopedComponentOwnProps<Components[Name]>
-            >
-          >,
+          ScopedComponentOwnProps<Components[Name]>
+        >,
         ScopedRenderResult,
         Omit<ScopedComponentRenderContext<Components, StateNames>, Name>
       > &
@@ -955,23 +960,21 @@ export type ScopedCreateResourceComponents<
       [Name in keyof Components]: JustScopedComponent<Components[Name]> &
         ScopedPropsRenderDefinition<
           CustomPropsObject,
-          ScopedResourceComponentProps<
-            Resources,
-            Options,
-            Composables,
-            LayoutCustomProps,
-            WithDefinedIncluded<
-              BaseInclude & ResourceEntryInclude<Props>,
-              ResourceEntryDefined<Props>
+          ScopedComponentRenderProps<
+            ScopedResourceComponentProps<
+              Resources,
+              Options,
+              Composables,
+              LayoutCustomProps,
+              WithDefinedIncluded<
+                BaseInclude & ResourceEntryInclude<Props>,
+                ResourceEntryDefined<Props>
+              >,
+              BaseCustom & ResourceEntryCustom<Props>,
+              Resource
             >,
-            BaseCustom & ResourceEntryCustom<Props>,
-            Resource
-          > &
-            Show<
-              ResolveRenderPropsAsDefined<
-                ScopedComponentOwnProps<Components[Name]>
-              >
-            >,
+            ScopedComponentOwnProps<Components[Name]>
+          >,
           ScopedRenderResult,
           Omit<ScopedComponentRenderContext<Components, StateNames>, Name>
         > &

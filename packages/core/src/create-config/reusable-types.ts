@@ -7,6 +7,8 @@ import {
   type StandardSchemaV1,
 } from '@jfdevelops/react-layout-validator';
 import type { OptionSchema } from '../option-schema';
+import type { WithChildren } from '@jfdevelops/react-layout-composables';
+import type { ReactElement } from 'react';
 import type {
   InferredInProps,
   InPropsDefinition,
@@ -394,23 +396,32 @@ export type ReusableResolved<
   CustomProps extends InPropsObject,
   Select,
   Overlap = undefined,
-> = Expanded<
-  GuardedObject<
-    MergeValues<
-      ReusableProps<Resources, Options, IncludeProps, CustomProps>,
-      ReusableSelected<Resources, Options, Select>,
-      Overlap,
-      ContractShape<
-        OptionDefinitions<Resources, Options>,
-        IncludeProps,
-        CustomProps
+> = WithChildren<
+  Expanded<
+    GuardedObject<
+      MergeValues<
+        ReusableProps<Resources, Options, IncludeProps, CustomProps>,
+        ReusableSelected<Resources, Options, Select>,
+        Overlap,
+        ContractShape<
+          OptionDefinitions<Resources, Options>,
+          IncludeProps,
+          CustomProps
+        >,
+        ContractShape<OptionDefinitions<Resources, Options>, Select, {}>
       >,
-      ContractShape<OptionDefinitions<Resources, Options>, Select, {}>
-    >,
-    OptionDefinitions<Resources, Options>,
-    IncludeProps extends { options: infer Selection } ? Selection : {},
-    Select extends { options: infer Selection } ? Selection : {},
-    MergedShape<Resources, Options, IncludeProps, CustomProps, Select, Overlap>
+      OptionDefinitions<Resources, Options>,
+      IncludeProps extends { options: infer Selection } ? Selection : {},
+      Select extends { options: infer Selection } ? Selection : {},
+      MergedShape<
+        Resources,
+        Options,
+        IncludeProps,
+        CustomProps,
+        Select,
+        Overlap
+      >
+    >
   >
 >;
 
@@ -508,11 +519,13 @@ type Expanded<Value> =
     ? Promise<Expanded<Result>>
     : Value extends (...args: any[]) => any
       ? Value
-      : Value extends readonly unknown[]
+      : Value extends ReactElement
         ? Value
-        : Value extends object
-          ? { [Key in keyof Value]: Expanded<Value[Key]> }
-          : Value;
+        : Value extends readonly unknown[]
+          ? Value
+          : Value extends object
+            ? { [Key in keyof Value]: Expanded<Value[Key]> }
+            : Value;
 
 type SourceInput<Values> = keyof Values extends never
   ? {}
@@ -563,34 +576,38 @@ export type ReusableInput<
   CustomProps extends InPropsObject,
   Select,
 > = Options extends OptionSchema
-  ? Expanded<
-      SchemaReusableInput<Options, IncludeProps, Select> &
-        ResolveInputPropsAsDefined<CustomProps> &
-        ReusableProps<Resources, {}, Omit<IncludeProps, 'options'>, {}> &
-        ResourceCallerInput<Resources, IncludeProps> &
-        ResourceCallerInput<Resources, Select>
+  ? WithChildren<
+      Expanded<
+        SchemaReusableInput<Options, IncludeProps, Select> &
+          ResolveInputPropsAsDefined<CustomProps> &
+          ReusableProps<Resources, {}, Omit<IncludeProps, 'options'>, {}> &
+          ResourceCallerInput<Resources, IncludeProps> &
+          ResourceCallerInput<Resources, Select>
+      >
     >
-  : Expanded<
-      ReusableProps<
-        Resources,
-        InputOptionDefinitions<Resources, Options>,
-        CallerContract<Resources, Options, IncludeProps, Select>,
-        InputDefinitions<CustomProps>
-      > &
-        ResourceCallerInput<Resources, IncludeProps> &
-        ResourceCallerInput<Resources, Select> &
-        SourceInput<
-          OptionSource<
-            InputOptionDefinitions<Resources, Options>,
-            IncludeProps,
-            true
-          > &
+  : WithChildren<
+      Expanded<
+        ReusableProps<
+          Resources,
+          InputOptionDefinitions<Resources, Options>,
+          CallerContract<Resources, Options, IncludeProps, Select>,
+          InputDefinitions<CustomProps>
+        > &
+          ResourceCallerInput<Resources, IncludeProps> &
+          ResourceCallerInput<Resources, Select> &
+          SourceInput<
             OptionSource<
               InputOptionDefinitions<Resources, Options>,
-              Select,
-              false
-            >
-        >
+              IncludeProps,
+              true
+            > &
+              OptionSource<
+                InputOptionDefinitions<Resources, Options>,
+                Select,
+                false
+              >
+          >
+      >
     >;
 
 type SelectionAt<Selection, Key extends PropertyKey> = Selection extends true

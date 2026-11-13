@@ -1,4 +1,9 @@
-import { requiredChildren, type RequiredChildren } from './built-in-props';
+import {
+  requiredChildren,
+  optionalChildren,
+  type RequiredChildren,
+  type OptionalChildren,
+} from './built-in-props';
 import {
   type PropDefinition,
   type PropDefinitions,
@@ -34,6 +39,7 @@ export type CustomPropsObject = Record<
   string,
   PropDefinition | ChildrenRequirement
 > & {
+  /** Optional React content by default; an explicit schema replaces that default. */
   children?: PropDefinition | ChildrenRequirement;
 };
 
@@ -50,7 +56,7 @@ export type NormalizedCustomProps<Props extends CustomPropsObject> = {
     : Key extends 'children'
       ? RequiredChildren
       : never;
-};
+} & ('children' extends keyof Props ? {} : { children: OptionalChildren });
 
 export type ResolveRenderProps<Props extends CustomPropsObject> = WithChildren<
   ResolveProps<NormalizedCustomProps<Props>>
@@ -66,18 +72,21 @@ export type ResolveRenderPropsAsDefined<Props extends CustomPropsObject> =
 export function normalizeCustomProps<Props extends CustomPropsObject>(
   props: Props,
 ) {
-  return Object.fromEntries(
-    Object.entries(props).map(([key, definition]) => {
-      if (typeof definition !== 'string') {
-        return [key, definition];
-      }
-      if (key !== 'children' || definition !== 'required') {
-        throw new LayoutConfigurationError(
-          'Only custom.children accepts the required shorthand.',
-        );
-      }
+  return {
+    children: optionalChildren,
+    ...Object.fromEntries(
+      Object.entries(props).map(([key, definition]) => {
+        if (typeof definition !== 'string') {
+          return [key, definition];
+        }
+        if (key !== 'children' || definition !== 'required') {
+          throw new LayoutConfigurationError(
+            'Only custom.children accepts the required shorthand.',
+          );
+        }
 
-      return [key, requiredChildren];
-    }),
-  ) as NormalizedCustomProps<Props>;
+        return [key, requiredChildren];
+      }),
+    ),
+  } as NormalizedCustomProps<Props>;
 }

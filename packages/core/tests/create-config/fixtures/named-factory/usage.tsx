@@ -1,4 +1,5 @@
 import { expectTypeOf } from 'vitest';
+import './default-children';
 import {
   createDefinedResourceLayout,
   defineLayoutName,

@@ -111,3 +111,29 @@ const invalidOptions2 = {
 
 // @ts-expect-error Optional children are implicit, not an explicit shorthand.
 factory.createRenderState(invalidOptions2);
+
+const Structured = factory
+  .defineResourceLayout({
+    props: {
+      custom: {
+        children: z.object({
+          label: z.string(),
+        }),
+      },
+    },
+    render: ({ children }) => <p>{children.label}</p>,
+  })
+  .createResourceLayout({
+    resource: 'users',
+    name: 'Structured',
+  });
+
+<Structured
+  children={{
+    label: 'Explicit type',
+  }}
+/>;
+// @ts-expect-error An explicit required schema replaces optional default children.
+<Structured />;
+// @ts-expect-error An explicit object schema replaces ReactNode.
+<Structured>React content</Structured>;
