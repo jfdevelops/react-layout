@@ -31,7 +31,9 @@ import {
   type DefinedResourceLayout,
   defineResourceLayout,
   type LayoutIncludeProps,
+  type LayoutProps,
   type LayoutResourcesAccessor,
+  type ResourceLayoutConfig,
   type CreateViewMapRenderStatesOptions,
   type DefinedResourceLayoutFromStates,
   createLayoutResourcesAccessor,
@@ -52,7 +54,7 @@ import {
 export type NonEmptyResources = readonly [ResourceDefinition, ...ResourceDefinition[]];
 
 /** Configuration shared by every layout created from one defined-layout factory. */
-export type CreateDefinedResourceLayoutOptions<
+export interface CreateDefinedResourceLayoutOptions<
   Resources extends NonEmptyResources,
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
@@ -60,32 +62,23 @@ export type CreateDefinedResourceLayoutOptions<
   SharedInclude extends LayoutIncludeProps<Resources, Options, Composables> = {},
   SharedCustom extends CustomPropsObject = {},
   DefaultNaming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = undefined,
-> = {
-  namespace?: DefaultNamespace;
+> extends Omit<
+  ResourceLayoutConfig<Resources, Options, DefaultNamespace, DefaultNaming>,
+  'resources'
+> {
   /**
-   * Default naming convention; explicit definition and component names override it.
-   */
-  name?: DefaultNaming;
-  /**
-   * Shared prop contracts, merged by key with layout and state contracts.
-   */
-  props?: {
-    include?: LayoutIncludeProps<Resources, Options, Composables> & SharedInclude;
-    custom?: SharedCustom & CustomPropsInput<SharedCustom>;
-  };
-  /**
-   * Resources supported by every layout created from this factory.
+   * The resources supported by every layout created from this factory.
    */
   resources: Resources;
   /**
-   * Props that render states can opt into through `props.include`.
+   * Shared prop contracts, merged by key with layout and state contracts.
    */
-  options?: Options;
+  props?: LayoutProps<Resources, Options, Composables, SharedInclude, SharedCustom>;
   /**
    * Layout-wide composables available to every render state.
    */
   composables?: LayoutComposablesDefinition<Resources, Composables>;
-};
+}
 
 /** The flat layout definition accepted after shared configuration is bound. */
 export type DefinedResourceLayoutInput<
@@ -106,11 +99,6 @@ export type DefinedResourceLayoutInput<
   >['layout'],
   'composables' | 'render'
 > & { render: Render; namespace?: Namespace };
-
-type BoundLayoutComposables<
-  Shared extends ComposableComponents,
-  Local extends ComposableComponents,
-> = Omit<Shared, keyof Local> & Local;
 
 /** Flattens a definition's layout while preserving its namespace setting. */
 type BoundLayoutInput<Definition extends { layout: unknown; namespace?: boolean }> =
@@ -142,7 +130,7 @@ export type BoundDefineResourceLayout<
     const IncludeProps extends LayoutIncludeProps<
       Resources,
       Options,
-      BoundLayoutComposables<Composables, LocalComposables>
+      MergeContract<Composables, LocalComposables>
     > = {},
     CustomProps extends CustomPropsObject = {},
     const Naming extends
@@ -154,7 +142,7 @@ export type BoundDefineResourceLayout<
         CreateViewMapRenderStatesOptions<
           Resources,
           Options,
-          BoundLayoutComposables<Composables, LocalComposables>,
+          MergeContract<Composables, LocalComposables>,
           MergeContract<SharedInclude, IncludeProps>,
           MergeContract<SharedCustom, CustomProps>,
           Render,
@@ -168,7 +156,7 @@ export type BoundDefineResourceLayout<
         include?: LayoutIncludeProps<
           Resources,
           Options,
-          BoundLayoutComposables<Composables, LocalComposables>
+          MergeContract<Composables, LocalComposables>
         > &
           IncludeProps;
         custom?: CustomProps & CustomPropsInput<CustomProps>;
@@ -181,7 +169,7 @@ export type BoundDefineResourceLayout<
   ): DefinedResourceLayoutFromStates<
     Resources,
     Options,
-    BoundLayoutComposables<Composables, LocalComposables>,
+    MergeContract<Composables, LocalComposables>,
     Render,
     Namespace,
     MergeContract<SharedInclude, IncludeProps>,
@@ -195,7 +183,7 @@ export type BoundDefineResourceLayout<
     const IncludeProps extends LayoutIncludeProps<
       Resources,
       Options,
-      BoundLayoutComposables<Composables, LocalComposables>
+      MergeContract<Composables, LocalComposables>
     > = {},
     CustomProps extends CustomPropsObject = {},
     LocalComposables extends ComposableComponents = {},
@@ -208,7 +196,7 @@ export type BoundDefineResourceLayout<
         CreateViewMapFunctionRenderOptions<
           Resources,
           Options,
-          BoundLayoutComposables<Composables, LocalComposables>,
+          MergeContract<Composables, LocalComposables>,
           MergeContract<SharedInclude, IncludeProps>,
           MergeContract<SharedCustom, CustomProps>,
           Namespace
@@ -221,7 +209,7 @@ export type BoundDefineResourceLayout<
         include?: LayoutIncludeProps<
           Resources,
           Options,
-          BoundLayoutComposables<Composables, LocalComposables>
+          MergeContract<Composables, LocalComposables>
         > &
           IncludeProps;
         custom?: CustomProps & CustomPropsInput<CustomProps>;
@@ -234,7 +222,7 @@ export type BoundDefineResourceLayout<
   ): DefinedResourceLayout<
     Resources,
     Options,
-    BoundLayoutComposables<Composables, LocalComposables>,
+    MergeContract<Composables, LocalComposables>,
     MergeContract<SharedInclude, IncludeProps>,
     MergeContract<SharedCustom, CustomProps>,
     {},
