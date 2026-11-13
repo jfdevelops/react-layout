@@ -218,8 +218,9 @@ read({ count: '2', options: { prefix: 'Items' } }); // 3
 
 ## Migrating from `createProp`
 
-Every custom-prop surface includes optional `children: ReactNode` automatically,
-including layouts, shells, render states, scoped components, and reusable helpers.
+React components include optional `children: ReactNode` automatically,
+including layouts, shells, render states, and scoped components.
+Reusable helpers and option schemas only accept children when explicitly declared.
 You do not need to declare `props.custom.children: reactNode()`. To use a different
 type, declare a children schema explicitly; it replaces the default:
 

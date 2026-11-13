@@ -59,9 +59,14 @@ export const incorrectContent = (
 );
 
 const readChildren = factory.createReusable({
+  props: {
+    custom: {
+      children: z.string(),
+    },
+  },
   fn: ({ children }) => children,
 });
-expectTypeOf(readChildren()).toEqualTypeOf<ReactNode>();
+expectTypeOf(readChildren).parameter(0).toEqualTypeOf<{ children: string }>();
 export const reusableContent = readChildren({
-  children: <span>Content</span>,
+  children: 'Content',
 });

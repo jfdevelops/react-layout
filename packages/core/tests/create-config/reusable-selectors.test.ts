@@ -4,7 +4,6 @@ import {
   type ReusableResourcesAccessor,
 } from '../../src';
 import { z } from 'zod';
-import type { ReactNode } from 'react';
 
 const factory = createDefinedResourceLayout({
   resources: [
@@ -270,10 +269,9 @@ describe('reusable selectors', () => {
         return props.resources;
       },
     });
-    expectTypeOf(helper).parameter(0).toMatchTypeOf<{
-      resources: 'users' | 'posts' | 'posts.comments';
-      children?: ReactNode;
-    }>();
+    expectTypeOf(helper)
+      .parameter(0)
+      .toEqualTypeOf<{ resources: 'users' | 'posts' | 'posts.comments' }>();
     expect(
       helper({
         resources: 'users',

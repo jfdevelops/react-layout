@@ -15,7 +15,6 @@ import {
 import type { CreateReusable, ReusableOverlap } from './reusable-types';
 import { type } from 'arktype';
 import { fieldDefinitions } from '../schema-fields';
-import { normalizeCustomProps } from '../custom-props';
 import {
   acceptsUndefined,
   objectDefinition,
@@ -482,18 +481,13 @@ export function createReusableBuilder(
             'Reusable source options must be an object.',
           );
         }
-        // Opaque schemas may declare children even when field metadata is absent.
-        const optionFields = fieldDefinitions(options);
         const callerKeys =
           selection === true
             ? Object.keys(props).filter(
                 (key) =>
                   key !== 'options' &&
                   key !== 'resources' &&
-                  !Object.hasOwn(definition.props?.custom ?? {}, key) &&
-                  (key !== 'children' ||
-                    optionFields === undefined ||
-                    Object.hasOwn(optionFields, 'children')),
+                  !Object.hasOwn(definition.props?.custom ?? {}, key),
               )
             : Object.entries((typeof selection === 'object' && selection) || {})
                 .filter(([, value]) => value === true)
@@ -521,13 +515,11 @@ export function createReusableBuilder(
           ),
         );
 
-        const callProps: Record<string, unknown> = {
+        return reusable({
           ...props,
           ...callerValues,
           options: values,
-        };
-
-        return reusable(callProps);
+        });
       };
     } as unknown;
   }
@@ -626,15 +618,9 @@ export function createReusableBuilder(
     }
 
     let included = compile(include, 'props');
-    const selected = compile(select, 'options');
-    const customDefinitions =
-      Object.hasOwn(included.children, 'children') ||
-      Object.hasOwn(selected.children, 'children')
-        ? (definition.props?.custom ?? {})
-        : normalizeCustomProps(definition.props?.custom ?? {});
     const custom = objectPlan(
       Object.fromEntries(
-        Object.entries(customDefinitions).map(([key, value]) => [
+        Object.entries(definition.props?.custom ?? {}).map(([key, value]) => [
           key,
           {
             kind: 'value',
@@ -647,6 +633,7 @@ export function createReusableBuilder(
       ),
     );
     included = mergePlans(included, custom);
+    const selected = compile(select, 'options');
     const plan = mergePlans(included, selected, definition.overlap);
     const callerDefinitions = planDefinitions(
       withoutSharedCallerValues(included, selected),
