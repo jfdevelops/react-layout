@@ -482,6 +482,8 @@ export function createReusableBuilder(
             'Reusable source options must be an object.',
           );
         }
+        // Opaque schemas may declare children even when field metadata is absent.
+        const optionFields = fieldDefinitions(options);
         const callerKeys =
           selection === true
             ? Object.keys(props).filter(
@@ -490,7 +492,8 @@ export function createReusableBuilder(
                   key !== 'resources' &&
                   !Object.hasOwn(definition.props?.custom ?? {}, key) &&
                   (key !== 'children' ||
-                    Object.hasOwn(fieldDefinitions(options) ?? {}, 'children')),
+                    optionFields === undefined ||
+                    Object.hasOwn(optionFields, 'children')),
               )
             : Object.entries((typeof selection === 'object' && selection) || {})
                 .filter(([, value]) => value === true)

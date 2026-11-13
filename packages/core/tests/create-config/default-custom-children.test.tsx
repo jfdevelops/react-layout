@@ -334,6 +334,36 @@ it('keeps implicit children out of strict whole-object option schemas', () => {
   });
 });
 
+it.each([false, true])(
+  'preserves opaque whole-object children inputs (default: %s)',
+  (withDefault) => {
+    const factory = createDefinedResourceLayout({
+      resources: ['users'],
+      options: z
+        .object({
+          children: withDefault ? z.string().default('Fallback') : z.string(),
+        })
+        .transform(({ children }) => ({
+          children: children.toUpperCase(),
+        })),
+    });
+    const read = factory.createReusable({
+      props: {
+        include: {
+          options: true,
+        },
+      },
+      fn: ({ children }) => children,
+    });
+
+    expect(
+      read({
+        children: 'Content',
+      }),
+    ).toBe('CONTENT');
+  },
+);
+
 it('preserves explicitly selected children option schemas', () => {
   const factory = createDefinedResourceLayout({
     resources: ['users'],
