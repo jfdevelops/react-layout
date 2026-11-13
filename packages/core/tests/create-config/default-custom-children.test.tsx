@@ -176,15 +176,20 @@ it('does not replace explicit scoped children when another resource adds unrelat
   ).toContain('SCOPED CONTENT');
 });
 
-it('provides children to reusable helpers and honors custom schemas', () => {
+it('requires reusable helpers to declare children explicitly', () => {
   const factory = createDefinedResourceLayout({
     resources: ['users'],
   });
   const read = factory.createReusable({
-    fn: ({ children }) => {
-      expectTypeOf(children).toEqualTypeOf<ReactNode>();
+    props: {
+      custom: {
+        title: z.string(),
+      },
+    },
+    fn: (props) => {
+      expectTypeOf(props).toEqualTypeOf<{ title: string }>();
 
-      return children;
+      return props;
     },
   });
   const custom = factory.createReusable({
@@ -198,12 +203,14 @@ it('provides children to reusable helpers and honors custom schemas', () => {
     fn: ({ children }) => children.label,
   });
 
-  expect(read()).toBeUndefined();
+  expectTypeOf(read).parameter(0).toEqualTypeOf<{ title: string }>();
   expect(
     read({
-      children: 'Reusable content',
+      title: 'Reusable content',
     }),
-  ).toBe('Reusable content');
+  ).toEqual({
+    title: 'Reusable content',
+  });
   expect(
     custom({
       children: {
@@ -302,14 +309,15 @@ it('lets a nested scoped component override inherited default children', () => {
   );
 });
 
-it('keeps implicit children out of strict whole-object option schemas', () => {
+it('does not add children to strict transformed reusable option schemas', () => {
   const factory = createDefinedResourceLayout({
     resources: ['users'],
     options: z
       .object({
         count: z.number(),
       })
-      .strict(),
+      .strict()
+      .transform((value) => value),
   });
   const read = factory.createReusable({
     props: {
@@ -317,20 +325,19 @@ it('keeps implicit children out of strict whole-object option schemas', () => {
         options: true,
       },
     },
-    fn: ({ children, count }) => ({
-      children,
-      count,
-    }),
+    fn: (props) => {
+      expectTypeOf(props).toEqualTypeOf<{ count: number }>();
+
+      return props;
+    },
   });
 
   expect(
     read({
       count: 2,
-      children: 'Content',
     }),
   ).toEqual({
     count: 2,
-    children: 'Content',
   });
 });
 
