@@ -192,7 +192,9 @@ type LayoutRenderContext<
    */
   resources: LayoutRenderResourcesAccessor<Resources>;
   name: string;
-  /** Retries the active lazy state when the current Error state was automatic. */
+  /**
+   * Retries the active lazy state when the current Error state was automatic.
+   */
   retry?: () => void;
 };
 
@@ -283,7 +285,9 @@ type OmitResourceDefinitions<
  * - `.isResource(value)` narrows an unknown value to one of the selected keys.
  */
 export type ResourceSelection<Definitions extends ReadonlyArray<ResourceDefinition>> = {
-  /** Returns the selected resource definitions. */
+  /**
+   * Returns the selected resource definitions.
+   */
   (): Show<Definitions>;
   /**
    * Narrows an unknown value to one of the selected resource keys.
@@ -354,7 +358,9 @@ export type LayoutResourcesAccessor<Resources extends ReadonlyArray<ResourceDefi
  */
 export type LayoutRenderResourcesAccessor<Resources extends ReadonlyArray<ResourceDefinition>> =
   LayoutResourcesAccessor<Resources> & {
-    /** The resource this layout instance is rendering for. */
+    /**
+     * The resource this layout instance is rendering for.
+     */
     readonly current: LayoutResourceKey<Resources>;
   };
 
@@ -833,9 +839,13 @@ export type CreateViewMapOptions<
     LayoutResourceKey<Resources>
   >,
 > = {
-  /** Default naming convention for components created by this definition. */
+  /**
+   * Default naming convention for components created by this definition.
+   */
   name?: Naming;
-  /** Default namespace mode for created layouts. Defaults to false. */
+  /**
+   * Default namespace mode for created layouts. Defaults to false.
+   */
   namespace?: Namespace;
   /**
    * An array of valid resource names to support. Nested sub-resource slugs that
@@ -1487,7 +1497,9 @@ export type DefinedResourceLayout<
    * automatically.
    */
   ResourceProvider: ResourceLayoutProvider<Resources>;
-  /** Returns the nearest current resource. */
+  /**
+   * Returns the nearest current resource.
+   */
   useResource: () => LayoutResourceKey<Resources>;
 };
 
@@ -3121,7 +3133,9 @@ export type ResourceLayoutShellProps<
        * the shell.
        */
       resource?: LayoutResourceKey<Resources>;
-      /** The shell's content region — typically a router `<Outlet />`. */
+      /**
+       * The shell's content region — typically a router `<Outlet />`.
+       */
       children?: ReactNode;
     }
 >;
@@ -3174,7 +3188,9 @@ export type CreateResourceLayoutWithLayoutOptions<
   Render = LayoutRenderFunction<Resources, Options, Composables, IncludeProps, CustomProps>,
   Namespace extends boolean = false,
 > = {
-  /** Default namespace mode for created layouts. Defaults to false. */
+  /**
+   * Default namespace mode for created layouts. Defaults to false.
+   */
   namespace?: Namespace;
   /**
    * An array of valid resource names to support. Nested sub-resource slugs that

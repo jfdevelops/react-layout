@@ -21,7 +21,8 @@
     "lint": "oxlint --deny-warnings",
     "lint:fix": "oxlint --fix --deny-warnings",
     "format": "oxfmt . && oxlint --fix --deny-warnings && oxfmt .",
-    "format:check": "oxfmt --check ."
+    "format:check": "oxfmt --check .",
+    "check:declarations": "node scripts/check-declaration-docs.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "2.31.0",

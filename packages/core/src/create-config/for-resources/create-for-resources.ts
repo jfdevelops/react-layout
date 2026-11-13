@@ -299,7 +299,9 @@ export function createForResources<
         definedEntries.set(resource, normalized);
       }
 
-      /** Resolved scoped components, per resource. */
+      /**
+       * Resolved scoped components, per resource.
+       */
       const resourceScopedComponents = new Map<
         LayoutResourceKey<Resources>,
         Record<string, (props?: never) => JSX.Element>

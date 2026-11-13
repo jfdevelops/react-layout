@@ -65,7 +65,9 @@ export class PropError extends validatorErrorFactory({
     return this.context.expected;
   }
 
-  /** Original Standard Schema issues, with paths relative to the props object. */
+  /**
+   * Original Standard Schema issues, with paths relative to the props object.
+   */
   get issues() {
     return this.context.issues as readonly StandardSchemaV1.Issue[] | undefined;
   }

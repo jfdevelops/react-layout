@@ -70,7 +70,9 @@ export type CreateResourceLayoutOptions<
   >,
 > = LayoutPropsForResource<Resources, InProps, Composables, IncludeProps> &
   CreateResourceLayoutOptionsBase<Resources, Name, Resource, Props, Naming> & {
-    /** Return a component namespace with `Root` instead of a callable component. Defaults to false. */
+    /**
+     * Return a component namespace with `Root` instead of a callable component. Defaults to false.
+     */
     namespace?: Namespace;
   };
 
@@ -213,7 +215,9 @@ export type SetDefaultPropForResourceFn<
 > = <
   const Defaults extends SetDefaultPropsForResource<Resources, InProps, Composables, IncludeProps>,
 >(
-  /** Default values for layout props. Each prop can only be set once. */
+  /**
+   * Default values for layout props. Each prop can only be set once.
+   */
   defaults: Defaults,
 ) => CreatedLayoutForResource<
   Resources,
@@ -297,7 +301,9 @@ type ResourceLayoutBuilder<
   DefaultNamespace,
   States
 > & {
-  /** Set default values for layout props in a single call. */
+  /**
+   * Set default values for layout props in a single call.
+   */
   setDefaults: SetDefaultPropForResourceFn<
     Resources,
     InProps,

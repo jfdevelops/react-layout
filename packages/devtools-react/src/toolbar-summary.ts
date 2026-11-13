@@ -6,14 +6,20 @@ export interface ToolbarSummary {
   activeLayouts: number;
   loading: number;
   failed: number;
-  /** The most recently mounted layout, e.g. `appointments · default`. */
+  /**
+   * The most recently mounted layout, e.g. `appointments · default`.
+   */
   current?: {
     resource: string;
     layoutId: string;
     stateId?: string;
-    /** Omitted when no state of the layout is mounted. */
+    /**
+     * Omitted when no state of the layout is mounted.
+     */
     state?: string;
-    /** Present when the layout can be previewed in another state. */
+    /**
+     * Present when the layout can be previewed in another state.
+     */
     instance?: PreviewInstance;
   };
 }

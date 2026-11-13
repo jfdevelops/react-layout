@@ -376,7 +376,9 @@ export type ResolvedResourceLinksWithGroupsResult<
   GroupIcon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
   LinkIcon = ResourceIcon<LayoutRenderResourcesAccessor<Resources>>,
 > = Array<ResolvedResourceLinksWithGroups<Resources, GroupIcon, LinkIcon>> & {
-  /** Returns the resolved group whose links include `resource`. */
+  /**
+   * Returns the resolved group whose links include `resource`.
+   */
   findResource<const RequestedResource extends LayoutResourceKey<Resources> | Resource>(
     resource: RequestedResource,
   ): FindResolvedResourceGroupResult<Resources, Resource, RequestedResource, GroupIcon, LinkIcon>;

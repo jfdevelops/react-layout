@@ -24,9 +24,13 @@ import { usePanelPreferences } from './preferences';
 
 export interface ReactLayoutDevtoolsProviderProps {
   source: object;
-  /** Per-response CSP nonce. Never persisted to preferences. */
+  /**
+   * Per-response CSP nonce. Never persisted to preferences.
+   */
   nonce?: string;
-  /** Use external when the host loads the exported styles.css asset. */
+  /**
+   * Use external when the host loads the exported styles.css asset.
+   */
   styleMode?: 'inline' | 'external';
   config?: ReactLayoutDevtoolsConfig;
   storageKey?: string;

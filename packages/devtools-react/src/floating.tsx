@@ -22,7 +22,9 @@ import { ToolbarDevtools } from './toolbar';
 
 export interface ReactLayoutDevtoolsProps extends ReactLayoutDevtoolsContentProps {
   initialIsOpen?: boolean;
-  /** Floating launcher position. Ignored by the toolbar variant. */
+  /**
+   * Floating launcher position. Ignored by the toolbar variant.
+   */
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
   /**
    * `floating` (default) shows a launcher and panel; `toolbar` docks a bar to

@@ -210,7 +210,9 @@ export type GetComponentForResource<Resources extends ReadonlyArray<ResourceDefi
 >;
 
 export interface GetComponent<Resources extends ReadonlyArray<ResourceDefinition>> {
-  /** Looks up a component by resource / optional sub-resource / optional component slot. */
+  /**
+   * Looks up a component by resource / optional sub-resource / optional component slot.
+   */
   <const Options extends GetComponentOptions<Resources>>(options: Options): JSX.Element;
   /**
    * Looks up a component by a deep config path.
@@ -257,9 +259,13 @@ export interface CreatedResourceConfig<
    * ```
    */
   forPaths: ForPaths<Resources, Config, ParameterizedResourcePath<Resources>>;
-  /** Narrows an unknown value to a sub-resource key configured for a path or resource. */
+  /**
+   * Narrows an unknown value to a sub-resource key configured for a path or resource.
+   */
   isSubResourceKey: IsSubResourceKey<Resources, Config, ParameterizedResourcePath<Resources>>;
-  /** Every sub-resource key configured in this config, at any depth. */
+  /**
+   * Every sub-resource key configured in this config, at any depth.
+   */
   subResources: ReadonlyArray<ConfigSubResourceKeys<Resources, Config>>;
 }
 
@@ -323,7 +329,9 @@ export type CreateResourceConfigFn<Resources extends ReadonlyArray<ResourceDefin
   <const Config extends ResourceConfigMap<Resources>>(
     config: ResourceConfigInput<Resources, Config>,
   ): CreatedResourceConfig<Resources, Config>;
-  /** Creates a typed fragment that can be spread into the complete config. */
+  /**
+   * Creates a typed fragment that can be spread into the complete config.
+   */
   forResource: CreateResourceConfigForResource<Resources>;
 };
 

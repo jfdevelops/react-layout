@@ -60,9 +60,13 @@ export type ForPathsRenderContext<
   Params,
 > = {
   children?: ReactNode;
-  /** Declared params merged with the props the component was called with. */
+  /**
+   * Declared params merged with the props the component was called with.
+   */
   params: Params;
-  /** Creates a getter for any of the paths this component was built for. */
+  /**
+   * Creates a getter for any of the paths this component was built for.
+   */
   getComponentForPath: CreateGetComponentForPath<Resources, Config, UnwrapTargetPaths<Paths>>;
 };
 
@@ -82,21 +86,27 @@ type HOFClosureValue<Params, Args> = [keyof Args] extends [never]
 
 export interface RenderedPathComponentHOF<Params, Args> {
   (closure: HOFClosureValue<Params, Args>): RenderedPathComponent<Show<Omit<Params, keyof Args>>>;
-  /** Type-only view of the value this HOF closes over. At runtime this is `undefined`. */
+  /**
+   * Type-only view of the value this HOF closes over. At runtime this is `undefined`.
+   */
   _args: HOFClosureValue<Params, Args>;
 }
 
 export interface RenderedPathComponent<Params, DisplayName extends string = string> {
   (props: WithChildren<Params>): JSX.Element;
   displayName: DisplayName;
-  /** Type-only view of the props this component accepts. */
+  /**
+   * Type-only view of the props this component accepts.
+   */
   _args: Params;
   /**
    * Splits the props into a closure and the remaining props, so shared params can be
    * bound once and the component reused. Chained `asHOF` calls keep prior closures.
    */
   asHOF<Args extends HOFArgSelection<Params> = {}>(options?: {
-    /** Params to close over. Anything omitted stays a prop. */
+    /**
+     * Params to close over. Anything omitted stays a prop.
+     */
     args: Args;
   }): RenderedPathComponentHOF<Params, Args>;
 }
@@ -124,7 +134,9 @@ export type TargetPathBuilder<
   render: (
     renderer: (context: ForPathsRenderContext<Resources, Config, Paths, Params>) => JSX.Element,
   ) => RenderedPathComponent<Params> & {
-    /** Names the component, either statically or from the render context. */
+    /**
+     * Names the component, either statically or from the render context.
+     */
     setDisplayName<Name extends string>(
       name: ValueOrFunction<Name, ForPathsRenderContext<Resources, Config, Paths, Params>>,
     ): RenderedPathComponent<Params, Name>;
@@ -137,7 +149,9 @@ export type TargetPathBuilder<
        * paths. Call it before `render` when building a reusable component.
        */
       addComponentKeyParams<Optional extends boolean = false>(options?: {
-        /** Whether the caller may omit `componentKey`. */
+        /**
+         * Whether the caller may omit `componentKey`.
+         */
         optional?: Optional;
       }): TargetPathBuilder<
         Resources,
@@ -158,7 +172,9 @@ export type TargetPathBuilder<
           Variables extends PathVariablesForPaths<Resources, Config, Paths>,
           Picked extends { [Key in keyof Variables]?: true } = {},
         >(options?: {
-          /** Variables to expose as props. Defaults to all of them. */
+          /**
+           * Variables to expose as props. Defaults to all of them.
+           */
           pick?: Picked;
         }): TargetPathBuilder<
           Resources,

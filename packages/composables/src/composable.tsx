@@ -481,7 +481,9 @@ type DefinedComposableComponentFactory<
   (
     render: (props: Show<WithChildren<ResolveProps<Props>>>) => ReactNode,
   ): DefinedComposableComponentRecord<Name, Props, Wrapper>;
-  /** Customize this instance without changing the factory's defaults. */
+  /**
+   * Customize this instance without changing the factory's defaults.
+   */
   <
     const Overrides extends InPropsObject = {},
     const CustomName extends string = Name,

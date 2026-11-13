@@ -27,7 +27,9 @@ export function InspectionTree({
   onExpandedChange,
 }: {
   graph: GraphSnapshot;
-  /** False while the tree is mounted but hidden behind another view. */
+  /**
+   * False while the tree is mounted but hidden behind another view.
+   */
   active?: boolean;
   locateRequest?: number;
   onLocate?: (element: HTMLElement) => void;

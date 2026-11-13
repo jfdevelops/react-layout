@@ -542,7 +542,9 @@ export type ReusableDefinition<
   select?: ReusableInclude<Resources, Options> &
     Select &
     ExactSelection<Select, ReusableInclude<Resources, Options>>;
-  /** Resolve ambiguous leaf collisions explicitly; the default rejects them. */
+  /**
+   * Resolve ambiguous leaf collisions explicitly; the default rejects them.
+   */
   overlap?: Overlap;
   fn: (props: ReusableResolved<Resources, Options, Include, Custom, Select, Overlap>) => Result;
 };
