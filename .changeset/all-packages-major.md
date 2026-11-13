@@ -10,7 +10,6 @@
 "@jfdevelops/react-layout-devtools-core": major
 "@jfdevelops/react-layout-devtools-react": major
 "@jfdevelops/react-layout-devtools-vite": major
-"@jfdevelops/react-layout-internals": major
 "@jfdevelops/react-layout-validator": major
 ---
 

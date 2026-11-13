@@ -35,12 +35,12 @@
   },
   "dependencies": {
     "@jfdevelops/create-error": "0.2.1",
-    "@jfdevelops/react-layout-internals": "workspace:*",
     "@jfdevelops/react-layout-validator": "workspace:*",
     "arktype": "2.2.8"
   },
   "devDependencies": {
     "@jfdevelops/react-layout-adapter-zod": "workspace:*",
+    "@jfdevelops/react-layout-internals": "workspace:*",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.2",
     "@types/node": "24.10.1",

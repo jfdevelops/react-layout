@@ -273,9 +273,6 @@ importers:
       '@jfdevelops/create-error':
         specifier: 0.2.1
         version: 0.2.1
-      '@jfdevelops/react-layout-internals':
-        specifier: workspace:*
-        version: link:../internals
       '@jfdevelops/react-layout-validator':
         specifier: workspace:*
         version: link:../validators
@@ -286,6 +283,9 @@ importers:
       '@jfdevelops/react-layout-adapter-zod':
         specifier: workspace:*
         version: link:../adapter-zod
+      '@jfdevelops/react-layout-internals':
+        specifier: workspace:*
+        version: link:../internals
       '@testing-library/jest-dom':
         specifier: 6.9.1
         version: 6.9.1
@@ -343,9 +343,6 @@ importers:
       '@jfdevelops/react-layout-devtools-core':
         specifier: workspace:*
         version: link:../devtools-core
-      '@jfdevelops/react-layout-internals':
-        specifier: workspace:*
-        version: link:../internals
       '@jfdevelops/react-layout-validator':
         specifier: workspace:*
         version: link:../validators
@@ -365,6 +362,9 @@ importers:
       '@jfdevelops/react-layout-composable-breadcrumb':
         specifier: workspace:*
         version: link:../composable-breadcrumb
+      '@jfdevelops/react-layout-internals':
+        specifier: workspace:*
+        version: link:../internals
       '@testing-library/jest-dom':
         specifier: 6.9.1
         version: 6.9.1

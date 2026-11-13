@@ -5,7 +5,6 @@
 "@jfdevelops/react-layout-composable-breadcrumb": major
 "@jfdevelops/react-layout-devtools-core": major
 "@jfdevelops/react-layout-devtools-react": minor
-"@jfdevelops/react-layout-internals": minor
 ---
 
 Remove `createProp` and the legacy prop-definition system. Props are described only with Standard Schema definitions (Zod, Valibot, ArkType, Effect, or any other Standard Schema library) and the React adapters.
