@@ -11,7 +11,7 @@ import type { OptionSchema } from '../option-schema';
 import type { InferredInProps, InPropsDefinition, InPropsObject, PropsContract } from '../props';
 import type { ResourceDefinition, ResourceEnum, ResourcePath } from '../resource';
 import type { LayoutResourcesAccessor } from './define-layout';
-import type { Show } from '../utils';
+import type { ShowCallable } from '../utils';
 import type { SingleResourceInput, ReusableResourcesAccessor } from './reusable-resource-input';
 export type { SingleResourceInput, ReusableResourcesAccessor } from './reusable-resource-input';
 
@@ -30,28 +30,28 @@ export type ReusableOptionSelection<Props extends InPropsObject> = {
     : true | Selector<OptionValue<Props[Key]>>;
 };
 
-type ResolvedResourceSelection<Resources extends readonly ResourceDefinition[], Result> =
-  Result extends SingleResourceInput<readonly ResourceDefinition[]>
+type ResolvedResourceSelection<Resources extends ReadonlyArray<ResourceDefinition>, Result> =
+  Result extends SingleResourceInput<ReadonlyArray<ResourceDefinition>>
     ? ResourcePath<Resources>
     : Result;
 
 type ResourceCallerInput<
-  Resources extends readonly ResourceDefinition[],
+  Resources extends ReadonlyArray<ResourceDefinition>,
   Contract,
 > = Contract extends { resources: (...args: any[]) => infer Result }
-  ? Extract<Result, SingleResourceInput<readonly ResourceDefinition[]>> extends never
+  ? Extract<Result, SingleResourceInput<ReadonlyArray<ResourceDefinition>>> extends never
     ? {}
     : { resources: ResourcePath<Resources> }
   : {};
 
 type OptionDefinitions<
-  Resources extends readonly ResourceDefinition[],
+  Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
 > = InferredInProps<Resources, Options> extends infer Props extends InPropsObject ? Props : never;
 
 /** Only data sources declared by the factory are available for selection. */
 export type ReusableInclude<
-  Resources extends readonly ResourceDefinition[],
+  Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
 > = {
   resources?: true | Selector<ReusableResourcesAccessor<Resources>>;
@@ -95,27 +95,27 @@ type SelectedOptionProps<Props extends InPropsObject, Selection> = {
 
 /** Options are flattened one level, so `options: { meta: true }` supplies `meta`. */
 export type ReusableProps<
-  Resources extends readonly ResourceDefinition[],
+  Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
-  Include,
-  Custom extends InPropsObject,
-> = (Include extends { resources: true }
+  IncludeProps,
+  CustomProps extends InPropsObject,
+> = (IncludeProps extends { resources: true }
   ? { resources: ResourceEnum<Resources>[number][] }
-  : Include extends { resources: (...args: any[]) => infer Result }
+  : IncludeProps extends { resources: (...args: any[]) => infer Result }
     ? { resources: ResolvedResourceSelection<Resources, Result> }
     : {}) &
-  (Include extends { options: infer Selection }
+  (IncludeProps extends { options: infer Selection }
     ? Selection extends (...args: any[]) => infer Result
       ? { options: Result }
       : Selection extends true
         ? ResolvedBuiltPropShape<OptionDefinitions<Resources, Options>>
         : SelectedOptionProps<OptionDefinitions<Resources, Options>, Selection>
     : {}) &
-  ResolvedBuiltPropShape<Custom>;
+  ResolvedBuiltPropShape<CustomProps>;
 
 /** Data selected for the reusable's single callback argument. */
 export type ReusableSelected<
-  Resources extends readonly ResourceDefinition[],
+  Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   Selection,
 > = (Selection extends { resources: infer Value }
@@ -145,7 +145,7 @@ type SelectionShape<Props extends InPropsObject, Selection> =
             ? SelectionShape<Shape, SelectionAt<Selection, Key>>
             : 'value';
       };
-type ContractShape<Props extends InPropsObject, Contract, Custom> = (Contract extends {
+type ContractShape<Props extends InPropsObject, Contract, CustomProps> = (Contract extends {
   resources: unknown;
 }
   ? { resources: 'value' }
@@ -154,7 +154,7 @@ type ContractShape<Props extends InPropsObject, Contract, Custom> = (Contract ex
     ? Selection extends Selector<any>
       ? { options: 'value' }
       : SelectionShape<Props, Selection>
-    : {}) & { [Key in keyof Custom]: 'value' };
+    : {}) & { [Key in keyof CustomProps]: 'value' };
 
 type MergeValue<Left, Right, Overlap, LeftShape, RightShape> = LeftShape extends object
   ? RightShape extends object
@@ -218,13 +218,14 @@ type MergeValues<Left, Right, Overlap, LeftShape, RightShape> = Omit<Left, keyof
   };
 
 // A merged object can exist while only one of its optional source containers exists.
-type IndependentSources<Props extends InPropsObject, Include, Select> = keyof CallerOptions<
+type IndependentSources<Props extends InPropsObject, IncludeProps, Select> = keyof CallerOptions<
   Props,
-  Include,
+  IncludeProps,
   Select
 > extends never
   ? false
-  : keyof (SourceValues<Props, Include, true> & SourceValues<Props, Select, false>) extends never
+  : keyof (SourceValues<Props, IncludeProps, true> &
+        SourceValues<Props, Select, false>) extends never
     ? false
     : true;
 
@@ -233,7 +234,7 @@ type BranchSelection<Selection> = Selection extends Selector<any> ? {} : Selecti
 type GuardedFields<
   Value,
   Props extends InPropsObject,
-  Include,
+  IncludeProps,
   Select,
   Shape,
   Independent extends boolean,
@@ -246,12 +247,12 @@ type GuardedFields<
               | GuardedObject<
                   NonNullable<Value[Key]>,
                   Nested,
-                  BranchSelection<SelectionAt<Include, Key>>,
+                  BranchSelection<SelectionAt<IncludeProps, Key>>,
                   BranchSelection<SelectionAt<Select, Key>>,
                   Shape[Key],
                   IndependentSources<
                     Nested,
-                    BranchSelection<SelectionAt<Include, Key>>,
+                    BranchSelection<SelectionAt<IncludeProps, Key>>,
                     BranchSelection<SelectionAt<Select, Key>>
                   > extends true
                     ? Independent extends true
@@ -271,49 +272,49 @@ type GuardedFields<
 type GuardedObject<
   Value,
   Props extends InPropsObject,
-  Include,
+  IncludeProps,
   Select,
   Shape,
   Independent extends boolean = false,
 > = Independent extends true
-  ? Partial<GuardedFields<Value, Props, Include, Select, Shape, Independent>>
-  : GuardedFields<Value, Props, Include, Select, Shape, Independent>;
+  ? Partial<GuardedFields<Value, Props, IncludeProps, Select, Shape, Independent>>
+  : GuardedFields<Value, Props, IncludeProps, Select, Shape, Independent>;
 
 type MergedShape<
-  Resources extends readonly ResourceDefinition[],
+  Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
-  Include,
-  Custom,
+  IncludeProps,
+  CustomProps,
   Select,
   Overlap,
 > = MergeValues<
-  ContractShape<OptionDefinitions<Resources, Options>, Include, Custom>,
+  ContractShape<OptionDefinitions<Resources, Options>, IncludeProps, CustomProps>,
   ContractShape<OptionDefinitions<Resources, Options>, Select, {}>,
   Overlap,
-  ContractShape<OptionDefinitions<Resources, Options>, Include, Custom>,
+  ContractShape<OptionDefinitions<Resources, Options>, IncludeProps, CustomProps>,
   ContractShape<OptionDefinitions<Resources, Options>, Select, {}>
 >;
 
 export type ReusableResolved<
-  Resources extends readonly ResourceDefinition[],
+  Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
-  Include,
-  Custom extends InPropsObject,
+  IncludeProps,
+  CustomProps extends InPropsObject,
   Select,
   Overlap = undefined,
 > = Expanded<
   GuardedObject<
     MergeValues<
-      ReusableProps<Resources, Options, Include, Custom>,
+      ReusableProps<Resources, Options, IncludeProps, CustomProps>,
       ReusableSelected<Resources, Options, Select>,
       Overlap,
-      ContractShape<OptionDefinitions<Resources, Options>, Include, Custom>,
+      ContractShape<OptionDefinitions<Resources, Options>, IncludeProps, CustomProps>,
       ContractShape<OptionDefinitions<Resources, Options>, Select, {}>
     >,
     OptionDefinitions<Resources, Options>,
-    Include extends { options: infer Selection } ? Selection : {},
+    IncludeProps extends { options: infer Selection } ? Selection : {},
     Select extends { options: infer Selection } ? Selection : {},
-    MergedShape<Resources, Options, Include, Custom, Select, Overlap>
+    MergedShape<Resources, Options, IncludeProps, CustomProps, Select, Overlap>
   >
 >;
 
@@ -407,11 +408,11 @@ type SourceInput<Values> = keyof Values extends never
     : { options: Values };
 
 type InputOptionDefinitions<
-  Resources extends readonly ResourceDefinition[],
+  Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
 > = InputDefinitions<OptionDefinitions<Resources, Options>>;
 
-type SchemaCallerKeys<Schema extends OptionSchema, Include> = Include extends {
+type SchemaCallerKeys<Schema extends OptionSchema, IncludeProps> = IncludeProps extends {
   options: infer Selection;
 }
   ? Selection extends true
@@ -420,38 +421,38 @@ type SchemaCallerKeys<Schema extends OptionSchema, Include> = Include extends {
         keyof StandardSchemaV1.InferInput<Schema>
   : never;
 
-type SchemaReusableInput<Schema extends OptionSchema, Include, Select> = 'options' extends
-  | keyof Include
+type SchemaReusableInput<Schema extends OptionSchema, IncludeProps, Select> = 'options' extends
+  | keyof IncludeProps
   | keyof Select
-  ? Pick<StandardSchemaV1.InferInput<Schema>, SchemaCallerKeys<Schema, Include>> &
-      SourceInput<Omit<StandardSchemaV1.InferInput<Schema>, SchemaCallerKeys<Schema, Include>>>
+  ? Pick<StandardSchemaV1.InferInput<Schema>, SchemaCallerKeys<Schema, IncludeProps>> &
+      SourceInput<Omit<StandardSchemaV1.InferInput<Schema>, SchemaCallerKeys<Schema, IncludeProps>>>
   : {};
 
 export type ReusableInput<
-  Resources extends readonly ResourceDefinition[],
+  Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
-  Include,
-  Custom extends InPropsObject,
+  IncludeProps,
+  CustomProps extends InPropsObject,
   Select,
 > = Options extends OptionSchema
   ? Expanded<
-      SchemaReusableInput<Options, Include, Select> &
-        ResolvedInputShape<Custom> &
-        ReusableProps<Resources, {}, Omit<Include, 'options'>, {}> &
-        ResourceCallerInput<Resources, Include> &
+      SchemaReusableInput<Options, IncludeProps, Select> &
+        ResolvedInputShape<CustomProps> &
+        ReusableProps<Resources, {}, Omit<IncludeProps, 'options'>, {}> &
+        ResourceCallerInput<Resources, IncludeProps> &
         ResourceCallerInput<Resources, Select>
     >
   : Expanded<
       ReusableProps<
         Resources,
         InputOptionDefinitions<Resources, Options>,
-        CallerContract<Resources, Options, Include, Select>,
-        InputDefinitions<Custom>
+        CallerContract<Resources, Options, IncludeProps, Select>,
+        InputDefinitions<CustomProps>
       > &
-        ResourceCallerInput<Resources, Include> &
+        ResourceCallerInput<Resources, IncludeProps> &
         ResourceCallerInput<Resources, Select> &
         SourceInput<
-          OptionSource<InputOptionDefinitions<Resources, Options>, Include, true> &
+          OptionSource<InputOptionDefinitions<Resources, Options>, IncludeProps, true> &
             OptionSource<InputOptionDefinitions<Resources, Options>, Select, false>
         >
     >;
@@ -462,9 +463,9 @@ type SelectionAt<Selection, Key extends PropertyKey> = Selection extends true
     ? Selection[Key]
     : undefined;
 
-type CallerOptions<Props extends InPropsObject, Include, Select> = {
+type CallerOptions<Props extends InPropsObject, IncludeProps, Select> = {
   [
-    Key in keyof Props as SelectionAt<Include, Key> extends infer Value
+    Key in keyof Props as SelectionAt<IncludeProps, Key> extends infer Value
       ? Value extends Selector<any> | undefined
         ? never
         : Value extends true
@@ -486,21 +487,21 @@ type CallerOptions<Props extends InPropsObject, Include, Select> = {
   ]: Props[Key] extends {
     properties: infer Shape extends InPropsObject;
   }
-    ? SelectionAt<Include, Key> extends true
+    ? SelectionAt<IncludeProps, Key> extends true
       ? SelectionAt<Select, Key> extends object
         ? CallerOptions<Shape, true, SelectionAt<Select, Key>>
         : true
-      : CallerOptions<Shape, SelectionAt<Include, Key>, SelectionAt<Select, Key>>
+      : CallerOptions<Shape, SelectionAt<IncludeProps, Key>, SelectionAt<Select, Key>>
     : true;
 };
 
 type CallerContract<
-  Resources extends readonly ResourceDefinition[],
+  Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
-  Include,
+  IncludeProps,
   Select,
-> = (Include extends { resources: true } ? { resources: true } : {}) &
-  (Include extends { options: infer Value }
+> = (IncludeProps extends { resources: true } ? { resources: true } : {}) &
+  (IncludeProps extends { options: infer Value }
     ? Value extends Selector<any>
       ? {}
       : {
@@ -525,19 +526,19 @@ type ExactSelection<Selection, Allowed> = {
 
 /** Configuration accepted by the bound reusable factory. */
 export type ReusableDefinition<
-  Resources extends readonly ResourceDefinition[],
+  Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
-  Include extends ReusableInclude<Resources, Options>,
-  Custom extends InPropsObject,
+  IncludeProps extends ReusableInclude<Resources, Options>,
+  CustomProps extends InPropsObject,
   Select extends ReusableInclude<Resources, Options>,
   Result,
   Overlap extends ReusableOverlap | undefined = undefined,
 > = {
   props?: PropsContract<
     ReusableInclude<Resources, Options> &
-      Include &
-      ExactSelection<Include, ReusableInclude<Resources, Options>>,
-    Custom
+      IncludeProps &
+      ExactSelection<IncludeProps, ReusableInclude<Resources, Options>>,
+    CustomProps
   >;
   select?: ReusableInclude<Resources, Options> &
     Select &
@@ -546,39 +547,51 @@ export type ReusableDefinition<
    * Resolve ambiguous leaf collisions explicitly; the default rejects them.
    */
   overlap?: Overlap;
-  fn: (props: ReusableResolved<Resources, Options, Include, Custom, Select, Overlap>) => Result;
+  fn: (
+    props: ReusableResolved<Resources, Options, IncludeProps, CustomProps, Select, Overlap>,
+  ) => Result;
 };
 
 export type ReusableArguments<
-  Resources extends readonly ResourceDefinition[],
+  Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
-  Include,
-  Custom extends InPropsObject,
+  IncludeProps,
+  CustomProps extends InPropsObject,
   Select,
 > =
-  {} extends ReusableInput<Resources, Options, Include, Custom, Select>
-    ? [props?: ReusableInput<Resources, Options, Include, Custom, Select>]
-    : [props: ReusableInput<Resources, Options, Include, Custom, Select>];
+  {} extends ReusableInput<Resources, Options, IncludeProps, CustomProps, Select>
+    ? [props?: ReusableInput<Resources, Options, IncludeProps, CustomProps, Select>]
+    : [props: ReusableInput<Resources, Options, IncludeProps, CustomProps, Select>];
 
 export type ReusableFunction<
-  Resources extends readonly ResourceDefinition[],
+  Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
-  Include,
-  Custom extends InPropsObject,
+  IncludeProps,
+  CustomProps extends InPropsObject,
   Select,
   Result,
-> = (...args: ReusableArguments<Resources, Options, Include, Custom, Select>) => Expanded<Result>;
+> = (
+  ...args: ReusableArguments<Resources, Options, IncludeProps, CustomProps, Select>
+) => Expanded<Result>;
 
 /** Creates a validated function with one merged callback argument. */
 export type CreateReusable<
-  Resources extends readonly ResourceDefinition[],
+  Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
 > = <
-  const Include extends ReusableInclude<Resources, Options> = {},
-  const Custom extends InPropsObject = {},
+  const IncludeProps extends ReusableInclude<Resources, Options> = {},
+  const CustomProps extends InPropsObject = {},
   const Select extends ReusableInclude<Resources, Options> = {},
   Result = unknown,
   const Overlap extends ReusableOverlap | undefined = undefined,
 >(
-  definition: ReusableDefinition<Resources, Options, Include, Custom, Select, Result, Overlap>,
-) => Show<ReusableFunction<Resources, Options, Include, Custom, Select, Result>>;
+  definition: ReusableDefinition<
+    Resources,
+    Options,
+    IncludeProps,
+    CustomProps,
+    Select,
+    Result,
+    Overlap
+  >,
+) => ShowCallable<ReusableFunction<Resources, Options, IncludeProps, CustomProps, Select, Result>>;

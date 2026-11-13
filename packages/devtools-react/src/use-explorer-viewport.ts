@@ -1,11 +1,7 @@
 import { useLayoutEffect, useState, type RefObject } from 'react';
+import type { ElementBounds } from './element-bounds';
 
-interface Viewport {
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-}
+type Viewport = ElementBounds;
 
 // jsdom and hidden panes report zero sizes; assume a typical panel instead.
 const FALLBACK = {

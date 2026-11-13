@@ -35,9 +35,9 @@ export type LazyResourceStates<Resource = string> = {
 
 type ErrorHandlerContext<Context> = [Context] extends [never] ? [] : [context: Context];
 
-export type LazyErrorHandlers<Resource, Custom extends object = {}, Context = never> = {
+export type LazyErrorHandlers<Resource, CustomProps extends object = {}, Context = never> = {
   [Code in LazyResourceError['code']]?: (
-    props: WithChildren<Custom> &
+    props: WithChildren<CustomProps> &
       Omit<LazyResourceErrorProps<Resource>, 'error'> & {
         error: LazyResourceErrorMap[Code];
       },
@@ -45,7 +45,7 @@ export type LazyErrorHandlers<Resource, Custom extends object = {}, Context = ne
   ) => ReactNode;
 } & {
   fallback?: (
-    props: WithChildren<Custom> & LazyResourceErrorProps<Resource>,
+    props: WithChildren<CustomProps> & LazyResourceErrorProps<Resource>,
     ...context: ErrorHandlerContext<Context>
   ) => ReactNode;
 };

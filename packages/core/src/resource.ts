@@ -267,3 +267,17 @@ export function toResourceEnum<Resources extends ReadonlyArray<ResourceDefinitio
 
   return keys as unknown as ResourceEnum<Resources>;
 }
+
+/**
+ * A resource tuple with at least one entry, preserving literal and nested paths.
+ */
+export type NonEmptyResources = readonly [ResourceDefinition, ...ResourceDefinition[]];
+
+/**
+ * The nested sub-resource definitions declared on a resource definition.
+ */
+export type NestedSubResourceDefinitions<Def extends ResourceDefinition> = Def extends {
+  subResources: infer Nested extends ReadonlyArray<ResourceDefinition>;
+}
+  ? Nested
+  : readonly [];

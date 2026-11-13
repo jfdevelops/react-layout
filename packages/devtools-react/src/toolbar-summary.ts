@@ -1,6 +1,8 @@
-import type { GraphNode, GraphSnapshot } from '@jfdevelops/react-layout-devtools-core';
-
-type PreviewInstance = NonNullable<GraphSnapshot['instances']>[number];
+import type {
+  GraphNode,
+  GraphSnapshot,
+  PreviewInstance,
+} from '@jfdevelops/react-layout-devtools-core';
 
 export interface ToolbarSummary {
   activeLayouts: number;

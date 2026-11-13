@@ -2,16 +2,16 @@ import { RenderStateNameContext, ReferencedRenderStateContext } from './render-s
 import { createContext, createElement, useContext, type ComponentType, type JSX } from 'react';
 import { LayoutConfigurationError } from '../errors';
 import type { IncludedProps } from '../props';
-import { capitalize } from '../utils/capitalize';
+import { capitalize } from '@jfdevelops/react-layout-internals';
 import { isStandardSchema } from '@jfdevelops/react-layout-validator';
 
 /** Props selected here are inherited from the containing state's render props. */
 export type StateComposableOptions<
   Props extends object,
-  Include extends IncludedProps<Props> = {},
+  IncludeProps extends IncludedProps<Props> = {},
 > = {
   props?: {
-    include?: Include & { [Key in Exclude<keyof Include, keyof Props>]: never };
+    include?: IncludeProps & { [Key in Exclude<keyof IncludeProps, keyof Props>]: never };
   };
 };
 
@@ -23,9 +23,9 @@ type StateComposableCallProps<Props extends object, Carried extends keyof Props>
 
 /** Non-enumerable state helpers; class methods stay out of object-spread types. */
 export declare class StateComposableHandle<Props extends object> {
-  asComposable<const Include extends IncludedProps<Props> = {}>(
-    options?: StateComposableOptions<Props, Include>,
-  ): StateComposable<Props, keyof Include & keyof Props>;
+  asComposable<const IncludeProps extends IncludedProps<Props> = {}>(
+    options?: StateComposableOptions<Props, IncludeProps>,
+  ): StateComposable<Props, keyof IncludeProps & keyof Props>;
 }
 
 /** A state component usable in a composables map, optionally inheriting props. */
@@ -38,10 +38,10 @@ export type StateComposable<Props extends object, Carried extends keyof Props = 
 
 /** Converts a state into a composable; unselected required props remain required. */
 export type AsStateComposable<Props extends object> = <
-  const Include extends IncludedProps<Props> = {},
+  const IncludeProps extends IncludedProps<Props> = {},
 >(
-  options?: StateComposableOptions<Props, Include>,
-) => StateComposable<Props, keyof Include & keyof Props>;
+  options?: StateComposableOptions<Props, IncludeProps>,
+) => StateComposable<Props, keyof IncludeProps & keyof Props>;
 
 /** @internal The definition is kept by identity so builder references need no registration. */
 export type StateComposableSource = {

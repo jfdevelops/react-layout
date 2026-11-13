@@ -1,5 +1,5 @@
 import type { WithChildren } from '@jfdevelops/react-layout-composables';
-import type { CustomPropsObject, ResolveRenderProps } from './custom-props';
+import type { CustomPropsInput, CustomPropsObject, ResolveRenderProps } from './custom-props';
 import { LayoutConfigurationError } from './errors';
 import type { ComposableComponents, MergePresetProps } from '@jfdevelops/react-layout-composables';
 import type { InPropsObject } from '@jfdevelops/react-layout-composables';
@@ -18,10 +18,47 @@ import type { OptionSchema, SchemaOptionDefinitions } from './option-schema';
 export type { InPropsObject };
 
 /** Shared include/custom contract used by configurable layout helpers. */
-export type PropsContract<Include extends object = object, Custom extends object = object> = {
-  include?: Include;
-  custom?: Custom;
-};
+export interface PropsContract<
+  IncludeProps extends object = object,
+  CustomProps extends object = object,
+> {
+  /**
+   * Shared options and preset props to include, keyed by prop name.
+   */
+  include?: IncludeProps;
+  /**
+   * Custom props that the layout, state, or component will receive.
+   */
+  custom?: CustomProps;
+}
+
+/**
+ * A {@link PropsContract} whose custom props are checked as prop definitions;
+ * string requirements are reserved for the built-in `children` slot.
+ */
+export interface TypedPropsContract<
+  IncludeProps extends object,
+  CustomProps extends CustomPropsObject,
+> extends PropsContract<IncludeProps, CustomProps & CustomPropsInput<CustomProps>> {}
+
+/**
+ * The `{ props?, composables?, render }` block shared by layouts, shells, and
+ * render states.
+ */
+export interface RenderDefinition<Props, Composables, Render> {
+  /**
+   * The props the block declares.
+   */
+  props?: Props;
+  /**
+   * Components composed by the block, created for each rendered instance.
+   */
+  composables?: Composables;
+  /**
+   * Renders the block.
+   */
+  render: Render;
+}
 
 /**
  * Two-argument `render(props, context)` used by createComponent and scoped
@@ -83,8 +120,8 @@ export type MergedLayoutInProps<
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
 > =
-  InferredInProps<Resources, Options> extends InPropsObject
-    ? InferredInProps<Resources, Options> & MergePresetProps<Composables>
+  InferredInProps<Resources, Options> extends infer Props extends InPropsObject
+    ? Props & MergePresetProps<Composables>
     : never;
 export type RequiredVariant = true | 'required';
 /**
@@ -107,6 +144,15 @@ type IncludedPropType = PropsType | IncludedPropBehavior;
 export type IncludedProps<T extends object> = {
   [K in keyof T & string]?: IncludedPropType;
 };
+
+/**
+ * The include map accepted for a layout's merged options and preset props.
+ */
+export type LayoutIncludeProps<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+  Options extends InPropsDefinition<Resources>,
+  Composables extends ComposableComponents,
+> = IncludedProps<MergedLayoutInProps<Resources, Options, Composables>>;
 
 type PropsKeys<Props extends InPropsObject, T> = T & keyof Props;
 export type IncludedPropVisibility<Value> = Value extends { required: boolean }
@@ -222,7 +268,7 @@ export type LayoutRenderProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents = {},
-  IncludeProps extends IncludedProps<MergedLayoutInProps<Resources, Options, Composables>> = {},
+  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables> = {},
   CustomProps extends CustomPropsObject = {},
 > = Show<
   ResolveRenderProps<CustomProps> &

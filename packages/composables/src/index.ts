@@ -33,5 +33,10 @@ export type {
   ResolveLayoutComposables,
 } from './composable';
 export type { InPropsObject, WithChildren } from './types';
-export type { BaseComponent, Show, UnionToIntersection } from './utils';
+export type {
+  BaseComponent,
+  Show,
+  ShowCallable,
+  UnionToIntersection,
+} from '@jfdevelops/react-layout-internals';
 export { EmptyComponentsError, InvalidComponentsError } from './errors';

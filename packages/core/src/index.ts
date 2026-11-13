@@ -163,6 +163,7 @@ export type {
   InferredInProps,
   InPropsDefinition,
   PropsContract,
+  RenderDefinition,
   InPropsFunction,
   InPropsObject,
   InPropsOptions,
@@ -195,7 +196,13 @@ export type {
   ResourceTree,
 } from './resource';
 export { pick } from './utils';
-export type { BaseComponent, MergeIntersection, Show, UnionToIntersection } from './utils';
+export type {
+  BaseComponent,
+  MergeIntersection,
+  Show,
+  ShowCallable,
+  UnionToIntersection,
+} from './utils';
 
 export { defineLayoutName } from './create-config/layout-name';
 export type {

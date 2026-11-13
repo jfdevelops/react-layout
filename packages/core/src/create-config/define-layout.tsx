@@ -104,6 +104,10 @@ import {
   ResolvedIncludedComponentProps,
   ResolvedIncludedConfigProps,
   ResolvedIncludedProps,
+  type LayoutIncludeProps,
+  type PropsContract,
+  type RenderDefinition,
+  type TypedPropsContract,
 } from '../props';
 import {
   createIsValidResourceFn,
@@ -114,9 +118,10 @@ import {
   type NormalizedResourceDefinitions,
   type ResourceDefinition,
   type ResourceDefinitionValue,
+  type NonEmptyResources,
 } from '../resource';
-import { BaseComponent, functionalUpdate, pick, Show, Updater } from '../utils';
-import { capitalize } from '../utils/capitalize';
+import { BaseComponent, functionalUpdate, pick, Show, ShowCallable, Updater } from '../utils';
+import { capitalize } from '@jfdevelops/react-layout-internals';
 import { InvalidConfigError } from '../errors';
 import { isResourceConfigComponentKey } from './component-keys';
 import { type CreateResourceConfigFn, createResourceConfig } from './get-component';
@@ -152,11 +157,7 @@ import {
   type RenderStateScope,
 } from './state-composable';
 
-export type LayoutIncludeProps<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  Options extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents,
-> = IncludedProps<MergedLayoutInProps<Resources, Options, Composables>>;
+export type { LayoutIncludeProps };
 
 export type LayoutProps<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -164,25 +165,38 @@ export type LayoutProps<
   Composables extends ComposableComponents,
   IncludeProps extends LayoutIncludeProps<Resources, Options, Composables> = {},
   CustomProps extends CustomPropsObject = {},
-> = {
-  /**
-   * Props to include in the layout.
-   */
-  include?: LayoutIncludeProps<Resources, Options, Composables> & IncludeProps;
-  /**
-   * Custom props that the layout will receive.
-   */
-  custom?: CustomProps & CustomPropsInput<CustomProps>;
-};
+> = TypedPropsContract<
+  LayoutIncludeProps<Resources, Options, Composables> & IncludeProps,
+  CustomProps
+>;
 
-type LayoutRenderContext<
+/**
+ * Context fields shared by layout and shell render callbacks.
+ */
+interface RenderContextBase<Composables extends ComposableComponents> {
+  /**
+   * The composables defined for this layout, bound to its resource and name.
+   */
+  composables: LayoutRenderComposables<Composables>;
+  /**
+   * The resolved option values available to this definition.
+   */
+  inProps: Record<string, unknown>;
+  /**
+   * The resolved component name.
+   */
+  name: string;
+}
+
+interface LayoutRenderContext<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Composables extends ComposableComponents,
   States extends string = import('./render-state').BuiltinRenderStateName,
-> = {
+> extends RenderContextBase<Composables> {
+  /**
+   * The render state this callback is rendering.
+   */
   state: States;
-  composables: LayoutRenderComposables<Composables>;
-  inProps: Record<string, unknown>;
   /**
    * Accessor for the resources bound to this definition. Read `resources.current`
    * for the resource this instance renders, call `resources()` for normalized
@@ -191,12 +205,11 @@ type LayoutRenderContext<
    * `resources.isResource(...)` to narrow an unknown value.
    */
   resources: LayoutRenderResourcesAccessor<Resources>;
-  name: string;
   /**
    * Retries the active lazy state when the current Error state was automatic.
    */
   retry?: () => void;
-};
+}
 
 type RenderStateBoundaryProps = {
   children: ReactNode;
@@ -751,28 +764,26 @@ export type ContextualInlineRenderStates<
 };
 
 /** An inline state with independently inferred props and composables. */
-export type TypedInlineRenderState<
+export interface TypedInlineRenderState<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   LayoutComposables extends ComposableComponents,
   StateComposables extends ComposableComponents,
   IncludeProps extends LayoutIncludeProps<Resources, Options, LayoutComposables & StateComposables>,
   CustomProps extends CustomPropsObject,
-> = {
-  props?: {
-    include?: IncludeProps;
-    custom?: CustomProps & CustomPropsInput<CustomProps>;
-  };
-  composables?: (create: CreateLayoutComposable<LayoutResourceKey<Resources>>) => StateComposables;
-  render: LayoutRenderFunction<
+> extends RenderDefinition<
+  TypedPropsContract<IncludeProps, CustomProps>,
+  (create: CreateLayoutComposable<LayoutResourceKey<Resources>>) => StateComposables,
+  LayoutRenderFunction<
     Resources,
     Options,
     LayoutComposables & StateComposables,
     IncludeProps,
     CustomProps
-  >;
+  >
+> {
   state?: string;
-};
+}
 
 type CreatedRenderState =
   | import('./render-state').CreatedRenderStateInput
@@ -800,31 +811,22 @@ type LayoutRenderInput<
   | LayoutRenderFunction<Resources, Options, Composables, IncludeProps, CustomProps>
   | ContextualInlineRenderStates<Resources, Options, Composables>;
 
-export type LayoutDefinition<
+/**
+ * A layout's `{ props?, composables?, render }` block. Composables are invoked
+ * per layout instance with a scoped `create` that resolves composable `name`
+ * callbacks using the layout's `resource` and `name`.
+ */
+export interface LayoutDefinition<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
   IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
   CustomProps extends CustomPropsObject,
-> = {
-  /**
-   * The props to pass to the layout.
-   */
-  props?: LayoutProps<Resources, Options, Composables, IncludeProps, CustomProps>;
-  /**
-   * Components used to compose the layout. Invoked per layout instance with
-   * a scoped `create` that resolves composable `name` callbacks using the
-   * layout's `resource` and `name`.
-   */
-  composables?: (
-    create: CreateLayoutComposable<LayoutResourceKey<Resources>>,
-    states: {},
-  ) => Composables;
-  /**
-   * The render function for the layout.
-   */
-  render: LayoutRenderInput<Resources, Options, Composables, IncludeProps, CustomProps>;
-};
+> extends RenderDefinition<
+  LayoutProps<Resources, Options, Composables, IncludeProps, CustomProps>,
+  (create: CreateLayoutComposable<LayoutResourceKey<Resources>>, states: {}) => Composables,
+  LayoutRenderInput<Resources, Options, Composables, IncludeProps, CustomProps>
+> {}
 
 /**
  * Resource scope shared by every resource-layout definition: the supported
@@ -931,14 +933,14 @@ export type CreateViewMapFunctionRenderOptions<
  * `composables(create)` callbacks that need independent context inference.
  */
 export interface CreateViewMapRenderStatesOptions<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  Options extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents,
-  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
-  CustomProps extends CustomPropsObject,
-  RenderStates extends { default: unknown } & Record<string, unknown>,
-  Namespace extends boolean = false,
-  Naming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = LayoutNameInput<
+  in out Resources extends ReadonlyArray<ResourceDefinition>,
+  in out Options extends InPropsDefinition<Resources>,
+  in out Composables extends ComposableComponents,
+  in out IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
+  in out CustomProps extends CustomPropsObject,
+  in out RenderStates extends { default: unknown } & Record<string, unknown>,
+  out Namespace extends boolean = false,
+  out Naming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = LayoutNameInput<
     LayoutResourceKey<Resources>
   >,
 > extends ResourceLayoutConfig<Resources, Options, Namespace, Naming> {
@@ -1179,23 +1181,23 @@ export type ResourceLayoutComponent<
 
 export type LayoutPropsForResource<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
+  Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents = {},
-  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
-> = InProps extends OptionSchema
+  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables> = {},
+> = Options extends OptionSchema
   ? Omit<
-      import('@jfdevelops/react-layout-validator').StandardSchemaV1.InferInput<InProps>,
+      import('@jfdevelops/react-layout-validator').StandardSchemaV1.InferInput<Options>,
       keyof ResolvedIncludedComponentProps<
-        MergedLayoutInProps<Resources, InProps, Composables>,
+        MergedLayoutInProps<Resources, Options, Composables>,
         IncludeProps
       >
     > &
       RequiredPresetLayoutProps<Composables>
   : [keyof IncludeProps] extends [never]
-    ? ResolveLayoutInputProps<InferredInProps<Resources, InProps>> &
+    ? ResolveLayoutInputProps<InferredInProps<Resources, Options>> &
         RequiredPresetLayoutProps<Composables>
     : ResolvedIncludedConfigProps<
-        MergedLayoutInProps<Resources, InProps, Composables>,
+        MergedLayoutInProps<Resources, Options, Composables>,
         IncludeProps
       >;
 
@@ -1226,9 +1228,9 @@ export type ResourceLayoutResult<Component, Namespace extends boolean> = Namespa
 
 type CreateResourceLayoutFnImpl<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
+  Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
-  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
+  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables> = {},
   CustomProps extends CustomPropsObject = {},
   States = {},
   DefaultNamespace extends boolean = false,
@@ -1241,7 +1243,7 @@ type CreateResourceLayoutFnImpl<
 >(
   options: CreateResourceLayoutOptions<
     Resources,
-    InProps,
+    Options,
     Composables,
     IncludeProps,
     string,
@@ -1250,7 +1252,7 @@ type CreateResourceLayoutFnImpl<
     Namespace,
     Name
   >,
-) => Show<
+) => ShowCallable<
   ResourceLayoutResult<
     ResourceLayoutComponent<
       ResolvedLayoutName<[Name] extends [never] ? DefaultNaming : Name, Resource>,
@@ -1258,16 +1260,16 @@ type CreateResourceLayoutFnImpl<
       Composables,
       Resource,
       ResolvedIncludedComponentProps<
-        MergedLayoutInProps<Resources, InProps, Composables>,
-        DefaultStateIncludes<Resources, InProps, Composables, States, IncludeProps>
+        MergedLayoutInProps<Resources, Options, Composables>,
+        DefaultStateIncludes<Resources, Options, Composables, States, IncludeProps>
       >,
       States,
       Resources,
-      InProps,
+      Options,
       CustomProps &
         IncludedComponentPropDefinitions<
-          MergedLayoutInProps<Resources, InProps, Composables>,
-          DefaultStateIncludes<Resources, InProps, Composables, States, IncludeProps>
+          MergedLayoutInProps<Resources, Options, Composables>,
+          DefaultStateIncludes<Resources, Options, Composables, States, IncludeProps>
         >
     >,
     Namespace
@@ -1281,7 +1283,7 @@ type CreateResourceLayoutFnImpl<
   >(
     options: CreateResourceLayoutOptions<
       Resources,
-      InProps,
+      Options,
       Composables,
       IncludeProps,
       string,
@@ -1290,7 +1292,7 @@ type CreateResourceLayoutFnImpl<
       Namespace,
       Naming
     >,
-  ) => Show<
+  ) => ShowCallable<
     ResourceLayoutResult<
       ResourceLayoutComponent<
         ResolvedLayoutName<Naming, Resource>,
@@ -1298,16 +1300,16 @@ type CreateResourceLayoutFnImpl<
         Composables,
         Resource,
         ResolvedIncludedComponentProps<
-          MergedLayoutInProps<Resources, InProps, Composables>,
-          DefaultStateIncludes<Resources, InProps, Composables, States, IncludeProps>
+          MergedLayoutInProps<Resources, Options, Composables>,
+          DefaultStateIncludes<Resources, Options, Composables, States, IncludeProps>
         >,
         States,
         Resources,
-        InProps,
+        Options,
         CustomProps &
           IncludedComponentPropDefinitions<
-            MergedLayoutInProps<Resources, InProps, Composables>,
-            DefaultStateIncludes<Resources, InProps, Composables, States, IncludeProps>
+            MergedLayoutInProps<Resources, Options, Composables>,
+            DefaultStateIncludes<Resources, Options, Composables, States, IncludeProps>
           >
       >,
       Namespace
@@ -1321,7 +1323,7 @@ type CreateResourceLayoutFnImpl<
   >(
     options: CreateResourceLayoutOptions<
       Resources,
-      InProps,
+      Options,
       Composables,
       IncludeProps,
       string,
@@ -1330,7 +1332,7 @@ type CreateResourceLayoutFnImpl<
       Namespace,
       LayoutNameCallback<Resource, ('default' | keyof States) & string, Name>
     >,
-  ) => Show<
+  ) => ShowCallable<
     ResourceLayoutResult<
       ResourceLayoutComponent<
         Name,
@@ -1338,16 +1340,16 @@ type CreateResourceLayoutFnImpl<
         Composables,
         Resource,
         ResolvedIncludedComponentProps<
-          MergedLayoutInProps<Resources, InProps, Composables>,
-          DefaultStateIncludes<Resources, InProps, Composables, States, IncludeProps>
+          MergedLayoutInProps<Resources, Options, Composables>,
+          DefaultStateIncludes<Resources, Options, Composables, States, IncludeProps>
         >,
         States,
         Resources,
-        InProps,
+        Options,
         CustomProps &
           IncludedComponentPropDefinitions<
-            MergedLayoutInProps<Resources, InProps, Composables>,
-            DefaultStateIncludes<Resources, InProps, Composables, States, IncludeProps>
+            MergedLayoutInProps<Resources, Options, Composables>,
+            DefaultStateIncludes<Resources, Options, Composables, States, IncludeProps>
           >
       >,
       Namespace
@@ -1356,20 +1358,20 @@ type CreateResourceLayoutFnImpl<
 
 export type CreateResourceLayoutMakeComposableOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
+  Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
   Name extends string,
   Resource extends LayoutResourceKey<Resources>,
   Props extends InPropsObject = {},
-  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
+  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables> = {},
 > = CreateResourceLayoutOptionsBase<Resources, Name, Resource, Props> &
-  Partial<LayoutPropsForResource<Resources, InProps, Composables, IncludeProps>>;
+  Partial<LayoutPropsForResource<Resources, Options, Composables, IncludeProps>>;
 
 type CreateResourceLayoutMakeComposableFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
+  Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
-  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
+  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
   CustomProps extends CustomPropsObject,
 > = <
   Name extends string,
@@ -1378,7 +1380,7 @@ type CreateResourceLayoutMakeComposableFn<
 >(
   options: CreateResourceLayoutMakeComposableOptions<
     Resources,
-    InProps,
+    Options,
     Composables,
     Name,
     Resource,
@@ -1389,16 +1391,16 @@ type CreateResourceLayoutMakeComposableFn<
 
 type CreateResourceLayoutFnBase<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
+  Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents = {},
-  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
+  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables> = {},
   CustomProps extends CustomPropsObject = {},
   States = {},
   DefaultNamespace extends boolean = false,
   DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
 > = CreateResourceLayoutFnImpl<
   Resources,
-  InProps,
+  Options,
   Composables,
   IncludeProps,
   CustomProps,
@@ -1411,7 +1413,7 @@ type CreateResourceLayoutFnBase<
    */
   forResource: CreateLayoutForResource<
     Resources,
-    InProps,
+    Options,
     Composables,
     IncludeProps,
     CustomProps,
@@ -1424,7 +1426,7 @@ type CreateResourceLayoutFnBase<
    */
   forResources: CreateResourceLayoutForResourcesFn<
     Resources,
-    InProps,
+    Options,
     Composables,
     IncludeProps,
     CustomProps,
@@ -1436,16 +1438,16 @@ type CreateResourceLayoutFnBase<
 
 type CreateResourceLayoutMakeComposableMember<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
+  Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents,
-  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables>,
+  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
   CustomProps extends CustomPropsObject,
 > = [keyof Composables] extends [never]
   ? {}
   : {
       makeComposable: CreateResourceLayoutMakeComposableFn<
         Resources,
-        InProps,
+        Options,
         Composables,
         IncludeProps,
         CustomProps
@@ -1454,16 +1456,16 @@ type CreateResourceLayoutMakeComposableMember<
 
 export type CreateResourceLayoutFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
+  Options extends InPropsDefinition<Resources>,
   Composables extends ComposableComponents = {},
-  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
+  IncludeProps extends LayoutIncludeProps<Resources, Options, Composables> = {},
   CustomProps extends CustomPropsObject = {},
   States = {},
   DefaultNamespace extends boolean = false,
   DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
 > = CreateResourceLayoutFnBase<
   Resources,
-  InProps,
+  Options,
   Composables,
   IncludeProps,
   CustomProps,
@@ -1473,26 +1475,26 @@ export type CreateResourceLayoutFn<
 > &
   CreateResourceLayoutMakeComposableMember<
     Resources,
-    InProps,
+    Options,
     Composables,
     IncludeProps,
     CustomProps
   >;
 
 export type DefinedResourceLayout<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents = {},
-  IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
-  CustomProps extends CustomPropsObject = {},
-  States = {},
-  DefaultNamespace extends boolean = false,
-  DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
+  in out Resources extends ReadonlyArray<ResourceDefinition>,
+  in out Options extends InPropsDefinition<Resources>,
+  in out Composables extends ComposableComponents = {},
+  in out IncludeProps extends LayoutIncludeProps<Resources, Options, Composables> = {},
+  in out CustomProps extends CustomPropsObject = {},
+  in out States = {},
+  out DefaultNamespace extends boolean = false,
+  out DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
 > = {
   createResourceConfig: CreateResourceConfigFn<Resources>;
   createResourceLayout: CreateResourceLayoutFn<
     Resources,
-    InProps,
+    Options,
     Composables,
     IncludeProps,
     CustomProps,
@@ -1553,13 +1555,13 @@ function assertUnreservedResourceSlugs(
 
 function defineResourceLayoutImpl<
   const Resources extends ReadonlyArray<ResourceDefinition>,
-  InProps extends InPropsDefinition<Resources> = {},
+  Options extends InPropsDefinition<Resources> = {},
   Composables extends ComposableComponents = {},
-  const IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
+  const IncludeProps extends LayoutIncludeProps<Resources, Options, Composables> = {},
   CustomProps extends CustomPropsObject = {},
   const Render = LayoutDefinition<
     Resources,
-    InProps,
+    Options,
     Composables,
     IncludeProps,
     CustomProps
@@ -1567,7 +1569,7 @@ function defineResourceLayoutImpl<
 >(
   options: CreateViewMapOptions<
     Resources,
-    InProps,
+    Options,
     Composables,
     IncludeProps,
     CustomProps,
@@ -1579,14 +1581,14 @@ function defineResourceLayoutImpl<
   renderStateName = 'default',
 ): DefinedResourceLayout<
   Resources,
-  InProps,
+  Options,
   Composables,
   IncludeProps,
   CustomProps,
   Render extends Record<string, unknown> ? Render : {}
 > {
   const {
-    options: inProps = {} as InProps,
+    options: inProps = {} as Options,
     resources,
     layout,
     namespace: defaultNamespace = false,
@@ -1656,7 +1658,7 @@ function defineResourceLayoutImpl<
   >(
     layoutOptions: CreateResourceLayoutOptions<
       Resources,
-      InProps,
+      Options,
       Composables,
       IncludeProps,
       Name,
@@ -1688,7 +1690,7 @@ function defineResourceLayoutImpl<
 
     const createComposableLayout =
       makeComposable<
-        LayoutRenderProps<Resources, InProps, Composables, IncludeProps, CustomProps>
+        LayoutRenderProps<Resources, Options, Composables, IncludeProps, CustomProps>
       >();
     const nameProp = createProp.string().literal(name);
     const rawResolvedOptions =
@@ -1989,7 +1991,7 @@ function defineResourceLayoutImpl<
     function RenderDefaultState({
       renderProps,
     }: {
-      renderProps: LayoutRenderProps<Resources, InProps, Composables, IncludeProps, CustomProps>;
+      renderProps: LayoutRenderProps<Resources, Options, Composables, IncludeProps, CustomProps>;
     }) {
       useLayoutEffect(() => {
         if (CreatedDefaultStateComponent) {
@@ -2025,7 +2027,7 @@ function defineResourceLayoutImpl<
       props: Show<
         ResolveRenderProps<CustomProps> &
           ResolvedIncludedComponentProps<
-            MergedLayoutInProps<Resources, InProps, Composables>,
+            MergedLayoutInProps<Resources, Options, Composables>,
             IncludeProps
           >
       >,
@@ -2151,7 +2153,7 @@ function defineResourceLayoutImpl<
       const layoutRenderProps = {
         ...validatedProps,
         ...layoutRenderIncludedProps,
-      } as unknown as LayoutRenderProps<Resources, InProps, Composables, IncludeProps, CustomProps>;
+      } as unknown as LayoutRenderProps<Resources, Options, Composables, IncludeProps, CustomProps>;
 
       const rendered = (
         <ReferencedRenderStateContext.Provider value={undefined}>
@@ -2526,7 +2528,7 @@ function defineResourceLayoutImpl<
         props: undefined as unknown as Show<
           ResolveRenderProps<CustomProps> &
             ResolvedIncludedComponentProps<
-              MergedLayoutInProps<Resources, InProps, Composables>,
+              MergedLayoutInProps<Resources, Options, Composables>,
               IncludeProps
             >
         >,
@@ -2576,7 +2578,7 @@ function defineResourceLayoutImpl<
     return rootComponent;
   }) as unknown as CreateResourceLayoutFnImpl<
     Resources,
-    InProps,
+    Options,
     Composables,
     IncludeProps,
     CustomProps,
@@ -2650,7 +2652,7 @@ function defineResourceLayoutImpl<
 
   const { createLayoutForResourceBuilder, forResource } = createForResource<
     Resources,
-    InProps,
+    Options,
     Composables,
     IncludeProps,
     CustomProps
@@ -2660,7 +2662,7 @@ function defineResourceLayoutImpl<
   });
   const forResources = createForResources<
     Resources,
-    InProps,
+    Options,
     Composables,
     IncludeProps,
     CustomProps
@@ -2701,14 +2703,14 @@ function defineResourceLayoutImpl<
   const createResourceLayoutExtras: {
     forResource: CreateLayoutForResource<
       Resources,
-      InProps,
+      Options,
       Composables,
       IncludeProps,
       CustomProps
     >;
     forResources: CreateResourceLayoutForResourcesFn<
       Resources,
-      InProps,
+      Options,
       Composables,
       IncludeProps,
       CustomProps
@@ -2726,9 +2728,9 @@ function defineResourceLayoutImpl<
   const createResourceLayout = Object.assign(
     definedResourceLayout,
     createResourceLayoutExtras,
-  ) as CreateResourceLayoutFn<
+  ) as unknown as CreateResourceLayoutFn<
     Resources,
-    InProps,
+    Options,
     Composables,
     IncludeProps,
     CustomProps,
@@ -2746,7 +2748,7 @@ function defineResourceLayoutImpl<
     useResource,
   }) as DefinedResourceLayout<
     Resources,
-    InProps,
+    Options,
     Composables,
     IncludeProps,
     CustomProps,
@@ -2754,13 +2756,11 @@ function defineResourceLayoutImpl<
   >;
 }
 
-type NonEmptyResourceDefinitions = readonly [ResourceDefinition, ...ResourceDefinition[]];
-
 /**
  * Factory returned by {@link DefineResourceLayout.forResources}.
  */
 export type DefineResourceLayoutForResourcesFactory<
-  BaseResources extends NonEmptyResourceDefinitions,
+  in out BaseResources extends NonEmptyResources,
 > = {
   <
     const Render extends { default: unknown } & Record<string, unknown>,
@@ -2826,9 +2826,7 @@ export type DefineResourceLayoutForResourcesFactory<
  * Binds one or more resources, then accepts the remaining
  * {@link defineResourceLayout} options (with optional extra `resources`).
  */
-export type DefineResourceLayoutForResources = <
-  const Resources extends NonEmptyResourceDefinitions,
->(
+export type DefineResourceLayoutForResources = <const Resources extends NonEmptyResources>(
   ...resources: Resources
 ) => DefineResourceLayoutForResourcesFactory<Resources>;
 
@@ -2876,40 +2874,42 @@ export type MergeContract<Base, Local> = Omit<Base, keyof Local> & Local;
 
 type PlainStateWithDefaults<
   Input,
-  Include,
-  Custom extends CustomPropsObject,
+  IncludeProps,
+  CustomProps extends CustomPropsObject,
 > = UnwrapRenderState<Input> & {
   props: {
-    include: MergeContract<Include, RenderStateIncludeProps<Input>>;
-    custom: MergeContract<Custom, RenderStateCustomProps<Input>>;
+    include: MergeContract<IncludeProps, RenderStateIncludeProps<Input>>;
+    custom: MergeContract<CustomProps, RenderStateCustomProps<Input>>;
   };
 };
 
 type StateWithDefaults<
   Input,
-  Include,
-  Custom extends CustomPropsObject,
+  IncludeProps,
+  CustomProps extends CustomPropsObject,
 > = Input extends import('./render-state').DeferredRenderState<
   infer D extends AnyRenderStateDefinition
 >
-  ? import('./render-state').DeferredRenderState<PlainStateWithDefaults<D, Include, Custom>>
+  ? import('./render-state').DeferredRenderState<
+      PlainStateWithDefaults<D, IncludeProps, CustomProps>
+    >
   : Input extends import('./render-state').LazyRenderState<infer D extends AnyRenderStateDefinition>
-    ? import('./render-state').LazyRenderState<PlainStateWithDefaults<D, Include, Custom>>
-    : PlainStateWithDefaults<Input, Include, Custom>;
+    ? import('./render-state').LazyRenderState<PlainStateWithDefaults<D, IncludeProps, CustomProps>>
+    : PlainStateWithDefaults<Input, IncludeProps, CustomProps>;
 
-type StatesWithDefaults<States, Include, Custom extends CustomPropsObject> = {
-  [K in keyof States]: StateWithDefaults<States[K], Include, Custom>;
+type StatesWithDefaults<States, IncludeProps, CustomProps extends CustomPropsObject> = {
+  [K in keyof States]: StateWithDefaults<States[K], IncludeProps, CustomProps>;
 };
 
 export type DefinedResourceLayoutFromStates<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  Options extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents,
-  Render extends { default: unknown },
-  DefaultNamespace extends boolean = false,
-  BaseInclude extends LayoutIncludeProps<Resources, Options, Composables> = {},
-  BaseCustom extends CustomPropsObject = {},
-  Naming extends LayoutNameInput<any, any> | undefined = undefined,
+  in out Resources extends ReadonlyArray<ResourceDefinition>,
+  in out Options extends InPropsDefinition<Resources>,
+  in out Composables extends ComposableComponents,
+  in out Render extends { default: unknown },
+  out DefaultNamespace extends boolean = false,
+  in out BaseInclude extends LayoutIncludeProps<Resources, Options, Composables> = {},
+  in out BaseCustom extends CustomPropsObject = {},
+  out Naming extends LayoutNameInput<any, any> | undefined = undefined,
 > = DefinedResourceLayout<
   Resources,
   Options,
@@ -2964,16 +2964,16 @@ export type DefineResourceLayoutFn = {
   >;
   <
     const Resources extends ReadonlyArray<ResourceDefinition>,
-    InProps extends InPropsDefinition<Resources> = {},
+    Options extends InPropsDefinition<Resources> = {},
     Composables extends ComposableComponents = {},
-    const IncludeProps extends LayoutIncludeProps<Resources, InProps, Composables> = {},
+    const IncludeProps extends LayoutIncludeProps<Resources, Options, Composables> = {},
     CustomProps extends CustomPropsObject = {},
     Namespace extends boolean = false,
     const Naming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = undefined,
   >(
     options: CreateViewMapFunctionRenderOptions<
       Resources,
-      InProps,
+      Options,
       Composables,
       IncludeProps,
       CustomProps,
@@ -2982,7 +2982,7 @@ export type DefineResourceLayoutFn = {
     >,
   ): DefinedResourceLayout<
     Resources,
-    InProps,
+    Options,
     Composables,
     IncludeProps,
     CustomProps,
@@ -3028,7 +3028,7 @@ export type DefineResourceLayout = DefineResourceLayoutFn & {
   withLayout: DefineResourceLayoutWithLayoutFn;
 };
 
-function defineResourceLayoutForResources<const Resources extends NonEmptyResourceDefinitions>(
+function defineResourceLayoutForResources<const Resources extends NonEmptyResources>(
   ...baseResources: Resources
 ): DefineResourceLayoutForResourcesFactory<Resources> {
   return ((
@@ -3064,12 +3064,10 @@ function defineResourceLayoutForResources<const Resources extends NonEmptyResour
  * - `children` is the shell's content region. Render it where page content
  *   belongs; it is already wrapped so mounted pages report their resource back.
  */
-export type ShellRenderContext<
+export interface ShellRenderContext<
   Resources extends ReadonlyArray<ResourceDefinition>,
   ShellComposables extends ComposableComponents,
-> = {
-  composables: LayoutRenderComposables<ShellComposables>;
-  inProps: Record<string, unknown>;
+> extends RenderContextBase<ShellComposables> {
   /**
    * The resource currently rendered in the outlet, or `undefined` when no
    * per-resource page is mounted and no `resource` prop was passed.
@@ -3082,13 +3080,12 @@ export type ShellRenderContext<
   resources: LayoutResourcesAccessor<Resources> & {
     readonly current: LayoutResourceKey<Resources> | undefined;
   };
-  name: string;
   /**
    * The shell's content region — typically a router `<Outlet />`. Render it
    * where page content belongs.
    */
   children?: ReactNode;
-};
+}
 
 /**
  * The `shell` block of a {@link defineResourceLayout.withLayout} call: the
@@ -3097,21 +3094,16 @@ export type ShellRenderContext<
  * Mirrors {@link LayoutDefinition} (`props`, `composables`, `render`) so the
  * two blocks read the same, plus an optional `name`.
  */
-export type ShellLayoutDefinition<
+export interface ShellLayoutDefinition<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
   ShellComposables extends ComposableComponents,
   ShellIncludeProps extends LayoutIncludeProps<Resources, Options, ShellComposables>,
   ShellCustomProps extends CustomPropsObject,
-> = {
-  /**
-   * Stable name for the shell component (React DevTools) and the base for any
-   * resource-scoped composable names. Defaults to `'ResourceLayoutShell'`.
-   */
-  name?: string;
-  props?: LayoutProps<Resources, Options, ShellComposables, ShellIncludeProps, ShellCustomProps>;
-  composables?: (create: CreateLayoutComposable<LayoutResourceKey<Resources>>) => ShellComposables;
-  render: (
+> extends RenderDefinition<
+  LayoutProps<Resources, Options, ShellComposables, ShellIncludeProps, ShellCustomProps>,
+  (create: CreateLayoutComposable<LayoutResourceKey<Resources>>) => ShellComposables,
+  (
     props: LayoutRenderProps<
       Resources,
       Options,
@@ -3120,8 +3112,14 @@ export type ShellLayoutDefinition<
       ShellCustomProps
     >,
     context: ShellRenderContext<Resources, ShellComposables>,
-  ) => JSX.Element;
-};
+  ) => JSX.Element
+> {
+  /**
+   * Stable name for the shell component (React DevTools) and the base for any
+   * resource-scoped composable names. Defaults to `'ResourceLayoutShell'`.
+   */
+  name?: string;
+}
 
 /**
  * Props accepted by the `Shell` component from
@@ -3133,7 +3131,7 @@ export type ResourceLayoutShellProps<
   ShellComposables extends ComposableComponents,
   ShellIncludeProps extends LayoutIncludeProps<Resources, Options, ShellComposables>,
   ShellCustomProps extends CustomPropsObject,
-> = Show<
+> = ShowCallable<
   (Options extends OptionSchema
     ? import('@jfdevelops/react-layout-validator').StandardSchemaV1.InferInput<Options>
     : {}) &
@@ -3203,7 +3201,10 @@ export interface CreateResourceLayoutWithLayoutOptions<
   ShellCustomProps extends CustomPropsObject = {},
   Render = LayoutRenderFunction<Resources, Options, Composables, IncludeProps, CustomProps>,
   Namespace extends boolean = false,
-> extends ResourceLayoutScope<Resources, Options, Namespace> {
+  Naming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = LayoutNameInput<
+    LayoutResourceKey<Resources>
+  >,
+> extends ResourceLayoutConfig<Resources, Options, Namespace, Naming> {
   /**
    * Props that the shell and the per-resource layout can opt into through
    * `props.include`, so either side can draw from the same definitions.
@@ -3254,6 +3255,7 @@ export type DefinedResourceLayoutWithShell<
   ShellCustomProps extends CustomPropsObject = {},
   States = {},
   DefaultNamespace extends boolean = false,
+  DefaultNaming extends LayoutNameInput<any, any> | undefined = undefined,
 > = DefinedResourceLayout<
   Resources,
   Options,
@@ -3261,7 +3263,8 @@ export type DefinedResourceLayoutWithShell<
   IncludeProps,
   CustomProps,
   States,
-  DefaultNamespace
+  DefaultNamespace,
+  DefaultNaming
 > & {
   /**
    * The application shell. Mount it once, wrapping the router outlet:
@@ -3304,6 +3307,7 @@ export type DefineResourceLayoutWithLayoutFn = {
     const ShellIncludeProps extends LayoutIncludeProps<Resources, Options, ShellComposables> = {},
     ShellCustomProps extends CustomPropsObject = {},
     Namespace extends boolean = false,
+    const Naming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = undefined,
   >(
     options: Omit<
       CreateResourceLayoutWithLayoutOptions<
@@ -3316,7 +3320,8 @@ export type DefineResourceLayoutWithLayoutFn = {
         ShellIncludeProps,
         ShellCustomProps,
         LayoutRenderFunction<Resources, Options, Composables, {}, {}>,
-        Namespace
+        Namespace,
+        Naming
       >,
       'layout'
     > & {
@@ -3330,7 +3335,16 @@ export type DefineResourceLayoutWithLayoutFn = {
         Namespace
       >['layout'];
     },
-  ): DefinedResourceLayoutFromStates<Resources, Options, Composables, Render, Namespace> & {
+  ): DefinedResourceLayoutFromStates<
+    Resources,
+    Options,
+    Composables,
+    Render,
+    Namespace,
+    {},
+    {},
+    Naming
+  > & {
     Shell: ResourceLayoutShellComponent<
       Resources,
       Options,
@@ -3349,6 +3363,7 @@ export type DefineResourceLayoutWithLayoutFn = {
     const ShellIncludeProps extends LayoutIncludeProps<Resources, Options, ShellComposables> = {},
     ShellCustomProps extends CustomPropsObject = {},
     Namespace extends boolean = false,
+    const Naming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = undefined,
   >(
     options: CreateResourceLayoutWithLayoutOptions<
       Resources,
@@ -3360,7 +3375,8 @@ export type DefineResourceLayoutWithLayoutFn = {
       ShellIncludeProps,
       ShellCustomProps,
       LayoutRenderFunction<Resources, Options, Composables, IncludeProps, CustomProps>,
-      Namespace
+      Namespace,
+      Naming
     >,
   ): DefinedResourceLayoutWithShell<
     Resources,
@@ -3372,22 +3388,21 @@ export type DefineResourceLayoutWithLayoutFn = {
     ShellIncludeProps,
     ShellCustomProps,
     {},
-    Namespace
+    Namespace,
+    Naming
   >;
 };
 
 /**
  * Loose runtime shape of a `shell` block, used by the impl below.
  */
-type ShellLayoutRuntime = {
+interface ShellLayoutRuntime extends RenderDefinition<
+  PropsContract<Record<string, unknown>, Record<string, unknown>>,
+  (create: unknown) => ComposableComponents,
+  (props: Record<string, unknown>, context: Record<string, unknown>) => JSX.Element
+> {
   name?: string;
-  composables?: (create: unknown) => ComposableComponents;
-  props?: {
-    include?: Record<string, unknown>;
-    custom?: Record<string, unknown>;
-  };
-  render: (props: Record<string, unknown>, context: Record<string, unknown>) => JSX.Element;
-};
+}
 
 /**
  * Builds the `Shell` component. Kept beside {@link defineResourceLayoutImpl} so
@@ -3871,7 +3886,7 @@ function defineResourceLayoutWithLayoutImpl(
 }
 
 export const defineResourceLayout: DefineResourceLayout = Object.assign(
-  defineResourceLayoutImpl as DefineResourceLayoutFn,
+  defineResourceLayoutImpl as unknown as DefineResourceLayoutFn,
   {
     forResources: defineResourceLayoutForResources,
     defineResources,

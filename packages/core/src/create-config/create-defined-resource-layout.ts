@@ -1,5 +1,5 @@
 import { createResourceSurface, type DefineResourceSurface } from './resource-surface';
-import type { CustomPropsInput, CustomPropsObject } from '../custom-props';
+import type { CustomPropsObject } from '../custom-props';
 import { createReusableBuilder, type CreateReusable } from './create-reusable';
 import { inspectLazy } from '../lazy/inspection';
 import type { ResourcePath } from '../resource';
@@ -24,8 +24,8 @@ import type {
   CreateLayoutComposable,
 } from '@jfdevelops/react-layout-composables';
 import { LayoutConfigurationError } from '../errors';
-import type { InPropsDefinition } from '../props';
-import type { LayoutResourceKey, ResourceDefinition } from '../resource';
+import type { InPropsDefinition, PropsContract, TypedPropsContract } from '../props';
+import type { LayoutResourceKey, NonEmptyResources, ResourceDefinition } from '../resource';
 import {
   type CreateViewMapFunctionRenderOptions,
   type DefinedResourceLayout,
@@ -50,8 +50,7 @@ import {
   type LayoutComposablesDefinition,
 } from './render-state';
 
-/** A resource tuple with at least one entry, preserving literal and nested paths. */
-export type NonEmptyResources = readonly [ResourceDefinition, ...ResourceDefinition[]];
+export type { NonEmptyResources };
 
 /** Configuration shared by every layout created from one defined-layout factory. */
 export interface CreateDefinedResourceLayoutOptions<
@@ -108,13 +107,13 @@ type BoundLayoutInput<Definition extends { layout: unknown; namespace?: boolean 
 
 /** A `defineResourceLayout` function with its shared configuration pre-bound. */
 export type BoundDefineResourceLayout<
-  Resources extends NonEmptyResources,
-  Options extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents,
-  DefaultNamespace extends boolean = false,
-  SharedInclude extends LayoutIncludeProps<Resources, Options, Composables> = {},
-  SharedCustom extends CustomPropsObject = {},
-  DefaultNaming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = undefined,
+  in out Resources extends NonEmptyResources,
+  in out Options extends InPropsDefinition<Resources>,
+  in out Composables extends ComposableComponents,
+  out DefaultNamespace extends boolean = false,
+  out SharedInclude extends LayoutIncludeProps<Resources, Options, Composables> = {},
+  out SharedCustom extends CustomPropsObject = {},
+  out DefaultNaming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = undefined,
 > = {
   /**
    * Defines a layout whose `render` map contains the required `default` state
@@ -152,15 +151,11 @@ export type BoundDefineResourceLayout<
       'composables' | 'name' | 'props'
     > & {
       name?: Naming;
-      props?: {
-        include?: LayoutIncludeProps<
-          Resources,
-          Options,
-          MergeContract<Composables, LocalComposables>
-        > &
-          IncludeProps;
-        custom?: CustomProps & CustomPropsInput<CustomProps>;
-      };
+      props?: TypedPropsContract<
+        LayoutIncludeProps<Resources, Options, MergeContract<Composables, LocalComposables>> &
+          IncludeProps,
+        CustomProps
+      >;
       composables?: (
         create: CreateLayoutComposable<LayoutResourceKey<Resources>>,
         states: RenderStateReferences<Resources, Options, Composables, Render>,
@@ -205,15 +200,11 @@ export type BoundDefineResourceLayout<
       'composables' | 'name' | 'props'
     > & {
       name?: Naming;
-      props?: {
-        include?: LayoutIncludeProps<
-          Resources,
-          Options,
-          MergeContract<Composables, LocalComposables>
-        > &
-          IncludeProps;
-        custom?: CustomProps & CustomPropsInput<CustomProps>;
-      };
+      props?: TypedPropsContract<
+        LayoutIncludeProps<Resources, Options, MergeContract<Composables, LocalComposables>> &
+          IncludeProps,
+        CustomProps
+      >;
       composables?: (
         create: CreateLayoutComposable<LayoutResourceKey<Resources>>,
         states: {},
@@ -259,13 +250,13 @@ export type DefineLazyDefaults<
 
 /** Reusable helpers produced by {@link createDefinedResourceLayout}. */
 export type CreateDefinedResourceLayoutResult<
-  Resources extends NonEmptyResources,
-  Options extends InPropsDefinition<Resources>,
-  Composables extends ComposableComponents,
-  DefaultNamespace extends boolean = false,
-  SharedInclude extends LayoutIncludeProps<Resources, Options, Composables> = {},
-  SharedCustom extends CustomPropsObject = {},
-  DefaultNaming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = undefined,
+  in out Resources extends NonEmptyResources,
+  in out Options extends InPropsDefinition<Resources>,
+  in out Composables extends ComposableComponents,
+  out DefaultNamespace extends boolean = false,
+  in out SharedInclude extends LayoutIncludeProps<Resources, Options, Composables> = {},
+  in out SharedCustom extends CustomPropsObject = {},
+  out DefaultNaming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = undefined,
 > = {
   /**
    * Defines an independent surface attached to this factory's resources.
@@ -415,10 +406,7 @@ export function createDefinedResourceLayout<
       namespace: layout.namespace ?? configuration.namespace,
       layout: {
         ...layout,
-        props: mergeLayoutProps(
-          configuration.props,
-          layout.props as { include?: object; custom?: object },
-        ),
+        props: mergeLayoutProps(configuration.props, layout.props as PropsContract),
         composables:
           composables || localComposables
             ? (create: CreateLayoutComposable<LayoutResourceKey<Resources>>, states: {}) => ({

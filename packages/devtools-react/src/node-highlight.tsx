@@ -1,14 +1,11 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { GraphSnapshot } from '@jfdevelops/react-layout-devtools-core';
+import type { ElementBounds } from './element-bounds';
 
-type Box = {
+interface Box extends ElementBounds {
   element: Element;
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-};
+}
 
 /** Follow owned descendants, never unrelated nodes linked as references. */
 export function highlightNodeIds(graph: GraphSnapshot, id: string): Set<string> {

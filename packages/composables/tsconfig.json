@@ -4,6 +4,7 @@
     "noEmit": true,
     "types": ["node", "vitest/globals", "@testing-library/jest-dom"],
     "paths": {
+      "@jfdevelops/react-layout-internals": ["../internals/src/index.ts"],
       "@jfdevelops/react-layout-validator": ["../validators/src/index.ts"]
     }
   },

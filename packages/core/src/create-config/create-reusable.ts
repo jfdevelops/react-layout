@@ -334,11 +334,11 @@ function resolvePlan(
 }
 
 export function createReusableBuilder<
-  const Resources extends readonly ResourceDefinition[],
+  const Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
 >(resources: Resources, options: Options): CreateReusable<Resources, Options>;
 export function createReusableBuilder(
-  resources: readonly ResourceDefinition[],
+  resources: ReadonlyArray<ResourceDefinition>,
   options: InPropsObject | OptionSchema | ((...args: any[]) => InPropsObject),
 ) {
   if (isStandardSchema(options)) {

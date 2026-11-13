@@ -1,13 +1,16 @@
-import type { CustomPropsInput, CustomPropsObject, ResolveCallProps } from '../custom-props';
+import type { CustomPropsObject, ResolveCallProps } from '../custom-props';
 import { createElement, type ComponentType, type ReactNode } from 'react';
 import type { ComposableComponents } from '@jfdevelops/react-layout-composables';
 import { LayoutConfigurationError } from '../errors';
 import type { ResourceDefinition, ResourcePath } from '../resource';
 import type {
   ResolvedIncludedComponentProps,
-  IncludedProps,
   InPropsDefinition,
   MergedLayoutInProps,
+  LayoutIncludeProps,
+  PropsContract,
+  RenderDefinition,
+  TypedPropsContract,
 } from '../props';
 import { defineResourceLayout } from '../create-config/define-layout';
 import type {
@@ -25,10 +28,10 @@ type BuiltinProps<State extends LazyDefaultState, Resource> = State extends 'Err
   : { resource: Resource };
 
 /** Shorthand includes are direct props; explicit supply sources retain their contract. */
-type LazyDefaultIncludes<Include> = {
-  [Key in keyof Include]: Include[Key] extends true
+type LazyDefaultIncludes<IncludeProps> = {
+  [Key in keyof IncludeProps]: IncludeProps[Key] extends true
     ? { required: true; suppliedVia: 'component' }
-    : Include[Key];
+    : IncludeProps[Key];
 };
 
 type LazyRender<State extends LazyDefaultState, Resource, Props, Context> =
@@ -42,34 +45,39 @@ export type CreateLazyRenderState<
   Composables extends ComposableComponents,
 > = <
   const State extends LazyDefaultState,
-  const Custom extends CustomPropsObject = {},
-  const Include extends IncludedProps<MergedLayoutInProps<Resources, Options, Composables>> = {},
+  const CustomProps extends CustomPropsObject = {},
+  const IncludeProps extends LayoutIncludeProps<Resources, Options, Composables> = {},
 >(definition: {
   state: State;
-  props?: { include?: Include; custom?: Custom & CustomPropsInput<Custom> };
+  props?: TypedPropsContract<IncludeProps, CustomProps>;
   render: LazyRender<
     State,
     ResourcePath<Resources>,
-    RenderStateProps<Resources, Options, Composables, Include, Custom>,
-    RenderStateContext<Composables, Resources, State>
+    RenderStateProps<Resources, Options, Composables, IncludeProps, CustomProps>,
+    RenderStateContext<Resources, Composables, State>
   >;
 }) => ComponentType<
   OptionalStateChildren<
-    ResolveCallProps<Custom> &
+    ResolveCallProps<CustomProps> &
       ResolvedIncludedComponentProps<
         MergedLayoutInProps<Resources, Options, Composables>,
-        LazyDefaultIncludes<Include>
+        LazyDefaultIncludes<IncludeProps>
       >,
-    Custom
+    CustomProps
   > &
     BuiltinProps<State, ResourcePath<Resources>>
 >;
 
-type RuntimeDefinition = {
+interface RuntimeDefinition extends Omit<
+  RenderDefinition<
+    PropsContract<Record<string, unknown>, CustomPropsObject>,
+    never,
+    ((props: any, context: any) => ReactNode) | LazyErrorHandlers<string, object, any>
+  >,
+  'composables'
+> {
   state: LazyDefaultState;
-  props?: { include?: Record<string, unknown>; custom?: CustomPropsObject };
-  render: ((props: any, context: any) => ReactNode) | LazyErrorHandlers<string, object, any>;
-};
+}
 
 export function createLazyRenderStateBuilder<
   Resources extends ReadonlyArray<ResourceDefinition>,

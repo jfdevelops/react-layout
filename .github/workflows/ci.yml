@@ -45,6 +45,9 @@ jobs:
       - name: Typecheck library
         run: pnpm typecheck
 
+      - name: Check the type-check budget
+        run: pnpm --filter @jfdevelops/react-layout typecheck:budget
+
       - name: Build library
         run: pnpm build
 

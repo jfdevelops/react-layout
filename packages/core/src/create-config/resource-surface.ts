@@ -30,8 +30,8 @@ export type DefineResourceSurface<Parent extends NonEmptyResources> = <
   const Options extends InPropsDefinition<Resources> = {},
   Composables extends ComposableComponents = {},
   Namespace extends boolean = false,
-  const Include extends LayoutIncludeProps<Resources, Options, Composables> = {},
-  const Custom extends CustomPropsObject = {},
+  const IncludeProps extends LayoutIncludeProps<Resources, Options, Composables> = {},
+  const CustomProps extends CustomPropsObject = {},
   const Naming extends LayoutNameInput<LayoutResourceKey<Resources>> | undefined = undefined,
   const Host extends SurfaceHost<Parent> | undefined = undefined,
 >(
@@ -40,8 +40,8 @@ export type DefineResourceSurface<Parent extends NonEmptyResources> = <
     Options,
     Composables,
     Namespace,
-    Include,
-    Custom,
+    IncludeProps,
+    CustomProps,
     Naming
   > & {
     host?: Host & { surface?: never };
@@ -51,8 +51,8 @@ export type DefineResourceSurface<Parent extends NonEmptyResources> = <
   Options,
   Composables,
   Namespace,
-  Include,
-  Custom,
+  IncludeProps,
+  CustomProps,
   Naming
 >;
 

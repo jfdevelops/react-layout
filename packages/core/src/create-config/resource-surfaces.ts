@@ -236,12 +236,10 @@ export function defineResourceSurfaces(surfaces: SurfaceBag): Record<string, unk
             composables: configuration.composables,
             render,
           },
-        } as Parameters<typeof defineResourceLayout.withLayout>[0])
-      : createDefinedResourceLayout(
-          configuration as Parameters<typeof createDefinedResourceLayout>[0],
-        ).defineResourceLayout({
+        } as never)
+      : createDefinedResourceLayout(configuration as never).defineResourceLayout({
           render,
-        } as Parameters<ReturnType<typeof createDefinedResourceLayout>['defineResourceLayout']>[0]);
+        } as never);
 
     if (host) {
       const parent = surfaces[host.surface];
