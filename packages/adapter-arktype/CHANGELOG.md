@@ -1,5 +1,17 @@
 # @jfdevelops/react-layout-adapter-arktype
 
+## 1.0.0
+
+### Major Changes
+
+- 65da0eb: Release every React Layout package as part of the coordinated major release for the Standard Schema prop system and updated public types.
+
+### Patch Changes
+
+- Updated dependencies [65da0eb]
+- Updated dependencies [c60ad4f]
+  - @jfdevelops/react-layout-adapters@1.0.0
+
 ## 0.1.1
 
 ### Patch Changes
