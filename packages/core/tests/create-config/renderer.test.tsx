@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import { z } from 'zod';
-import { defineResourceLayout } from '../../src';
+import { defineResourceLayout, InvalidPathError } from '../../src';
 
 const { createResourceConfig } = defineResourceLayout({
   resources: [
@@ -467,5 +467,33 @@ describe('createRenderer', () => {
         render: () => null,
       }),
     ).toThrow('reserved');
+  });
+
+  it('selects and builds a parent scope whose own page is unselected', () => {
+    const renderPage = pages.createRenderer({
+      params: {
+        include: {
+          path: {
+            pick: {
+              resource: {
+                containers: {
+                  $containerId: true,
+                },
+              },
+            },
+          },
+        },
+      },
+      render: ({ getComponentForPath, path }) =>
+        getComponentForPath(path)().component,
+    });
+    const Nested = renderPage('containers')('$containerId');
+    const Built = renderPage
+      .forPath('containers')
+      .render(() => <p>Custom</p>)
+      .build();
+    expect(renderToStaticMarkup(<Nested />)).toBe('<p>Container</p>');
+    expect(renderToStaticMarkup(<Built />)).toBe('<p>Custom</p>');
+    expect(() => renderPage.build()).toThrowError(InvalidPathError);
   });
 });

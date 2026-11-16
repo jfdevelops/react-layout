@@ -61,29 +61,29 @@ export function createResourceRenderer<
       prefix: string,
       render: RuntimeOptions<Record<string, unknown>>['render'],
     ) {
-      function checkPath(path: string) {
-        const fullPath = prefix ? `${prefix}.${path}` : path;
-
+      /** A scope is a page, or a parent whose descendants include a page. */
+      function assertScope(path: string) {
         if (
-          !paths.includes(fullPath) &&
-          !paths.some((candidate) => candidate.startsWith(`${fullPath}.`))
+          !paths.includes(path) &&
+          !paths.some((candidate) => candidate.startsWith(`${path}.`))
         ) {
           throw new InvalidPathError({
-            path: fullPath,
+            path,
             validPaths: paths,
           });
         }
+      }
+
+      function checkPath(path: string) {
+        const fullPath = prefix ? `${prefix}.${path}` : path;
+
+        assertScope(fullPath);
 
         return fullPath;
       }
 
       function build() {
-        if (!paths.includes(prefix)) {
-          throw new InvalidPathError({
-            path: prefix,
-            validPaths: paths,
-          });
-        }
+        assertScope(prefix);
 
         function makeBuilder(
           renderer: RuntimeOptions<Record<string, unknown>>['render'],
