@@ -1,5 +1,11 @@
 # @jfdevelops/react-layout
 
+## 3.1.0
+
+### Minor Changes
+
+- 35c0493: Add reusable resource renderers with inferred schema parameters, scoped path selection, immutable render overrides, and arbitrary factory outputs. Unify builder parameter options while retaining deprecated compatibility methods.
+
 ## 3.0.0
 
 ### Major Changes
