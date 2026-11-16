@@ -559,6 +559,8 @@ Use `ReactLayoutDevtools` from `@jfdevelops/react-layout-devtools-react` for a f
 
 See [devtools and shared defaults](docs/devtools-and-shared-defaults.md) for setup, global prop contracts, reusable naming conventions, and local overrides.
 
+See [resource renderers](docs/resource-renderers.md) for shared page rendering, inferred factories, scoped overrides, and parameter migration.
+
 See [lazy loading](docs/lazy-loading.md) for shared preload and retry behavior, typed lazy errors, and scoped content shells that avoid circular imports.
 
 ### Hosted surface families
