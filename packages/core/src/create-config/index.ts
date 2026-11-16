@@ -223,3 +223,11 @@ export type {
 
 export { defineResourceSurfaces } from './resource-surfaces';
 export type { DefineResourceSurface, SurfaceHost } from './resource-surface';
+
+export type {
+  CreateResourceRenderer,
+  ResourceRenderer,
+  ResourceRendererBuilder,
+  ResourceRendererContext,
+} from './renderer-types';
+export type { PathParamsOptions } from './for-paths/params';
