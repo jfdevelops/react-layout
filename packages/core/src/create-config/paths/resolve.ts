@@ -39,7 +39,7 @@ export function flattenSubResourceParam(
   return [param.value, ...flattenSubResourceParam(param.subResource)];
 }
 
-function isSubResourceParamValue(
+export function isSubResourceParamValue(
   value: unknown,
 ): value is SubResourceParamValue {
   if (typeof value === 'string') {

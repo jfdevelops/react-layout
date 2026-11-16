@@ -1,4 +1,6 @@
 import type { JSX } from 'react';
+import { createResourceRenderer } from './renderer';
+import type { CreateResourceRenderer } from './renderer-types';
 import {
   InvalidComponentError,
   InvalidConfigError,
@@ -258,6 +260,10 @@ export interface CreatedResourceConfig<
   Config extends ResourceConfigMap<Resources> = ResourceConfigMap<Resources>,
 > {
   config: Config;
+  /**
+   * Defines a reusable renderer with inferred parameters and an optional output factory.
+   */
+  createRenderer: CreateResourceRenderer<Resources, Config>;
   getComponent: GetComponent<Resources>;
   /**
    * Creates a reusable getter bound to one path. Variables the path leaves open become
@@ -542,6 +548,9 @@ function createResourceConfigImpl<
 
   return {
     config,
+    createRenderer: createResourceRenderer(
+      configRecord,
+    ) as unknown as Created['createRenderer'],
     getComponent: createGetComponent(config),
     createGetComponent: ((path: string) =>
       createGetComponentForPath(

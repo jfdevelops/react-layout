@@ -1,5 +1,7 @@
 import type { JSX } from 'react';
 import type { ResourceDefinition } from '../../resource';
+import type { KeysOfUnion, ValueOfKeyInUnion } from '../../utils';
+import { InvalidPathError } from '../../errors';
 import { isConfigNode } from '../component-keys';
 import {
   collectPathComponentKeys,
@@ -20,14 +22,6 @@ import type {
   ResolveParameterizedPathValue,
   ResourceSubResourceKeys,
 } from '../paths';
-
-type KeysOfUnion<Value> = Value extends unknown ? keyof Value : never;
-
-type ValueOfKeyInUnion<Value, Key> = Value extends unknown
-  ? Key extends keyof Value
-    ? Value[Key]
-    : never
-  : never;
 
 export interface PathValueComponentGetter<Value> {
   /**
@@ -206,7 +200,11 @@ export function createGetComponentForPath<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Config extends Record<string, unknown>,
   Path extends string,
->(config: Config, path: Path): GetComponentForPath<Resources, Config, Path> {
+>(
+  config: Config,
+  path: Path,
+  boundVariables: PathVariableValues = {},
+): GetComponentForPath<Resources, Config, Path> {
   const variableNames = extractPathVariables(path);
   const resources = collectPathResources(config, path);
   const subResourceKeys = collectPathSubResourceKeys(config, path);
@@ -214,7 +212,10 @@ export function createGetComponentForPath<
 
   function getComponentForPath(variables?: PathVariableValues) {
     return attachComponentGetter(
-      resolveParameterizedPath(config, path, variables ?? {}),
+      resolveParameterizedPath(config, path, {
+        ...boundVariables,
+        ...variables,
+      }),
     );
   }
 
@@ -261,4 +262,31 @@ export function createGetComponentForPath<
     },
     variableGuards,
   ) as unknown as GetComponentForPath<Resources, Config, Path>;
+}
+
+/** Shares path-scope validation and optional parameter binding across render contexts. */
+export function createScopedGetComponentForPath<
+  Resources extends readonly ResourceDefinition[],
+  Config extends Record<string, unknown>,
+  Paths extends readonly string[],
+>(
+  config: Config,
+  paths: Paths,
+  boundVariables?: PathVariableValues,
+): CreateGetComponentForPath<Resources, Config, Paths[number]> {
+  return (path) => {
+    if (!paths.includes(path)) {
+      throw new InvalidPathError({
+        path,
+        validPaths: [...paths],
+        reason: 'This component was not built for that path',
+      });
+    }
+
+    return createGetComponentForPath<Resources, Config, typeof path>(
+      config,
+      path,
+      boundVariables,
+    );
+  };
 }
