@@ -4,6 +4,20 @@ export type {
   ShowCallable,
   UnionToIntersection,
 } from '@jfdevelops/react-layout-internals';
+/** Keys present in any member of a union. */
+export type KeysOfUnion<Value> = Value extends unknown ? keyof Value : never;
+
+/** Values for a key across a union, with an explicit fallback for absent keys. */
+export type ValueOfKeyInUnion<
+  Value,
+  Key,
+  Missing = never,
+> = Value extends unknown
+  ? Key extends keyof Value
+    ? Value[Key]
+    : Missing
+  : never;
+
 export type MergeIntersection<T> = {
   [Key in keyof T]: T[Key];
 };

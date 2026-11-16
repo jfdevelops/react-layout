@@ -1,63 +1,36 @@
 import type { JSX, ReactNode } from 'react';
 import type { WithChildren } from '@jfdevelops/react-layout-composables';
-import {
-  InvalidComponentError,
-  InvalidPathError,
-  InvalidResourceError,
-  InvalidSubResourceError,
-} from '../../errors';
+import { InvalidPathError } from '../../errors';
 import type { ResourceDefinition } from '../../resource';
 import type { IsUnion, Show } from '../../utils';
-import {
-  collectPathComponentKeys,
-  collectPathResources,
-  collectPathSubResourceKeys,
-  extractPathVariables,
-  flattenSubResourceParam,
-  generateResourceConfigPaths,
-} from '../paths';
+import { createPathParams, validatePathParamsOptions } from './params';
 import type {
-  PathComponentKeys,
-  PathVariables,
-  SubResourceParamValue,
-} from '../paths';
+  CheckedPathParams,
+  IncludedPathParams,
+  PathParamInput,
+  PathParamOutput,
+  PickedPathParams,
+  PathParamsOptions,
+} from './params';
+import { generateResourceConfigPaths } from '../paths';
+import type { PathParamPick, SelectedPathConfig } from './selection';
+import type { PathVariables } from '../paths';
 import {
-  createGetComponentForPath,
+  createScopedGetComponentForPath,
   type CreateGetComponentForPath,
 } from './get-component-for-path';
-
-type UnwrapTargetPaths<Paths> = Paths extends readonly [
-  infer First,
-  ...infer Rest,
-]
-  ? (First & string) | UnwrapTargetPaths<Rest>
-  : Paths extends readonly (infer Path)[]
-    ? Path & string
-    : never;
 
 type PathVariablesForPaths<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Config,
   Paths extends ReadonlyArray<string>,
-> =
-  UnwrapTargetPaths<Paths> extends infer Path
-    ? Path extends string
-      ? PathVariables<Resources, Config, Path>
-      : never
-    : never;
+> = Paths[number] extends infer Path
+  ? Path extends string
+    ? PathVariables<Resources, Config, Path>
+    : never
+  : never;
 
-type ComponentKeysForPaths<
-  Resources extends ReadonlyArray<ResourceDefinition>,
-  Config,
-  Paths extends ReadonlyArray<string>,
-> =
-  UnwrapTargetPaths<Paths> extends infer Path
-    ? Path extends string
-      ? PathComponentKeys<Resources, Config, Path>
-      : never
-    : never;
-
-type ValueOrFunction<Value, Input> = Value | ((input: Input) => Value);
+export type ValueOrFunction<Value, Input> = Value | ((input: Input) => Value);
 
 /** Context handed to `render` and to `setDisplayName`. */
 export type ForPathsRenderContext<
@@ -77,7 +50,7 @@ export type ForPathsRenderContext<
   getComponentForPath: CreateGetComponentForPath<
     Resources,
     Config,
-    UnwrapTargetPaths<Paths>
+    Paths[number]
   >;
 };
 
@@ -132,13 +105,12 @@ type WithComponentKeyParam<
   Config,
   Paths extends ReadonlyArray<string>,
   Optional extends boolean,
-> = Optional extends true
-  ? { componentKey?: ComponentKeysForPaths<Resources, Config, Paths> }
-  : { componentKey: ComponentKeysForPaths<Resources, Config, Paths> };
-
-type PickedPathParams<Variables, Picked> = [keyof Picked] extends [never]
-  ? Variables
-  : Pick<Variables, keyof Picked & keyof Variables>;
+> = IncludedPathParams<
+  Resources,
+  Config,
+  Paths[number],
+  { include: { keys: { optional: Optional } } }
+>;
 
 export type TargetPathBuilder<
   Resources extends ReadonlyArray<ResourceDefinition>,
@@ -146,10 +118,11 @@ export type TargetPathBuilder<
   Paths extends ReadonlyArray<string>,
   Params extends Record<string, unknown> = {},
   Used extends 'addComponentKeyParams' | 'addPathParams' | 'addParams' = never,
+  Output extends Record<string, unknown> = Params,
 > = {
   render: (
     renderer: (
-      context: ForPathsRenderContext<Resources, Config, Paths, Params>,
+      context: ForPathsRenderContext<Resources, Config, Paths, Output>,
     ) => JSX.Element,
   ) => RenderedPathComponent<Params> & {
     /**
@@ -158,7 +131,7 @@ export type TargetPathBuilder<
     setDisplayName<Name extends string>(
       name: ValueOrFunction<
         Name,
-        ForPathsRenderContext<Resources, Config, Paths, Params>
+        ForPathsRenderContext<Resources, Config, Paths, Output>
       >,
     ): RenderedPathComponent<Params, Name>;
   };
@@ -166,6 +139,7 @@ export type TargetPathBuilder<
   ? {}
   : {
       /**
+       * @deprecated Use `.addParams({ include: { keys: true } })`.
        * Adds a `componentKey` prop narrowed to the component slots configured for these
        * paths. Call it before `render` when building a reusable component.
        */
@@ -181,13 +155,15 @@ export type TargetPathBuilder<
         Show<
           Params & WithComponentKeyParam<Resources, Config, Paths, Optional>
         >,
-        Used | 'addComponentKeyParams'
+        Used | 'addComponentKeyParams',
+        Show<Output & WithComponentKeyParam<Resources, Config, Paths, Optional>>
       >;
     }) &
   ('addPathParams' extends Used
     ? {}
     : {
         /**
+         * @deprecated Use `.addParams({ include: { path: true } })`.
          * Turns the variables these paths leave open into props. Without `pick`, every
          * variable becomes a prop.
          */
@@ -204,18 +180,43 @@ export type TargetPathBuilder<
           Config,
           Paths,
           Show<Params & PickedPathParams<Variables, Picked>>,
-          Used | 'addPathParams'
+          Used | 'addPathParams',
+          Show<Output & PickedPathParams<Variables, Picked>>
         >;
       }) &
   ('addParams' extends Used
     ? {}
     : {
         /**
-         * Adds custom params with the given values as defaults. Defaults are
-         * optional at the call site and filled in before `render` runs.
+         * Adds included path variables, component keys, and custom Standard Schema parameters.
+         */
+        addParams<
+          const Options extends PathParamsOptions<
+            PathParamPick<Resources, Config, Paths[number]>
+          >,
+        >(
+          options: CheckedPathParams<
+            Options,
+            PathParamPick<Resources, Config, Paths[number]>
+          >,
+        ): TargetPathBuilder<
+          Resources,
+          SelectedPathConfig<Config, Options>,
+          Paths,
+          Show<
+            Params & PathParamInput<Resources, Config, Paths[number], Options>
+          >,
+          Used | 'addParams',
+          Show<
+            Output & PathParamOutput<Resources, Config, Paths[number], Options>
+          >
+        >;
+        /**
+         * @deprecated Pass schema definitions through `{ custom }` instead.
+         * Retains legacy default-value parameters for compatibility.
          */
         addParams<NewParams extends Record<string, unknown>>(
-          params: NewParams,
+          params: NewParams & { include?: never; custom?: never },
         ): TargetPathBuilder<
           Resources,
           Config,
@@ -236,131 +237,12 @@ export type ForPaths<
 const DEFAULT_DISPLAY_NAME = 'ResourcePathComponent';
 
 type BuilderState = {
-  paths: readonly string[];
   paramDefaults: Record<string, unknown>;
-  declaredPathParams: readonly string[];
-  componentKeyDeclared: boolean;
-  componentKeyOptional: boolean;
   usedComponentKeyParams: boolean;
   usedPathParams: boolean;
   usedParams: boolean;
+  customParams: PathParamsOptions;
 };
-
-type ValidationSets = {
-  resources: readonly string[];
-  subResources: readonly string[];
-  components: readonly string[];
-};
-
-function collectValidationSets(
-  config: Record<string, unknown>,
-  paths: readonly string[],
-): ValidationSets {
-  const resources = new Set<string>();
-  const subResources = new Set<string>();
-  const components = new Set<string>();
-
-  for (const path of paths) {
-    for (const resource of collectPathResources(config, path)) {
-      resources.add(resource);
-    }
-
-    for (const subResource of collectPathSubResourceKeys(config, path)) {
-      subResources.add(subResource);
-    }
-
-    for (const component of collectPathComponentKeys(config, path)) {
-      components.add(component);
-    }
-  }
-
-  return {
-    resources: [...resources],
-    subResources: [...subResources],
-    components: [...components],
-  };
-}
-
-/**
- * Validates the params a caller passed before the renderer runs, so a bad resource or
- * slot fails with a typed error naming what is available.
- */
-function validateParams(
-  params: Record<string, unknown>,
-  state: BuilderState,
-  sets: ValidationSets,
-): void {
-  const { resource, subResource, component, componentKey } = params as {
-    resource?: unknown;
-    subResource?: unknown;
-    component?: unknown;
-    componentKey?: unknown;
-  };
-
-  if (state.declaredPathParams.includes('resource') && resource !== undefined) {
-    if (typeof resource !== 'string' || !sets.resources.includes(resource)) {
-      throw new InvalidResourceError({
-        resource,
-        validResources: [...sets.resources],
-      });
-    }
-  }
-
-  if (
-    state.declaredPathParams.includes('subResource') &&
-    subResource !== undefined
-  ) {
-    const slugs = flattenSubResourceParam(subResource as SubResourceParamValue);
-
-    for (const slug of slugs) {
-      if (!sets.subResources.includes(slug)) {
-        throw new InvalidSubResourceError({
-          subResource: slug,
-          resource: typeof resource === 'string' ? resource : undefined,
-          validSubResources: [...sets.subResources],
-        });
-      }
-    }
-  }
-
-  if (
-    state.declaredPathParams.includes('component') &&
-    component !== undefined
-  ) {
-    if (typeof component !== 'string' || !sets.components.includes(component)) {
-      throw new InvalidComponentError({
-        component,
-        validComponents: [...sets.components],
-      });
-    }
-  }
-
-  if (!state.componentKeyDeclared) {
-    return;
-  }
-
-  if (componentKey === undefined) {
-    if (!state.componentKeyOptional) {
-      throw new InvalidComponentError({
-        component: componentKey,
-        validComponents: [...sets.components],
-        reason: 'A "componentKey" prop is required for this component',
-      });
-    }
-
-    return;
-  }
-
-  if (
-    typeof componentKey !== 'string' ||
-    !sets.components.includes(componentKey)
-  ) {
-    throw new InvalidComponentError({
-      component: componentKey,
-      validComponents: [...sets.components],
-    });
-  }
-}
 
 function readClosureProps(
   selected: string[],
@@ -449,50 +331,80 @@ export function createTargetPathBuilder<
   Config extends Record<string, unknown>,
   Paths extends ReadonlyArray<string>,
 >(config: Config, paths: Paths): TargetPathBuilder<Resources, Config, Paths> {
-  const validationSets = collectValidationSets(config, paths);
+  type RenderContext = ForPathsRenderContext<
+    Resources,
+    Record<string, unknown>,
+    Paths,
+    Record<string, unknown>
+  >;
 
   const makeBuilder = (state: BuilderState): Record<string, unknown> => {
     const builder: Record<string, unknown> = {};
 
+    function addParams(
+      options: PathParamsOptions,
+      used: Partial<BuilderState> = {},
+    ) {
+      const customParams = {
+        include: {
+          ...state.customParams.include,
+          ...options.include,
+        },
+        custom: {
+          ...state.customParams.custom,
+          ...options.custom,
+        },
+      };
+      validatePathParamsOptions(customParams);
+
+      return makeBuilder({
+        ...state,
+        ...used,
+        customParams,
+      });
+    }
+
     if (!state.usedComponentKeyParams) {
       builder.addComponentKeyParams = (options?: { optional?: boolean }) =>
-        makeBuilder({
-          ...state,
-          usedComponentKeyParams: true,
-          componentKeyDeclared: true,
-          componentKeyOptional: options?.optional === true,
-        });
+        addParams(
+          {
+            include: {
+              keys: options ?? true,
+            },
+          },
+          {
+            usedComponentKeyParams: true,
+          },
+        );
     }
 
     if (!state.usedPathParams) {
-      builder.addPathParams = (options?: { pick?: Record<string, true> }) => {
-        const available = new Set<string>();
-
-        for (const path of state.paths) {
-          for (const name of extractPathVariables(path)) {
-            available.add(name);
-          }
-        }
-
-        const picked = Object.entries(options?.pick ?? {})
-          .filter(([, enabled]) => enabled === true)
-          .map(([key]) => key);
-        const declared =
-          picked.length === 0
-            ? [...available]
-            : picked.filter((name) => available.has(name));
-
-        return makeBuilder({
-          ...state,
-          usedPathParams: true,
-          declaredPathParams: [...state.declaredPathParams, ...declared],
-        });
-      };
+      builder.addPathParams = (options?: { pick?: Record<string, true> }) =>
+        addParams(
+          {
+            include: {
+              path: options ?? true,
+            },
+          },
+          {
+            usedPathParams: true,
+          },
+        );
     }
 
     if (!state.usedParams) {
-      builder.addParams = (params: Record<string, unknown>) =>
-        makeBuilder({
+      builder.addParams = (params: Record<string, unknown>) => {
+        if (
+          'include' in params ||
+          'custom' in params ||
+          Object.keys(params).length === 0
+        ) {
+          return addParams(params as PathParamsOptions, {
+            usedParams: true,
+          });
+        }
+
+        return makeBuilder({
           ...state,
           usedParams: true,
           paramDefaults: {
@@ -500,36 +412,28 @@ export function createTargetPathBuilder<
             ...params,
           },
         });
+      };
     }
 
-    builder.render = (
-      renderer: (context: {
-        params: Record<string, unknown>;
-        getComponentForPath: unknown;
-      }) => JSX.Element,
-    ) => {
-      const buildContext = (props: Record<string, unknown>) => {
-        const params = {
-          ...state.paramDefaults,
-          ...props,
-        };
+    builder.render = (renderer: (context: RenderContext) => JSX.Element) => {
+      const pathParams = createPathParams(
+        config,
+        paths,
+        state.customParams,
+        state.paramDefaults,
+      );
 
-        validateParams(params, state, validationSets);
+      const buildContext = (props: Record<string, unknown>) => {
+        const params = pathParams.resolve(props);
 
         return {
           children: props.children as ReactNode,
           params,
-          getComponentForPath: (path: string) => {
-            if (!state.paths.includes(path)) {
-              throw new InvalidPathError({
-                path,
-                validPaths: [...state.paths],
-                reason: 'This component was not built for that path',
-              });
-            }
-
-            return createGetComponentForPath(config, path);
-          },
+          getComponentForPath: createScopedGetComponentForPath<
+            Resources,
+            Record<string, unknown>,
+            Paths
+          >(pathParams.config, paths),
         };
       };
 
@@ -541,14 +445,7 @@ export function createTargetPathBuilder<
       });
 
       return Object.assign(component, {
-        setDisplayName: (
-          name:
-            | string
-            | ((context: {
-                params: Record<string, unknown>;
-                getComponentForPath: unknown;
-              }) => string),
-        ) => {
+        setDisplayName: (name: ValueOrFunction<string, RenderContext>) => {
           if (typeof name === 'string') {
             const named = createRenderedComponent(runRenderer, {
               ...state.paramDefaults,
@@ -574,14 +471,11 @@ export function createTargetPathBuilder<
   };
 
   return makeBuilder({
-    paths,
     paramDefaults: {},
-    declaredPathParams: [],
-    componentKeyDeclared: false,
-    componentKeyOptional: false,
     usedComponentKeyParams: false,
     usedPathParams: false,
     usedParams: false,
+    customParams: {},
   }) as unknown as TargetPathBuilder<Resources, Config, Paths>;
 }
 

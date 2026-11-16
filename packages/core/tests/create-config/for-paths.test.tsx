@@ -269,6 +269,35 @@ describe('forPaths', () => {
     expect(screen.getByTestId('users-error')).toBeDefined();
   });
 
+  it('rejects malformed sub-resource values before flattening them', () => {
+    const { forPaths } = createTestConfig();
+    const Component = forPaths('$resource.$subResource')
+      .addPathParams()
+      .render(() => <div />);
+    const renderWith = Component as unknown as (
+      props: Record<string, unknown>,
+    ) => unknown;
+
+    for (const subResource of [
+      null,
+      42,
+      {
+        value: 'admins',
+      },
+      {
+        value: 'managers',
+        subResource: 42,
+      },
+    ]) {
+      expect(() =>
+        renderWith({
+          resource: 'users',
+          subResource,
+        }),
+      ).toThrowError(InvalidSubResourceError);
+    }
+  });
+
   it('picks only the requested path params', () => {
     const { forPaths } = createTestConfig();
     const UsersComponent = forPaths('$resource.$component')
