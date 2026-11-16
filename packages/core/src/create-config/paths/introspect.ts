@@ -6,26 +6,41 @@ import {
 import { MAX_PATH_DEPTH } from './generate';
 import { readPathVariableName } from './variables';
 
+function visitDescendantNodes(
+  node: Record<string, unknown>,
+  depth: number,
+  visit: (node: Record<string, unknown>) => boolean,
+): boolean {
+  if (depth === 0) {
+    return false;
+  }
+
+  for (const key of readSubResourceKeys(node)) {
+    const child = node[key];
+
+    if (
+      isConfigNode(child) &&
+      (visit(child) || visitDescendantNodes(child, depth - 1, visit))
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 /** Every branch below `node`, at any depth within the path depth cap. */
 export function collectDescendantNodes(
   node: Record<string, unknown>,
   depth = MAX_PATH_DEPTH,
 ): Record<string, unknown>[] {
-  if (depth === 0) {
-    return [];
-  }
-
   const nodes: Record<string, unknown>[] = [];
 
-  for (const key of readSubResourceKeys(node)) {
-    const subNode = node[key];
+  visitDescendantNodes(node, depth, (child) => {
+    nodes.push(child);
 
-    if (!isConfigNode(subNode)) {
-      continue;
-    }
-
-    nodes.push(subNode, ...collectDescendantNodes(subNode, depth - 1));
-  }
+    return false;
+  });
 
   return nodes;
 }
@@ -35,15 +50,35 @@ export function collectSubResourceKeysBelow(
   node: Record<string, unknown>,
   depth = MAX_PATH_DEPTH,
 ): string[] {
-  const keys = new Set<string>(readSubResourceKeys(node));
+  const keys = new Set<string>();
 
-  for (const descendant of collectDescendantNodes(node, depth)) {
-    for (const key of readSubResourceKeys(descendant)) {
-      keys.add(key);
-    }
-  }
+  collectSubResourceKeysInto(node, depth, keys);
 
   return [...keys];
+}
+
+function collectSubResourceKeysInto(
+  node: Record<string, unknown>,
+  depth: number,
+  keys: Set<string>,
+): void {
+  const children = readSubResourceKeys(node);
+
+  for (const key of children) {
+    keys.add(key);
+  }
+
+  if (depth === 0) {
+    return;
+  }
+
+  for (const key of children) {
+    const child = node[key];
+
+    if (isConfigNode(child)) {
+      collectSubResourceKeysInto(child, depth - 1, keys);
+    }
+  }
 }
 
 /**
@@ -54,7 +89,15 @@ export function pathExistsOnNode(
   node: unknown,
   segments: readonly string[],
 ): boolean {
-  if (segments.length === 0) {
+  return pathExistsAtSegment(node, segments, 0);
+}
+
+function pathExistsAtSegment(
+  node: unknown,
+  segments: readonly string[],
+  index: number,
+): boolean {
+  if (index === segments.length) {
     return true;
   }
 
@@ -62,7 +105,7 @@ export function pathExistsOnNode(
     return false;
   }
 
-  const [segment, ...rest] = segments;
+  const segment = segments[index];
 
   if (segment === undefined) {
     return true;
@@ -71,14 +114,14 @@ export function pathExistsOnNode(
   const variableName = readPathVariableName(segment);
 
   if (variableName === 'subResource') {
-    return collectDescendantNodes(node).some((descendant) =>
-      pathExistsOnNode(descendant, rest),
+    return visitDescendantNodes(node, MAX_PATH_DEPTH, (descendant) =>
+      pathExistsAtSegment(descendant, segments, index + 1),
     );
   }
 
   if (variableName === 'component') {
     return readComponentKeys(node).some((key) =>
-      pathExistsOnNode(node[key], rest),
+      pathExistsAtSegment(node[key], segments, index + 1),
     );
   }
 
@@ -88,7 +131,7 @@ export function pathExistsOnNode(
 
   const next = node[segment];
 
-  return next !== undefined && pathExistsOnNode(next, rest);
+  return next !== undefined && pathExistsAtSegment(next, segments, index + 1);
 }
 
 /** Resource keys configured in a config map. */
@@ -105,23 +148,188 @@ export function collectConfigResources(
 export function collectPathResources(
   config: Record<string, unknown>,
   path: string,
+  segments: readonly string[] = path.split('.'),
 ): string[] {
-  const [head, ...rest] = path.split('.');
-  const resources = collectConfigResources(config);
+  const head = segments[0];
 
   if (head === undefined) {
     return [];
   }
 
   if (readPathVariableName(head) === 'resource') {
-    return resources.filter((resource) =>
-      pathExistsOnNode(config[resource], rest),
+    return collectConfigResources(config).filter((resource) =>
+      pathExistsAtSegment(config[resource], segments, 1),
     );
   }
 
-  return resources.filter(
-    (resource) => resource === head && pathExistsOnNode(config[resource], rest),
+  if (!Object.prototype.propertyIsEnumerable.call(config, head)) {
+    return [];
+  }
+
+  const node = config[head];
+
+  return isConfigNode(node) && pathExistsAtSegment(node, segments, 1)
+    ? [head]
+    : [];
+}
+
+/** Collects requested validation categories together while matching one path. */
+export function collectPathValidationSets(
+  config: Record<string, unknown>,
+  path: string,
+  targets: {
+    resources?: Set<string>;
+    subResources?: Set<string>;
+    components?: Set<string>;
+  },
+): void {
+  const segments = path.split('.');
+  const head = segments[0];
+  const subResourceIndex = segments.findIndex(
+    (segment) => readPathVariableName(segment) === 'subResource',
   );
+  const componentIndex =
+    readPathVariableName(segments.at(-1) ?? '') === 'component'
+      ? segments.length - 1
+      : segments.length;
+  const candidates =
+    readPathVariableName(head ?? '') === 'resource'
+      ? collectConfigResources(config)
+      : head !== undefined &&
+          Object.prototype.propertyIsEnumerable.call(config, head)
+        ? [head]
+        : [];
+
+  for (const resource of candidates) {
+    const root = config[resource];
+
+    if (!isConfigNode(root)) {
+      continue;
+    }
+
+    if (!targets.subResources && !targets.components) {
+      if (pathExistsAtSegment(root, segments, 1)) {
+        targets.resources?.add(resource);
+      }
+
+      continue;
+    }
+
+    const subResources = new Set<string>();
+    const components = new Set<string>();
+
+    function descendants(
+      node: Record<string, unknown>,
+      depth: number,
+      nextIndex: number,
+      includeSubResources: boolean,
+    ): boolean {
+      if (depth === 0 && !includeSubResources) {
+        return false;
+      }
+
+      const keys = readSubResourceKeys(node);
+      let exists = false;
+
+      if (includeSubResources) {
+        for (const key of keys) {
+          subResources.add(key);
+        }
+      }
+
+      if (depth === 0) {
+        return false;
+      }
+
+      for (const key of keys) {
+        const child = node[key];
+
+        if (isConfigNode(child)) {
+          // Both calls must run: matching gathers slots; descent gathers nested slugs.
+          const matches = match(child, nextIndex);
+          const nestedMatches = descendants(
+            child,
+            depth - 1,
+            nextIndex,
+            includeSubResources,
+          );
+          exists = matches || nestedMatches || exists;
+        }
+      }
+
+      return exists;
+    }
+
+    function match(node: unknown, index: number): boolean {
+      const variable = readPathVariableName(segments[index] ?? '');
+      const isNode = isConfigNode(node);
+      const keys =
+        isNode &&
+        (variable === 'component' ||
+          (targets.components && index === componentIndex))
+          ? readComponentKeys(node)
+          : [];
+
+      if (targets.components && index === componentIndex) {
+        for (const key of keys) {
+          components.add(key);
+        }
+      }
+
+      if (index === segments.length) {
+        return true;
+      }
+
+      if (!isNode) {
+        return false;
+      }
+
+      const segment = segments[index];
+
+      if (segment === undefined) {
+        return true;
+      }
+
+      if (variable === 'subResource') {
+        return descendants(
+          node,
+          MAX_PATH_DEPTH,
+          index + 1,
+          !!targets.subResources && index === subResourceIndex,
+        );
+      }
+
+      if (variable === 'component') {
+        let exists = false;
+
+        for (const key of keys) {
+          exists = match(node[key], index + 1) || exists;
+        }
+
+        return exists;
+      }
+
+      if (variable !== undefined) {
+        return false;
+      }
+
+      return node[segment] !== undefined && match(node[segment], index + 1);
+    }
+
+    if (!match(root, 1)) {
+      continue;
+    }
+
+    targets.resources?.add(resource);
+
+    for (const key of subResources) {
+      targets.subResources?.add(key);
+    }
+
+    for (const key of components) {
+      targets.components?.add(key);
+    }
+  }
 }
 
 /** Nodes a path's fixed prefix resolves to, stopping before `segments` runs out. */
@@ -137,7 +345,11 @@ function collectNodesForSegments(
 
     for (const current of frontier) {
       if (variableName === 'subResource') {
-        next.push(...collectDescendantNodes(current));
+        visitDescendantNodes(current, MAX_PATH_DEPTH, (descendant) => {
+          next.push(descendant);
+
+          return false;
+        });
         continue;
       }
 
@@ -173,22 +385,22 @@ function collectNodesForSegments(
 export function collectPathSubResourceKeys(
   config: Record<string, unknown>,
   path: string,
+  resources: readonly string[] = collectPathResources(config, path),
+  segments: readonly string[] = path.split('.'),
 ): string[] {
-  const segments = path.split('.');
   const subResourceIndex = segments.findIndex(
     (segment) => readPathVariableName(segment) === 'subResource',
   );
   const keys = new Set<string>();
+  const prefix =
+    subResourceIndex === -1 ? [] : segments.slice(1, subResourceIndex);
 
-  for (const resource of collectPathResources(config, path)) {
+  for (const resource of resources) {
     const resourceNode = config[resource];
 
     if (!isConfigNode(resourceNode)) {
       continue;
     }
-
-    const prefix =
-      subResourceIndex === -1 ? [] : segments.slice(1, subResourceIndex);
 
     for (const node of collectNodesForSegments(resourceNode, prefix)) {
       for (const key of collectSubResourceKeysBelow(node)) {
@@ -204,8 +416,9 @@ export function collectPathSubResourceKeys(
 export function collectPathComponentKeys(
   config: Record<string, unknown>,
   path: string,
+  resources: readonly string[] = collectPathResources(config, path),
+  segments: readonly string[] = path.split('.'),
 ): string[] {
-  const segments = path.split('.');
   const tail = segments.slice(1);
   const withoutTrailingComponent =
     readPathVariableName(tail.at(-1) ?? '') === 'component'
@@ -213,7 +426,7 @@ export function collectPathComponentKeys(
       : tail;
   const keys = new Set<string>();
 
-  for (const resource of collectPathResources(config, path)) {
+  for (const resource of resources) {
     const resourceNode = config[resource];
 
     if (!isConfigNode(resourceNode)) {

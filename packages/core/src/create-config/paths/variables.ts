@@ -21,7 +21,9 @@ export type RemovePathVariableIdentifier<Segment extends string> =
   Segment extends PathVariable<infer Name> ? Name : Segment;
 
 type ExtractSegmentVariable<Segment extends string> =
-  Segment extends PathVariable<infer Name> ? Name : never;
+  Segment extends PathVariable<infer Name extends PathVariableName>
+    ? Name
+    : never;
 
 /**
  * Variable names declared by a dot-separated path.
@@ -64,8 +66,11 @@ export function isPathVariableSegment(segment: string): boolean {
 
 /** Variable name for a segment, or `undefined` when the segment is a fixed key. */
 export function readPathVariableName(segment: string): string | undefined {
-  return isPathVariableSegment(segment)
-    ? segment.slice(PATH_VARIABLE_IDENTIFIER.length)
+  const name = segment.slice(PATH_VARIABLE_IDENTIFIER.length);
+
+  return isPathVariableSegment(segment) &&
+    ['resource', 'subResource', 'component'].includes(name)
+    ? name
     : undefined;
 }
 
