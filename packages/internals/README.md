@@ -11,5 +11,7 @@ public types from `@jfdevelops/react-layout` or
 `@jfdevelops/react-layout-composables` instead, and do not depend on this
 package directly. Its exports can change in any release.
 
-It is private and unversioned. Changesets does not version or tag it; published
-packages bundle the internal definitions they use.
+It is private and versioned with Changesets, including release tags. Add a
+changeset for internal changes just as for public packages. Its version is also
+required by pnpm when packing dependents with `workspace:*` references.
+It is never published; public packages bundle the internal definitions they use.
