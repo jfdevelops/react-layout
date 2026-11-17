@@ -1,66 +1,28 @@
 import {
-  createPropValidator,
+  builtIn,
   defineComposableComponent,
-  type PropValidatorErrorHelper,
 } from '@jfdevelops/react-layout-composables';
+import type { StandardSchemaV1 } from '@jfdevelops/react-layout-validator';
+
+const navigationItem = builtIn.union(
+  builtIn.string,
+  builtIn.object({
+    value: builtIn.string,
+    href: builtIn.string.optional(),
+    isActive: builtIn.boolean.optional(),
+    isDisabled: builtIn.boolean.optional(),
+  }),
+);
+
+const items = builtIn.record(navigationItem);
 
 /** One navigation item: its label, or its label with a destination and state. */
-export type NavigationItem =
-  | string
-  | {
-      value: string;
-      href?: string;
-      isActive?: boolean;
-      isDisabled?: boolean;
-    };
+export type NavigationItem = StandardSchemaV1.InferOutput<
+  typeof navigationItem
+>;
 
 /** Navigation items keyed by a stable id. */
-export type NavigationItems = Record<string, NavigationItem>;
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function isOptional(value: unknown, type: 'boolean' | 'string') {
-  return value === undefined || typeof value === type;
-}
-
-function isNavigationItem(item: unknown) {
-  if (typeof item === 'string') {
-    return true;
-  }
-
-  return (
-    isRecord(item) &&
-    typeof item.value === 'string' &&
-    isOptional(item.href, 'string') &&
-    isOptional(item.isActive, 'boolean') &&
-    isOptional(item.isDisabled, 'boolean')
-  );
-}
-
-function assertNavigationItems(
-  value: unknown,
-  error: PropValidatorErrorHelper,
-): asserts value is NavigationItems {
-  if (!isRecord(value)) {
-    throw error('Expected navigation items keyed by id');
-  }
-
-  const invalidKey = Object.keys(value).find(
-    (key) => !isNavigationItem(value[key]),
-  );
-
-  if (invalidKey !== undefined) {
-    throw error(`"${invalidKey}" is not a label or a navigation item`);
-  }
-}
-
-const items = createPropValidator(({ value, error }) => {
-  assertNavigationItems(value, error);
-
-  return value;
-});
+export type NavigationItems = StandardSchemaV1.InferOutput<typeof items>;
 
 /**
  * The navigation contract. Call it for a list named `items`, or `extend` it

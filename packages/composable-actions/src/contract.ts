@@ -1,65 +1,36 @@
+import type { StandardSchemaV1 } from '@jfdevelops/react-layout-validator';
 import {
+  builtIn,
   createPropValidator,
   defineComposableComponent,
-  type PropValidatorErrorHelper,
 } from '@jfdevelops/react-layout-composables';
 import { defaultIntents, InvalidIntentError, isIntent } from './intent';
 
-/** One link-style action: its label, destination, and presentation. */
-export type Action<Intent extends string = string> = {
-  value: string;
-  href?: string;
-  intent?: Intent;
-  isDisabled?: boolean;
-};
+function createActionsDefinition(intents: ReadonlyArray<string>) {
+  return builtIn.record(
+    builtIn.object({
+      value: builtIn.string,
+      href: builtIn.string.optional(),
+      intent: createPropValidator(({ value }) => {
+        InvalidIntentError.invariant(isIntent(value, intents), () => ({
+          intent: value,
+          intents: [...intents],
+        }));
 
-/** Actions keyed by a stable id. */
-export type Actions<Intent extends string = string> = Record<
-  string,
-  Action<Intent>
->;
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function isOptional(value: unknown, type: 'boolean' | 'string') {
-  return value === undefined || typeof value === type;
-}
-
-function hasActionShape(action: unknown): action is Record<string, unknown> {
-  return (
-    isRecord(action) &&
-    typeof action.value === 'string' &&
-    isOptional(action.href, 'string') &&
-    isOptional(action.isDisabled, 'boolean')
+        return value;
+      }).optional(),
+      isDisabled: builtIn.boolean.optional(),
+    }),
   );
 }
 
-function assertActions<Intent extends string>(
-  value: unknown,
-  intents: ReadonlyArray<Intent>,
-  error: PropValidatorErrorHelper,
-): asserts value is Actions<Intent> {
-  if (!isRecord(value)) {
-    throw error('Expected actions keyed by id');
-  }
+/** Actions keyed by a stable id. */
+export type Actions = StandardSchemaV1.InferOutput<
+  ReturnType<typeof createActionsDefinition>
+>;
 
-  for (const [key, action] of Object.entries(value)) {
-    if (!hasActionShape(action)) {
-      throw error(`"${key}" is not an action`);
-    }
-
-    InvalidIntentError.invariant(
-      action.intent === undefined || isIntent(action.intent, intents),
-      () => ({
-        action: key,
-        intent: action.intent,
-        intents: [...intents],
-      }),
-    );
-  }
-}
+/** One link-style action: its label, destination, and presentation. */
+export type Action = Actions[string];
 
 /**
  * The actions contract. Call it for a list named `actions`, or `extend` it to
@@ -75,10 +46,6 @@ export const createActionsComposable = defineComposableComponent
   .handler(({ intents }) => ({
     name: 'Actions',
     props: {
-      actions: createPropValidator(({ value, error }) => {
-        assertActions(value, intents, error);
-
-        return value;
-      }),
+      actions: createActionsDefinition(intents),
     },
   }));

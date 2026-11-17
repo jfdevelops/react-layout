@@ -29,7 +29,6 @@ const actionsErrorFactory = createError({
 });
 
 const invalidIntentContext = builtIn.object({
-  action: builtIn.string,
   intent: builtIn.unknown,
   intents: builtIn.array(builtIn.string),
 });
@@ -38,12 +37,16 @@ export type InvalidIntentContext = StandardSchemaV1.InferOutput<
   typeof invalidIntentContext
 >;
 
-/** Thrown when an action's intent is not one of the known intents. */
+/**
+ * Thrown when an action's intent is not one of the known intents. The
+ * `PropError` reporting the action has it as its `cause`, and its path names
+ * the action.
+ */
 export class InvalidIntentError extends actionsErrorFactory({
   code: 'invalidIntent',
 })
   .defineContext(invalidIntentContext)
   .implement(
-    ({ action, intent, intents }) =>
-      `"${action}" has the intent ${JSON.stringify(intent)}; expected ${intents.join(', ')}`,
+    ({ intent, intents }) =>
+      `Unknown intent ${JSON.stringify(intent)}; expected ${intents.join(', ')}`,
   ) {}
