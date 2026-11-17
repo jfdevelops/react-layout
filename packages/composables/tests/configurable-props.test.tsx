@@ -1,7 +1,11 @@
 import { createElement } from 'react';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, expectTypeOf, it } from 'vitest';
-import { builtIn, defineComposableComponent } from '../src';
+import {
+  builtIn,
+  defineComposableComponent,
+  InvalidComposablePropsError,
+} from '../src';
 
 afterEach(cleanup);
 
@@ -184,6 +188,17 @@ describe('defined composable context', () => {
       limit: 'many',
       render: () => null,
     });
+    expect(() =>
+      defineComposableComponent.defineContext({}).handler(() => ({
+        name: 'Notice',
+        props: {
+          children: 'required',
+          // Constraining the returned props would cost inline validators
+          // their inferred argument, so this is rejected when it is defined.
+          title: 'required',
+        },
+      })),
+    ).toThrow(InvalidComposablePropsError);
     defineComposableComponent.defineContext({
       // @ts-expect-error `name` is an option of every defined composable.
       name: {
