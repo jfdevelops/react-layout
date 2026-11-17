@@ -1,5 +1,45 @@
 # @jfdevelops/react-layout
 
+## 4.0.0
+
+### Major Changes
+
+- 4b21676: Replace positional renderer factory arguments with one options object containing independent `component`, `params`, and `props` fields:
+
+  ```tsx
+  const renderUsers = renderPage("users");
+  const Page = renderUsers({
+    component: "component",
+    params: { count: "1" },
+    props: { label: "Users" },
+  });
+  ```
+
+  Migrate `factory(componentKey, props)` to `factory({ component: componentKey, props })`. For parameter objects, move `componentKey` into `component` and place the remaining path/custom parameters under `params`. `component` accepts only a configured component key or `'*'`.
+
+  Using `component: '*'` returns the factory result for every configured component slot, keyed by its component key. Path/custom parameters and factory props apply to each result. Fields are optional when their declared inputs are optional or defaulted; the options object can be omitted when every field is optional.
+
+- 4b21676: The `displayName` callback now receives a typed path object. Replace direct string operations on `path` with `path.value`. Template interpolation and `path.toString()` still produce the original path string; the `render` callback continues receiving its string path.
+
+  `path.is(prefix)` matches the exact path and dot-separated descendants, narrowing `path.value`. `path.capitalize()` capitalizes the current path; passing a valid path capitalizes that literal. Passing `'*'` returns the current path capitalized, with its string type widened to the union of all capitalized valid paths. The callback also exposes the existing top-level `capitalize` helper. Path arguments complete one segment at a time.
+
+  Selections with configured descendants expose `forResource(relativePath)`, preserving their renderer, factory, and scoped overrides. For example, `renderPage('users').forResource('detail')` selects the same renderer as `renderPage('users.detail')`. Leaf selections omit `forResource` from both their type and runtime object.
+
+  Descendant selection on a Component returned by a factory remains component-only and does not run that factory again.
+
+### Patch Changes
+
+- 4fb0d99: Complete resource paths one segment at a time in `getComponent`, `createGetComponent`, `getComponentForPath`, `forPaths`, and `isSubResourceKey`, while continuing to validate the complete supplied path. Fully specified paths keep their inferred return types.
+
+  TypeScript 5.9 still offers root suggestions for the `path` property inside `isSubResourceKey` options; TypeScript 6 follows that property's typed prefix.
+
+- 3c3c4fe: Use a shared `CapitalizeFn` interface for capitalization callbacks. It preserves literal return types and centralizes the overload contract used by layout naming and renderer paths.
+
+  Shared selection helpers remain bundled implementation details. The private internals package is unversioned and is not published or tagged.
+
+- Updated dependencies [3c3c4fe]
+  - @jfdevelops/react-layout-composables@1.2.1
+
 ## 3.3.0
 
 ### Minor Changes

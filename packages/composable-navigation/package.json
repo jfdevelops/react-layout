@@ -1,6 +1,6 @@
 {
   "name": "@jfdevelops/react-layout-composable-navigation",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Navigation preset composables for react-layout: breadcrumb, tabs, and their shared contract.",
   "repository": {
     "type": "git",

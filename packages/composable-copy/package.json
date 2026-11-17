@@ -1,6 +1,6 @@
 {
   "name": "@jfdevelops/react-layout-composable-copy",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Page copy preset composables for react-layout: header, meta, and their shared contract.",
   "repository": {
     "type": "git",
