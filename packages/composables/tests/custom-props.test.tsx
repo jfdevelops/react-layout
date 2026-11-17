@@ -4,6 +4,7 @@ import { afterEach, describe, expect, expectTypeOf, it } from 'vitest';
 import { z } from 'zod';
 import {
   defineComposableComponent,
+  InvalidComposablePropsError,
   type ComposableProps,
   type CustomPropsObject,
 } from '../src';
@@ -48,13 +49,15 @@ describe('defined composable custom props', () => {
     expect(screen.getByText('Content')).toBeInTheDocument();
     // @ts-expect-error Children are required.
     <Panel title='Users' />;
-    defineComposableComponent({
-      name: 'Panel',
-      props: {
-        // @ts-expect-error Only children accepts the required shorthand.
-        title: 'required',
-      },
-    });
+    expect(() =>
+      defineComposableComponent({
+        name: 'Panel',
+        props: {
+          // @ts-expect-error Only children accepts the required shorthand.
+          title: 'required',
+        },
+      }),
+    ).toThrow(InvalidComposablePropsError);
     expect(() =>
       render(
         createElement(Panel, {
