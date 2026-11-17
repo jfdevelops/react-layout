@@ -738,6 +738,26 @@ export type ComposableDefinition<Props extends InPropsObject> = {
   readonly infer: Show<ResolveProps<Props>>;
 };
 
+// Factory methods and inherited function properties take precedence over the
+// optional named definition alias.
+type ComposableDefinitionName<Name extends string> = Exclude<
+  Name,
+  | keyof Function
+  | 'props'
+  | 'extend'
+  | 'constructor'
+  | 'hasOwnProperty'
+  | 'isPrototypeOf'
+  | 'propertyIsEnumerable'
+  | 'toLocaleString'
+  | 'valueOf'
+  | '__proto__'
+  | '__defineGetter__'
+  | '__defineSetter__'
+  | '__lookupGetter__'
+  | '__lookupSetter__'
+>;
+
 export type DefinedComposableComponentFactory<
   Name extends string,
   Props extends InPropsObject,
@@ -748,7 +768,7 @@ export type DefinedComposableComponentFactory<
    * The composable's definition under its name: its prop definitions, and
    * their value types as `typeof factory.Name.infer.prop`.
    */
-  readonly [Key in Name]: ComposableDefinition<Props>;
+  readonly [Key in ComposableDefinitionName<Name>]: ComposableDefinition<Props>;
 } & {
   props: Props;
   /**
@@ -806,6 +826,22 @@ export type DefinedComposableComponentFactory<
     CustomWrapper
   >;
 };
+
+function attachComposableDefinition(
+  factory: object,
+  name: string,
+  props: InPropsObject,
+) {
+  if (name in factory) {
+    return;
+  }
+
+  Object.defineProperty(factory, name, {
+    value: {
+      props,
+    },
+  });
+}
 
 function getRenamedName(prop: string, rename: PropRename | undefined) {
   if (rename === undefined) {
@@ -1043,11 +1079,7 @@ export function defineComposableComponent<
     value: extend,
   });
   // `infer` is left out: it only carries types.
-  Object.defineProperty(factory, name, {
-    value: {
-      props,
-    },
-  });
+  attachComposableDefinition(factory, name, props);
 
   return factory as DefinedComposableComponentFactory<Name, Props, Wrapper>;
 }
@@ -1170,9 +1202,6 @@ function defineContext<Values extends Record<string, unknown>>(
         enumerable: true,
         value: base.props,
       });
-      Object.defineProperty(contextual, name, {
-        value: base[name],
-      });
       Object.defineProperty(contextual, 'extend', {
         value: (customization: Record<string, unknown>) => {
           const { factory, rest } = select(customization);
@@ -1180,6 +1209,8 @@ function defineContext<Values extends Record<string, unknown>>(
           return factory.extend(rest);
         },
       });
+
+      attachComposableDefinition(contextual, name, base.props);
 
       return contextual as unknown as DefinedComposableComponentFactory<
         Name,
