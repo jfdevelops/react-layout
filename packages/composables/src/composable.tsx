@@ -623,13 +623,83 @@ type PropOverrides<Props extends InPropsObject> = {
   [Key in keyof Props]?: ComposablePropDefinition;
 } & ComposableProps;
 
+// Options every defined composable accepts; a context value cannot use them.
+type ReservedComposableOption =
+  | 'name'
+  | 'props'
+  | 'rename'
+  | 'render'
+  | 'wrapWith';
+
+// A default such as `['a', 'b'] as const` only shows the kind of value, so its
+// literals widen: a caller may supply any value of that kind.
+type WidenContextValue<Value> = Value extends string
+  ? string
+  : Value extends number
+    ? number
+    : Value extends boolean
+      ? boolean
+      : Value extends bigint
+        ? bigint
+        : Value extends (...input: never[]) => unknown
+          ? Value
+          : Value extends ReadonlyArray<infer Item>
+            ? ReadonlyArray<WidenContextValue<Item>>
+            : Value extends object
+              ? {
+                  [Key in keyof Value]: WidenContextValue<Value[Key]>;
+                }
+              : Value;
+
+/**
+ * The context values a defined composable works with, typed from the
+ * defaults it declares.
+ */
+export type ComposableContextValues<Defaults> = {
+  [Key in keyof Defaults]: WidenContextValue<Defaults[Key]>;
+};
+
+/** One value a caller may change where a defined composable is used. */
+export type ComposableContextEntry<Value> = {
+  /**
+   * The value used when the caller supplies none.
+   */
+  value: Value;
+  /**
+   * Decides the value to use from the default and what the caller supplied.
+   * Without it, a supplied value replaces the default.
+   */
+  handler?: (input: {
+    value: WidenContextValue<Value>;
+    supplied: WidenContextValue<Value>;
+  }) => WidenContextValue<Value>;
+};
+
+/** The context entries of a defined composable, keyed by option name. */
+export type ComposableContextEntries<Values> = {
+  [Key in keyof Values]: Key extends ReservedComposableOption
+    ? never
+    : ComposableContextEntry<Values[Key]>;
+};
+
+/**
+ * What a caller may pass for each context value: the value itself, or a
+ * function that receives the default and returns the value.
+ */
+export type ComposableContextOptions<Context> = {
+  [Key in keyof Context]?:
+    | Context[Key]
+    | ((value: Context[Key]) => Context[Key]);
+};
+
 type CustomizeComposableOptions<
   Props extends InPropsObject,
   Renames,
   Overrides,
   CustomName extends string,
   CustomWrapper,
-> = {
+  Context = {},
+> = ComposableContextOptions<Context> & {
   name?: CustomName;
   /**
    * Rename default props. A string keeps the definition; an object also
@@ -647,6 +717,7 @@ export type DefinedComposableComponentFactory<
   Name extends string,
   Props extends InPropsObject,
   Wrapper = undefined,
+  Context = {},
 > = {
   props: Props;
   /**
@@ -663,7 +734,8 @@ export type DefinedComposableComponentFactory<
       Renames,
       Overrides,
       CustomName,
-      CustomWrapper
+      CustomWrapper,
+      Context
     > & {
       render: (
         props: Show<
@@ -694,7 +766,8 @@ export type DefinedComposableComponentFactory<
       Renames,
       Overrides,
       CustomName,
-      CustomWrapper
+      CustomWrapper,
+      Context
     >,
   ): DefinedComposableComponentFactory<
     CustomName,
@@ -938,6 +1011,139 @@ export function defineComposableComponent<
 
   return factory as DefinedComposableComponentFactory<Name, Props, Wrapper>;
 }
+
+function resolveComposableContext(
+  entries: Record<string, ComposableContextEntry<unknown>>,
+  options: Record<string, unknown>,
+) {
+  const rest = {
+    ...options,
+  };
+  let isCustomized = false;
+  const values = Object.fromEntries(
+    Object.entries(entries).map(([key, entry]) => {
+      if (!Object.hasOwn(options, key) || options[key] === undefined) {
+        return [key, entry.value];
+      }
+
+      const option = options[key];
+      // A function is how a caller derives its value from the default.
+      const supplied =
+        typeof option === 'function' ? option(entry.value) : option;
+
+      delete rest[key];
+      isCustomized = true;
+
+      return [
+        key,
+        entry.handler
+          ? entry.handler({
+              value: entry.value,
+              supplied,
+            })
+          : supplied,
+      ];
+    }),
+  );
+
+  return {
+    isCustomized,
+    rest,
+    values,
+  };
+}
+
+/**
+ * Starts a defined composable whose definition depends on values a caller
+ * may change. `handler` receives those values and returns the definition.
+ */
+function defineContext<Values extends Record<string, unknown>>(
+  entries: ComposableContextEntries<Values>,
+) {
+  const contextEntries = entries as Record<
+    string,
+    ComposableContextEntry<unknown>
+  >;
+
+  return {
+    /**
+     * Defines the composable from the context values. It runs with the
+     * defaults, and again for a caller that changes a value.
+     */
+    handler<
+      const Name extends string,
+      Definitions extends ComposableProps = {},
+      Wrapper = undefined,
+    >(
+      define: (context: ComposableContextValues<Values>) => {
+        name: Name;
+        props?: Definitions & ComposableProps;
+        wrapWith?: Wrapper;
+      },
+    ) {
+      type Factory = DefinedComposableComponentFactory<
+        Name,
+        NormalizeComposableProps<Definitions>,
+        Wrapper
+      >;
+
+      // The definition is checked where `handler` is called.
+      function createFactory(values: Record<string, unknown>) {
+        return defineComposableComponent(
+          define(values as ComposableContextValues<Values>) as never,
+        ) as unknown as Factory;
+      }
+
+      const base = createFactory(
+        resolveComposableContext(contextEntries, {}).values,
+      );
+
+      // A customized call gets a factory defined from its own values.
+      function select(options: Record<string, unknown>) {
+        const { isCustomized, rest, values } = resolveComposableContext(
+          contextEntries,
+          options,
+        );
+
+        return {
+          factory: isCustomized ? createFactory(values) : base,
+          rest,
+        };
+      }
+
+      const contextual = (definition: unknown) => {
+        if (typeof definition === 'function') {
+          return base(definition as never);
+        }
+
+        const { factory, rest } = select(definition as Record<string, unknown>);
+
+        return factory(rest as never);
+      };
+
+      Object.defineProperty(contextual, 'props', {
+        enumerable: true,
+        value: base.props,
+      });
+      Object.defineProperty(contextual, 'extend', {
+        value: (customization: Record<string, unknown>) => {
+          const { factory, rest } = select(customization);
+
+          return factory.extend(rest);
+        },
+      });
+
+      return contextual as unknown as DefinedComposableComponentFactory<
+        Name,
+        NormalizeComposableProps<Definitions>,
+        Wrapper,
+        ComposableContextValues<Values>
+      >;
+    },
+  };
+}
+
+defineComposableComponent.defineContext = defineContext;
 
 export type MakeComposableOptions<
   Composables extends ComposableComponents,

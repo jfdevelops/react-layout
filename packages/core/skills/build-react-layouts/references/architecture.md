@@ -133,6 +133,14 @@ Reject with `throw error('Expected text')`, which creates a
 `PropValidatorError`. Use `createPropValidator(fn)` to share one validator between props and
 composables, and `.optional()` on its result for a prop that may be left out.
 
+To let callers change something a definition depends on, use the builder:
+`defineComposableComponent.defineContext({ tones: { value: defaults } }).handler(({ tones }) => ({ name, props }))`.
+Each context entry needs a default `value`; its optional `handler` receives
+`{ value, supplied }` and returns the value to use. A caller passes a value
+or a function of the default beside the other options:
+`createNotice({ tones: (defaults) => [...defaults, 'loud'], render })`.
+The prop types come from the declared value type, not from the caller's value.
+
 ## Persist the application shell across navigation
 
 Plain `defineResourceLayout` wraps every page in its own `createResourceLayout`
