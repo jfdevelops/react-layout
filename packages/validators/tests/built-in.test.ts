@@ -78,6 +78,46 @@ describe('built-in validators', () => {
     });
   });
 
+  it('accepts a value that matches any member of a union', () => {
+    const label = builtIn.union(
+      builtIn.string,
+      builtIn.object({
+        value: builtIn.string,
+      }),
+    );
+
+    expectTypeOf(label).toEqualTypeOf<
+      PropValidatorSchema<
+        | string
+        | {
+            value: string;
+          }
+      >
+    >();
+    expect(issuesOf(label, 'Users')).toEqual([]);
+    expect(
+      issuesOf(label, {
+        value: 'Users',
+      }),
+    ).toEqual([]);
+    expect(issuesOf(label, 1)).toEqual([
+      {
+        message: 'Expected a string or an object',
+        path: undefined,
+      },
+    ]);
+    expect(
+      issuesOf(label, {
+        value: 1,
+      }),
+    ).toEqual([
+      {
+        message: 'Expected a string',
+        path: ['value'],
+      },
+    ]);
+  });
+
   it('validates arrays, tuples and records with item paths', () => {
     const names = builtIn.array(builtIn.string);
     const pair = builtIn.tuple(builtIn.string, builtIn.number);
