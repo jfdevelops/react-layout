@@ -118,6 +118,40 @@ describe('built-in validators', () => {
     ]);
   });
 
+  it.each([
+    {
+      schema: builtIn.record(builtIn.string),
+      input: JSON.parse('{"__proto__":"Home","users":"Users"}'),
+    },
+    {
+      schema: builtIn.record(
+        builtIn.object({
+          value: builtIn.string,
+        }),
+      ),
+      input: JSON.parse(
+        '{"__proto__":{"value":"Home"},"users":{"value":"Users"}}',
+      ),
+    },
+  ])(
+    'preserves own record keys without changing its prototype',
+    async ({ schema, input }) => {
+      const result = await schema['~standard'].validate(input);
+
+      expect(result).toEqual({
+        value: input,
+      });
+
+      if (result.issues) {
+        throw new Error('Expected the record to validate');
+      }
+
+      expect(Object.hasOwn(result.value, '__proto__')).toBe(true);
+      expect(Object.keys(result.value)).toEqual(['__proto__', 'users']);
+      expect(Object.getPrototypeOf(result.value)).toBe(Object.prototype);
+    },
+  );
+
   it('validates arrays, tuples and records with item paths', () => {
     const names = builtIn.array(builtIn.string);
     const pair = builtIn.tuple(builtIn.string, builtIn.number);
