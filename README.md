@@ -508,6 +508,17 @@ type NavigationItems = typeof createNavigationComposable.Navigation.infer.items;
 createNavigationComposable.Navigation.props.items['~standard'].validate(value);
 ```
 
+`getSchema` returns the definition at a path, starting with the composable's
+name. Inside a definition made of built-in validators the path goes deeper:
+an object key is a segment, `[string]` is any key of a record and `[number]`
+any item of an array. The editor lists every path, and the result is typed:
+
+```ts
+const href = createNavigationComposable.getSchema(
+  'Navigation.items.[string].href',
+); // StandardSchemaV1<unknown, string | undefined>
+```
+
 A prop of `defineComposableComponent` is a Standard Schema or a validator
 function, so a composable needs no schema library. The function receives the
 supplied value as `unknown`, returns the validated value, and throws to reject

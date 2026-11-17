@@ -2,7 +2,7 @@ import type { StandardSchemaV1 } from '@standard-schema/spec';
 
 import { literal, object, string } from './built-in';
 import { validatorErrorFactory } from './errors';
-import { getSchemaStructure } from './schema';
+import { getSchemaStructure, type InferableSchema } from './schema';
 
 /** The path segment for any key of a record. */
 export type RecordSegment = '[string]';
@@ -149,7 +149,7 @@ function getChildSchema(
 export function getSchemaAtPath<Value, const Path extends SchemaPath<Value>>(
   schema: StandardSchemaV1<unknown, Value>,
   path: Path,
-): StandardSchemaV1<unknown, SchemaPathValue<Value, Path>>;
+): InferableSchema<SchemaPathValue<Value, Path>>;
 
 export function getSchemaAtPath(
   schema: StandardSchemaV1,

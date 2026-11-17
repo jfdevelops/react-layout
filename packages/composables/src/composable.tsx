@@ -13,8 +13,13 @@ import {
   InvalidPropRenameError,
 } from './errors';
 import {
+  getSchemaAtPath,
+  InvalidSchemaPathError,
   type NormalizePropDefinitions,
   PropDefinition,
+  type PropValidatorSchema,
+  type SchemaPath,
+  type SchemaPathValue,
   type PropValidationContext,
   type PropValidator,
   ResolveProps,
@@ -738,6 +743,37 @@ export type ComposableDefinition<Props extends InPropsObject> = {
   readonly infer: Show<ResolveProps<Props>>;
 };
 
+/**
+ * A path to one of a defined composable's prop definitions,
+ * `${Name}.${prop}`, or deeper into a built-in definition, such as
+ * `Actions.actions.[string].href`. See {@link SchemaPath} for the segments.
+ */
+export type ComposableSchemaPath<
+  Name extends string,
+  Props extends InPropsObject,
+> = {
+  [Key in keyof Props & string]:
+    | `${Name}.${Key}`
+    | (Props[Key] extends PropValidatorSchema<infer Value>
+        ? `${Name}.${Key}.${SchemaPath<Value>}`
+        : never);
+}[keyof Props & string];
+
+/** The definition {@link ComposableSchemaPath} `Path` leads to. */
+export type ComposableSchemaAtPath<
+  Name extends string,
+  Props extends InPropsObject,
+  Path extends string,
+> = Path extends `${Name}.${infer Rest}`
+  ? Rest extends keyof Props
+    ? Props[Rest]
+    : Rest extends `${infer Key}.${infer Deep}`
+      ? Props[Key] extends PropValidatorSchema<infer Value>
+        ? StandardSchemaV1<unknown, SchemaPathValue<Value, Deep>>
+        : never
+      : never
+  : never;
+
 export type DefinedComposableComponentFactory<
   Name extends string,
   Props extends InPropsObject,
@@ -782,6 +818,15 @@ export type DefinedComposableComponentFactory<
   (
     render: (props: Show<WithChildren<ResolveProps<Props>>>) => ReactNode,
   ): DefinedComposableComponentRecord<Name, Props, Wrapper>;
+  /**
+   * The definition at `path`: `Actions.actions` for a prop, or deeper into
+   * a built-in definition, such as `Actions.actions.[string].href`. `[string]`
+   * is any key of a record and `[number]` any item of an array. The
+   * definition validates a value on its own.
+   */
+  getSchema<const Path extends ComposableSchemaPath<Name, Props>>(
+    path: Path,
+  ): ComposableSchemaAtPath<Name, Props, Path>;
   /**
    * Derive a factory with its own name, props, or wrapper. The original
    * factory is unchanged.
@@ -914,6 +959,43 @@ export function defineComposableComponent<
   // from this factory shares them.
   const props = normalizeComposableProps(options.props ?? {}) as Props;
 
+  function getSchema(path: string) {
+    const [composable, prop = '', ...rest] = path.split('.');
+
+    if (composable !== name || !Object.hasOwn(props, prop)) {
+      throw new InvalidSchemaPathError({
+        path,
+        segment: composable === name ? prop : (composable ?? ''),
+        reason: 'unknown',
+      });
+    }
+
+    const definition = props[prop] as StandardSchemaV1;
+
+    if (rest.length === 0) {
+      return definition;
+    }
+
+    try {
+      return getSchemaAtPath(definition, rest.join('.') as never);
+    } catch (error) {
+      if (!(error instanceof InvalidSchemaPathError)) {
+        throw error;
+      }
+
+      // Reports the whole path rather than the part inside the prop.
+      throw new InvalidSchemaPathError(
+        {
+          ...error.context,
+          path,
+        },
+        {
+          cause: error,
+        },
+      );
+    }
+  }
+
   function extend(customization: {
     name?: string;
     rename?: Record<string, PropRename | undefined>;
@@ -1041,6 +1123,9 @@ export function defineComposableComponent<
   });
   Object.defineProperty(factory, 'extend', {
     value: extend,
+  });
+  Object.defineProperty(factory, 'getSchema', {
+    value: getSchema,
   });
   // `infer` is left out: it only carries types.
   Object.defineProperty(factory, name, {
@@ -1172,6 +1257,10 @@ function defineContext<Values extends Record<string, unknown>>(
       });
       Object.defineProperty(contextual, name, {
         value: base[name],
+      });
+      // Paths lead into the definitions made from the default values.
+      Object.defineProperty(contextual, 'getSchema', {
+        value: base.getSchema,
       });
       Object.defineProperty(contextual, 'extend', {
         value: (customization: Record<string, unknown>) => {

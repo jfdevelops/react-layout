@@ -25,6 +25,8 @@ export type {
   CreateLayoutComposable,
   ConflictingPresetPropContext,
   ComposableDefinition,
+  ComposableSchemaAtPath,
+  ComposableSchemaPath,
   DefinedComposableComponentFactory,
   DefinedComposableComponentRecord,
   InvalidPropRenameContext,
@@ -165,6 +167,8 @@ export {
   isComponentSlot,
   isStandardSchema,
   PropError,
+  getSchemaAtPath,
+  InvalidSchemaPathError,
   PropValidatorError,
   resolvePropDefinitionValues,
   validateProps,
@@ -177,7 +181,10 @@ export type {
   PropValidator,
   PropValidatorContext,
   PropValidatorErrorHelper,
+  InvalidSchemaPathContext,
   PropValidatorSchema,
+  SchemaPath,
+  SchemaPathValue,
   ResolveProps,
 } from '@jfdevelops/react-layout-validator';
 export type {

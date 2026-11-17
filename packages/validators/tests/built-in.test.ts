@@ -60,6 +60,14 @@ describe('built-in validators', () => {
     ]);
   });
 
+  it('reads its value type as infer, which is undefined at runtime', () => {
+    const tags = builtIn.array(builtIn.string).optional();
+
+    expectTypeOf<typeof tags.infer>().toEqualTypeOf<string[] | undefined>();
+    expect(tags.infer).toBeUndefined();
+    expect('infer' in tags).toBe(false);
+  });
+
   it('validates the empty slots of a sparse array', () => {
     const sparse: unknown[] = ['a'];
 

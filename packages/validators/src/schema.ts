@@ -1,10 +1,27 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 
+/**
+ * A schema whose output type reads as `typeof schema.infer`, for a type
+ * taken from a definition instead of written twice.
+ */
+export type InferableSchema<Value> = StandardSchemaV1<unknown, Value> & {
+  /**
+   * Types only; `undefined` at runtime. The type of a value the schema
+   * accepts.
+   */
+  readonly infer: Value;
+};
+
 /** The prop definition created from a custom validator. */
 export interface PropValidatorSchema<Value> extends StandardSchemaV1<
   Value,
   Value
 > {
+  /**
+   * Types only; `undefined` at runtime. The type of a value the schema
+   * accepts: `type Text = typeof text.infer`.
+   */
+  readonly infer: Value;
   /**
    * The same validator for a prop that may be left out. Every call returns
    * the same definition.
@@ -100,7 +117,8 @@ export function createSchema<Value>(
 ): PropValidatorSchema<Value> {
   let optionalSchema: PropValidatorSchema<Value | undefined> | undefined;
 
-  const schema: PropValidatorSchema<Value> = {
+  // `infer` is left out: it only carries a type.
+  const schema = {
     '~standard': {
       version: 1,
       vendor: 'react-layout',
@@ -117,7 +135,7 @@ export function createSchema<Value>(
 
       return optionalSchema;
     },
-  };
+  } as PropValidatorSchema<Value>;
 
   if (structure) {
     schemaStructures.set(schema, structure);

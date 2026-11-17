@@ -143,7 +143,10 @@ A factory holds its definition under the composable's name. Infer a prop's
 type from it instead of declaring it by hand:
 `typeof createActionsComposable.Actions.infer.actions` (`infer` is
 type-only and `undefined` at runtime). `createActionsComposable.Actions.props`
-are the prop definitions, each usable as a validator.
+are the prop definitions, each usable as a validator. To reuse one nested
+definition, use `createActionsComposable.getSchema('Actions.actions.[string].href')`:
+the path starts with the composable's name and goes into built-in validators
+(`[string]` for record keys, `[number]` for array items).
 
 A prop of `defineComposableComponent` is a Standard Schema or a validator
 function: `({ value, error }) => value`. The function receives the supplied

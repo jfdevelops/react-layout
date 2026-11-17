@@ -3,6 +3,7 @@ import { z } from 'zod';
 import {
   builtIn,
   getSchemaAtPath,
+  type InferableSchema,
   InvalidSchemaPathError,
   type SchemaPath,
   type StandardSchemaV1,
@@ -73,11 +74,10 @@ describe('getSchemaAtPath', () => {
     const color = getSchemaAtPath(page, 'tags.[number].color');
     const width = getSchemaAtPath(page, 'size.0');
 
-    expectTypeOf(title).toEqualTypeOf<StandardSchemaV1<unknown, string>>();
-    expectTypeOf(color).toEqualTypeOf<
-      StandardSchemaV1<unknown, string | undefined>
-    >();
-    expectTypeOf(width).toEqualTypeOf<StandardSchemaV1<unknown, number>>();
+    expectTypeOf(title).toEqualTypeOf<InferableSchema<string>>();
+    expectTypeOf(color).toEqualTypeOf<InferableSchema<string | undefined>>();
+    expectTypeOf<typeof color.infer>().toEqualTypeOf<string | undefined>();
+    expectTypeOf(width).toEqualTypeOf<InferableSchema<number>>();
     expect(title).toBe(builtIn.string);
     expect(label).toBe(builtIn.string);
     expect(color).toBe(builtIn.string.optional());
@@ -88,7 +88,7 @@ describe('getSchemaAtPath', () => {
   it('follows the union member and the optional schema a segment leads into', () => {
     const href = getSchemaAtPath(page, 'links.[string].href');
 
-    expectTypeOf(href).toEqualTypeOf<StandardSchemaV1<unknown, string>>();
+    expectTypeOf(href).toEqualTypeOf<InferableSchema<string>>();
     expect(href).toBe(builtIn.string);
     expect(getSchemaAtPath(page, 'meta.author')).toBe(builtIn.string);
   });
