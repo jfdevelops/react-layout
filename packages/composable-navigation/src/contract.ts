@@ -24,9 +24,10 @@ export const createNavigationComposable = defineComposableComponent({
   },
 });
 
+const itemsSchema = createNavigationComposable.getSchema('Navigation.items');
+
 /** Navigation items keyed by a stable id. */
-export type NavigationItems =
-  typeof createNavigationComposable.Navigation.infer.items;
+export type NavigationItems = typeof itemsSchema.infer;
 
 /** One navigation item: its label, or its label with a destination and state. */
 export type NavigationItem = NavigationItems[string];
