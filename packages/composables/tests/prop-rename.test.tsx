@@ -30,6 +30,11 @@ describe('defined composable prop renames', () => {
     },
   });
 
+  it('exposes its prop types under its name only as a type', () => {
+    expect(createList.List).toBeUndefined();
+    expect(Object.keys(createList)).toEqual(['props']);
+  });
+
   it('renames a prop while keeping its definition', () => {
     const { List } = createList({
       rename: {

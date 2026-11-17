@@ -134,3 +134,12 @@ const { Title } = createTitle(({ title, suffix, level }) => {
 <Title title='Title' suffix='!' level={1} label='Frame' />;
 // @ts-expect-error The derived factory keeps the renamed prop required.
 <Title suffix='!' level={1} label='Frame' />;
+
+// A factory's name reads its prop value types; extending renames it.
+expectTypeOf<typeof createLabel.Label.props>().toEqualTypeOf<{
+  value: string;
+  suffix: string;
+}>();
+expectTypeOf<typeof createTitle.Title.props.level>().toEqualTypeOf<number>();
+// @ts-expect-error The derived factory is read under its own name.
+createTitle.Label;

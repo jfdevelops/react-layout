@@ -720,12 +720,30 @@ type CustomizeComposableOptions<
   wrapWith?: CustomWrapper;
 };
 
+/**
+ * The types of a defined composable, read with `typeof`:
+ * `typeof createActionsComposable.Actions.props.actions`. The property is
+ * `undefined` at runtime.
+ */
+export type ComposableTypes<Props extends InPropsObject> = {
+  /**
+   * The value type of each prop, as the render callback receives it.
+   */
+  props: Show<ResolveProps<Props>>;
+};
+
 export type DefinedComposableComponentFactory<
   Name extends string,
   Props extends InPropsObject,
   Wrapper = undefined,
   Context = {},
 > = {
+  /**
+   * Types only; `undefined` at runtime. Read a prop's value type with
+   * `typeof factory.Name.props.prop`.
+   */
+  readonly [Key in Name]: ComposableTypes<Props>;
+} & {
   props: Props;
   /**
    * Customize this instance without changing the factory's defaults.

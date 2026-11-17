@@ -497,6 +497,14 @@ Presets in one layout that declare the same prop receive the same page value,
 so they must share one definition. Two different definitions for one prop throw
 `ConflictingPresetPropError` when the layout is created.
 
+A factory also carries its prop types under its name, so a type can come from
+the definition instead of being written twice. The property exists only in
+types and is `undefined` at runtime:
+
+```ts
+type NavigationItems = typeof createNavigationComposable.Navigation.props.items;
+```
+
 A prop of `defineComposableComponent` is a Standard Schema or a validator
 function, so a composable needs no schema library. The function receives the
 supplied value as `unknown`, returns the validated value, and throws to reject
