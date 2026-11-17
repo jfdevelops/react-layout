@@ -38,7 +38,7 @@ describe('createBreadcrumbComposable', () => {
       Breadcrumb[composablePresetMetaKey].props.segments['~standard'].vendor,
     ).toBe('zod');
     expect(createBreadcrumbComposable.props.segments['~standard'].vendor).toBe(
-      'arktype',
+      'react-layout',
     );
   });
 

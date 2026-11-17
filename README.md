@@ -464,11 +464,70 @@ const Callable = definition.createResourceLayout({
 
 In namespace mode, component metadata and `makeComposable` remain available on `Root`. The state name `Root` is reserved only when namespace mode is enabled.
 
+## Preset composables
+
+Preset composables ship their props, so a page supplies the values and your
+render callback supplies the markup. Each package exports its presets from the
+root and the contract they are built from under `/contract`.
+
+| Package                                          | Presets              |
+| ------------------------------------------------ | -------------------- |
+| [`composable-navigation`](./packages/composable-navigation) | `Breadcrumb`, `Tabs` |
+| [`composable-copy`](./packages/composable-copy)   | `Header`, `Meta`     |
+| [`composable-actions`](./packages/composable-actions) | `Actions`        |
+| [`composable-access`](./packages/composable-access) | `Access`           |
+
+Every factory created by `defineComposableComponent` accepts `rename` to give a
+default prop a new name, or a new name and definition, and has `extend` to
+derive another factory:
+
+```tsx
+const createStepsComposable = createNavigationComposable.extend({
+  name: 'Steps',
+  rename: { items: 'steps' },
+});
+
+createHeaderComposable({
+  rename: { title: { name: 'heading', schema: reactNode() } },
+  render: ({ heading }) => <h1>{heading}</h1>,
+});
+```
+
+Presets in one layout that declare the same prop receive the same page value,
+so they must share one definition. Two different definitions for one prop throw
+`ConflictingPresetPropError` when the layout is created.
+
+A prop of `defineComposableComponent` is a Standard Schema or a validator
+function, so a composable needs no schema library. The function receives the
+supplied value as `unknown`, returns the validated value, and throws to reject
+it; its return type is the prop type. Reject a value with
+`throw error('Expected text')`, which creates a `PropValidatorError`. `createPropValidator` makes a validator reusable:
+
+```tsx
+const text = createPropValidator(({ value, error }) => {
+  if (typeof value !== 'string') {
+    throw error('Expected text');
+  }
+
+  return value;
+});
+
+const createNoticeComposable = defineComposableComponent({
+  name: 'Notice',
+  props: {
+    title: text,
+    description: text.optional(),
+    isDismissible: ({ value }) => value === true,
+  },
+});
+```
+
 ## Workspace
 
 | Path                     | Description                                        |
 | ------------------------ | -------------------------------------------------- |
 | `packages/core`          | `@jfdevelops/react-layout` — the published library |
+| `packages/composable-*`  | Preset composables that ship their own props       |
 | `examples/basic-example` | Demo app showing resource layouts in action        |
 
 ## Development

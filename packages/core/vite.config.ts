@@ -49,6 +49,14 @@ export default defineConfig({
         __dirname,
         '../validators/src/index.ts',
       ),
+      '@jfdevelops/react-layout-composable-navigation': path.resolve(
+        __dirname,
+        '../composable-navigation/src/index.ts',
+      ),
+      '@jfdevelops/react-layout-composable-copy': path.resolve(
+        __dirname,
+        '../composable-copy/src/index.ts',
+      ),
       '@jfdevelops/react-layout-composables': path.resolve(
         __dirname,
         '../composables/src/index.ts',

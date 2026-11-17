@@ -15,7 +15,10 @@ import {
   type ResolveInputProps,
   type ResolveInputPropsAsDefined,
 } from '@jfdevelops/react-layout-validator';
-import type { WithChildren } from '@jfdevelops/react-layout-composables';
+import type {
+  CustomPropsObject,
+  WithChildren,
+} from '@jfdevelops/react-layout-composables';
 import { LayoutConfigurationError } from './errors';
 import { capitalize } from '@jfdevelops/react-layout-internals';
 
@@ -34,21 +37,12 @@ export function validateCustomProps<Props extends object>(
   return validateProps(suppliedDefinitions, props, context);
 }
 
-export type ChildrenRequirement = 'required';
-export type CustomPropsObject = Record<
-  string,
-  PropDefinition | ChildrenRequirement
-> & {
-  /** Optional React content by default; an explicit schema replaces that default. */
-  children?: PropDefinition | ChildrenRequirement;
-};
-
-/** String requirements are reserved for the built-in children slot. */
-export type CustomPropsInput<Props extends CustomPropsObject> = {
-  [Key in keyof Props]: Key extends 'children'
-    ? Props[Key]
-    : Extract<Props[Key], PropDefinition>;
-};
+// One definition of the custom props object, shared with defined composables.
+export type {
+  ChildrenRequirement,
+  CustomPropsInput,
+  CustomPropsObject,
+} from '@jfdevelops/react-layout-composables';
 
 export type NormalizedCustomProps<Props extends CustomPropsObject> = {
   [Key in keyof Props]: Props[Key] extends PropDefinition

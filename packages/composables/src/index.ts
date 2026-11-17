@@ -14,6 +14,9 @@ export type {
   ComposableComponent,
   ComposableComponentCallable,
   ComposableComponents,
+  ComposableContextEntry,
+  ComposableContextOptions,
+  ComposableContextValues,
   ComposableNameContext,
   ComposablePresetComponent,
   ComposablePresetComponentCallProps,
@@ -21,21 +24,56 @@ export type {
   ComposablePresetProps,
   ComposableResourceLayout,
   CreateLayoutComposable,
+  DefinedComposableComponentFactory,
   DefinedComposableComponentRecord,
   LayoutComposablesFactory,
   MakeComposable,
   MakeComposableOptions,
   MergePresetProps,
   PresetPropsFromComposable,
+  PropRename,
+  PropRenames,
+  RenameProps,
   RequiredPresetLayoutProps,
   RequiredPresetRenderProps,
   ResolveLayoutComposables,
 } from './composable';
 export type { InPropsObject, WithChildren } from './types';
 export type {
+  ChildrenRequirement,
+  ComposablePropDefinition,
+  ComposableProps,
+  ComposablePropsInput,
+  CustomPropsInput,
+  CustomPropsObject,
+  NormalizeComposableProps,
+  RequiredChildren,
+} from './custom-props';
+export {
+  builtIn,
+  createPropValidator,
+  PropValidatorError,
+} from '@jfdevelops/react-layout-validator';
+export type {
+  PropValidator,
+  PropValidatorContext,
+  PropValidatorErrorHelper,
+  PropValidatorSchema,
+} from '@jfdevelops/react-layout-validator';
+export type {
   BaseComponent,
   Show,
   ShowCallable,
   UnionToIntersection,
 } from '@jfdevelops/react-layout-internals';
-export { EmptyComponentsError, InvalidComponentsError } from './errors';
+export {
+  ConflictingPresetPropError,
+  EmptyComponentsError,
+  InvalidComponentsError,
+  InvalidComposablePropsError,
+  InvalidPropRenameError,
+} from './errors';
+export type {
+  ConflictingPresetPropContext,
+  InvalidPropRenameContext,
+} from './errors';

@@ -541,16 +541,18 @@ it('labels schemas by vendor in inspection details without running them', async 
 });
 
 it('counts actual composable instances and excludes unrendered declarations', () => {
+  // Presets sharing a prop must share its definition.
+  const label = z.string().optional();
   const Item = defineComposableComponent({
     name: 'Item',
     props: {
-      label: z.string().optional(),
+      label,
     },
   })(({ label }) => <span>{label}</span>);
   const Hidden = defineComposableComponent({
     name: 'Hidden',
     props: {
-      label: z.string().optional(),
+      label,
     },
   })(({ label }) => <span>{label}</span>);
   const factory = createDefinedResourceLayout({

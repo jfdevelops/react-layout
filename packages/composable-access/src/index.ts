@@ -1,0 +1,1 @@
+export { createAccessComposable } from './contract';

@@ -37,18 +37,26 @@ export function validateProps<T extends object>(
         throw error;
       }
       const path = error.path === 'value' ? key : `${key}.${error.path}`;
-      throw new PropError({
-        layoutName: context?.layoutName,
-        resource: context?.resource,
-        path,
-        received: error.received,
-        expected: error.expected,
-        message: `Invalid prop "${path}": ${error.message}`,
-        issues: error.issues?.map((issue) => ({
-          ...issue,
-          path: [key, ...(issue.path ?? [])],
-        })),
-      });
+      throw new PropError(
+        {
+          layoutName: context?.layoutName,
+          resource: context?.resource,
+          path,
+          received: error.received,
+          expected: error.expected,
+          message: `Invalid prop "${path}": ${error.message}`,
+          issues: error.issues?.map((issue) => ({
+            ...issue,
+            path: [key, ...(issue.path ?? [])],
+          })),
+        },
+        // Keeps the error a validator function threw.
+        error.cause === undefined
+          ? undefined
+          : {
+              cause: error.cause,
+            },
+      );
     }
   }
 

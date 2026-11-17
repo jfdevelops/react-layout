@@ -111,7 +111,7 @@ Merge optional preset composables into the same semantic map:
 ```tsx
 import {
   createBreadcrumbComposable,
-} from '@jfdevelops/react-layout-composable-breadcrumb';
+} from '@jfdevelops/react-layout-composable-navigation';
 
 composables: (create) => ({
   Layout: create({ name: 'Layout', wrapWith: AppLayout }),
@@ -124,6 +124,38 @@ composables: (create) => ({
 Include the preset's required values in `layout.props.include`. Keep
 presentation in the preset renderer and segment definitions in resource page
 configuration.
+
+Preset packages group composables by the contract they share:
+
+| Package                                         | Presets              |
+| ----------------------------------------------- | -------------------- |
+| `@jfdevelops/react-layout-composable-navigation` | `Breadcrumb`, `Tabs` |
+| `@jfdevelops/react-layout-composable-copy`       | `Header`, `Meta`     |
+| `@jfdevelops/react-layout-composable-actions`    | `Actions`            |
+| `@jfdevelops/react-layout-composable-access`     | `Access`             |
+
+Each package exports its contract from `/contract`. Derive another preset with
+`contract.extend({ name, rename, props })` rather than redefining the schema.
+Presets that declare the same prop must share its definition; give one of them
+its own name with `rename` when their values differ.
+
+A prop of `defineComposableComponent` is a Standard Schema or a validator
+function: `({ value, error }) => value`. The function receives the supplied
+value as `unknown`, returns the validated value, and throws to reject it; the
+message is reported with the prop name. Its return type is the prop type.
+Reject with `throw error('Expected text')`, which creates a
+`PropValidatorError`. Use `createPropValidator(fn)` to share one validator between props and
+composables, and `.optional()` on its result for a prop that may be left out.
+
+To let callers change something a definition depends on, use the builder:
+`defineComposableComponent.defineContext({ tones: { value: defaults } }).handler(({ tones }) => ({ name, props }))`.
+Each context entry needs a default `value`; its optional `handler` receives
+`{ value, supplied }` and returns the value to use. A caller passes a value
+or a function of the default beside the other options:
+`createNotice({ tones: (defaults) => [...defaults, 'loud'], render })`.
+A function passed for a context value is always called with the default, so
+supply a function value by returning it: `format: (defaults) => (text) => …`.
+The prop types come from the declared value type, not from the caller's value.
 
 ## Persist the application shell across navigation
 

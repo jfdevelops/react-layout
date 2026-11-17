@@ -35,7 +35,27 @@
       "options": {}
     },
     {
+      "path": "packages/composable-access",
+      "kind": "library",
+      "options": {}
+    },
+    {
+      "path": "packages/composable-actions",
+      "kind": "library",
+      "options": {}
+    },
+    {
       "path": "packages/composable-breadcrumb",
+      "kind": "library",
+      "options": {}
+    },
+    {
+      "path": "packages/composable-copy",
+      "kind": "library",
+      "options": {}
+    },
+    {
+      "path": "packages/composable-navigation",
       "kind": "library",
       "options": {}
     },
@@ -100,7 +120,23 @@
       "options": {}
     },
     {
+      "name": "@jfdevelops/react-layout-composable-access",
+      "options": {}
+    },
+    {
+      "name": "@jfdevelops/react-layout-composable-actions",
+      "options": {}
+    },
+    {
       "name": "@jfdevelops/react-layout-composable-breadcrumb",
+      "options": {}
+    },
+    {
+      "name": "@jfdevelops/react-layout-composable-copy",
+      "options": {}
+    },
+    {
+      "name": "@jfdevelops/react-layout-composable-navigation",
       "options": {}
     },
     {

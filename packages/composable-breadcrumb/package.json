@@ -34,9 +34,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@jfdevelops/react-layout-composables": "workspace:*",
-    "@jfdevelops/react-layout-validator": "workspace:*",
-    "arktype": "2.2.8"
+    "@jfdevelops/react-layout-composable-navigation": "workspace:*",
+    "@jfdevelops/react-layout-composables": "workspace:*"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "6.9.1",

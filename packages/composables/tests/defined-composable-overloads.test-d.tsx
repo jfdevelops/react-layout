@@ -86,3 +86,51 @@ const { Empty } = empty({
 <Empty count={1} />;
 // @ts-expect-error Added props are required.
 <Empty />;
+
+const renamedProp = createLabel({
+  rename: {
+    value: 'heading',
+    suffix: {
+      name: 'count',
+      schema: z.number(),
+    },
+  },
+  render: ({ heading, count }) => {
+    expectTypeOf(heading).toEqualTypeOf<string>();
+    expectTypeOf(count).toEqualTypeOf<number>();
+
+    return heading + count;
+  },
+});
+<renamedProp.Label heading='Heading' count={1} label='Frame' />;
+// @ts-expect-error The original prop name was replaced.
+<renamedProp.Label value='Heading' count={1} label='Frame' />;
+// @ts-expect-error The replacement definition determines the value type.
+<renamedProp.Label heading='Heading' count='one' label='Frame' />;
+createLabel.extend({
+  rename: {
+    // @ts-expect-error Only declared props can be renamed.
+    missing: 'other',
+  },
+});
+
+const createTitle = createLabel.extend({
+  name: 'Title',
+  rename: {
+    value: 'title',
+  },
+  props: {
+    level: z.number(),
+  },
+});
+expectTypeOf(createTitle.props.title).toEqualTypeOf(createLabel.props.value);
+const { Title } = createTitle(({ title, suffix, level }) => {
+  expectTypeOf(title).toEqualTypeOf<string>();
+  expectTypeOf(suffix).toEqualTypeOf<string>();
+  expectTypeOf(level).toEqualTypeOf<number>();
+
+  return title;
+});
+<Title title='Title' suffix='!' level={1} label='Frame' />;
+// @ts-expect-error The derived factory keeps the renamed prop required.
+<Title suffix='!' level={1} label='Frame' />;
