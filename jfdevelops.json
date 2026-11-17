@@ -35,6 +35,11 @@
       "options": {}
     },
     {
+      "path": "packages/composable-actions",
+      "kind": "library",
+      "options": {}
+    },
+    {
       "path": "packages/composable-breadcrumb",
       "kind": "library",
       "options": {}
@@ -107,6 +112,10 @@
     },
     {
       "name": "@jfdevelops/react-layout-adapters",
+      "options": {}
+    },
+    {
+      "name": "@jfdevelops/react-layout-composable-actions",
       "options": {}
     },
     {
