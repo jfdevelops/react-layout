@@ -80,6 +80,9 @@ jobs:
       - name: Check formatting
         run: pnpm format:check
 
+      - name: Test release retries
+        run: pnpm test:release
+
       - name: Typecheck library
         run: pnpm typecheck
 
@@ -91,6 +94,9 @@ jobs:
 
       - name: Check member docs in built declarations
         run: pnpm check:declarations
+
+      - name: Verify package archives
+        run: pnpm -r --filter "@jfdevelops/*" pack --pack-destination "${{ runner.temp }}/react-layout-packs"
 
       - name: Verify published factory types on TypeScript 5.9 and 6
         run: pnpm --filter @jfdevelops/react-layout test:types:published
