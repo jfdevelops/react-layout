@@ -34,7 +34,9 @@ createActionsComposable({
 });
 ```
 
-An action with any other intent is rejected with `InvalidIntentError`.
+An action with any other intent is rejected: the `PropError` that reports
+the `actions` prop has an `InvalidIntentError` as its `cause`, with the action,
+the intent and the allowed intents in its `context`.
 `intents` sits beside `rename`, `name` and the other options, and `extend`
 accepts it too.
 

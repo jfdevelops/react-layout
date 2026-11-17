@@ -32,6 +32,13 @@ export class EmptyComponentsError extends composableErrorFactory({
   .defineContext(builtIn.string)
   .implement((message) => message) {}
 
+/** Thrown when a defined composable's props are declared incorrectly. */
+export class InvalidComposablePropsError extends composableErrorFactory({
+  code: 'invalidComposableProps',
+})
+  .defineContext(builtIn.string)
+  .implement((message) => message) {}
+
 const propRenameContext = builtIn.object({
   composable: builtIn.string,
   prop: builtIn.string,

@@ -70,6 +70,7 @@ export {
   ConflictingPresetPropError,
   EmptyComponentsError,
   InvalidComponentsError,
+  InvalidComposablePropsError,
   InvalidPropRenameError,
 } from './errors';
 export type {

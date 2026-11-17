@@ -107,12 +107,11 @@ const renamedProp = createLabel({
 <renamedProp.Label value='Heading' count={1} label='Frame' />;
 // @ts-expect-error The replacement definition determines the value type.
 <renamedProp.Label heading='Heading' count='one' label='Frame' />;
-// @ts-expect-error Only declared props can be renamed.
-createLabel({
+createLabel.extend({
   rename: {
+    // @ts-expect-error Only declared props can be renamed.
     missing: 'other',
   },
-  render: () => null,
 });
 
 const createTitle = createLabel.extend({

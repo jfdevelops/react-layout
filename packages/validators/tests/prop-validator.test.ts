@@ -110,6 +110,52 @@ describe('createPropValidator', () => {
     expect(error.message).toBe('Invalid prop "title": Expected text');
   });
 
+  it('keeps the thrown error as the cause of the prop error', () => {
+    class OutOfRangeError extends Error {}
+
+    const thrown = new OutOfRangeError('Expected a percentage');
+    const error = capturePropError(() =>
+      validateProps(
+        {
+          title: text,
+          progress: createPropValidator(() => {
+            throw thrown;
+          }),
+        },
+        {
+          title: 'Users',
+          progress: 101,
+        },
+      ),
+    );
+
+    expect(error.cause).toBe(thrown);
+    expect(
+      capturePropError(() =>
+        validateProps(
+          {
+            title: text,
+          },
+          {
+            title: 1,
+          },
+        ),
+      ).cause,
+    ).toBeInstanceOf(PropValidatorError);
+    expect(
+      capturePropError(() =>
+        validateProps(
+          {
+            title: z.string(),
+          },
+          {
+            title: 1,
+          },
+        ),
+      ).cause,
+    ).toBeUndefined();
+  });
+
   it('reports any thrown error, with a default message when it has none', () => {
     const never = createPropValidator(({ value }) => {
       throw value;

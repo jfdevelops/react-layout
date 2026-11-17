@@ -60,6 +60,24 @@ describe('built-in validators', () => {
     ]);
   });
 
+  it('validates the empty slots of a sparse array', () => {
+    const sparse: unknown[] = ['a'];
+
+    sparse[2] = 'c';
+
+    expect(issuesOf(builtIn.array(builtIn.string), sparse)).toEqual([
+      {
+        message: 'Expected a string',
+        path: [1],
+      },
+    ]);
+    expect(
+      builtIn.array(builtIn.string.optional())['~standard'].validate(sparse),
+    ).toEqual({
+      value: ['a', undefined, 'c'],
+    });
+  });
+
   it('validates arrays, tuples and records with item paths', () => {
     const names = builtIn.array(builtIn.string);
     const pair = builtIn.tuple(builtIn.string, builtIn.number);

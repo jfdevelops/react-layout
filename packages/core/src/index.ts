@@ -4,6 +4,7 @@ export {
   createComposableComponent,
   createLayoutComposableFactory,
   defineComposableComponent,
+  InvalidComposablePropsError,
   InvalidPropRenameError,
   LayoutComposablePresetProvider,
   makeComposable,
