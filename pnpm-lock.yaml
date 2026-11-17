@@ -300,9 +300,6 @@ importers:
       '@jfdevelops/react-layout-validator':
         specifier: workspace:*
         version: link:../validators
-      arktype:
-        specifier: 2.2.8
-        version: 2.2.8
     devDependencies:
       '@jfdevelops/react-layout-adapter-zod':
         specifier: workspace:*

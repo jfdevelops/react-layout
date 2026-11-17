@@ -21,12 +21,16 @@ export type {
   ComposablePresetProps,
   ComposableResourceLayout,
   CreateLayoutComposable,
+  DefinedComposableComponentFactory,
   DefinedComposableComponentRecord,
   LayoutComposablesFactory,
   MakeComposable,
   MakeComposableOptions,
   MergePresetProps,
   PresetPropsFromComposable,
+  PropRename,
+  PropRenames,
+  RenameProps,
   RequiredPresetLayoutProps,
   RequiredPresetRenderProps,
   ResolveLayoutComposables,
@@ -38,4 +42,13 @@ export type {
   ShowCallable,
   UnionToIntersection,
 } from '@jfdevelops/react-layout-internals';
-export { EmptyComponentsError, InvalidComponentsError } from './errors';
+export {
+  ConflictingPresetPropError,
+  EmptyComponentsError,
+  InvalidComponentsError,
+  InvalidPropRenameError,
+} from './errors';
+export type {
+  ConflictingPresetPropContext,
+  InvalidPropRenameContext,
+} from './errors';
