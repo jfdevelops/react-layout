@@ -84,6 +84,26 @@ describe('getSchemaAtPath', () => {
     expect(getSchemaAtPath(page, 'meta.author')).toBe(builtIn.string);
   });
 
+  it('validates every union member at a shared leaf', () => {
+    const schema = builtIn.union(
+      builtIn.object({
+        value: builtIn.string,
+      }),
+      builtIn.object({
+        value: builtIn.number,
+      }),
+    );
+    const value = getSchemaAtPath(schema, 'value');
+
+    expectTypeOf<typeof value.infer>().toEqualTypeOf<string | number>();
+    expect(value['~standard'].validate('hello')).toEqual({
+      value: 'hello',
+    });
+    expect(value['~standard'].validate(42)).toEqual({
+      value: 42,
+    });
+  });
+
   it('follows all union branches that share a segment', () => {
     const schema = builtIn.union(
       builtIn.object({

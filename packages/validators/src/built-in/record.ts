@@ -20,7 +20,12 @@ export function record<Schema extends StandardSchemaV1>(item: Schema) {
         if (result.issues) {
           issues.push(...result.issues);
         } else {
-          entries[key] = result.value;
+          Object.defineProperty(entries, key, {
+            value: result.value,
+            enumerable: true,
+            configurable: true,
+            writable: true,
+          });
         }
       }
 

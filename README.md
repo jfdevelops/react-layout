@@ -523,6 +523,8 @@ hrefSchema['~standard'].validate(value);
 `infer` is a type-only property on built-in validators and on what
 `getSchema` returns; it is `undefined` at runtime. A factory also holds its
 definitions under its name: `createNavigationComposable.Navigation.props`.
+For names that collide with factory methods or native function properties,
+use `factory.props` or `factory.getSchema` instead of the named alias.
 
 Paths stop at external schemas and custom validator functions: Standard Schema
 exposes validation, but not child definitions. These leaves can still be
