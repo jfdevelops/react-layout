@@ -139,6 +139,20 @@ Each package exports its contract from `/contract`. Derive another preset with
 Presets that declare the same prop must share its definition; give one of them
 its own name with `rename` when their values differ.
 
+Infer an exported type from the contract instead of declaring it by hand.
+Get the definition with `getSchema` and read its type from `infer`
+(type-only, `undefined` at runtime):
+
+```ts
+const actionsSchema = createActionsComposable.getSchema('actions');
+
+export type Actions = typeof actionsSchema.infer;
+```
+
+The path starts with a prop name and goes into built-in validators,
+such as `actions.[string].href` (`[string]` for record keys,
+`[number]` for array items). The definition validates a value on its own.
+
 A prop of `defineComposableComponent` is a Standard Schema or a validator
 function: `({ value, error }) => value`. The function receives the supplied
 value as `unknown`, returns the validated value, and throws to reject it; the

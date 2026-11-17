@@ -30,6 +30,22 @@ describe('defined composable prop renames', () => {
     },
   });
 
+  it('exposes its definitions under its name', () => {
+    const createTabs = createList.extend({
+      name: 'Tabs',
+    });
+
+    expect(createList.List.props).toBe(createList.props);
+    expect(createList.List.infer).toBeUndefined();
+    expect(createTabs.Tabs.props.items).toBe(createList.props.items);
+    expect(
+      createList.List.props.items['~standard'].validate(['a']),
+    ).toMatchObject({
+      value: ['a'],
+    });
+    expect(Object.keys(createList)).toEqual(['props']);
+  });
+
   it('renames a prop while keeping its definition', () => {
     const { List } = createList({
       rename: {

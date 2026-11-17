@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
 import type { ReactNode } from 'react';
 import {
   composablePresetMetaKey,
@@ -11,6 +11,72 @@ import { z } from 'zod';
 function Frame({ children, label }: { children?: ReactNode; label: string }) {
   return <section aria-label={label}>{children}</section>;
 }
+
+describe('factory property name collisions', () => {
+  afterEach(cleanup);
+
+  it.each([
+    'props',
+    'extend',
+    'getSchema',
+    'name',
+    'length',
+    'prototype',
+    'arguments',
+    'caller',
+    'constructor',
+    '__proto__',
+    'toString',
+  ] as const)('preserves the factory API for a composable named %s', (name) => {
+    const create = defineComposableComponent({
+      name,
+      props: {
+        value: z.string(),
+      },
+    });
+    const Component = create(({ value }) => <p>{value}</p>)[name];
+
+    render(<Component value='Direct' />);
+    expect(screen.getByText('Direct')).toBeInTheDocument();
+    expect(create.props.value).toBeDefined();
+    expect(
+      create.extend({
+        name: 'Other',
+      }).Other.props,
+    ).toEqual(create.props);
+
+    const renamed = defineComposableComponent({
+      name: 'Original',
+      props: {
+        value: z.string(),
+      },
+    }).extend({
+      name,
+    });
+    const Renamed = renamed(({ value }) => <p>{value}</p>)[name];
+
+    render(<Renamed value='Renamed' />);
+    expect(screen.getByText('Renamed')).toBeInTheDocument();
+
+    const contextual = defineComposableComponent
+      .defineContext({})
+      .handler(() => ({
+        name,
+        props: {
+          value: z.string(),
+        },
+      }));
+    const Contextual = contextual(({ value }) => <p>{value}</p>)[name];
+
+    render(<Contextual value='Contextual' />);
+    expect(screen.getByText('Contextual')).toBeInTheDocument();
+    expect(
+      contextual.extend({
+        name: 'Other',
+      }).Other.props,
+    ).toEqual(contextual.props);
+  });
+});
 
 describe('defined composable factory overloads', () => {
   const createLabel = defineComposableComponent({

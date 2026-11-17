@@ -1,7 +1,7 @@
 import { expectTypeOf } from 'vitest';
 import { createBreadcrumbComposable, createTabsComposable } from '../src';
 import { createNavigationComposable } from '../src/contract';
-import type { NavigationItems } from '../src';
+import type { NavigationItem, NavigationItems } from '../src';
 
 const { Navigation } = createNavigationComposable(({ items }) => {
   expectTypeOf(items).toEqualTypeOf<NavigationItems>();
@@ -52,3 +52,13 @@ const { Tabs } = createTabsComposable(({ tabs }) => {
     },
   }}
 />;
+
+expectTypeOf<NavigationItem>().toEqualTypeOf<
+  | string
+  | {
+      value: string;
+      href?: string | undefined;
+      isActive?: boolean | undefined;
+      isDisabled?: boolean | undefined;
+    }
+>();

@@ -134,3 +134,37 @@ const { Title } = createTitle(({ title, suffix, level }) => {
 <Title title='Title' suffix='!' level={1} label='Frame' />;
 // @ts-expect-error The derived factory keeps the renamed prop required.
 <Title suffix='!' level={1} label='Frame' />;
+
+// A factory's name holds its definitions and their value types; extending
+// renames it.
+expectTypeOf(createLabel.Label.props).toEqualTypeOf(createLabel.props);
+expectTypeOf<typeof createLabel.Label.infer>().toEqualTypeOf<{
+  value: string;
+  suffix: string;
+}>();
+expectTypeOf<typeof createTitle.Title.infer.level>().toEqualTypeOf<number>();
+// @ts-expect-error The derived factory is read under its own name.
+createTitle.Label;
+
+// Colliding names keep the factory API, without intersecting a named alias.
+const createProps = createLabel.extend({
+  name: 'props',
+});
+expectTypeOf(createProps.props.value).toEqualTypeOf(createLabel.props.value);
+// @ts-expect-error `props` is the prop dictionary, not a named definition alias.
+createProps.props.infer;
+const createExtend = createLabel.extend({
+  name: 'extend',
+});
+const { extend: Extend } = createExtend(({ value, suffix }) => value + suffix);
+<Extend value='Label' suffix='!' label='Frame' />;
+createExtend.extend({
+  name: 'Other',
+});
+
+const createGetSchema = createLabel.extend({
+  name: 'getSchema',
+});
+expectTypeOf(createGetSchema.getSchema('value')).toEqualTypeOf(
+  createLabel.props.value,
+);

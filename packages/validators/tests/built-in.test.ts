@@ -60,6 +60,14 @@ describe('built-in validators', () => {
     ]);
   });
 
+  it('reads its value type as infer, which is undefined at runtime', () => {
+    const tags = builtIn.array(builtIn.string).optional();
+
+    expectTypeOf<typeof tags.infer>().toEqualTypeOf<string[] | undefined>();
+    expect(tags.infer).toBeUndefined();
+    expect('infer' in tags).toBe(false);
+  });
+
   it('validates the empty slots of a sparse array', () => {
     const sparse: unknown[] = ['a'];
 
@@ -78,14 +86,88 @@ describe('built-in validators', () => {
     });
   });
 
+  it('accepts a value that matches any member of a union', () => {
+    const label = builtIn.union(
+      builtIn.string,
+      builtIn.object({
+        value: builtIn.string,
+      }),
+    );
+
+    expectTypeOf(label).toExtend<
+      PropValidatorSchema<
+        | string
+        | {
+            value: string;
+          }
+      >
+    >();
+    expect(issuesOf(label, 'Users')).toEqual([]);
+    expect(
+      issuesOf(label, {
+        value: 'Users',
+      }),
+    ).toEqual([]);
+    expect(issuesOf(label, 1)).toEqual([
+      {
+        message: 'Expected a string or an object',
+        path: undefined,
+      },
+    ]);
+    expect(
+      issuesOf(label, {
+        value: 1,
+      }),
+    ).toEqual([
+      {
+        message: 'Expected a string',
+        path: ['value'],
+      },
+    ]);
+  });
+
+  it.each([
+    {
+      schema: builtIn.record(builtIn.string),
+      input: JSON.parse('{"__proto__":"Home","users":"Users"}'),
+    },
+    {
+      schema: builtIn.record(
+        builtIn.object({
+          value: builtIn.string,
+        }),
+      ),
+      input: JSON.parse(
+        '{"__proto__":{"value":"Home"},"users":{"value":"Users"}}',
+      ),
+    },
+  ])(
+    'preserves own record keys without changing its prototype',
+    async ({ schema, input }) => {
+      const result = await schema['~standard'].validate(input);
+
+      expect(result).toEqual({
+        value: input,
+      });
+
+      if (result.issues) {
+        throw new Error('Expected the record to validate');
+      }
+
+      expect(Object.hasOwn(result.value, '__proto__')).toBe(true);
+      expect(Object.keys(result.value)).toEqual(['__proto__', 'users']);
+      expect(Object.getPrototypeOf(result.value)).toBe(Object.prototype);
+    },
+  );
+
   it('validates arrays, tuples and records with item paths', () => {
     const names = builtIn.array(builtIn.string);
     const pair = builtIn.tuple(builtIn.string, builtIn.number);
     const counts = builtIn.record(builtIn.number);
 
-    expectTypeOf(names).toEqualTypeOf<PropValidatorSchema<string[]>>();
-    expectTypeOf(pair).toEqualTypeOf<PropValidatorSchema<[string, number]>>();
-    expectTypeOf(counts).toEqualTypeOf<
+    expectTypeOf(names).toExtend<PropValidatorSchema<string[]>>();
+    expectTypeOf(pair).toExtend<PropValidatorSchema<[string, number]>>();
+    expectTypeOf(counts).toExtend<
       PropValidatorSchema<Record<string, number>>
     >();
     expect(issuesOf(names, ['a', 1])).toEqual([
@@ -122,7 +204,7 @@ describe('built-in validators', () => {
       roles: builtIn.array(builtIn.literal('admin', 'member')),
     });
 
-    expectTypeOf(user).toEqualTypeOf<
+    expectTypeOf(user).toExtend<
       PropValidatorSchema<{
         name: string;
         meta: unknown;

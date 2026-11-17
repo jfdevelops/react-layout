@@ -66,7 +66,7 @@ describe('actions contract', () => {
         } as never),
       ),
     ).toThrow(
-      /Invalid prop "actions": "create" has the intent "loud"; expected primary, destructive/,
+      /Invalid prop "actions.create.intent": Unknown intent "loud"; expected primary, destructive/,
     );
   });
 
@@ -94,7 +94,6 @@ describe('actions contract', () => {
     expect((caught as Error).cause).toMatchObject({
       code: 'invalidIntent',
       context: {
-        action: 'create',
         intent: 'loud',
         intents: ['primary', 'destructive'],
       },
@@ -103,7 +102,6 @@ describe('actions contract', () => {
 
   it('describes an unknown intent with its own error', () => {
     const error = new InvalidIntentError({
-      action: 'create',
       intent: 'loud',
       intents: ['primary'],
     });
@@ -113,18 +111,16 @@ describe('actions contract', () => {
       name: 'InvalidIntentError',
       code: 'invalidIntent',
       context: {
-        action: 'create',
         intent: 'loud',
         intents: ['primary'],
       },
     });
     expect(() =>
       InvalidIntentError.invariant(false, {
-        action: 'archive',
         intent: 1,
         intents: ['primary'],
       }),
-    ).toThrow(/"archive" has the intent 1/);
+    ).toThrow(/Unknown intent 1/);
   });
 
   it('uses the intents chosen where the composable is created', () => {
@@ -162,7 +158,7 @@ describe('actions contract', () => {
         } as never),
       ),
     ).toThrow(
-      /"archive" has the intent "destructive"; expected primary, ghost/,
+      /"actions.archive.intent": Unknown intent "destructive"; expected primary, ghost/,
     );
   });
 

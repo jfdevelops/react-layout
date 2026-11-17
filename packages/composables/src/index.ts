@@ -17,6 +17,9 @@ export type {
   ComposableContextEntry,
   ComposableContextOptions,
   ComposableContextValues,
+  ComposableDefinition,
+  ComposableSchemaAtPath,
+  ComposableSchemaPath,
   ComposableNameContext,
   ComposablePresetComponent,
   ComposablePresetComponentCallProps,
@@ -52,13 +55,19 @@ export type {
 export {
   builtIn,
   createPropValidator,
+  getSchemaAtPath,
+  InvalidSchemaPathError,
   PropValidatorError,
 } from '@jfdevelops/react-layout-validator';
 export type {
   PropValidator,
   PropValidatorContext,
   PropValidatorErrorHelper,
+  InferableSchema,
+  InvalidSchemaPathContext,
   PropValidatorSchema,
+  SchemaPath,
+  SchemaPathValue,
 } from '@jfdevelops/react-layout-validator';
 export type {
   BaseComponent,

@@ -13,8 +13,13 @@ import {
   InvalidPropRenameError,
 } from './errors';
 import {
+  getSchemaAtPath,
+  type InferableSchema,
+  InvalidSchemaPathError,
   type NormalizePropDefinitions,
   PropDefinition,
+  type SchemaPath,
+  type SchemaPathValue,
   type PropValidationContext,
   type PropValidator,
   ResolveProps,
@@ -720,12 +725,85 @@ type CustomizeComposableOptions<
   wrapWith?: CustomWrapper;
 };
 
+/**
+ * A defined composable's definition, under its name on the factory:
+ * `createActionsComposable.Actions`.
+ */
+export type ComposableDefinition<Props extends InPropsObject> = {
+  /**
+   * The prop definitions. Each one validates a value on its own:
+   * `createActionsComposable.Actions.props.actions['~standard'].validate(value)`.
+   */
+  props: Props;
+  /**
+   * Types only; `undefined` at runtime. The value type of each prop, as the
+   * render callback receives it:
+   * `typeof createActionsComposable.Actions.infer.actions`.
+   */
+  readonly infer: Show<ResolveProps<Props>>;
+};
+
+/** A prop path, completing one segment at a time within recorded children. */
+export type ComposableSchemaPath<
+  Props extends InPropsObject,
+  Path extends string = '',
+> = Path extends `${infer Key}.${infer Rest}`
+  ? Key extends keyof Props & string
+    ? `${Key}.${SchemaPath<Props[Key], Rest>}`
+    : keyof Props & string
+  : keyof Props & string;
+
+/** The definition a prop path leads to. */
+export type ComposableSchemaAtPath<
+  Props extends InPropsObject,
+  Path extends string,
+> = Path extends keyof Props
+  ? Props[Path]
+  : Path extends `${infer Key extends keyof Props & string}.${infer Deep}`
+    ? InferableSchema<SchemaPathValue<Props[Key], Deep>>
+    : never;
+
+// Factory methods and inherited function properties take precedence over the
+// optional named definition alias.
+type ComposableDefinitionName<Name extends string> = Exclude<
+  Name,
+  | keyof Function
+  | 'props'
+  | 'extend'
+  | 'getSchema'
+  | 'constructor'
+  | 'hasOwnProperty'
+  | 'isPrototypeOf'
+  | 'propertyIsEnumerable'
+  | 'toLocaleString'
+  | 'valueOf'
+  | '__proto__'
+  | '__defineGetter__'
+  | '__defineSetter__'
+  | '__lookupGetter__'
+  | '__lookupSetter__'
+>;
+
 export type DefinedComposableComponentFactory<
   Name extends string,
   Props extends InPropsObject,
   Wrapper = undefined,
   Context = {},
 > = {
+  /**
+   * The composable's definition under its name: its prop definitions, and
+   * their value types as `typeof factory.Name.infer.prop`.
+   */
+  readonly [Key in ComposableDefinitionName<Name>]: ComposableDefinition<Props>;
+} & DefinedComposableComponentCallable<Name, Props, Wrapper, Context>;
+
+/** The callable API and customization methods of a defined composable factory. */
+interface DefinedComposableComponentCallable<
+  Name extends string,
+  Props extends InPropsObject,
+  Wrapper = undefined,
+  Context = {},
+> {
   props: Props;
   /**
    * Customize this instance without changing the factory's defaults.
@@ -759,6 +837,17 @@ export type DefinedComposableComponentFactory<
     render: (props: Show<WithChildren<ResolveProps<Props>>>) => ReactNode,
   ): DefinedComposableComponentRecord<Name, Props, Wrapper>;
   /**
+   * The definition at `path`: `actions` for a prop, or deeper into
+   * a built-in definition, such as `actions.[string].href`. `[string]`
+   * is any key of a record and `[number]` any item of an array. The
+   * definition validates a value on its own.
+   */
+  getSchema<const Path extends string>(
+    path: Path extends ComposableSchemaPath<Props, Path>
+      ? Path
+      : ComposableSchemaPath<Props, Path>,
+  ): ComposableSchemaAtPath<Props, Path>;
+  /**
    * Derive a factory with its own name, props, or wrapper. The original
    * factory is unchanged.
    */
@@ -781,7 +870,23 @@ export type DefinedComposableComponentFactory<
     CustomizedProps<Props, Renames, Overrides>,
     CustomWrapper
   >;
-};
+}
+
+function attachComposableDefinition(
+  factory: object,
+  name: string,
+  props: InPropsObject,
+) {
+  if (name in factory) {
+    return;
+  }
+
+  Object.defineProperty(factory, name, {
+    value: {
+      props,
+    },
+  });
+}
 
 function getRenamedName(prop: string, rename: PropRename | undefined) {
   if (rename === undefined) {
@@ -889,6 +994,43 @@ export function defineComposableComponent<
   // Inline validators become definitions once, so every composable derived
   // from this factory shares them.
   const props = normalizeComposableProps(options.props ?? {}) as Props;
+
+  function getSchema(path: string) {
+    const [prop = '', ...rest] = path.split('.');
+
+    if (!Object.hasOwn(props, prop)) {
+      throw new InvalidSchemaPathError({
+        path,
+        segment: prop,
+        reason: 'unknown',
+      });
+    }
+
+    const definition = props[prop] as StandardSchemaV1;
+
+    if (rest.length === 0) {
+      return definition;
+    }
+
+    try {
+      return getSchemaAtPath(definition, rest.join('.') as never);
+    } catch (error) {
+      if (!(error instanceof InvalidSchemaPathError)) {
+        throw error;
+      }
+
+      // Reports the whole path rather than the part inside the prop.
+      throw new InvalidSchemaPathError(
+        {
+          ...error.context,
+          path,
+        },
+        {
+          cause: error,
+        },
+      );
+    }
+  }
 
   function extend(customization: {
     name?: string;
@@ -1018,6 +1160,11 @@ export function defineComposableComponent<
   Object.defineProperty(factory, 'extend', {
     value: extend,
   });
+  Object.defineProperty(factory, 'getSchema', {
+    value: getSchema,
+  });
+  // `infer` is left out: it only carries types.
+  attachComposableDefinition(factory, name, props);
 
   return factory as DefinedComposableComponentFactory<Name, Props, Wrapper>;
 }
@@ -1099,12 +1246,17 @@ function defineContext<Values extends Record<string, unknown>>(
 
       // The definition is checked where `handler` is called.
       function createFactory(values: Record<string, unknown>) {
-        return defineComposableComponent(
-          define(values as ComposableContextValues<Values>) as never,
-        ) as unknown as Factory;
+        const definition = define(values as ComposableContextValues<Values>);
+
+        return {
+          factory: defineComposableComponent(
+            definition as never,
+          ) as unknown as Factory,
+          name: definition.name,
+        };
       }
 
-      const base = createFactory(
+      const { factory: base, name } = createFactory(
         resolveComposableContext(contextEntries, {}).values,
       );
 
@@ -1116,7 +1268,7 @@ function defineContext<Values extends Record<string, unknown>>(
         );
 
         return {
-          factory: isCustomized ? createFactory(values) : base,
+          factory: isCustomized ? createFactory(values).factory : base,
           rest,
         };
       }
@@ -1135,6 +1287,10 @@ function defineContext<Values extends Record<string, unknown>>(
         enumerable: true,
         value: base.props,
       });
+      // Paths lead into the definitions made from the default values.
+      Object.defineProperty(contextual, 'getSchema', {
+        value: base.getSchema,
+      });
       Object.defineProperty(contextual, 'extend', {
         value: (customization: Record<string, unknown>) => {
           const { factory, rest } = select(customization);
@@ -1142,6 +1298,8 @@ function defineContext<Values extends Record<string, unknown>>(
           return factory.extend(rest);
         },
       });
+
+      attachComposableDefinition(contextual, name, base.props);
 
       return contextual as unknown as DefinedComposableComponentFactory<
         Name,

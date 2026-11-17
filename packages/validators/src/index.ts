@@ -12,7 +12,14 @@ export {
 } from './prop-validator';
 export * as builtIn from './built-in';
 export type { ObjectValue } from './built-in';
-export type { PropValidatorSchema } from './schema';
+export type { InferableSchema, PropValidatorSchema } from './schema';
+export {
+  getSchemaAtPath,
+  InvalidSchemaPathError,
+  type InvalidSchemaPathContext,
+  type SchemaPath,
+  type SchemaPathValue,
+} from './schema-path';
 export type {
   NormalizePropDefinitions,
   PropDefinitionInputs,

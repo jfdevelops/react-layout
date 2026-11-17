@@ -1,0 +1,128 @@
+import { describe, expect, expectTypeOf, it } from 'vitest';
+import { z } from 'zod';
+import {
+  builtIn,
+  defineComposableComponent,
+  InvalidSchemaPathError,
+} from '../src';
+import type { InferableSchema } from '@jfdevelops/react-layout-validator';
+
+function captureError(run: () => unknown) {
+  try {
+    run();
+  } catch (error) {
+    return error;
+  }
+
+  return undefined;
+}
+
+describe('getSchema', () => {
+  const createList = defineComposableComponent({
+    name: 'List',
+    props: {
+      items: builtIn.record(
+        builtIn.object({
+          value: builtIn.string,
+          href: builtIn.string.optional(),
+        }),
+      ),
+      title: z.string(),
+    },
+  });
+
+  it('returns a prop definition by its prop name', () => {
+    const items = createList.getSchema('items');
+    const title = createList.getSchema('title');
+
+    expectTypeOf(items).toEqualTypeOf(createList.props.items);
+    expectTypeOf(title).toEqualTypeOf(createList.props.title);
+    expect(items).toBe(createList.props.items);
+    expect(title).toBe(createList.props.title);
+  });
+
+  it('follows a path into a built-in definition', () => {
+    const value = createList.getSchema('items.[string].value');
+    const href = createList.getSchema('items.[string].href');
+
+    expectTypeOf(value).toEqualTypeOf<InferableSchema<string>>();
+    expectTypeOf(href).toEqualTypeOf<InferableSchema<string | undefined>>();
+    const items = createList.getSchema('items');
+
+    expectTypeOf<typeof items.infer>().toEqualTypeOf<
+      Record<
+        string,
+        {
+          value: string;
+          href?: string | undefined;
+        }
+      >
+    >();
+    expect(value).toBe(builtIn.string);
+    expect(href).toBe(builtIn.string.optional());
+    expect(href['~standard'].validate(1)).toMatchObject({
+      issues: [
+        {
+          message: 'Expected a string',
+        },
+      ],
+    });
+  });
+
+  it('reads an extended factory under its own names', () => {
+    const createTabs = createList.extend({
+      name: 'Tabs',
+      rename: {
+        items: 'tabs',
+      },
+    });
+
+    expect(createTabs.getSchema('tabs.[string].value')).toBe(builtIn.string);
+    // @ts-expect-error The extended factory uses its renamed props.
+    captureError(() => createTabs.getSchema('items'));
+  });
+
+  it('reads the definitions made from the default context values', () => {
+    const createNotice = defineComposableComponent
+      .defineContext({
+        tones: {
+          value: ['info', 'warning'] as const,
+        },
+      })
+      .handler(({ tones }) => ({
+        name: 'Notice',
+        props: {
+          tone: builtIn.literal(...tones),
+        },
+      }));
+
+    expect(
+      createNotice.getSchema('tone')['~standard'].validate('info'),
+    ).toEqual({
+      value: 'info',
+    });
+  });
+
+  it('rejects a path that does not lead to a definition', () => {
+    const name = captureError(() =>
+      createList.getSchema('Menu.items' as never),
+    );
+    const deep = captureError(() =>
+      createList.getSchema('items.[string].missing' as never),
+    );
+
+    expect(name).toBeInstanceOf(InvalidSchemaPathError);
+    expect((name as InvalidSchemaPathError).context).toEqual({
+      path: 'Menu.items',
+      segment: 'Menu',
+      reason: 'unknown',
+    });
+    expect((deep as InvalidSchemaPathError).context).toEqual({
+      path: 'items.[string].missing',
+      segment: 'missing',
+      reason: 'unknown',
+    });
+    // @ts-expect-error A schema from another library is not followed.
+    captureError(() => createList.getSchema('title.length'));
+  });
+});
