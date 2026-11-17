@@ -14,6 +14,9 @@
       ],
       "@jfdevelops/react-layout-devtools-core": [
         "../../packages/devtools-core/src/index.ts"
+      ],
+      "@jfdevelops/react-layout-composable-navigation": [
+        "../../packages/composable-navigation/src/index.ts"
       ]
     },
     "types": ["node"]

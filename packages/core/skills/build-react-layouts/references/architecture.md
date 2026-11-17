@@ -111,7 +111,7 @@ Merge optional preset composables into the same semantic map:
 ```tsx
 import {
   createBreadcrumbComposable,
-} from '@jfdevelops/react-layout-composable-breadcrumb';
+} from '@jfdevelops/react-layout-composable-navigation';
 
 composables: (create) => ({
   Layout: create({ name: 'Layout', wrapWith: AppLayout }),

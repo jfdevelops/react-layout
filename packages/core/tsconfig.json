@@ -24,7 +24,10 @@
       "@jfdevelops/react-layout-adapter-effect": [
         "../adapter-effect/src/index.ts"
       ],
-      "@jfdevelops/react-layout-adapters": ["../adapters/src/index.ts"]
+      "@jfdevelops/react-layout-adapters": ["../adapters/src/index.ts"],
+      "@jfdevelops/react-layout-composable-navigation": [
+        "../composable-navigation/src/index.ts"
+      ]
     }
   },
   "include": [

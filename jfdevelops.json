@@ -40,6 +40,11 @@
       "options": {}
     },
     {
+      "path": "packages/composable-navigation",
+      "kind": "library",
+      "options": {}
+    },
+    {
       "path": "packages/composables",
       "kind": "library",
       "options": {}
@@ -101,6 +106,10 @@
     },
     {
       "name": "@jfdevelops/react-layout-composable-breadcrumb",
+      "options": {}
+    },
+    {
+      "name": "@jfdevelops/react-layout-composable-navigation",
       "options": {}
     },
     {
