@@ -5,6 +5,9 @@ export {
 } from './standard-schema';
 export type { StandardSchemaV1 } from '@standard-schema/spec';
 export { PropError, type PropErrorOptions } from './prop-error';
+export * as builtIn from './built-in';
+export type { ObjectValue } from './built-in';
+export type { PropValidatorSchema } from './schema';
 export { componentSlotSymbol, isComponentSlot } from './types';
 export type {
   ComponentSlotBrand,

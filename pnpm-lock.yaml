@@ -549,9 +549,6 @@ importers:
       '@standard-schema/spec':
         specifier: ^1.1.0
         version: 1.1.0
-      arktype:
-        specifier: 2.2.8
-        version: 2.2.8
     devDependencies:
       '@types/node':
         specifier: 24.10.1

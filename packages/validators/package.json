@@ -35,8 +35,7 @@
   },
   "dependencies": {
     "@jfdevelops/create-error": "0.2.1",
-    "@standard-schema/spec": "^1.1.0",
-    "arktype": "2.2.8"
+    "@standard-schema/spec": "^1.1.0"
   },
   "devDependencies": {
     "@types/node": "24.10.1",

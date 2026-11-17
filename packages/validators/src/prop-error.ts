@@ -1,19 +1,21 @@
-import { type } from 'arktype';
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 
+import { object, string, unknown } from './built-in';
 import { validatorErrorFactory } from './errors';
 
-const propErrorContext = type({
-  'layoutName?': 'string | undefined',
-  path: 'string',
-  'resource?': 'string | undefined',
-  received: 'unknown',
-  expected: 'unknown',
-  message: 'string',
-  'issues?': 'unknown',
+const propErrorContext = object({
+  layoutName: string.optional(),
+  path: string,
+  resource: string.optional(),
+  received: unknown,
+  expected: unknown,
+  message: string,
+  issues: unknown,
 });
 
-export type PropErrorOptions = typeof propErrorContext.infer;
+export type PropErrorOptions = StandardSchemaV1.InferOutput<
+  typeof propErrorContext
+>;
 
 export class PropError extends validatorErrorFactory({
   code: 'invalidProp',

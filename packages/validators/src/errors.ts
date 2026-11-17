@@ -1,9 +1,10 @@
 import { createError } from '@jfdevelops/create-error';
-import { type } from 'arktype';
+
+import { object, string } from './built-in';
 
 export const validatorErrorFactory = createError({
-  definition: type({
-    code: 'string',
+  definition: object({
+    code: string,
   }),
   data: {
     property: 'context',
