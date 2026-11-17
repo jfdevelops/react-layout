@@ -145,6 +145,26 @@ describe('defined composable prop renames', () => {
       reason,
     });
   });
+
+  it('reports the name requested for a prop that is not defined', () => {
+    const error = captureError(() =>
+      createList.extend({
+        rename: {
+          missing: {
+            name: 'other',
+            schema: z.string(),
+          },
+        } as never,
+      }),
+    );
+
+    expect((error as InvalidPropRenameError).context).toEqual({
+      composable: 'List',
+      prop: 'missing',
+      name: 'other',
+      reason: 'unknown',
+    });
+  });
 });
 
 describe('preset prop conflicts', () => {

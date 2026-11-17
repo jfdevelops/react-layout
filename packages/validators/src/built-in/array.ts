@@ -11,15 +11,16 @@ export function array<Item>(item: StandardSchemaV1<unknown, Item>) {
     const items: Item[] = [];
     const issues: StandardSchemaV1.Issue[] = [];
 
-    value.forEach((entry, index) => {
-      const result = validateNested(item, entry, index);
+    // An index loop also visits the empty slots of a sparse array.
+    for (let index = 0; index < value.length; index += 1) {
+      const result = validateNested(item, value[index], index);
 
       if (result.issues) {
         issues.push(...result.issues);
       } else {
         items.push(result.value);
       }
-    });
+    }
 
     return issues.length > 0
       ? {
