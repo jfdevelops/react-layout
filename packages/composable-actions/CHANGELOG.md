@@ -1,5 +1,12 @@
 # @jfdevelops/react-layout-composable-actions
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [3c3c4fe]
+  - @jfdevelops/react-layout-composables@1.2.1
+
 ## 0.2.0
 
 ### Minor Changes

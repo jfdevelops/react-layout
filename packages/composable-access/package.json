@@ -1,6 +1,6 @@
 {
   "name": "@jfdevelops/react-layout-composable-access",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Access preset composable for react-layout and its contract.",
   "repository": {
     "type": "git",
