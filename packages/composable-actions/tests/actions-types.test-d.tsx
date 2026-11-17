@@ -1,6 +1,6 @@
 import { expectTypeOf } from 'vitest';
 import { createActionsComposable } from '../src';
-import type { Actions as ActionRecord } from '../src';
+import type { Action, Actions as ActionRecord } from '../src';
 
 const { Actions } = createActionsComposable(({ actions }) => {
   expectTypeOf(actions).toEqualTypeOf<ActionRecord>();
@@ -58,3 +58,11 @@ createActionsComposable.extend({
 
   return null;
 });
+
+expectTypeOf<Action>().toEqualTypeOf<{
+  value: string;
+  href?: string | undefined;
+  intent?: string | undefined;
+  isDisabled?: boolean | undefined;
+}>();
+expectTypeOf<ActionRecord>().toEqualTypeOf<Record<string, Action>>();
