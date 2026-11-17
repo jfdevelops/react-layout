@@ -1,6 +1,6 @@
 {
   "name": "@jfdevelops/react-layout-composable-actions",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Actions preset composable for react-layout and its contract.",
   "repository": {
     "type": "git",

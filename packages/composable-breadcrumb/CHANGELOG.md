@@ -1,5 +1,16 @@
 # @jfdevelops/react-layout-composable-breadcrumb
 
+## 1.1.1
+
+### Patch Changes
+
+- Updated dependencies [25b2ecc]
+- Updated dependencies [c5bd2ea]
+- Updated dependencies [62d8112]
+- Updated dependencies [d710f10]
+  - @jfdevelops/react-layout-composable-navigation@0.1.1
+  - @jfdevelops/react-layout-composables@1.2.0
+
 ## 1.1.0
 
 ### Minor Changes

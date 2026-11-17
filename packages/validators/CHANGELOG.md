@@ -1,5 +1,17 @@
 # @jfdevelops/react-layout-validator
 
+## 1.2.0
+
+### Minor Changes
+
+- caeb573: Add `builtIn.union(...schemas)`, which accepts a value matching any of its schemas. When none matches, a schema that accepted the kind of value reports its nested issues; otherwise one issue lists what was expected, such as `Expected a string or an object`.
+- 62d8112: A built-in validator, and any schema made with `createPropValidator`, reads its value type as `typeof schema.infer`. `infer` exists only in types and is `undefined` at runtime. `InferableSchema<Value>` is a Standard Schema with that property.
+- 708be93: Add `getSchemaAtPath(schema, path)`, which returns the schema at a path inside a built-in validator: object keys, `[string]` for any record key, `[number]` for any array item and indexes for tuple items, through optional schemas and union members. `SchemaPath<Value>` lists the paths and `SchemaPathValue<Value, Path>` is the value type at one. A path that does not exist, or that enters a schema from another library, throws `InvalidSchemaPathError`.
+
+### Patch Changes
+
+- e8bf8ef: Preserve arbitrary own keys, including `__proto__`, in validated records without changing the output prototype.
+
 ## 1.1.0
 
 ### Minor Changes

@@ -1,5 +1,25 @@
 # @jfdevelops/react-layout-composables
 
+## 1.2.0
+
+### Minor Changes
+
+- 62d8112: Add `getSchema(path)` to factories created by `defineComposableComponent`. The path starts with a prop, `actions`, optionally followed by a path into a built-in definition: `actions.[string].href`. Only the next segment is suggested by the editor, and the returned definition is typed, with its value type as `typeof schema.infer`. A factory built with `defineContext` returns the definitions made from its default values.
+
+  Path checking follows recorded schema children and rejects paths into external schemas and custom validator functions.
+
+- d710f10: A factory created by `defineComposableComponent` holds its definition under its name: `createActionsComposable.Actions.props` are the prop definitions, each usable as a validator, and `typeof createActionsComposable.Actions.infer.actions` is a prop's value type. `infer` exists only in types and is `undefined` at runtime. An extended factory is read under its own name. The type is exported as `ComposableDefinition`.
+
+  Names that collide with factory methods or inherited function properties remain valid component names. In those cases the factory API takes precedence and the named definition alias is omitted; the definitions remain available through `factory.props`.
+
+### Patch Changes
+
+- Updated dependencies [caeb573]
+- Updated dependencies [e8bf8ef]
+- Updated dependencies [62d8112]
+- Updated dependencies [708be93]
+  - @jfdevelops/react-layout-validator@1.2.0
+
 ## 1.1.0
 
 ### Minor Changes
