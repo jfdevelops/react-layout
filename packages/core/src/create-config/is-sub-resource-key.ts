@@ -1,4 +1,5 @@
 import type { ResourceDefinition } from '../resource';
+import type { CheckedPath } from '@jfdevelops/react-layout-internals';
 import {
   collectPathSubResourceKeys,
   collectResourceSubResourceKeys,
@@ -42,11 +43,13 @@ export type IsSubResourceKey<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Config,
   AllowedPath extends string,
-> = <
-  const Options extends IsSubResourceKeyOptions<Resources, Config, AllowedPath>,
->(
+> = <const Options extends IsSubResourceKeyOptions<Resources, Config, string>>(
   key: unknown,
-  options: Options,
+  options: {
+    [Key in keyof Options]: Key extends 'path'
+      ? CheckedPath<AllowedPath, Extract<Options[Key], string>>
+      : Options[Key];
+  },
 ) => key is IsSubResourceKeyResult<Resources, Config, Options>;
 
 export function createIsSubResourceKey(config: Record<string, unknown>) {

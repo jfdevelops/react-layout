@@ -434,18 +434,18 @@ describe('getComponent types for resource-specific sub-resources', () => {
   });
 
   it('supports deeply typed config paths', () => {
-    expectTypeOf(config.getComponent).toBeCallableWith(
-      'templates.deleted.expired',
-    );
-    expectTypeOf(config.getComponent).toBeCallableWith(
-      'templates.deleted.expired.component',
-    );
-    expectTypeOf(config.getComponent).toBeCallableWith(
-      'templates.deleted.expired.pendingComponent',
-    );
-    expectTypeOf(config.getComponent).toBeCallableWith(
-      'appointments.component',
-    );
+    expectTypeOf(() =>
+      config.getComponent('templates.deleted.expired'),
+    ).returns.toEqualTypeOf<React.JSX.Element>();
+    expectTypeOf(() =>
+      config.getComponent('templates.deleted.expired.component'),
+    ).returns.toEqualTypeOf<React.JSX.Element>();
+    expectTypeOf(() =>
+      config.getComponent('templates.deleted.expired.pendingComponent'),
+    ).returns.toEqualTypeOf<React.JSX.Element>();
+    expectTypeOf(() =>
+      config.getComponent('appointments.component'),
+    ).returns.toEqualTypeOf<React.JSX.Element>();
 
     () => {
       // @ts-expect-error deleted is not configured under appointments

@@ -1,4 +1,5 @@
 import type { JSX, ReactNode } from 'react';
+import type { CheckedPath } from '@jfdevelops/react-layout-internals';
 import type { WithChildren } from '@jfdevelops/react-layout-composables';
 import { InvalidPathError } from '../../errors';
 import type { ResourceDefinition } from '../../resource';
@@ -230,8 +231,8 @@ export type ForPaths<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Config,
   AllowedPath extends string,
-> = <const Paths extends readonly [AllowedPath, ...AllowedPath[]]>(
-  ...paths: Paths
+> = <const Paths extends readonly [string, ...string[]]>(
+  ...paths: { [Index in keyof Paths]: CheckedPath<AllowedPath, Paths[Index]> }
 ) => TargetPathBuilder<Resources, Config, Paths>;
 
 const DEFAULT_DISPLAY_NAME = 'ResourcePathComponent';

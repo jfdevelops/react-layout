@@ -5,8 +5,12 @@ Define a shared renderer on a created resource config:
 ```tsx
 const renderPage = resourcePageConfig.createRenderer({
   params: { include: { keys: true } },
-  render: ({ getComponentForPath, path, params }) =>
-    getComponentForPath(path)()[params.componentKey],
+  render: ({ getComponentForPath, path, params }) => {
+    const getComponents = getComponentForPath(path);
+    const components = getComponents();
+
+    return components[params.componentKey];
+  },
   displayName: ({ path, params }) => `${path}Page${params.componentKey}`,
   factory: {
     render: (_props, { context: { Component, componentKey } }) =>
@@ -16,8 +20,8 @@ const renderPage = resourcePageConfig.createRenderer({
 
 const renderTrash = renderPage('trash');
 const routeOptions = {
-  component: renderTrash('component'),
-  pendingComponent: renderTrash('pendingComponent'),
+  component: renderTrash({ component: 'component' }),
+  pendingComponent: renderTrash({ component: 'pendingComponent' }),
 };
 ```
 
@@ -25,6 +29,12 @@ Only `render` is required. Without `factory`, path selection returns a configure
 Component. With a factory, it returns a function accepting the declared parameters
 and optional factory props. Factory results preserve their inferred type and
 runtime identity: thunks, JSX, primitives, and objects are all supported.
+
+The `displayName` callback's `path.capitalize()` capitalizes the current path.
+Pass a valid path to capitalize that literal instead, for example
+`path.capitalize('users.detail')` returns `'Users.detail'`.
+`path.capitalize('*')` also capitalizes the current path, but its string type
+is the union of all capitalized valid paths. It always returns a string.
 
 ## Path selection and overrides
 
@@ -38,6 +48,21 @@ When a node is both a page and a parent, the page wins. Explicitly scope that no
 with `renderPage.forPath('containers')('$containerId')`. This separates child path
 selection from component-key selection, including when their names coincide.
 `forPath` always returns a scope; `scope.build()` resolves the current scope.
+
+Selections with configured descendants also expose `forResource`:
+
+```tsx
+// file-1.ts
+export const renderUserComponents = renderPage('users');
+
+// file-2.ts
+const renderUserDetailComponents = renderUserComponents.forResource('detail');
+// Equivalent to renderPage('users.detail').
+```
+
+The argument is relative to the selected path, with one-segment-at-a-time
+suggestions. It preserves the renderer, factory, and scoped overrides. Leaf
+selections omit `forResource` from their types and runtime objects.
 
 Use `renderPage.render(callback)` or `scope.render(callback)` to create a separate
 render override before factory evaluation. A default Component also supports
@@ -88,15 +113,25 @@ Schema defaults and optional inputs retain their existing behavior. Within a ren
 `getComponentForPath(path)()` uses its current declared path parameters; explicit
 getter arguments override them.
 
-Factories use `selectedFactory(parameters, props?)`. When `componentKey` is the
-only declared parameter, `selectedFactory('component')` is shorthand for
-`selectedFactory({ componentKey: 'component' })`. Multiple parameters use an object.
-With no required parameters or props, the factory can be invoked without arguments.
+Factories accept one options object: `selectedFactory({ component, params, props })`.
+`component` accepts a configured component key or `'*'`. Use `{ component: '*' }`
+to return every configured component's factory result, keyed by its component key.
+Path variables and custom parameters use an object under `params`.
+The component key belongs only in `component`; `params` does not accept `componentKey`.
+The `component`, `params`, and `props` fields are independently optional when their inputs
+are optional or defaulted. With no required inputs, the options object can also
+be omitted.
 
 `factory.props` is a separate Standard Schema definition map. Required schema inputs
-make the second invocation argument required. For example, a factory declaring
+make the `props` field required. For example, a factory declaring
 `params.custom.title` and `factory.props.label` is invoked as
-`renderPage('trash')({ title: 'Trash' }, { label: 'Page' })`.
+```tsx
+const renderTrash = renderPage('trash');
+const page = renderTrash({
+  params: { title: 'Trash' },
+  props: { label: 'Page' },
+});
+```
 The first callback argument contains validated factory props; the second argument's
 `context` contains the configured Component and all validated declared parameters.
 Supply any required Component props when rendering it from a factory.

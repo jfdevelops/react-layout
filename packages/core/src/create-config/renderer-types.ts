@@ -1,5 +1,11 @@
 import type { ReactElement, ReactNode } from 'react';
 import type {
+  CapitalizeFn,
+  CheckedPath,
+  StringSelection,
+  StringSelectionResult,
+} from '@jfdevelops/react-layout-internals';
+import type {
   PropDefinitions,
   ResolveInputPropsAsDefined,
   ResolvePropsAsDefined,
@@ -91,10 +97,11 @@ export type ResourceRendererContext<
   'getComponentForPath'
 > & {
   path: SelectedPaths<Resources, Config, Path, Options>;
-  getComponentForPath: <
-    const Selected extends SelectedPaths<Resources, Config, Path, Options>,
-  >(
-    path: Selected,
+  getComponentForPath: <const Selected extends string>(
+    path: CheckedPath<
+      SelectedPaths<Resources, Config, Path, Options>,
+      Selected
+    >,
   ) => RendererGetter<Resources, SelectedPathConfig<Config, Options>, Selected>;
 };
 
@@ -117,23 +124,55 @@ export type ResourceRendererBuilder<
   render(
     renderer: Render<Resources, Config, Path, Options>,
   ): ResourceRendererBuilder<Resources, Config, Path, Options>;
-};
+} & RendererChildren<
+    Resources,
+    Config,
+    Options,
+    {},
+    unknown,
+    false,
+    Path,
+    SelectedPaths<
+      Resources,
+      Config,
+      ConfiguredPaths<Resources, Config>,
+      Options
+    >
+  >;
 
-type FactoryArgs<Params, Props> = {} extends Props
-  ? {} extends Params
-    ? [params?: Params, props?: Props]
-    : [params: Params, props?: Props]
-  : [params: Params, props: Props];
+type FactoryKey<Params> = 'componentKey' extends keyof Params
+  ? StringSelection<Extract<Params['componentKey'], string>>
+  : never;
 
-type FactoryCall<Params, Props, Return> = {
-  (...args: FactoryArgs<Params, Props>): Return;
-} & (keyof Params extends 'componentKey'
-  ? 'componentKey' extends keyof Params
-    ? (
-        ...args: FactoryArgs<Params['componentKey' & keyof Params], Props>
-      ) => Return
-    : {}
-  : {});
+type FactoryResult<Params, Selected, Return> = [Selected] extends [never]
+  ? Return
+  : StringSelectionResult<
+      {
+        [Key in Extract<Params['componentKey' & keyof Params], string>]: Return;
+      },
+      Selected
+    >;
+
+type FactoryOptions<Params, Props, Selected> =
+  ('componentKey' extends keyof Params
+    ? {} extends Pick<Params, 'componentKey' & keyof Params>
+      ? { component?: Selected }
+      : { component: Selected }
+    : { component?: never }) &
+    (keyof Omit<Params, 'componentKey'> extends never
+      ? { params?: never }
+      : {} extends Omit<Params, 'componentKey'>
+        ? { params?: Omit<Params, 'componentKey'> }
+        : { params: Omit<Params, 'componentKey'> }) &
+    ({} extends Props ? { props?: Props } : { props: Props });
+
+type FactoryCall<Params, Props, Return> = {} extends Params & Props
+  ? <const Selected extends FactoryKey<Params> = never>(
+      options?: FactoryOptions<Params, Props, Selected>,
+    ) => FactoryResult<Params, Selected, Return>
+  : <const Selected extends FactoryKey<Params> = never>(
+      options: FactoryOptions<Params, Props, Selected>,
+    ) => FactoryResult<Params, Selected, Return>;
 
 type Join<Prefix extends string, Path extends string> = Prefix extends ''
   ? Path
@@ -147,6 +186,53 @@ type Prefixes<Path extends string> = Path extends `${infer Head}.${infer Rest}`
   ? Head | `${Head}.${Prefixes<Rest>}`
   : Path;
 
+type RendererChildren<
+  Resources extends readonly ResourceDefinition[],
+  Config,
+  Options extends PathParamsOptions,
+  Props extends PropDefinitions,
+  Return,
+  HasFactory extends boolean,
+  Prefix extends string,
+  Allowed extends string,
+> = [Remaining<Allowed, Prefix>] extends [never]
+  ? {}
+  : {
+      /**
+       * Selects a descendant relative to this path, preserving its renderer and factory.
+       * Available only when the selected path has configured descendants.
+       *
+       * @example
+       * ```ts
+       * const renderUsers = renderPage('users');
+       * const renderDetail = renderUsers.forResource('detail');
+       * ```
+       */
+      forResource<const Path extends string>(
+        path: CheckedPath<Prefixes<Remaining<Allowed, Prefix>>, Path>,
+      ): [Extract<Join<Prefix, Path>, Allowed>] extends [never]
+        ? ResourceRenderer<
+            Resources,
+            Config,
+            Options,
+            Props,
+            Return,
+            HasFactory,
+            Join<Prefix, Path>,
+            Allowed
+          >
+        : Selection<
+            Resources,
+            Config,
+            Options,
+            Props,
+            Return,
+            HasFactory,
+            Extract<Join<Prefix, Path>, Allowed>,
+            Allowed
+          >;
+    };
+
 type Selection<
   Resources extends readonly ResourceDefinition[],
   Config,
@@ -155,16 +241,57 @@ type Selection<
   Return,
   HasFactory extends boolean,
   Path extends string,
+  Allowed extends string,
 > = HasFactory extends true
   ? FactoryCall<
       Input<Resources, Config, Path, Options>,
       ResolveInputPropsAsDefined<Props>,
       Return
-    >
+    > &
+      RendererChildren<
+        Resources,
+        Config,
+        Options,
+        Props,
+        Return,
+        HasFactory,
+        Path,
+        Allowed
+      >
   : ResourceRendererBuilder<Resources, Config, Path, Options>;
 
 /** Callable path selector. Use `forPath` to explicitly keep a page/parent scoped. */
-export interface ResourceRenderer<
+export type ResourceRenderer<
+  Resources extends readonly ResourceDefinition[],
+  Config,
+  Options extends PathParamsOptions,
+  Props extends PropDefinitions = {},
+  Return = ResourceRendererBuilder<Resources, Config, string, Options>,
+  HasFactory extends boolean = false,
+  Prefix extends string = '',
+  Allowed extends string = ConfiguredPaths<Resources, Config>,
+> = ResourceRendererSelector<
+  Resources,
+  Config,
+  Options,
+  Props,
+  Return,
+  HasFactory,
+  Prefix,
+  Allowed
+> &
+  RendererChildren<
+    Resources,
+    Config,
+    Options,
+    Props,
+    Return,
+    HasFactory,
+    Prefix,
+    Allowed
+  >;
+
+interface ResourceRendererSelector<
   Resources extends readonly ResourceDefinition[],
   Config,
   Options extends PathParamsOptions,
@@ -174,8 +301,8 @@ export interface ResourceRenderer<
   Prefix extends string = '',
   Allowed extends string = ConfiguredPaths<Resources, Config>,
 > {
-  <const Path extends Prefixes<Remaining<Allowed, Prefix>>>(
-    path: Path,
+  <const Path extends string>(
+    path: CheckedPath<Prefixes<Remaining<Allowed, Prefix>>, Path>,
   ): Join<Prefix, Path> extends Allowed
     ? Selection<
         Resources,
@@ -184,7 +311,8 @@ export interface ResourceRenderer<
         Props,
         Return,
         HasFactory,
-        Join<Prefix, Path>
+        Join<Prefix, Path>,
+        Allowed
       >
     : ResourceRenderer<
         Resources,
@@ -199,8 +327,8 @@ export interface ResourceRenderer<
   /**
    * Selects a scope without evaluating its factory, even when that path is a page.
    */
-  forPath<const Path extends Prefixes<Remaining<Allowed, Prefix>>>(
-    path: Path,
+  forPath<const Path extends string>(
+    path: CheckedPath<Prefixes<Remaining<Allowed, Prefix>>, Path>,
   ): ResourceRenderer<
     Resources,
     Config,
@@ -243,15 +371,54 @@ export interface ResourceRenderer<
     Props,
     Return,
     HasFactory,
-    Prefix
+    Prefix,
+    Allowed
   >;
 }
+
+/** A display-name path with guards for exact paths and their descendants. */
+export interface RendererDisplayNamePath<
+  Path extends string,
+  Allowed extends string = Path,
+> {
+  readonly value: Path;
+  /**
+   * Matches an exact path or any descendant separated by a dot, narrowing
+   * `path.value` to the matching paths. Suggestions follow the current segment.
+   * For example, `author` matches `author.address.city`, but not `authorId`.
+   *
+   * @example
+   * ```ts
+   * if (path.is('author.address')) {
+   *   // path.value is 'author.address' | 'author.address.city'.
+   *   return path.capitalize();
+   * }
+   * ```
+   */
+  is<const Prefix extends string>(
+    prefix: CheckedPath<Prefixes<Path>, Prefix>,
+  ): this is RendererDisplayNamePath<
+    Extract<Path, Prefix | `${Prefix}.${string}`>,
+    Allowed
+  >;
+  capitalize: CapitalizeFn<Prefixes<Allowed>>;
+  toString(): Path;
+}
+
+type RendererDisplayNameContext<Context> = Context extends {
+  path: infer Path extends string;
+}
+  ? Omit<Context, 'path'> & {
+      path: RendererDisplayNamePath<Path>;
+      capitalize: CapitalizeFn;
+    }
+  : Context;
 
 /** Shared definition for public inference and runtime renderer configuration. */
 export type RendererDefinition<Context, Params = PathParamsOptions> = {
   params?: Params;
   render: (context: Context) => ReactNode;
-  displayName?: ValueOrFunction<string, Context>;
+  displayName?: ValueOrFunction<string, RendererDisplayNameContext<Context>>;
 };
 
 /** Factory definitions follow the same props/render contract as resource components. */

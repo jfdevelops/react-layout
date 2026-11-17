@@ -1,53 +1,50 @@
 import { z } from 'zod';
 import { expectTypeOf } from 'vitest';
-import { defineResourceLayout } from '../../src';
 
-const { createResourceConfig } = defineResourceLayout({
-  resources: [
-    {
-      value: 'containers',
-      subResources: ['$containerId'],
-    },
-    'trash',
-  ],
-  layout: {
-    render: () => <main />,
-  },
-});
-const pages = createResourceConfig({
-  containers: {
-    component: <p>Containers</p>,
-    $containerId: {
-      component: <p>Container</p>,
-      errorComponent: <p>Container error</p>,
-    },
-  },
-  trash: {
-    component: <p>Trash</p>,
-    pendingComponent: <p>Trash pending</p>,
-  },
-});
+import { pages } from './fixtures/renderer';
 
 const renderPage = pages.createRenderer({
+  factory: {
+    render:
+      (_props, { context: { Component, componentKey } }) =>
+      () => <Component componentKey={componentKey} />,
+  },
   params: {
     include: {
       keys: true,
     },
   },
   render: () => null,
-  factory: {
-    render:
-      (_props, { context: { Component, componentKey } }) =>
-      () => <Component componentKey={componentKey} />,
-  },
 });
 
-// @ts-expect-error This key belongs to the container page.
-renderPage('trash')('errorComponent');
+const renderTrash = renderPage('trash');
+const Trash = renderTrash({
+  component: 'pendingComponent',
+});
+expectTypeOf(Trash).toEqualTypeOf<() => React.JSX.Element>();
+expectTypeOf(Trash).not.toHaveProperty('forResource');
+renderTrash({
+  // @ts-expect-error Components accept only component keys or '*'.
+  component: {
+    componentKey: 'component',
+  },
+});
+renderTrash({
+  component: 'component',
+  // @ts-expect-error The component key belongs in component, not params.
+  params: {
+    componentKey: 'component',
+  },
+});
+renderTrash({
+  // @ts-expect-error This key belongs to the container page.
+  component: 'errorComponent',
+});
 // @ts-expect-error Unknown resource path.
 renderPage('unknown');
+const containers = renderPage.forPath('containers');
 // @ts-expect-error Invalid remaining path.
-renderPage.forPath('containers')('unknown');
+containers('unknown');
 const custom = pages.createRenderer({
   params: {
     include: {
@@ -69,25 +66,31 @@ const custom = pages.createRenderer({
   },
 });
 
-// @ts-expect-error Custom parameters disable the single-key shorthand.
-custom('trash')('component', {
-  label: 'Count',
+const customTrash = custom('trash');
+// @ts-expect-error Custom parameters must be supplied under params.
+customTrash({
+  component: 'component',
+  props: {
+    label: 'Count',
+  },
 });
 // @ts-expect-error Factory props are required here.
-custom('trash')({
-  componentKey: 'component',
-  count: '1',
+customTrash({
+  component: 'component',
+  params: {
+    count: '1',
+  },
 });
-custom('trash')(
-  {
-    componentKey: 'component',
+customTrash({
+  component: 'component',
+  params: {
     // @ts-expect-error Callers provide schema input, not transformed output.
     count: 1,
   },
-  {
+  props: {
     label: 'Count',
   },
-);
+});
 const variables = pages.createRenderer({
   params: {
     include: {
@@ -100,18 +103,23 @@ const variables = pages.createRenderer({
     render: (_props, { context }) => context.resource,
   },
 });
-variables('$resource')({
-  resource: 'trash',
-  componentKey: 'component',
+const renderVariable = variables('$resource');
+renderVariable({
+  component: 'component',
+  params: {
+    resource: 'trash',
+  },
 });
-variables('$resource')({
-  // @ts-expect-error Invalid resource value.
-  resource: 'missing',
-  componentKey: 'component',
+renderVariable({
+  component: 'component',
+  params: {
+    // @ts-expect-error Invalid resource value.
+    resource: 'missing',
+  },
 });
 // @ts-expect-error Required path parameters must be supplied.
-variables('$resource')({
-  componentKey: 'component',
+renderVariable({
+  component: 'component',
 });
 const conflictingParams = {
   include: {
@@ -139,9 +147,11 @@ const componentFactory = pages.createRenderer({
     render: (_props, { context }) => context.Component,
   },
 });
-componentFactory('trash')().render(() => null);
+const createTrashComponent = componentFactory('trash');
+const TrashComponent = createTrashComponent();
+TrashComponent.render(() => null);
 
-const optionalFactory = pages.createRenderer({
+const createOptionalFactory = pages.createRenderer({
   render: () => null,
   factory:
     Math.random() > 0.5
@@ -149,7 +159,8 @@ const optionalFactory = pages.createRenderer({
           render: () => 42 as const,
         }
       : undefined,
-})('trash');
+});
+const optionalFactory = createOptionalFactory('trash');
 
 if ('render' in optionalFactory) {
   optionalFactory.render(() => null);

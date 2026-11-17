@@ -1,4 +1,5 @@
 import type { JSX } from 'react';
+import type { CheckedPath } from '@jfdevelops/react-layout-internals';
 import { createResourceRenderer } from './renderer';
 import type { CreateResourceRenderer } from './renderer-types';
 import {
@@ -241,17 +242,19 @@ export interface GetComponent<
   Resources extends ReadonlyArray<ResourceDefinition>,
 > {
   /**
+   * Looks up a component by a deep config path.
+   * A path ending on a branch (e.g. `'templates.deleted.expired'`) returns that branch's
+   * `component`; a path ending on a slot returns that slot.
+   */
+  <const Path extends string>(
+    path: CheckedPath<ResourceConfigPath<Resources>, Path>,
+  ): JSX.Element;
+  /**
    * Looks up a component by resource / optional sub-resource / optional component slot.
    */
   <const Options extends GetComponentOptions<Resources>>(
     options: Options,
   ): JSX.Element;
-  /**
-   * Looks up a component by a deep config path.
-   * A path ending on a branch (e.g. `'templates.deleted.expired'`) returns that branch's
-   * `component`; a path ending on a slot returns that slot.
-   */
-  <const Path extends ResourceConfigPath<Resources>>(path: Path): JSX.Element;
   forResource: GetComponentForResource<Resources>;
 }
 
@@ -505,9 +508,11 @@ export function createGetComponent<
   Resources extends ReadonlyArray<ResourceDefinition>,
 >(config: ResourceConfigMap<Resources>): GetComponent<Resources> {
   function getComponent(options: GetComponentOptions<Resources>): JSX.Element;
-  function getComponent(path: ResourceConfigPath<Resources>): JSX.Element;
+  function getComponent<const Path extends string>(
+    path: CheckedPath<ResourceConfigPath<Resources>, Path>,
+  ): JSX.Element;
   function getComponent(
-    options: GetComponentOptions<Resources> | ResourceConfigPath<Resources>,
+    options: GetComponentOptions<Resources> | string,
   ): JSX.Element {
     if (typeof options === 'string') {
       return getComponentFromPath(config, options);

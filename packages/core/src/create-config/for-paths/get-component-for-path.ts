@@ -1,4 +1,5 @@
 import type { JSX } from 'react';
+import type { CheckedPath } from '@jfdevelops/react-layout-internals';
 import type { ResourceDefinition } from '../../resource';
 import type { KeysOfUnion, ValueOfKeyInUnion } from '../../utils';
 import { InvalidPathError } from '../../errors';
@@ -163,8 +164,8 @@ export type CreateGetComponentForPath<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Config,
   AllowedPath extends string,
-> = <const Path extends AllowedPath>(
-  path: Path,
+> = <const Path extends string>(
+  path: CheckedPath<AllowedPath, Path>,
 ) => GetComponentForPath<Resources, Config, Path>;
 
 const componentGetters = new WeakMap<object, object>();
@@ -274,7 +275,9 @@ export function createScopedGetComponentForPath<
   paths: Paths,
   boundVariables?: PathVariableValues,
 ): CreateGetComponentForPath<Resources, Config, Paths[number]> {
-  return (path) => {
+  return <const Path extends string>(
+    path: CheckedPath<Paths[number], Path>,
+  ) => {
     if (!paths.includes(path)) {
       throw new InvalidPathError({
         path,
@@ -283,9 +286,9 @@ export function createScopedGetComponentForPath<
       });
     }
 
-    return createGetComponentForPath<Resources, Config, typeof path>(
+    return createGetComponentForPath<Resources, Config, Path>(
       config,
-      path,
+      path as Path,
       boundVariables,
     );
   };
