@@ -1,5 +1,16 @@
 # @jfdevelops/react-layout-validator
 
+## 1.1.0
+
+### Minor Changes
+
+- 1707339: Add `builtIn` validators that need no schema library: `string`, `number`, `boolean`, `unknown`, `callable`, `literal(...values)`, `array(item)`, `tuple(...items)`, `record(item)` and `object(shape)`. Each is a Standard Schema with `.optional()`. The validator package now validates its error contexts with them and no longer depends on arktype.
+- 9e37bf5: A prop of `defineComposableComponent` can now be a validator function instead of a Standard Schema. The function receives `{ value, error }`: the supplied value as `unknown` and an `error` helper. It returns the validated value, whose type is the prop type, and rejects it with `throw error('Expected text')`. `error` creates a `PropValidatorError`. The thrown error is the `cause` of the `PropError` that reports the value. `createPropValidator` turns a validator function into a reusable definition, and `.optional()` on its result accepts a missing value.
+
+  A composable's `props` is now typed with the same `CustomPropsObject` as `props.custom`, so `children: 'required'` is accepted. A string on any other prop throws `InvalidComposablePropsError`.
+
+  The composables package and `@jfdevelops/react-layout` re-export `builtIn`, `createPropValidator` and `PropValidatorError`.
+
 ## 1.0.0
 
 ### Major Changes
