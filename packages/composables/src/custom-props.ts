@@ -6,6 +6,7 @@ import {
   type PropValidatorSchema,
 } from '@jfdevelops/react-layout-validator';
 import type { ReactNode } from 'react';
+import { InvalidComposablePropsError } from './errors';
 
 /** Marks the built-in `children` slot as required. */
 export type ChildrenRequirement = 'required';
@@ -84,10 +85,19 @@ export function normalizeComposableProps<Props extends ComposableProps>(
 ) {
   return normalizePropDefinitions(
     Object.fromEntries(
-      Object.entries(props).map(([key, definition]) => [
-        key,
-        typeof definition === 'string' ? requiredChildren : definition,
-      ]),
+      Object.entries(props).map(([key, definition]) => {
+        if (typeof definition !== 'string') {
+          return [key, definition];
+        }
+
+        if (key !== 'children' || definition !== 'required') {
+          throw new InvalidComposablePropsError(
+            `Prop "${key}" cannot be a string: only children accepts the required shorthand.`,
+          );
+        }
+
+        return [key, requiredChildren];
+      }),
     ),
   ) as NormalizeComposableProps<Props>;
 }

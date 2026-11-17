@@ -70,6 +70,37 @@ describe('actions contract', () => {
     );
   });
 
+  it('reports an unknown intent as the cause of the prop error', () => {
+    const { Actions } = createActionsComposable(() => null);
+    let caught: unknown;
+
+    try {
+      render(
+        createElement(Actions, {
+          actions: {
+            create: {
+              value: 'New user',
+              intent: 'loud',
+            },
+          },
+        } as never),
+      );
+    } catch (error) {
+      caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(Error);
+    expect((caught as Error).cause).toBeInstanceOf(InvalidIntentError);
+    expect((caught as Error).cause).toMatchObject({
+      code: 'invalidIntent',
+      context: {
+        action: 'create',
+        intent: 'loud',
+        intents: ['primary', 'destructive'],
+      },
+    });
+  });
+
   it('describes an unknown intent with its own error', () => {
     const error = new InvalidIntentError({
       action: 'create',

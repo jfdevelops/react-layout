@@ -1,5 +1,6 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 import { PropError } from './prop-error';
+import { getIssueErrorOptions } from './schema';
 
 export function isStandardSchema(value: unknown): value is StandardSchemaV1 {
   if (
@@ -45,13 +46,16 @@ export function validateDefinition<Definition extends StandardSchemaV1>(
           typeof segment === 'object' ? String(segment.key) : String(segment),
         )
         .join('.') || 'value';
-    throw new PropError({
-      path,
-      received: value,
-      expected: definition['~standard'].vendor,
-      message: issue?.message ?? 'Schema validation failed',
-      issues: result.issues,
-    });
+    throw new PropError(
+      {
+        path,
+        received: value,
+        expected: definition['~standard'].vendor,
+        message: issue?.message ?? 'Schema validation failed',
+        issues: result.issues,
+      },
+      getIssueErrorOptions(issue),
+    );
   }
 
   return result.value;

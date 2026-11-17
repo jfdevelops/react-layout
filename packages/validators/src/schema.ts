@@ -22,15 +22,43 @@ export function pass<Value>(value: Value): SchemaResult<Value> {
   };
 }
 
-/** Rejects a value with one message. */
-export function fail(message: string): SchemaResult<never> {
+/** A Standard Schema issue that keeps the error it was created from. */
+export type SchemaIssue = StandardSchemaV1.Issue & {
+  /**
+   * The error a validator threw to reject the value.
+   */
+  cause?: unknown;
+};
+
+/**
+ * Rejects a value with one message. `cause` is the error behind it, which
+ * becomes the `cause` of the `PropError` reporting the value.
+ */
+export function fail(message: string, cause?: unknown): SchemaResult<never> {
+  const issue: SchemaIssue =
+    cause === undefined
+      ? {
+          message,
+        }
+      : {
+          message,
+          cause,
+        };
+
   return {
-    issues: [
-      {
-        message,
-      },
-    ],
+    issues: [issue],
   };
+}
+
+/** The native error options that carry an issue's cause, if it has one. */
+export function getIssueErrorOptions(
+  issue: SchemaIssue | undefined,
+): ErrorOptions | undefined {
+  return issue?.cause === undefined
+    ? undefined
+    : {
+        cause: issue.cause,
+      };
 }
 
 /**
