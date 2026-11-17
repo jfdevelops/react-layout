@@ -21,11 +21,38 @@ it.each(['typescript-5-9', 'typescript-6'])(
         : '../../src';
     const source = `
       import { defineResourceLayout } from '${entry}';
+      import { z } from 'zod';
       const { createResourceConfig } = defineResourceLayout({
         resources: [{ value: 'users', subResources: ['admins', { value: 'managers', subResources: ['female'] }] }],
         layout: { render: () => <main /> },
       });
       const pages = createResourceConfig({ users: { component: <main />, detail: { component: <main />, errorComponent: <main /> }, admins: { component: <main /> }, managers: { component: <main />, female: { component: <main /> } } } });
+      const renderPage = pages.createRenderer({
+        params: { include: { keys: true } },
+        render: () => null,
+        factory: { props: { label: z.string() }, render: (props) => props.label },
+      });
+      const renderUsers = renderPage('users');
+      renderUsers({ /*factoryOptions*/ });
+      renderUsers({ component: '/*factoryKeys*/', props: { label: 'Users' } });
+      renderUsers({ component: '*', props: { /*wildcardProps*/ } });
+      renderUsers({ component: 'component', props: { /*singleProps*/ } });
+      renderUsers({ component: 'component', props: { /*objectProps*/ } });
+      const renderCustom = pages.createRenderer({
+        params: { include: { keys: true }, custom: { count: z.number() } },
+        render: () => null,
+        factory: { render: (_props, { context }) => context.count },
+      });
+      const customUsers = renderCustom('users');
+      customUsers({ component: '*', params: { /*factoryParams*/ } });
+      const renderOptional = pages.createRenderer({
+        params: { include: { keys: true } },
+        render: () => null,
+        factory: { props: { label: z.string().optional() }, render: (props) => props.label },
+      });
+      const optionalUsers = renderOptional('users');
+      optionalUsers({ component: '*', props: { /*optionalWildcardProps*/ } });
+      optionalUsers({ component: 'component', props: { /*optionalSingleProps*/ } });
       pages.createRenderer({ params: { /*params*/ }, render: () => null });
       pages.createRenderer({ params: { include: { /*empty*/ } }, render: () => null });
       pages.createRenderer({ params: { include: { path: true, /*populated*/ } }, render: () => null });
@@ -72,7 +99,24 @@ it.each(['typescript-5-9', 'typescript-6'])(
     });
 
     try {
+      const keyCompletions = service.getCompletionsAtPosition(
+        file,
+        source.indexOf('/*factoryKeys*/'),
+        {},
+      );
+      expect(keyCompletions?.entries.map(({ name }) => name).sort()).toEqual([
+        '*',
+        'component',
+      ]);
+
       for (const [marker, expected] of Object.entries({
+        factoryOptions: ['component', 'params', 'props'],
+        factoryParams: ['count'],
+        wildcardProps: ['label'],
+        singleProps: ['label'],
+        objectProps: ['label'],
+        optionalWildcardProps: ['label'],
+        optionalSingleProps: ['label'],
         params: ['include', 'custom'],
         empty: ['path', 'keys'],
         populated: ['keys'],

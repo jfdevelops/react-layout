@@ -29,6 +29,26 @@ it.each(['typescript-5-9', 'typescript-6'])(
         users: { component: <main />, managers: { component: <main />, female: { component: <main /> } } },
         trash: { component: <main />, pendingComponent: <main /> },
       });
+      const renderer = pages.createRenderer({
+        render: ({ getComponentForPath }) => { getComponentForPath('users./*getter*/'); return null; },
+        displayName: ({ path }) => {
+          path.is('/*guardRoot*/');
+          path.is('users./*guardChild*/');
+          path.is('users.managers./*guardDeep*/');
+          path.capitalize('/*capitalizeRoot*/');
+          path.capitalize('users./*capitalizeChild*/');
+          if (path.is('users')) { path.is('users.managers./*guardNarrowed*/'); }
+          return path.value;
+        },
+      });
+      renderer('/*rendererRoot*/');
+      renderer('users./*rendererChild*/');
+      const selectedUsers = renderer('users');
+      selectedUsers.forResource('/*resourceRoot*/');
+      selectedUsers.forResource('managers./*resourceDeep*/');
+      renderer.forPath('users.managers./*scope*/');
+      const usersRenderer = renderer.forPath('users');
+      usersRenderer('managers./*relative*/');
       pages.createGetComponent('users.managers./*createGetter*/');
       pages.getComponent('users.managers./*getComponent*/');
       pages.forPaths('users.managers./*forPaths*/');
@@ -61,10 +81,25 @@ it.each(['typescript-5-9', 'typescript-6'])(
     });
 
     try {
-      const expected = { boundGetter: ['users.managers.female'] };
+      const expected = {
+        guardRoot: ['users', 'trash', '$resource'],
+        capitalizeRoot: ['users', 'trash', '$resource', '*'],
+        capitalizeChild: ['users.managers', 'users.$subResource'],
+        guardChild: ['users.managers', 'users.$subResource'],
+        guardDeep: ['users.managers.female'],
+        guardNarrowed: ['users.managers.female'],
+        rendererRoot: ['users', 'trash', '$resource'],
+        rendererChild: ['users.managers', 'users.$subResource'],
+        resourceRoot: ['managers', '$subResource'],
+        resourceDeep: ['managers.female'],
+        scope: ['users.managers.female'],
+        relative: ['managers.female'],
+        boundGetter: ['users.managers.female'],
+      };
 
       for (const marker of [
         ...Object.keys(expected),
+        'getter',
         'createGetter',
         'getComponent',
         'forPaths',
@@ -89,7 +124,9 @@ it.each(['typescript-5-9', 'typescript-6'])(
         // TypeScript 5.9 does not infer the edited prefix inside an options object.
         const hasLegacyObjectCompletion =
           marker === 'subResourceGuard' && compiler === 'typescript-5-9';
-        const requiredNames = expect.arrayContaining([`${prefix}female`]);
+        const requiredNames = expect.arrayContaining([
+          `${prefix}${marker === 'getter' ? 'managers' : 'female'}`,
+        ]);
         const expectedNames = hasLegacyObjectCompletion
           ? ['$resource', 'trash', 'users']
           : (exact?.sort() ?? requiredNames);

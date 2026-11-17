@@ -1,4 +1,9 @@
 import { createElement, Fragment } from 'react';
+import {
+  capitalize,
+  resolveStringSelection,
+  type StringSelectionResult,
+} from '@jfdevelops/react-layout-internals';
 import { validateProps } from '@jfdevelops/react-layout-validator';
 import type { PropDefinitions } from '@jfdevelops/react-layout-validator';
 import { InvalidPathError } from '../errors';
@@ -20,6 +25,7 @@ import {
 import type {
   CreateResourceRenderer,
   RendererDefinition,
+  RendererDisplayNamePath,
 } from './renderer-types';
 
 type RuntimeContext<Config> = ForPathsRenderContext<
@@ -56,11 +62,45 @@ export function createResourceRenderer<
         COMPONENT_SLOT_KEYS.some((slot) => slot === key),
       ),
     );
+    const displayNamePaths = [
+      ...new Set(
+        paths.flatMap((path) => {
+          const segments = path.split('.');
+          const tail = segments.at(-1);
+
+          if (
+            tail === '$component' ||
+            COMPONENT_SLOT_KEYS.some((key) => key === tail)
+          ) {
+            return [];
+          }
+
+          return segments.map((_, index) =>
+            segments.slice(0, index + 1).join('.'),
+          );
+        }),
+      ),
+    ];
 
     function makeScope(
       prefix: string,
       render: RuntimeOptions<Record<string, unknown>>['render'],
     ) {
+      const hasDescendants = displayNamePaths.some(
+        (path) => !prefix || path.startsWith(`${prefix}.`),
+      );
+
+      function withDescendants<Value extends object>(
+        value: Value,
+        renderer = render,
+      ) {
+        return hasDescendants
+          ? Object.assign(value, {
+              forResource: (path: string) => makeScope(prefix, renderer)(path),
+            })
+          : value;
+      }
+
       /** A scope is a page, or a parent whose descendants include a page. */
       function assertScope(path: string) {
         if (
@@ -113,18 +153,73 @@ export function createResourceRenderer<
             createElement(Fragment, null, renderer(buildContext(context))),
           );
           const displayName = options.displayName;
+
+          function capitalizePath<Current extends string>(this: {
+            readonly value: Current;
+          }): Capitalize<Current>;
+          function capitalizePath<const Selected extends string>(
+            path: Selected,
+          ): StringSelectionResult<
+            Record<string, Capitalize<string>>,
+            Selected,
+            Capitalize<string>
+          >;
+          function capitalizePath(path = prefix) {
+            return resolveStringSelection<
+              Record<string, Capitalize<string>>,
+              string,
+              Capitalize<string>
+            >(
+              displayNamePaths,
+              path,
+              (key) => {
+                if (!displayNamePaths.includes(key)) {
+                  throw new InvalidPathError({
+                    path: key,
+                    validPaths: displayNamePaths,
+                  });
+                }
+
+                return capitalize(key);
+              },
+              () => capitalize(prefix),
+            );
+          }
+
           const named =
             displayName === undefined
               ? component
               : component.setDisplayName(
                   typeof displayName === 'string'
                     ? displayName
-                    : (context) => displayName(buildContext(context)),
+                    : (context) =>
+                        displayName({
+                          ...buildContext(context),
+                          capitalize,
+                          path: {
+                            value: prefix,
+                            is<const Path extends string>(
+                              path: Path,
+                            ): this is RendererDisplayNamePath<
+                              Extract<string, Path | `${Path}.${string}`>,
+                              string
+                            > {
+                              return (
+                                prefix === path || prefix.startsWith(`${path}.`)
+                              );
+                            },
+                            capitalize: capitalizePath,
+                            toString: () => prefix,
+                          },
+                        }),
                 );
 
-          return Object.assign(named, {
-            render: makeBuilder,
-          });
+          return withDescendants(
+            Object.assign(named, {
+              render: makeBuilder,
+            }),
+            renderer,
+          );
         }
 
         const Component = makeBuilder(render);
@@ -135,46 +230,102 @@ export function createResourceRenderer<
         }
 
         const pathParams = createPathParams(selectedConfig, [prefix], params);
+        const renderFactory = factory.render;
+        const factoryProps = factory.props ?? {};
 
-        return (
-          supplied: unknown = {},
-          props: Record<string, unknown> = {},
-        ) => {
-          if (typeof supplied === 'string' && !pathParams.canUseKeyShorthand) {
+        const createFactoryResult = (options: unknown = {}) => {
+          if (
+            typeof options !== 'object' ||
+            options === null ||
+            Array.isArray(options)
+          ) {
+            throw new TypeError('Renderer factory options must be an object.');
+          }
+
+          const componentKey =
+            'component' in options ? options.component : undefined;
+          const input =
+            ('params' in options ? options.params : undefined) ?? {};
+          const props = ('props' in options ? options.props : undefined) ?? {};
+
+          if (typeof props !== 'object' || Array.isArray(props)) {
+            throw new TypeError('Renderer factory props must be an object.');
+          }
+          if (componentKey !== undefined && typeof componentKey !== 'string') {
             throw new TypeError(
-              'Component-key shorthand requires componentKey to be the only declared parameter.',
+              'Renderer factory component must be a component key or "*".',
             );
           }
 
-          const input =
-            typeof supplied === 'string'
-              ? {
-                  componentKey: supplied,
-                }
-              : supplied;
+          if (componentKey !== undefined && !params.include?.keys) {
+            throw new TypeError(
+              'Renderer factory component requires included component keys.',
+            );
+          }
 
           if (
             typeof input !== 'object' ||
             input === null ||
             Array.isArray(input)
           ) {
+            throw new TypeError('Renderer factory params must be an object.');
+          }
+
+          if ('componentKey' in input) {
             throw new TypeError(
-              'Renderer factory parameters must be an object or a component key.',
+              'Pass the component key in component, not params.',
             );
           }
 
-          const values = pathParams.resolve(
-            input as Record<string, unknown>,
-            true,
-          );
+          function evaluateFactory(input: Record<string, unknown>) {
+            const values = pathParams.resolve(input, true);
 
-          return factory.render(validateProps(factory.props ?? {}, props), {
-            context: {
-              ...values,
-              Component,
-            },
+            return renderFactory(
+              validateProps(factoryProps, props as Record<string, unknown>),
+              {
+                context: {
+                  ...values,
+                  Component,
+                },
+              },
+            );
+          }
+
+          if (componentKey !== undefined) {
+            const keys = collectPathComponentKeys(
+              selectedConfig,
+              prefix,
+            ).filter((key) => COMPONENT_SLOT_KEYS.some((slot) => slot === key));
+
+            function evaluateComponent(componentKey: string) {
+              return evaluateFactory({
+                ...input,
+                componentKey,
+              });
+            }
+
+            return resolveStringSelection<Record<string, unknown>, string>(
+              keys,
+              componentKey,
+              evaluateComponent,
+              (keys) =>
+                Object.fromEntries(
+                  keys.map((key) => [key, evaluateComponent(key)]),
+                ),
+            );
+          }
+
+          return evaluateFactory({
+            ...input,
+            ...(componentKey === undefined
+              ? {}
+              : {
+                  componentKey,
+                }),
           });
         };
+
+        return withDescendants(createFactoryResult);
       }
 
       function select(path: string) {
@@ -192,12 +343,15 @@ export function createResourceRenderer<
         return makeScope(fullPath, render).build();
       }
 
-      return Object.assign(select, {
-        forPath: (path: string) => makeScope(checkPath(path), render),
-        render: (renderer: RuntimeOptions<Record<string, unknown>>['render']) =>
-          makeScope(prefix, renderer),
-        build,
-      });
+      return withDescendants(
+        Object.assign(select, {
+          forPath: (path: string) => makeScope(checkPath(path), render),
+          render: (
+            renderer: RuntimeOptions<Record<string, unknown>>['render'],
+          ) => makeScope(prefix, renderer),
+          build,
+        }),
+      );
     }
 
     return makeScope('', options.render);
