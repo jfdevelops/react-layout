@@ -497,27 +497,32 @@ Presets in one layout that declare the same prop receive the same page value,
 so they must share one definition. Two different definitions for one prop throw
 `ConflictingPresetPropError` when the layout is created.
 
-A factory also holds its definition under its name. `props` are the prop
-definitions, each usable as a validator, and `infer` gives their value types,
-so a type comes from the definition instead of being written twice. `infer`
-exists only in types and is `undefined` at runtime:
+Take a type from a definition instead of writing it twice. `getSchema`
+returns the definition at a path that starts with the composable's name, and
+`infer` on it is the value type:
 
 ```ts
-type NavigationItems = typeof createNavigationComposable.Navigation.infer.items;
+const itemsSchema = createNavigationComposable.getSchema('Navigation.items');
 
-createNavigationComposable.Navigation.props.items['~standard'].validate(value);
+export type NavigationItems = typeof itemsSchema.infer;
 ```
 
-`getSchema` returns the definition at a path, starting with the composable's
-name. Inside a definition made of built-in validators the path goes deeper:
-an object key is a segment, `[string]` is any key of a record and `[number]`
-any item of an array. The editor lists every path, and the result is typed:
+Inside a definition made of built-in validators the path goes deeper: an
+object key is a segment, `[string]` is any key of a record and `[number]`
+any item of an array. The editor lists every path:
 
 ```ts
-const href = createNavigationComposable.getSchema(
+const hrefSchema = createNavigationComposable.getSchema(
   'Navigation.items.[string].href',
-); // StandardSchemaV1<unknown, string | undefined>
+);
+
+type Href = typeof hrefSchema.infer; // string | undefined
+hrefSchema['~standard'].validate(value);
 ```
+
+`infer` is a type-only property on built-in validators and on what
+`getSchema` returns; it is `undefined` at runtime. A factory also holds its
+definitions under its name: `createNavigationComposable.Navigation.props`.
 
 A prop of `defineComposableComponent` is a Standard Schema or a validator
 function, so a composable needs no schema library. The function receives the

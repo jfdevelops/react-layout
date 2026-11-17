@@ -14,6 +14,7 @@ import {
 } from './errors';
 import {
   getSchemaAtPath,
+  type InferableSchema,
   InvalidSchemaPathError,
   type NormalizePropDefinitions,
   PropDefinition,
@@ -769,7 +770,7 @@ export type ComposableSchemaAtPath<
     ? Props[Rest]
     : Rest extends `${infer Key}.${infer Deep}`
       ? Props[Key] extends PropValidatorSchema<infer Value>
-        ? StandardSchemaV1<unknown, SchemaPathValue<Value, Deep>>
+        ? InferableSchema<SchemaPathValue<Value, Deep>>
         : never
       : never
   : never;

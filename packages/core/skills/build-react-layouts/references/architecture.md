@@ -139,14 +139,19 @@ Each package exports its contract from `/contract`. Derive another preset with
 Presets that declare the same prop must share its definition; give one of them
 its own name with `rename` when their values differ.
 
-A factory holds its definition under the composable's name. Infer a prop's
-type from it instead of declaring it by hand:
-`typeof createActionsComposable.Actions.infer.actions` (`infer` is
-type-only and `undefined` at runtime). `createActionsComposable.Actions.props`
-are the prop definitions, each usable as a validator. To reuse one nested
-definition, use `createActionsComposable.getSchema('Actions.actions.[string].href')`:
-the path starts with the composable's name and goes into built-in validators
-(`[string]` for record keys, `[number]` for array items).
+Infer an exported type from the contract instead of declaring it by hand.
+Get the definition with `getSchema` and read its type from `infer`
+(type-only, `undefined` at runtime):
+
+```ts
+const actionsSchema = createActionsComposable.getSchema('Actions.actions');
+
+export type Actions = typeof actionsSchema.infer;
+```
+
+The path starts with the composable's name and goes into built-in validators,
+such as `Actions.actions.[string].href` (`[string]` for record keys,
+`[number]` for array items). The definition validates a value on its own.
 
 A prop of `defineComposableComponent` is a Standard Schema or a validator
 function: `({ value, error }) => value`. The function receives the supplied

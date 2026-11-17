@@ -63,6 +63,7 @@ export type {
   PropValidator,
   PropValidatorContext,
   PropValidatorErrorHelper,
+  InferableSchema,
   InvalidSchemaPathContext,
   PropValidatorSchema,
   SchemaPath,

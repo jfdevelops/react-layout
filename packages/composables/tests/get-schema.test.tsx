@@ -5,7 +5,7 @@ import {
   defineComposableComponent,
   InvalidSchemaPathError,
 } from '../src';
-import type { StandardSchemaV1 } from '@jfdevelops/react-layout-validator';
+import type { InferableSchema } from '@jfdevelops/react-layout-validator';
 
 function captureError(run: () => unknown) {
   try {
@@ -45,9 +45,18 @@ describe('getSchema', () => {
     const value = createList.getSchema('List.items.[string].value');
     const href = createList.getSchema('List.items.[string].href');
 
-    expectTypeOf(value).toEqualTypeOf<StandardSchemaV1<unknown, string>>();
-    expectTypeOf(href).toEqualTypeOf<
-      StandardSchemaV1<unknown, string | undefined>
+    expectTypeOf(value).toEqualTypeOf<InferableSchema<string>>();
+    expectTypeOf(href).toEqualTypeOf<InferableSchema<string | undefined>>();
+    const items = createList.getSchema('List.items');
+
+    expectTypeOf<typeof items.infer>().toEqualTypeOf<
+      Record<
+        string,
+        {
+          value: string;
+          href?: string | undefined;
+        }
+      >
     >();
     expect(value).toBe(builtIn.string);
     expect(href).toBe(builtIn.string.optional());
