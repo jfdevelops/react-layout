@@ -141,6 +141,43 @@ describe('defined composable context', () => {
     expect(Object.keys(createNotice.props)).toEqual(['title', 'tone', 'lines']);
   });
 
+  it('takes a function value from a function of the default', () => {
+    const createLabel = defineComposableComponent
+      .defineContext({
+        format: {
+          value: (text: string) => text,
+        },
+      })
+      .handler(({ format }) => ({
+        name: 'Label',
+        props: {
+          text: ({ value }) => format(String(value)),
+        },
+      }));
+    const { Label } = createLabel({
+      format: (defaultFormat) => {
+        expectTypeOf(defaultFormat).toEqualTypeOf<(text: string) => string>();
+
+        return (text) => defaultFormat(text).toUpperCase();
+      },
+      render: ({ text }) => <p>{text}</p>,
+    });
+
+    render(<Label text='saved' />);
+    expect(screen.getByText('SAVED')).toBeInTheDocument();
+
+    // Type check only: called, the function would receive the default.
+    function supplyFormatDirectly() {
+      return createLabel({
+        // @ts-expect-error A function value is returned from a function.
+        format: (text: string) => text.toUpperCase(),
+        render: () => null,
+      });
+    }
+
+    expectTypeOf(supplyFormatDirectly).toBeFunction();
+  });
+
   it('rejects a value of the wrong type and a reserved option name', () => {
     createNotice({
       // @ts-expect-error The limit is a number.

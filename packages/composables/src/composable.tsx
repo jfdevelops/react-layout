@@ -682,14 +682,21 @@ export type ComposableContextEntries<Values> = {
     : ComposableContextEntry<Values[Key]>;
 };
 
+// A supplied function is always called with the default, so a value that is
+// itself a function can only be supplied by returning it from one.
+type ComposableContextOption<Value> = Value extends (
+  ...input: never[]
+) => unknown
+  ? (value: Value) => Value
+  : Value | ((value: Value) => Value);
+
 /**
  * What a caller may pass for each context value: the value itself, or a
- * function that receives the default and returns the value.
+ * function that receives the default and returns the value. A context value
+ * that is a function is supplied the second way only.
  */
 export type ComposableContextOptions<Context> = {
-  [Key in keyof Context]?:
-    | Context[Key]
-    | ((value: Context[Key]) => Context[Key]);
+  [Key in keyof Context]?: ComposableContextOption<Context[Key]>;
 };
 
 type CustomizeComposableOptions<

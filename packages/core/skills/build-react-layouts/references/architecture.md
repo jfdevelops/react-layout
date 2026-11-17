@@ -139,6 +139,8 @@ Each context entry needs a default `value`; its optional `handler` receives
 `{ value, supplied }` and returns the value to use. A caller passes a value
 or a function of the default beside the other options:
 `createNotice({ tones: (defaults) => [...defaults, 'loud'], render })`.
+A function passed for a context value is always called with the default, so
+supply a function value by returning it: `format: (defaults) => (text) => …`.
 The prop types come from the declared value type, not from the caller's value.
 
 ## Persist the application shell across navigation
