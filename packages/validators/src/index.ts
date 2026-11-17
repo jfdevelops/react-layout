@@ -5,9 +5,21 @@ export {
 } from './standard-schema';
 export type { StandardSchemaV1 } from '@standard-schema/spec';
 export { PropError, type PropErrorOptions } from './prop-error';
+export { PropValidatorError } from './prop-validator-error';
+export {
+  createPropValidator,
+  normalizePropDefinitions,
+} from './prop-validator';
 export * as builtIn from './built-in';
 export type { ObjectValue } from './built-in';
 export type { PropValidatorSchema } from './schema';
+export type {
+  NormalizePropDefinitions,
+  PropDefinitionInputs,
+  PropValidator,
+  PropValidatorContext,
+  PropValidatorErrorHelper,
+} from './prop-validator';
 export { componentSlotSymbol, isComponentSlot } from './types';
 export type {
   ComponentSlotBrand,

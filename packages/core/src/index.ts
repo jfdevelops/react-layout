@@ -157,10 +157,13 @@ export type {
   ComponentSlotOptions,
 } from './component-slot';
 export {
+  builtIn,
   createPropsFromComponent,
+  createPropValidator,
   isComponentSlot,
   isStandardSchema,
   PropError,
+  PropValidatorError,
   resolvePropDefinitionValues,
   validateProps,
 } from '@jfdevelops/react-layout-validator';
@@ -169,6 +172,10 @@ export type {
   PropDefinitions,
   ResolveInputProps,
   PropErrorOptions,
+  PropValidator,
+  PropValidatorContext,
+  PropValidatorErrorHelper,
+  PropValidatorSchema,
   ResolveProps,
 } from '@jfdevelops/react-layout-validator';
 export type {

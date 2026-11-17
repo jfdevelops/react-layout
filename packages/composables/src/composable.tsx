@@ -13,14 +13,23 @@ import {
   InvalidPropRenameError,
 } from './errors';
 import {
+  type NormalizePropDefinitions,
   PropDefinition,
   type PropValidationContext,
+  type PropValidator,
   ResolveProps,
   ResolveInputProps,
   type StandardSchemaV1,
   resolvePropDefinitionValues,
   validateProps,
 } from '@jfdevelops/react-layout-validator';
+import {
+  type ComposableProps,
+  type ComposablePropDefinition,
+  type ComposablePropsInput,
+  type NormalizeComposableProps,
+  normalizeComposableProps,
+} from './custom-props';
 import { InPropsObject, type WithChildren } from './types';
 import type {
   BaseComponent,
@@ -33,7 +42,7 @@ export const composablePresetMetaKey = Symbol.for(
   'view-map.composable-preset-meta',
 );
 
-const validatedInPropsObject = Symbol('validatedInPropsObject');
+const validatedComposableProps = Symbol('validatedComposableProps');
 
 export type ComposablePresetMeta<Props extends InPropsObject = InPropsObject> =
   {
@@ -481,7 +490,7 @@ export function createComposableComponent<
       mergedInProps as Record<string, unknown>,
     );
     const alreadyValidated = (options as unknown as Record<symbol, unknown>)[
-      validatedInPropsObject
+      validatedComposableProps
     ];
     const mergedResolved = validateProps(
       alreadyValidated ? {} : inProps,
@@ -537,11 +546,17 @@ export function createComposableComponent<
 
 type DefineComposableComponentOptions<
   Name extends string,
-  Props extends InPropsObject,
+  Props extends ComposableProps,
   Wrapper = undefined,
 > = {
   name: Name;
-  props?: Props;
+  /**
+   * The composable's custom props. This is the same object as `props.custom`
+   * elsewhere in the library; a composable has no shared options to
+   * `include`, so the `custom` key is left out. Each prop is a Standard
+   * Schema or an inline validator, and `children: 'required'` is accepted.
+   */
+  props?: Props & ComposableProps & ComposablePropsInput<Props>;
   wrapWith?: Wrapper;
 };
 
@@ -558,7 +573,7 @@ export type PropRename =
   | string
   | {
       name: string;
-      schema: PropDefinition;
+      schema: PropDefinition | PropValidator;
     };
 
 /** New names for a defined composable's props, keyed by their current names. */
@@ -573,9 +588,13 @@ type RenamedPropName<Key, Rename> = Rename extends string
     : Key;
 
 type RenamedPropDefinition<Definition, Rename> = Rename extends {
-  schema: infer Schema extends PropDefinition;
+  schema: infer Schema;
 }
-  ? Schema
+  ? Schema extends PropDefinition
+    ? Schema
+    : NormalizePropDefinitions<{
+        schema: Schema;
+      }>['schema']
   : Definition;
 
 /** Applies a rename map to a defined composable's prop definitions. */
@@ -597,12 +616,12 @@ type CustomizedProps<Props extends InPropsObject, Renames, Overrides> = Omit<
   RenameProps<Props, Renames>,
   keyof Overrides
 > &
-  Overrides;
+  NormalizeComposableProps<Overrides>;
 
 // Lists the default props so an editor suggests them, and allows new ones.
 type PropOverrides<Props extends InPropsObject> = {
-  [Key in keyof Props]?: PropDefinition;
-} & InPropsObject;
+  [Key in keyof Props]?: ComposablePropDefinition;
+} & ComposableProps;
 
 type CustomizeComposableOptions<
   Props extends InPropsObject,
@@ -634,7 +653,7 @@ export type DefinedComposableComponentFactory<
    * Customize this instance without changing the factory's defaults.
    */
   <
-    const Overrides extends InPropsObject = {},
+    const Overrides extends ComposableProps = {},
     const CustomName extends string = Name,
     CustomWrapper = Wrapper,
     const Renames extends PropRenames<Props> = {},
@@ -666,7 +685,7 @@ export type DefinedComposableComponentFactory<
    */
   extend<
     const Renames extends PropRenames<Props> = {},
-    const Overrides extends InPropsObject = {},
+    const Overrides extends ComposableProps = {},
     const CustomName extends string = Name,
     CustomWrapper = Wrapper,
   >(
@@ -700,7 +719,7 @@ function renamePropDefinitions(
     }
   }
 
-  const renamed: InPropsObject = {};
+  const renamed: ComposableProps = {};
 
   for (const [prop, definition] of Object.entries(props)) {
     const rename = renames[prop];
@@ -766,17 +785,32 @@ function resolvePresetComposableCallProps<Props extends InPropsObject>(
 
 export function defineComposableComponent<
   const Name extends string,
+  Definitions extends ComposableProps = {},
+  Wrapper = undefined,
+>(
+  options: DefineComposableComponentOptions<Name, Definitions, Wrapper>,
+): DefinedComposableComponentFactory<
+  Name,
+  NormalizeComposableProps<Definitions>,
+  Wrapper
+>;
+
+export function defineComposableComponent<
+  const Name extends string,
   Props extends InPropsObject = {},
   Wrapper = undefined,
 >(
   options: DefineComposableComponentOptions<Name, Props, Wrapper>,
 ): DefinedComposableComponentFactory<Name, Props, Wrapper> {
-  const { name, props = {} as Props, wrapWith } = options;
+  const { name, wrapWith } = options;
+  // Inline validators become definitions once, so every composable derived
+  // from this factory shares them.
+  const props = normalizeComposableProps(options.props ?? {}) as Props;
 
   function extend(customization: {
     name?: string;
     rename?: Record<string, PropRename | undefined>;
-    props?: InPropsObject | ((defaults: Props) => InPropsObject);
+    props?: ComposableProps | ((defaults: Props) => ComposableProps);
     wrapWith?: unknown;
   }) {
     const customName = customization.name ?? name;
@@ -788,10 +822,11 @@ export function defineComposableComponent<
     return defineComposableComponent({
       ...options,
       name: customName,
+      // Already-checked definitions; the checked input type is for callers.
       props: {
         ...renamePropDefinitions(customName, props, customization.rename ?? {}),
         ...overrides,
-      },
+      } as {},
       wrapWith: 'wrapWith' in customization ? customization.wrapWith : wrapWith,
     });
   }
@@ -802,7 +837,7 @@ export function defineComposableComponent<
       | {
           name?: string;
           rename?: Record<string, PropRename | undefined>;
-          props?: InPropsObject | ((defaults: Props) => InPropsObject);
+          props?: ComposableProps | ((defaults: Props) => ComposableProps);
           wrapWith?: unknown;
           render: (props: any) => ReactNode;
         },
@@ -827,7 +862,7 @@ export function defineComposableComponent<
       inProps: props,
       outProps: (resolved) => resolved as never,
       ...{
-        [validatedInPropsObject]: true,
+        [validatedComposableProps]: true,
       },
     });
 

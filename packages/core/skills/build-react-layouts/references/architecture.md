@@ -125,6 +125,14 @@ Include the preset's required values in `layout.props.include`. Keep
 presentation in the preset renderer and segment definitions in resource page
 configuration.
 
+A prop of `defineComposableComponent` is a Standard Schema or a validator
+function: `({ value, error }) => value`. The function receives the supplied
+value as `unknown`, returns the validated value, and throws to reject it; the
+message is reported with the prop name. Its return type is the prop type.
+Reject with `throw error('Expected text')`, which creates a
+`PropValidatorError`. Use `createPropValidator(fn)` to share one validator between props and
+composables, and `.optional()` on its result for a prop that may be left out.
+
 ## Persist the application shell across navigation
 
 Plain `defineResourceLayout` wraps every page in its own `createResourceLayout`

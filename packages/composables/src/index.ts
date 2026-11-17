@@ -37,6 +37,27 @@ export type {
 } from './composable';
 export type { InPropsObject, WithChildren } from './types';
 export type {
+  ChildrenRequirement,
+  ComposablePropDefinition,
+  ComposableProps,
+  ComposablePropsInput,
+  CustomPropsInput,
+  CustomPropsObject,
+  NormalizeComposableProps,
+  RequiredChildren,
+} from './custom-props';
+export {
+  builtIn,
+  createPropValidator,
+  PropValidatorError,
+} from '@jfdevelops/react-layout-validator';
+export type {
+  PropValidator,
+  PropValidatorContext,
+  PropValidatorErrorHelper,
+  PropValidatorSchema,
+} from '@jfdevelops/react-layout-validator';
+export type {
   BaseComponent,
   Show,
   ShowCallable,
