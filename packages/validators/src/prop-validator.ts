@@ -54,8 +54,9 @@ const createValidatorError: PropValidatorErrorHelper = (...input) =>
 /**
  * Creates a reusable prop definition from a validator function, with no
  * schema library. The validator narrows the `unknown` value it receives, and
- * its return type is the prop's type. An error it throws rejects the value,
- * and the error's message describes why.
+ * its return type is the prop's type. An error it throws rejects the value:
+ * its message describes why, and it is the `cause` of the resulting
+ * `PropError`.
  */
 export function createPropValidator<Value>(
   validate: PropValidator<Value>,
@@ -73,6 +74,7 @@ export function createPropValidator<Value>(
         error instanceof Error && error.message
           ? error.message
           : defaultMessage,
+        error,
       );
     }
   });
