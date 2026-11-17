@@ -57,6 +57,14 @@ it.each(['typescript-5-9', 'typescript-6'])(
       pages.forPaths('users.managers.female').render(({ getComponentForPath }) => {
         getComponentForPath('users.managers./*boundGetter*/'); return null;
       });
+      const createComponents = pages.createRenderer({
+        render: () => <main />,
+        factory: { render: (_props, { context }) => context.Component },
+      });
+      const createUsers = createComponents('users');
+      const Users = createUsers();
+      const Child = Users.forResource('managers');
+      const child = <Child />;
     `;
     const source = probe.replace(/\/\*\w+\*\//g, '');
     const config = ts.readConfigFile(`${root}/tsconfig.json`, ts.sys.readFile);
@@ -145,6 +153,19 @@ it.each(['typescript-5-9', 'typescript-6'])(
             names?.every((name) => !name.slice(prefix.length).includes('.')),
         ).toBe(true);
       }
+      const componentStart = source.indexOf('const createComponents =');
+      const componentErrors = service
+        .getSemanticDiagnostics(file)
+        .filter(
+          (diagnostic) =>
+            diagnostic.start !== undefined &&
+            diagnostic.start >= componentStart,
+        );
+      expect(
+        componentErrors.map(({ messageText }) =>
+          ts.flattenDiagnosticMessageText(messageText, '\n'),
+        ),
+      ).toEqual([]);
     } finally {
       service.dispose();
     }

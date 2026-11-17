@@ -210,8 +210,8 @@ type RendererChildren<
        */
       forResource<const Path extends string>(
         path: CheckedPath<Prefixes<Remaining<Allowed, Prefix>>, Path>,
-      ): Join<Prefix, Path> extends Allowed
-        ? Selection<
+      ): [Extract<Join<Prefix, Path>, Allowed>] extends [never]
+        ? ResourceRenderer<
             Resources,
             Config,
             Options,
@@ -221,14 +221,14 @@ type RendererChildren<
             Join<Prefix, Path>,
             Allowed
           >
-        : ResourceRenderer<
+        : Selection<
             Resources,
             Config,
             Options,
             Props,
             Return,
             HasFactory,
-            Join<Prefix, Path>,
+            Extract<Join<Prefix, Path>, Allowed>,
             Allowed
           >;
     };

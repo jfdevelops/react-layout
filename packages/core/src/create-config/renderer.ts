@@ -85,6 +85,7 @@ export function createResourceRenderer<
     function makeScope(
       prefix: string,
       render: RuntimeOptions<Record<string, unknown>>['render'],
+      useFactory = true,
     ) {
       const hasDescendants = displayNamePaths.some(
         (path) => !prefix || path.startsWith(`${prefix}.`),
@@ -93,10 +94,12 @@ export function createResourceRenderer<
       function withDescendants<Value extends object>(
         value: Value,
         renderer = render,
+        factoryEnabled = useFactory,
       ) {
         return hasDescendants
           ? Object.assign(value, {
-              forResource: (path: string) => makeScope(prefix, renderer)(path),
+              forResource: (path: string) =>
+                makeScope(prefix, renderer, factoryEnabled)(path),
             })
           : value;
       }
@@ -219,11 +222,12 @@ export function createResourceRenderer<
               render: makeBuilder,
             }),
             renderer,
+            false,
           );
         }
 
         const Component = makeBuilder(render);
-        const factory = options.factory;
+        const factory = useFactory ? options.factory : undefined;
 
         if (!factory) {
           return Component;
@@ -337,18 +341,19 @@ export function createResourceRenderer<
           (!COMPONENT_SLOT_KEYS.some((key) => getter.isComponent(key)) &&
             paths.some((candidate) => candidate.startsWith(`${fullPath}.`)))
         ) {
-          return makeScope(fullPath, render);
+          return makeScope(fullPath, render, useFactory);
         }
 
-        return makeScope(fullPath, render).build();
+        return makeScope(fullPath, render, useFactory).build();
       }
 
       return withDescendants(
         Object.assign(select, {
-          forPath: (path: string) => makeScope(checkPath(path), render),
+          forPath: (path: string) =>
+            makeScope(checkPath(path), render, useFactory),
           render: (
             renderer: RuntimeOptions<Record<string, unknown>>['render'],
-          ) => makeScope(prefix, renderer),
+          ) => makeScope(prefix, renderer, useFactory),
           build,
         }),
       );

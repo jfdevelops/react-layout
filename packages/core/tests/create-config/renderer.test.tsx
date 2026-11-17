@@ -5,6 +5,35 @@ import { defineResourceLayout, InvalidPathError } from '../../src';
 import { pages } from './fixtures/renderer';
 
 describe('resource renderer selection', () => {
+  it('keeps descendants of a factory-returned Component as renderable components', () => {
+    let factoryCalls = 0;
+    const renderPage = pages.createRenderer({
+      render: ({ getComponentForPath, path }) => {
+        const getComponents = getComponentForPath(path);
+        const components = getComponents();
+
+        return components.component;
+      },
+      factory: {
+        render: (_props, { context }) => {
+          factoryCalls += 1;
+
+          return context.Component;
+        },
+      },
+    });
+    const createParent = renderPage('containers');
+    const Parent = createParent();
+    const Child = Parent.forResource('$containerId');
+    const ChangedParent = Parent.render(({ path }) => <p>{path}</p>);
+    const ChangedChild = ChangedParent.forResource('$containerId');
+    expect(renderToStaticMarkup(<Child />)).toBe('<p>Container</p>');
+    expect(renderToStaticMarkup(<ChangedChild />)).toBe(
+      '<p>containers.$containerId</p>',
+    );
+    expect(factoryCalls).toBe(1);
+  });
+
   it('selects shared detail pages without evaluating the parent factory', () => {
     let factoryCalls = 0;
     const layout = defineResourceLayout({
