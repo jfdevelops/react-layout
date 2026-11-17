@@ -24,7 +24,7 @@ export type {
   ComposableResourceLayout,
   CreateLayoutComposable,
   ConflictingPresetPropContext,
-  ComposableTypes,
+  ComposableDefinition,
   DefinedComposableComponentFactory,
   DefinedComposableComponentRecord,
   InvalidPropRenameContext,

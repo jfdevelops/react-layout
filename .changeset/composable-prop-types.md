@@ -3,4 +3,4 @@
 '@jfdevelops/react-layout': minor
 ---
 
-A factory created by `defineComposableComponent` carries its prop value types under its name, so a type can be inferred from the definition: `typeof createActionsComposable.Actions.props.actions`. The property exists only in types and is `undefined` at runtime. An extended factory is read under its own name. The type is exported as `ComposableTypes`.
+A factory created by `defineComposableComponent` holds its definition under its name: `createActionsComposable.Actions.props` are the prop definitions, each usable as a validator, and `typeof createActionsComposable.Actions.infer.actions` is a prop's value type. `infer` exists only in types and is `undefined` at runtime. An extended factory is read under its own name. The type is exported as `ComposableDefinition`.

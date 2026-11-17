@@ -17,7 +17,7 @@ export type {
   ComposableContextEntry,
   ComposableContextOptions,
   ComposableContextValues,
-  ComposableTypes,
+  ComposableDefinition,
   ComposableNameContext,
   ComposablePresetComponent,
   ComposablePresetComponentCallProps,

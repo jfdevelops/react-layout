@@ -139,9 +139,11 @@ Each package exports its contract from `/contract`. Derive another preset with
 Presets that declare the same prop must share its definition; give one of them
 its own name with `rename` when their values differ.
 
-Infer a prop's type from a factory instead of declaring it by hand:
-`typeof createActionsComposable.Actions.props.actions`. The property under
-the composable's name exists only in types and is `undefined` at runtime.
+A factory holds its definition under the composable's name. Infer a prop's
+type from it instead of declaring it by hand:
+`typeof createActionsComposable.Actions.infer.actions` (`infer` is
+type-only and `undefined` at runtime). `createActionsComposable.Actions.props`
+are the prop definitions, each usable as a validator.
 
 A prop of `defineComposableComponent` is a Standard Schema or a validator
 function: `({ value, error }) => value`. The function receives the supplied

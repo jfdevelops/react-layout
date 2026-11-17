@@ -497,12 +497,15 @@ Presets in one layout that declare the same prop receive the same page value,
 so they must share one definition. Two different definitions for one prop throw
 `ConflictingPresetPropError` when the layout is created.
 
-A factory also carries its prop types under its name, so a type can come from
-the definition instead of being written twice. The property exists only in
-types and is `undefined` at runtime:
+A factory also holds its definition under its name. `props` are the prop
+definitions, each usable as a validator, and `infer` gives their value types,
+so a type comes from the definition instead of being written twice. `infer`
+exists only in types and is `undefined` at runtime:
 
 ```ts
-type NavigationItems = typeof createNavigationComposable.Navigation.props.items;
+type NavigationItems = typeof createNavigationComposable.Navigation.infer.items;
+
+createNavigationComposable.Navigation.props.items['~standard'].validate(value);
 ```
 
 A prop of `defineComposableComponent` is a Standard Schema or a validator

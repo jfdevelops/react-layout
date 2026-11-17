@@ -121,6 +121,15 @@ describe('defined composable context', () => {
     ).toThrow(/Invalid prop "lines": Expected at most 3 lines/);
   });
 
+  it('exposes the default definitions under its name', () => {
+    expect(createNotice.Notice.props).toBe(createNotice.props);
+    expect(
+      createNotice.Notice.props.tone['~standard'].validate('info'),
+    ).toEqual({
+      value: 'info',
+    });
+  });
+
   it('keeps the other options beside the context values', () => {
     const createAlert = createNotice.extend({
       name: 'Alert',

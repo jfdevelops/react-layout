@@ -38,7 +38,7 @@ export const createActionsComposable = defineComposableComponent
   }));
 
 /** Actions keyed by a stable id. */
-export type Actions = typeof createActionsComposable.Actions.props.actions;
+export type Actions = typeof createActionsComposable.Actions.infer.actions;
 
 /** One link-style action: its label, destination, and presentation. */
 export type Action = Actions[string];

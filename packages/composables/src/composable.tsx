@@ -721,15 +721,21 @@ type CustomizeComposableOptions<
 };
 
 /**
- * The types of a defined composable, read with `typeof`:
- * `typeof createActionsComposable.Actions.props.actions`. The property is
- * `undefined` at runtime.
+ * A defined composable's definition, under its name on the factory:
+ * `createActionsComposable.Actions`.
  */
-export type ComposableTypes<Props extends InPropsObject> = {
+export type ComposableDefinition<Props extends InPropsObject> = {
   /**
-   * The value type of each prop, as the render callback receives it.
+   * The prop definitions. Each one validates a value on its own:
+   * `createActionsComposable.Actions.props.actions['~standard'].validate(value)`.
    */
-  props: Show<ResolveProps<Props>>;
+  props: Props;
+  /**
+   * Types only; `undefined` at runtime. The value type of each prop, as the
+   * render callback receives it:
+   * `typeof createActionsComposable.Actions.infer.actions`.
+   */
+  readonly infer: Show<ResolveProps<Props>>;
 };
 
 export type DefinedComposableComponentFactory<
@@ -739,10 +745,10 @@ export type DefinedComposableComponentFactory<
   Context = {},
 > = {
   /**
-   * Types only; `undefined` at runtime. Read a prop's value type with
-   * `typeof factory.Name.props.prop`.
+   * The composable's definition under its name: its prop definitions, and
+   * their value types as `typeof factory.Name.infer.prop`.
    */
-  readonly [Key in Name]: ComposableTypes<Props>;
+  readonly [Key in Name]: ComposableDefinition<Props>;
 } & {
   props: Props;
   /**
@@ -1036,6 +1042,12 @@ export function defineComposableComponent<
   Object.defineProperty(factory, 'extend', {
     value: extend,
   });
+  // `infer` is left out: it only carries types.
+  Object.defineProperty(factory, name, {
+    value: {
+      props,
+    },
+  });
 
   return factory as DefinedComposableComponentFactory<Name, Props, Wrapper>;
 }
@@ -1117,12 +1129,17 @@ function defineContext<Values extends Record<string, unknown>>(
 
       // The definition is checked where `handler` is called.
       function createFactory(values: Record<string, unknown>) {
-        return defineComposableComponent(
-          define(values as ComposableContextValues<Values>) as never,
-        ) as unknown as Factory;
+        const definition = define(values as ComposableContextValues<Values>);
+
+        return {
+          factory: defineComposableComponent(
+            definition as never,
+          ) as unknown as Factory,
+          name: definition.name,
+        };
       }
 
-      const base = createFactory(
+      const { factory: base, name } = createFactory(
         resolveComposableContext(contextEntries, {}).values,
       );
 
@@ -1134,7 +1151,7 @@ function defineContext<Values extends Record<string, unknown>>(
         );
 
         return {
-          factory: isCustomized ? createFactory(values) : base,
+          factory: isCustomized ? createFactory(values).factory : base,
           rest,
         };
       }
@@ -1152,6 +1169,9 @@ function defineContext<Values extends Record<string, unknown>>(
       Object.defineProperty(contextual, 'props', {
         enumerable: true,
         value: base.props,
+      });
+      Object.defineProperty(contextual, name, {
+        value: base[name],
       });
       Object.defineProperty(contextual, 'extend', {
         value: (customization: Record<string, unknown>) => {
