@@ -1,5 +1,31 @@
 # @jfdevelops/react-layout
 
+## 3.2.0
+
+### Minor Changes
+
+- 7eb2eaa: Add `defineComposableComponent.defineContext({ ... }).handler(...)` for composables whose definition depends on values a caller may change. Each context entry has a default `value` and an optional `handler` that decides how a supplied value is applied. `handler` on the builder receives the values and returns the definition. A caller passes a value, or a function of the default, beside the other options (a value that is itself a function is supplied only as a function of the default): `createNotice({ tones: (defaults) => [...defaults, 'loud'], render })`.
+- 9e37bf5: A prop of `defineComposableComponent` can now be a validator function instead of a Standard Schema. The function receives `{ value, error }`: the supplied value as `unknown` and an `error` helper. It returns the validated value, whose type is the prop type, and rejects it with `throw error('Expected text')`. `error` creates a `PropValidatorError`. The thrown error is the `cause` of the `PropError` that reports the value. `createPropValidator` turns a validator function into a reusable definition, and `.optional()` on its result accepts a missing value.
+
+  A composable's `props` is now typed with the same `CustomPropsObject` as `props.custom`, so `children: 'required'` is accepted. A string on any other prop throws `InvalidComposablePropsError`.
+
+  The composables package and `@jfdevelops/react-layout` re-export `builtIn`, `createPropValidator` and `PropValidatorError`.
+
+- d6ea68f: Add `rename` and `extend` to factories created by `defineComposableComponent`. `rename` gives a default prop a new name (`{ items: 'tabs' }`) or a new name and definition (`{ title: { name: 'heading', schema } }`). `extend` derives a new factory with its own name, props, or wrapper. An invalid rename throws `InvalidPropRenameError`.
+
+  Preset composables in one layout that declare the same prop must now share one definition. Two different definitions for one prop throw `ConflictingPresetPropError` when the layout is created; previously the last definition silently won.
+
+  The composables package now validates its error contexts with the built-in validators and no longer depends on arktype.
+
+### Patch Changes
+
+- Updated dependencies [1707339]
+- Updated dependencies [7eb2eaa]
+- Updated dependencies [9e37bf5]
+- Updated dependencies [d6ea68f]
+  - @jfdevelops/react-layout-validator@1.1.0
+  - @jfdevelops/react-layout-composables@1.1.0
+
 ## 3.1.0
 
 ### Minor Changes
