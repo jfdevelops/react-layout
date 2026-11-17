@@ -53,6 +53,7 @@
     "@jfdevelops/react-layout-adapter-valibot": "workspace:*",
     "@jfdevelops/react-layout-adapter-zod": "workspace:*",
     "@jfdevelops/react-layout-composable-breadcrumb": "workspace:*",
+    "@jfdevelops/react-layout-composable-copy": "workspace:*",
     "@jfdevelops/react-layout-composable-navigation": "workspace:*",
     "@jfdevelops/react-layout-internals": "workspace:*",
     "@testing-library/jest-dom": "6.9.1",

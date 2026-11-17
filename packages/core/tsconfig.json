@@ -27,6 +27,9 @@
       "@jfdevelops/react-layout-adapters": ["../adapters/src/index.ts"],
       "@jfdevelops/react-layout-composable-navigation": [
         "../composable-navigation/src/index.ts"
+      ],
+      "@jfdevelops/react-layout-composable-copy": [
+        "../composable-copy/src/index.ts"
       ]
     }
   },
