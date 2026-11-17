@@ -125,6 +125,20 @@ Include the preset's required values in `layout.props.include`. Keep
 presentation in the preset renderer and segment definitions in resource page
 configuration.
 
+Preset packages group composables by the contract they share:
+
+| Package                                         | Presets              |
+| ----------------------------------------------- | -------------------- |
+| `@jfdevelops/react-layout-composable-navigation` | `Breadcrumb`, `Tabs` |
+| `@jfdevelops/react-layout-composable-copy`       | `Header`, `Meta`     |
+| `@jfdevelops/react-layout-composable-actions`    | `Actions`            |
+| `@jfdevelops/react-layout-composable-access`     | `Access`             |
+
+Each package exports its contract from `/contract`. Derive another preset with
+`contract.extend({ name, rename, props })` rather than redefining the schema.
+Presets that declare the same prop must share its definition; give one of them
+its own name with `rename` when their values differ.
+
 A prop of `defineComposableComponent` is a Standard Schema or a validator
 function: `({ value, error }) => value`. The function receives the supplied
 value as `unknown`, returns the validated value, and throws to reject it; the
