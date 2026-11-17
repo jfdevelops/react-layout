@@ -34,30 +34,36 @@ export type ObjectValue<Schemas extends Shape> = {
  * accepts `undefined` may be left out, and keys that are not listed are kept.
  */
 export function object<const Schemas extends Shape>(shape: Schemas) {
-  return createSchema((value) => {
-    if (!isRecord(value)) {
-      return fail('Expected an object');
-    }
-
-    const entries: Record<string, unknown> = {
-      ...value,
-    };
-    const issues: StandardSchemaV1.Issue[] = [];
-
-    for (const key of Object.keys(shape)) {
-      const result = validateNested(shape[key]!, value[key], key);
-
-      if (result.issues) {
-        issues.push(...result.issues);
-      } else if (key in value || result.value !== undefined) {
-        entries[key] = result.value;
+  return createSchema(
+    (value) => {
+      if (!isRecord(value)) {
+        return fail('Expected an object');
       }
-    }
 
-    return issues.length > 0
-      ? {
-          issues,
+      const entries: Record<string, unknown> = {
+        ...value,
+      };
+      const issues: StandardSchemaV1.Issue[] = [];
+
+      for (const key of Object.keys(shape)) {
+        const result = validateNested(shape[key]!, value[key], key);
+
+        if (result.issues) {
+          issues.push(...result.issues);
+        } else if (key in value || result.value !== undefined) {
+          entries[key] = result.value;
         }
-      : pass(entries as ObjectValue<Schemas>);
-  });
+      }
+
+      return issues.length > 0
+        ? {
+            issues,
+          }
+        : pass(entries as ObjectValue<Schemas>);
+    },
+    {
+      kind: 'object',
+      shape,
+    },
+  );
 }

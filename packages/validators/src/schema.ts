@@ -61,30 +61,69 @@ export function getIssueErrorOptions(
       };
 }
 
+/** How a built-in schema is made of other schemas. */
+export type SchemaStructure =
+  | {
+      kind: 'object';
+      shape: Readonly<Record<string, StandardSchemaV1>>;
+    }
+  | {
+      kind: 'record' | 'array';
+      item: StandardSchemaV1;
+    }
+  | {
+      kind: 'tuple' | 'union';
+      items: ReadonlyArray<StandardSchemaV1>;
+    }
+  | {
+      kind: 'optional';
+      inner: StandardSchemaV1;
+    };
+
+// Kept apart from the schema objects so they stay plain Standard Schemas.
+const schemaStructures = new WeakMap<object, SchemaStructure>();
+
+/** The schemas a built-in schema is made of, if it is made of any. */
+export function getSchemaStructure(schema: StandardSchemaV1) {
+  return schemaStructures.get(schema);
+}
+
 /**
  * Creates a synchronous Standard Schema from a function that returns a
  * result. It depends on nothing else in the library, so the library's own
- * errors can validate their contexts with it.
+ * errors can validate their contexts with it. `structure` records the
+ * schemas it is made of, so a path can be followed into it.
  */
 export function createSchema<Value>(
   validate: (value: unknown) => SchemaResult<Value>,
+  structure?: SchemaStructure,
 ): PropValidatorSchema<Value> {
   let optionalSchema: PropValidatorSchema<Value | undefined> | undefined;
 
-  return {
+  const schema: PropValidatorSchema<Value> = {
     '~standard': {
       version: 1,
       vendor: 'react-layout',
       validate,
     },
     optional() {
-      optionalSchema ??= createSchema<Value | undefined>((value) =>
-        value === undefined ? pass(undefined) : validate(value),
+      optionalSchema ??= createSchema<Value | undefined>(
+        (value) => (value === undefined ? pass(undefined) : validate(value)),
+        {
+          kind: 'optional',
+          inner: schema,
+        },
       );
 
       return optionalSchema;
     },
   };
+
+  if (structure) {
+    schemaStructures.set(schema, structure);
+  }
+
+  return schema;
 }
 
 /** Validates a nested value and places its issues under `key`. */

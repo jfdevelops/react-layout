@@ -75,5 +75,9 @@ export function union<const Schemas extends ReadonlyArray<StandardSchemaV1>>(
         ],
       };
     },
+    {
+      kind: 'union',
+      items: schemas,
+    },
   );
 }
