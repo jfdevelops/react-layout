@@ -29,6 +29,20 @@ export interface PropValidatorSchema<Value> extends StandardSchemaV1<
   optional(): PropValidatorSchema<Value | undefined>;
 }
 
+/** Type-only identity of the children recorded by a built-in schema. */
+export declare const schemaStructure: unique symbol;
+
+/** A built-in schema that preserves its child definitions for path checking. */
+export interface StructuredSchema<
+  Value,
+  Structure,
+> extends PropValidatorSchema<Value> {
+  /** Types only; the runtime structure is stored separately. */
+  readonly [schemaStructure]: Structure;
+  /** The same child definitions, accepting an omitted value. */
+  optional(): StructuredSchema<Value | undefined, Structure>;
+}
+
 /** The result of validating one value. */
 export type SchemaResult<Value> = StandardSchemaV1.Result<Value>;
 
@@ -111,6 +125,15 @@ export function getSchemaStructure(schema: StandardSchemaV1) {
  * errors can validate their contexts with it. `structure` records the
  * schemas it is made of, so a path can be followed into it.
  */
+export function createSchema<Value, const Structure extends SchemaStructure>(
+  validate: (value: unknown) => SchemaResult<Value>,
+  structure: Structure,
+): StructuredSchema<Value, Structure>;
+
+export function createSchema<Value>(
+  validate: (value: unknown) => SchemaResult<Value>,
+): PropValidatorSchema<Value>;
+
 export function createSchema<Value>(
   validate: (value: unknown) => SchemaResult<Value>,
   structure?: SchemaStructure,
@@ -125,7 +148,7 @@ export function createSchema<Value>(
       validate,
     },
     optional() {
-      optionalSchema ??= createSchema<Value | undefined>(
+      optionalSchema ??= createSchema(
         (value) => (value === undefined ? pass(undefined) : validate(value)),
         {
           kind: 'optional',

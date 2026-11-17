@@ -2,11 +2,11 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import { z } from 'zod';
 import {
   builtIn,
+  createPropValidator,
   getSchemaAtPath,
   type InferableSchema,
   InvalidSchemaPathError,
   type SchemaPath,
-  type StandardSchemaV1,
 } from '../src';
 
 const tag = builtIn.object({
@@ -46,26 +46,17 @@ function captureError(run: () => unknown) {
 }
 
 describe('getSchemaAtPath', () => {
-  it('lists every path into the value', () => {
-    expectTypeOf<
-      SchemaPath<StandardSchemaV1.InferOutput<typeof page>>
-    >().toEqualTypeOf<
-      | 'title'
-      | 'tags'
-      | 'tags.[number]'
-      | 'tags.[number].label'
-      | 'tags.[number].color'
-      | 'links'
-      | 'links.[string]'
-      | 'links.[string].href'
-      | 'size'
-      | 'size.0'
-      | 'size.1'
-      | 'meta'
-      | 'meta.author'
-      | 'extra'
-      | 'extra.note'
+  it('suggests only the next supported segment', () => {
+    expectTypeOf<SchemaPath<typeof page>>().toEqualTypeOf<
+      'title' | 'tags' | 'links' | 'size' | 'meta' | 'extra'
     >();
+    expectTypeOf<
+      SchemaPath<typeof page, 'tags.'>
+    >().toEqualTypeOf<'tags.[number]'>();
+    expectTypeOf<SchemaPath<typeof page, 'tags.[number].'>>().toEqualTypeOf<
+      'tags.[number].label' | 'tags.[number].color'
+    >();
+    expectTypeOf<SchemaPath<typeof page, 'extra.'>>().toEqualTypeOf<never>();
   });
 
   it('follows object keys, record keys, array items and tuple indexes', () => {
@@ -93,10 +84,65 @@ describe('getSchemaAtPath', () => {
     expect(getSchemaAtPath(page, 'meta.author')).toBe(builtIn.string);
   });
 
+  it('follows all union branches that share a segment', () => {
+    const schema = builtIn.union(
+      builtIn.object({
+        item: builtIn.object({
+          label: builtIn.string,
+        }),
+      }),
+      builtIn.object({
+        item: builtIn.object({
+          count: builtIn.number,
+        }),
+      }),
+    );
+    const count = getSchemaAtPath(schema, 'item.count');
+
+    expectTypeOf<typeof count.infer>().toEqualTypeOf<number>();
+    expect(count).toBe(builtIn.number);
+  });
+
+  it('checks a requested path beyond the previous five-segment limit', () => {
+    const schema = builtIn.object({
+      a: builtIn.object({
+        b: builtIn.object({
+          c: builtIn.object({
+            d: builtIn.object({
+              e: builtIn.object({
+                f: builtIn.string,
+              }),
+            }),
+          }),
+        }),
+      }),
+    });
+    const leaf = getSchemaAtPath(schema, 'a.b.c.d.e.f');
+
+    expectTypeOf<typeof leaf.infer>().toEqualTypeOf<string>();
+    expect(leaf).toBe(builtIn.string);
+  });
+
+  it('stops at custom validators even when their output has properties', () => {
+    const custom = createPropValidator(() => ({
+      note: 'hello',
+    }));
+    const schema = builtIn.object({
+      custom,
+    });
+
+    expect(getSchemaAtPath(schema, 'custom')).toBe(custom);
+    // @ts-expect-error The output shape is not a tree of child validators.
+    expect(() => getSchemaAtPath(schema, 'custom.note')).toThrow(
+      InvalidSchemaPathError,
+    );
+  });
+
   it('rejects a segment that does not exist or cannot be followed', () => {
     const unknown = captureError(() =>
       getSchemaAtPath(page, 'tags.0' as never),
     );
+    // @ts-expect-error External schemas do not expose traversable children.
     const opaque = captureError(() => getSchemaAtPath(page, 'extra.note'));
 
     expect(unknown).toBeInstanceOf(InvalidSchemaPathError);

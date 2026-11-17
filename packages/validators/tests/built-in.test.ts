@@ -94,7 +94,7 @@ describe('built-in validators', () => {
       }),
     );
 
-    expectTypeOf(label).toEqualTypeOf<
+    expectTypeOf(label).toExtend<
       PropValidatorSchema<
         | string
         | {
@@ -131,9 +131,9 @@ describe('built-in validators', () => {
     const pair = builtIn.tuple(builtIn.string, builtIn.number);
     const counts = builtIn.record(builtIn.number);
 
-    expectTypeOf(names).toEqualTypeOf<PropValidatorSchema<string[]>>();
-    expectTypeOf(pair).toEqualTypeOf<PropValidatorSchema<[string, number]>>();
-    expectTypeOf(counts).toEqualTypeOf<
+    expectTypeOf(names).toExtend<PropValidatorSchema<string[]>>();
+    expectTypeOf(pair).toExtend<PropValidatorSchema<[string, number]>>();
+    expectTypeOf(counts).toExtend<
       PropValidatorSchema<Record<string, number>>
     >();
     expect(issuesOf(names, ['a', 1])).toEqual([
@@ -170,7 +170,7 @@ describe('built-in validators', () => {
       roles: builtIn.array(builtIn.literal('admin', 'member')),
     });
 
-    expectTypeOf(user).toEqualTypeOf<
+    expectTypeOf(user).toExtend<
       PropValidatorSchema<{
         name: string;
         meta: unknown;

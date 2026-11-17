@@ -37,7 +37,7 @@ export const createActionsComposable = defineComposableComponent
     },
   }));
 
-const actionsSchema = createActionsComposable.getSchema('Actions.actions');
+const actionsSchema = createActionsComposable.getSchema('actions');
 
 /** Actions keyed by a stable id. */
 export type Actions = typeof actionsSchema.infer;

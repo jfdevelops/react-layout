@@ -31,9 +31,9 @@ describe('getSchema', () => {
     },
   });
 
-  it('returns a prop definition by its composable and prop name', () => {
-    const items = createList.getSchema('List.items');
-    const title = createList.getSchema('List.title');
+  it('returns a prop definition by its prop name', () => {
+    const items = createList.getSchema('items');
+    const title = createList.getSchema('title');
 
     expectTypeOf(items).toEqualTypeOf(createList.props.items);
     expectTypeOf(title).toEqualTypeOf(createList.props.title);
@@ -42,12 +42,12 @@ describe('getSchema', () => {
   });
 
   it('follows a path into a built-in definition', () => {
-    const value = createList.getSchema('List.items.[string].value');
-    const href = createList.getSchema('List.items.[string].href');
+    const value = createList.getSchema('items.[string].value');
+    const href = createList.getSchema('items.[string].href');
 
     expectTypeOf(value).toEqualTypeOf<InferableSchema<string>>();
     expectTypeOf(href).toEqualTypeOf<InferableSchema<string | undefined>>();
-    const items = createList.getSchema('List.items');
+    const items = createList.getSchema('items');
 
     expectTypeOf<typeof items.infer>().toEqualTypeOf<
       Record<
@@ -77,11 +77,9 @@ describe('getSchema', () => {
       },
     });
 
-    expect(createTabs.getSchema('Tabs.tabs.[string].value')).toBe(
-      builtIn.string,
-    );
-    // @ts-expect-error The extended factory has its own name.
-    captureError(() => createTabs.getSchema('List.items'));
+    expect(createTabs.getSchema('tabs.[string].value')).toBe(builtIn.string);
+    // @ts-expect-error The extended factory uses its renamed props.
+    captureError(() => createTabs.getSchema('items'));
   });
 
   it('reads the definitions made from the default context values', () => {
@@ -99,7 +97,7 @@ describe('getSchema', () => {
       }));
 
     expect(
-      createNotice.getSchema('Notice.tone')['~standard'].validate('info'),
+      createNotice.getSchema('tone')['~standard'].validate('info'),
     ).toEqual({
       value: 'info',
     });
@@ -110,7 +108,7 @@ describe('getSchema', () => {
       createList.getSchema('Menu.items' as never),
     );
     const deep = captureError(() =>
-      createList.getSchema('List.items.[string].missing' as never),
+      createList.getSchema('items.[string].missing' as never),
     );
 
     expect(name).toBeInstanceOf(InvalidSchemaPathError);
@@ -120,11 +118,11 @@ describe('getSchema', () => {
       reason: 'unknown',
     });
     expect((deep as InvalidSchemaPathError).context).toEqual({
-      path: 'List.items.[string].missing',
+      path: 'items.[string].missing',
       segment: 'missing',
       reason: 'unknown',
     });
     // @ts-expect-error A schema from another library is not followed.
-    captureError(() => createList.getSchema('List.title.length'));
+    captureError(() => createList.getSchema('title.length'));
   });
 });

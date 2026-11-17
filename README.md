@@ -498,22 +498,22 @@ so they must share one definition. Two different definitions for one prop throw
 `ConflictingPresetPropError` when the layout is created.
 
 Take a type from a definition instead of writing it twice. `getSchema`
-returns the definition at a path that starts with the composable's name, and
+returns the definition at a path that starts with a prop name, and
 `infer` on it is the value type:
 
 ```ts
-const itemsSchema = createNavigationComposable.getSchema('Navigation.items');
+const itemsSchema = createNavigationComposable.getSchema('items');
 
 export type NavigationItems = typeof itemsSchema.infer;
 ```
 
 Inside a definition made of built-in validators the path goes deeper: an
 object key is a segment, `[string]` is any key of a record and `[number]`
-any item of an array. The editor lists every path:
+any item of an array. The editor suggests the next segment after each dot:
 
 ```ts
 const hrefSchema = createNavigationComposable.getSchema(
-  'Navigation.items.[string].href',
+  'items.[string].href',
 );
 
 type Href = typeof hrefSchema.infer; // string | undefined
@@ -523,6 +523,10 @@ hrefSchema['~standard'].validate(value);
 `infer` is a type-only property on built-in validators and on what
 `getSchema` returns; it is `undefined` at runtime. A factory also holds its
 definitions under its name: `createNavigationComposable.Navigation.props`.
+
+Paths stop at external schemas and custom validator functions: Standard Schema
+exposes validation, but not child definitions. These leaves can still be
+retrieved and validated as a whole.
 
 A prop of `defineComposableComponent` is a Standard Schema or a validator
 function, so a composable needs no schema library. The function receives the

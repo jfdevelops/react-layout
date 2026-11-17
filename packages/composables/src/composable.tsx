@@ -18,7 +18,6 @@ import {
   InvalidSchemaPathError,
   type NormalizePropDefinitions,
   PropDefinition,
-  type PropValidatorSchema,
   type SchemaPath,
   type SchemaPathValue,
   type PropValidationContext,
@@ -744,36 +743,25 @@ export type ComposableDefinition<Props extends InPropsObject> = {
   readonly infer: Show<ResolveProps<Props>>;
 };
 
-/**
- * A path to one of a defined composable's prop definitions,
- * `${Name}.${prop}`, or deeper into a built-in definition, such as
- * `Actions.actions.[string].href`. See {@link SchemaPath} for the segments.
- */
+/** A prop path, completing one segment at a time within recorded children. */
 export type ComposableSchemaPath<
-  Name extends string,
   Props extends InPropsObject,
-> = {
-  [Key in keyof Props & string]:
-    | `${Name}.${Key}`
-    | (Props[Key] extends PropValidatorSchema<infer Value>
-        ? `${Name}.${Key}.${SchemaPath<Value>}`
-        : never);
-}[keyof Props & string];
+  Path extends string = '',
+> = Path extends `${infer Key}.${infer Rest}`
+  ? Key extends keyof Props & string
+    ? `${Key}.${SchemaPath<Props[Key], Rest>}`
+    : keyof Props & string
+  : keyof Props & string;
 
-/** The definition {@link ComposableSchemaPath} `Path` leads to. */
+/** The definition a prop path leads to. */
 export type ComposableSchemaAtPath<
-  Name extends string,
   Props extends InPropsObject,
   Path extends string,
-> = Path extends `${Name}.${infer Rest}`
-  ? Rest extends keyof Props
-    ? Props[Rest]
-    : Rest extends `${infer Key}.${infer Deep}`
-      ? Props[Key] extends PropValidatorSchema<infer Value>
-        ? InferableSchema<SchemaPathValue<Value, Deep>>
-        : never
-      : never
-  : never;
+> = Path extends keyof Props
+  ? Props[Path]
+  : Path extends `${infer Key extends keyof Props & string}.${infer Deep}`
+    ? InferableSchema<SchemaPathValue<Props[Key], Deep>>
+    : never;
 
 export type DefinedComposableComponentFactory<
   Name extends string,
@@ -786,7 +774,15 @@ export type DefinedComposableComponentFactory<
    * their value types as `typeof factory.Name.infer.prop`.
    */
   readonly [Key in Name]: ComposableDefinition<Props>;
-} & {
+} & DefinedComposableComponentCallable<Name, Props, Wrapper, Context>;
+
+/** The callable API and customization methods of a defined composable factory. */
+interface DefinedComposableComponentCallable<
+  Name extends string,
+  Props extends InPropsObject,
+  Wrapper = undefined,
+  Context = {},
+> {
   props: Props;
   /**
    * Customize this instance without changing the factory's defaults.
@@ -820,14 +816,16 @@ export type DefinedComposableComponentFactory<
     render: (props: Show<WithChildren<ResolveProps<Props>>>) => ReactNode,
   ): DefinedComposableComponentRecord<Name, Props, Wrapper>;
   /**
-   * The definition at `path`: `Actions.actions` for a prop, or deeper into
-   * a built-in definition, such as `Actions.actions.[string].href`. `[string]`
+   * The definition at `path`: `actions` for a prop, or deeper into
+   * a built-in definition, such as `actions.[string].href`. `[string]`
    * is any key of a record and `[number]` any item of an array. The
    * definition validates a value on its own.
    */
-  getSchema<const Path extends ComposableSchemaPath<Name, Props>>(
-    path: Path,
-  ): ComposableSchemaAtPath<Name, Props, Path>;
+  getSchema<const Path extends string>(
+    path: Path extends ComposableSchemaPath<Props, Path>
+      ? Path
+      : ComposableSchemaPath<Props, Path>,
+  ): ComposableSchemaAtPath<Props, Path>;
   /**
    * Derive a factory with its own name, props, or wrapper. The original
    * factory is unchanged.
@@ -851,7 +849,7 @@ export type DefinedComposableComponentFactory<
     CustomizedProps<Props, Renames, Overrides>,
     CustomWrapper
   >;
-};
+}
 
 function getRenamedName(prop: string, rename: PropRename | undefined) {
   if (rename === undefined) {
@@ -961,12 +959,12 @@ export function defineComposableComponent<
   const props = normalizeComposableProps(options.props ?? {}) as Props;
 
   function getSchema(path: string) {
-    const [composable, prop = '', ...rest] = path.split('.');
+    const [prop = '', ...rest] = path.split('.');
 
-    if (composable !== name || !Object.hasOwn(props, prop)) {
+    if (!Object.hasOwn(props, prop)) {
       throw new InvalidSchemaPathError({
         path,
-        segment: composable === name ? prop : (composable ?? ''),
+        segment: prop,
         reason: 'unknown',
       });
     }

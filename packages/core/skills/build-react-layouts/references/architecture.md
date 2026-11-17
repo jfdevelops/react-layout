@@ -144,13 +144,13 @@ Get the definition with `getSchema` and read its type from `infer`
 (type-only, `undefined` at runtime):
 
 ```ts
-const actionsSchema = createActionsComposable.getSchema('Actions.actions');
+const actionsSchema = createActionsComposable.getSchema('actions');
 
 export type Actions = typeof actionsSchema.infer;
 ```
 
 The path starts with the composable's name and goes into built-in validators,
-such as `Actions.actions.[string].href` (`[string]` for record keys,
+such as `actions.[string].href` (`[string]` for record keys,
 `[number]` for array items). The definition validates a value on its own.
 
 A prop of `defineComposableComponent` is a Standard Schema or a validator

@@ -1,8 +1,12 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 
-import { literal, object, string } from './built-in';
+import { literal, object, string, union } from './built-in';
 import { validatorErrorFactory } from './errors';
-import { getSchemaStructure, type InferableSchema } from './schema';
+import {
+  getSchemaStructure,
+  type InferableSchema,
+  type StructuredSchema,
+} from './schema';
 
 /** The path segment for any key of a record. */
 export type RecordSegment = '[string]';
@@ -10,70 +14,69 @@ export type RecordSegment = '[string]';
 /** The path segment for any item of an array. */
 export type ArraySegment = '[number]';
 
-// The value under each segment that leads out of `Value`.
-type Segments<Value> =
-  Value extends ReadonlyArray<unknown>
-    ? number extends Value['length']
-      ? {
-          [Segment in ArraySegment]: Value[number];
-        }
-      : {
-          [
-            Key in keyof Value as Key extends `${number}` ? Key : never
-          ]: Value[Key];
-        }
-    : Value extends (...input: never[]) => unknown
-      ? {}
-      : Value extends object
-        ? string extends keyof Value
-          ? {
-              [Segment in RecordSegment]: Value[string];
-            }
-          : {
-              [
-                Key in keyof Value as Key extends string ? Key : never
-              ]: Value[Key];
-            }
-        : {};
+// Only recorded children are traversable; an output type alone cannot describe
+// how a validator was constructed.
+type Children<Schema> =
+  Schema extends StructuredSchema<unknown, infer Structure>
+    ? Structure extends { kind: 'object'; shape: infer Shape }
+      ? Shape
+      : Structure extends { kind: 'array'; item: infer Item }
+        ? { '[number]': Item }
+        : Structure extends { kind: 'record'; item: infer Item }
+          ? { '[string]': Item }
+          : Structure extends { kind: 'tuple'; items: infer Items }
+            ? {
+                [
+                  Key in keyof Items as Key extends `${number}` ? Key : never
+                ]: Items[Key];
+              }
+            : Structure extends {
+                  kind: 'union';
+                  items: ReadonlyArray<infer Member>;
+                }
+              ? Children<Member>
+              : {}
+    : {};
 
-type SegmentOf<Value> = keyof Segments<Value> & string;
+type Child<Schema, Key extends string> = Schema extends unknown
+  ? Children<Schema> extends infer Shape
+    ? Shape extends unknown
+      ? Key extends keyof Shape
+        ? Shape[Key]
+        : never
+      : never
+    : never
+  : never;
 
-// Deep enough for nested props; it also stops recursive types.
-type MaxDepth = 5;
-
-/**
- * Every path into a value of type `Value`, as dot-separated segments. An
- * object key is its own segment, `[string]` is any key of a record,
- * `[number]` any item of an array, and a tuple item is its index.
- */
-export type SchemaPath<
-  Value,
-  Depth extends unknown[] = [],
-> = Depth['length'] extends MaxDepth
-  ? never
-  : // `null` and `undefined` lead nowhere, so a path goes through an optional value.
-    NonNullable<Value> extends infer Present
-    ? Present extends unknown
-      ? {
-          [Segment in SegmentOf<Present>]:
-            | Segment
-            | `${Segment}.${SchemaPath<Segments<Present>[Segment], [...Depth, unknown]>}`;
-        }[SegmentOf<Present>]
+type ChildKey<Schema> =
+  Children<Schema> extends infer Shape
+    ? Shape extends unknown
+      ? keyof Shape & string
       : never
     : never;
 
-/** The type of the value at `Path` in a value of type `Value`. */
-export type SchemaPathValue<Value, Path extends string> =
-  NonNullable<Value> extends infer Present
-    ? Present extends unknown
-      ? Path extends `${infer Segment}.${infer Rest}`
-        ? Segment extends SegmentOf<Present>
-          ? SchemaPathValue<Segments<Present>[Segment], Rest>
-          : never
-        : Path extends SegmentOf<Present>
-          ? Segments<Present>[Path]
-          : never
-      : never
+/**
+ * Validates the supplied path and suggests only the next segment. Object keys,
+ * `[string]` record keys, `[number]` array items and tuple indexes are supported.
+ * Schemas without recorded children are leaves.
+ */
+export type SchemaPath<
+  Schema,
+  Path extends string = '',
+> = Path extends `${infer Key}.${infer Rest}`
+  ? Key extends ChildKey<Schema>
+    ? `${Key}.${SchemaPath<Child<Schema, Key>, Rest>}`
+    : ChildKey<Schema>
+  : ChildKey<Schema>;
+
+/** The output type of the schema at a supported path. */
+export type SchemaPathValue<
+  Schema,
+  Path extends string,
+> = Path extends `${infer Key}.${infer Rest}`
+  ? SchemaPathValue<Child<Schema, Key>, Rest>
+  : Child<Schema, Path> extends infer Result extends StandardSchemaV1
+    ? StandardSchemaV1.InferOutput<Result>
     : never;
 
 const invalidSchemaPathContext = object({
@@ -124,17 +127,15 @@ function getChildSchema(
       return segment === '[number]' ? structure.item : undefined;
     case 'tuple':
       return isIndex(segment) ? structure.items[Number(segment)] : undefined;
-    case 'union':
-      // The first member the segment leads into.
-      for (const member of structure.items) {
+    case 'union': {
+      const children = structure.items.flatMap((member) => {
         const child = getChildSchema(member, segment);
 
-        if (child) {
-          return child;
-        }
-      }
+        return child ? [child] : [];
+      });
 
-      return undefined;
+      return children.length > 1 ? union(...children) : children[0];
+    }
     case 'optional':
       return getChildSchema(structure.inner, segment);
     default:
@@ -146,10 +147,13 @@ function getChildSchema(
  * Follows `path` into a built-in schema and returns the schema there. The
  * path's segments are the ones {@link SchemaPath} lists.
  */
-export function getSchemaAtPath<Value, const Path extends SchemaPath<Value>>(
-  schema: StandardSchemaV1<unknown, Value>,
-  path: Path,
-): InferableSchema<SchemaPathValue<Value, Path>>;
+export function getSchemaAtPath<
+  Schema extends StandardSchemaV1,
+  const Path extends string,
+>(
+  schema: Schema,
+  path: Path extends SchemaPath<Schema, Path> ? Path : SchemaPath<Schema, Path>,
+): InferableSchema<SchemaPathValue<Schema, Path>>;
 
 export function getSchemaAtPath(
   schema: StandardSchemaV1,

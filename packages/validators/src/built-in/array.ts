@@ -2,7 +2,9 @@ import type { StandardSchemaV1 } from '@standard-schema/spec';
 import { createSchema, fail, pass, validateNested } from '../schema';
 
 /** Accepts an array whose items all match `item`. */
-export function array<Item>(item: StandardSchemaV1<unknown, Item>) {
+export function array<Schema extends StandardSchemaV1>(item: Schema) {
+  type Item = StandardSchemaV1.InferOutput<Schema>;
+
   return createSchema(
     (value) => {
       if (!Array.isArray(value)) {

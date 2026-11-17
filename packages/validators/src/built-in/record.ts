@@ -2,7 +2,9 @@ import type { StandardSchemaV1 } from '@standard-schema/spec';
 import { createSchema, fail, isRecord, pass, validateNested } from '../schema';
 
 /** Accepts an object whose values all match `item`, under any keys. */
-export function record<Item>(item: StandardSchemaV1<unknown, Item>) {
+export function record<Schema extends StandardSchemaV1>(item: Schema) {
+  type Item = StandardSchemaV1.InferOutput<Schema>;
+
   return createSchema(
     (value) => {
       if (!isRecord(value)) {
