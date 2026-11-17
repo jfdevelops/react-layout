@@ -684,6 +684,14 @@ export type DefinedComposableComponentFactory<
   >;
 };
 
+function getRenamedName(prop: string, rename: PropRename | undefined) {
+  if (rename === undefined) {
+    return prop;
+  }
+
+  return typeof rename === 'string' ? rename : rename.name;
+}
+
 function renamePropDefinitions(
   composable: string,
   props: InPropsObject,
@@ -694,7 +702,7 @@ function renamePropDefinitions(
       throw new InvalidPropRenameError({
         composable,
         prop,
-        name: prop,
+        name: getRenamedName(prop, renames[prop]),
         reason: 'unknown',
       });
     }
@@ -704,12 +712,7 @@ function renamePropDefinitions(
 
   for (const [prop, definition] of Object.entries(props)) {
     const rename = renames[prop];
-    const name =
-      rename === undefined
-        ? prop
-        : typeof rename === 'string'
-          ? rename
-          : rename.name;
+    const name = getRenamedName(prop, rename);
 
     if (rename !== undefined && name === 'children') {
       throw new InvalidPropRenameError({
