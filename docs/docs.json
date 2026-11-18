@@ -1,0 +1,397 @@
+{
+  "$schema": "./maintainers/docs.schema.json",
+  "schemaVersion": 1,
+  "library": {
+    "id": "react-layout",
+    "name": "React Layout",
+    "npmPackage": "@jfdevelops/react-layout",
+    "repository": "https://github.com/jfdevelops/react-layout"
+  },
+  "defaultVersion": "v4",
+  "docsBaseCommit": "50ff82dbc2d40d56cb83fb4c95905c09ccaf4fde",
+  "auditedOn": "2026-11-17",
+  "excluded": [
+    "maintainers"
+  ],
+  "legacyRedirects": [
+    {
+      "from": "docs/standard-schema.md",
+      "to": "v4/guides/props-and-validation"
+    },
+    {
+      "from": "docs/resource-renderers.md",
+      "to": "v4/guides/route-components"
+    },
+    {
+      "from": "docs/lazy-loading.md",
+      "to": "v4/guides/lazy-loading"
+    },
+    {
+      "from": "docs/hosted-surfaces.md",
+      "to": "v4/guides/hosted-surfaces"
+    },
+    {
+      "from": "docs/devtools-and-shared-defaults.md",
+      "to": "v4/guides/resource-layouts"
+    },
+    {
+      "from": "docs/vision.md",
+      "toMaintainerPage": "maintainers/design/vision.md"
+    }
+  ],
+  "versions": [
+    {
+      "id": "v4",
+      "label": "v4",
+      "major": 4,
+      "status": "current",
+      "path": "v4",
+      "package": {
+        "name": "@jfdevelops/react-layout",
+        "publishedVersions": 1,
+        "firstVersion": "4.0.0",
+        "endpointVersion": "4.0.0"
+      },
+      "source": {
+        "kind": "release-tag",
+        "repository": "https://github.com/jfdevelops/react-layout",
+        "tag": "@jfdevelops/react-layout@4.0.0",
+        "commit": "b68f12045758ea26e7df75d3c79c8c2b886b4ace",
+        "publishedAt": "2026-11-17T21:46:19Z",
+        "provenance": "npm SLSA provenance commit equals the tag commit",
+        "firstRelease": {
+          "version": "4.0.0",
+          "tag": "@jfdevelops/react-layout@4.0.0",
+          "commit": "b68f12045758ea26e7df75d3c79c8c2b886b4ace"
+        }
+      },
+      "examples": {
+        "verification": "typechecked",
+        "fixtures": "tools/docs/examples/v4",
+        "command": "pnpm check:docs-examples"
+      },
+      "navigation": [
+        {
+          "title": "Start",
+          "pages": [
+            "index",
+            "getting-started"
+          ]
+        },
+        {
+          "title": "Build layouts",
+          "pages": [
+            "guides/resource-layouts",
+            "guides/props-and-validation",
+            "guides/render-states",
+            "guides/composables-and-presets"
+          ]
+        },
+        {
+          "title": "Route and scale",
+          "pages": [
+            "guides/route-components",
+            "guides/reusable-helpers",
+            "guides/lazy-loading",
+            "guides/hosted-surfaces"
+          ]
+        },
+        {
+          "title": "Develop and debug",
+          "pages": [
+            "guides/develop-and-debug"
+          ]
+        },
+        {
+          "title": "Reference",
+          "pages": [
+            "reference/api",
+            "troubleshooting"
+          ]
+        },
+        {
+          "title": "Migration",
+          "pages": [
+            "migration"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "v3",
+      "label": "v3",
+      "major": 3,
+      "status": "previous",
+      "path": "v3",
+      "package": {
+        "name": "@jfdevelops/react-layout",
+        "publishedVersions": 4,
+        "firstVersion": "3.0.0",
+        "endpointVersion": "3.3.0"
+      },
+      "source": {
+        "kind": "release-tag",
+        "repository": "https://github.com/jfdevelops/react-layout",
+        "tag": "@jfdevelops/react-layout@3.3.0",
+        "commit": "1b5a1677c85883a09000053287350e7f66d87293",
+        "publishedAt": "2026-11-17T17:01:18Z",
+        "provenance": "npm SLSA provenance commit equals the tag commit",
+        "firstRelease": {
+          "version": "3.0.0",
+          "tag": "@jfdevelops/react-layout@3.0.0",
+          "commit": "afc2c7782adc8c8664bfb00fca5d277496e471c9"
+        }
+      },
+      "examples": {
+        "verification": "adapted-from-source",
+        "fixtures": null,
+        "command": null
+      },
+      "navigation": [
+        {
+          "title": "Start",
+          "pages": [
+            "index",
+            "getting-started"
+          ]
+        },
+        {
+          "title": "Build layouts",
+          "pages": [
+            "guides/resource-layouts",
+            "guides/props-and-validation",
+            "guides/render-states",
+            "guides/composables-and-presets"
+          ]
+        },
+        {
+          "title": "Route and scale",
+          "pages": [
+            "guides/route-components",
+            "guides/reusable-helpers",
+            "guides/lazy-loading",
+            "guides/hosted-surfaces"
+          ]
+        },
+        {
+          "title": "Develop and debug",
+          "pages": [
+            "guides/develop-and-debug"
+          ]
+        },
+        {
+          "title": "Reference",
+          "pages": [
+            "reference/api",
+            "troubleshooting"
+          ]
+        },
+        {
+          "title": "Migration",
+          "pages": [
+            "migration"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "v2",
+      "label": "v2",
+      "major": 2,
+      "status": "previous",
+      "path": "v2",
+      "package": {
+        "name": "@jfdevelops/react-layout",
+        "publishedVersions": 9,
+        "firstVersion": "2.0.0",
+        "endpointVersion": "2.7.0"
+      },
+      "source": {
+        "kind": "release-tag",
+        "repository": "https://github.com/jfdevelops/react-layout",
+        "tag": "@jfdevelops/react-layout@2.7.0",
+        "commit": "c55251276d2399f27e50bb238fb22ea18741efe6",
+        "publishedAt": "2026-11-10T21:50:55Z",
+        "provenance": "npm SLSA provenance commit equals the tag commit",
+        "firstRelease": {
+          "version": "2.0.0",
+          "tag": "@jfdevelops/react-layout@2.0.0",
+          "commit": "310165180d45d620e91a65137153d1520eac3360"
+        }
+      },
+      "examples": {
+        "verification": "adapted-from-source",
+        "fixtures": null,
+        "command": null
+      },
+      "navigation": [
+        {
+          "title": "Start",
+          "pages": [
+            "index",
+            "getting-started"
+          ]
+        },
+        {
+          "title": "Build layouts",
+          "pages": [
+            "guides/resource-layouts",
+            "guides/props-and-validation",
+            "guides/render-states",
+            "guides/composables-and-presets"
+          ]
+        },
+        {
+          "title": "Route and scale",
+          "pages": [
+            "guides/route-components",
+            "guides/reusable-helpers",
+            "guides/lazy-loading",
+            "guides/hosted-surfaces"
+          ]
+        },
+        {
+          "title": "Develop and debug",
+          "pages": [
+            "guides/develop-and-debug"
+          ]
+        },
+        {
+          "title": "Reference",
+          "pages": [
+            "reference/api",
+            "troubleshooting"
+          ]
+        },
+        {
+          "title": "Migration",
+          "pages": [
+            "migration"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "v1",
+      "label": "v1",
+      "major": 1,
+      "status": "previous",
+      "path": "v1",
+      "package": {
+        "name": "@jfdevelops/react-layout",
+        "publishedVersions": 11,
+        "firstVersion": "1.0.0",
+        "endpointVersion": "1.6.1"
+      },
+      "source": {
+        "kind": "release-tag",
+        "repository": "https://github.com/jfdevelops/react-layout",
+        "tag": "@jfdevelops/react-layout@1.6.1",
+        "commit": "f183a3d4deec330876380e3ce2d2735dde398974",
+        "publishedAt": "2026-10-27T18:23:55Z",
+        "provenance": "npm SLSA provenance commit equals the tag commit",
+        "firstRelease": {
+          "version": "1.0.0",
+          "tag": "@jfdevelops/react-layout@1.0.0",
+          "commit": "f21a23fbf7428d8bc475eae705c97284d2cb1e5f"
+        }
+      },
+      "examples": {
+        "verification": "adapted-from-source",
+        "fixtures": null,
+        "command": null
+      },
+      "navigation": [
+        {
+          "title": "Start",
+          "pages": [
+            "index",
+            "getting-started"
+          ]
+        },
+        {
+          "title": "Build layouts",
+          "pages": [
+            "guides/resource-layouts",
+            "guides/props-and-validation",
+            "guides/render-states",
+            "guides/composables-and-presets"
+          ]
+        },
+        {
+          "title": "Route and scale",
+          "pages": [
+            "guides/route-components",
+            "guides/lazy-loading"
+          ]
+        },
+        {
+          "title": "Develop and debug",
+          "pages": [
+            "guides/develop-and-debug"
+          ]
+        },
+        {
+          "title": "Reference",
+          "pages": [
+            "reference/api",
+            "troubleshooting"
+          ]
+        },
+        {
+          "title": "Migration",
+          "pages": [
+            "migration"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "v0",
+      "label": "v0",
+      "major": 0,
+      "status": "legacy",
+      "path": "v0",
+      "package": {
+        "name": "@jfdevelops/react-layout",
+        "publishedVersions": 42,
+        "firstVersion": "0.1.1",
+        "endpointVersion": "0.25.0"
+      },
+      "source": {
+        "kind": "release-tag",
+        "repository": "https://github.com/jfdevelops/react-layout",
+        "tag": "@jfdevelops/react-layout@0.25.0",
+        "commit": "185598a15d362035ac59a5429404642d9c52abb4",
+        "publishedAt": "2026-10-21T15:24:17Z",
+        "provenance": "npm SLSA provenance commit equals the tag commit",
+        "firstRelease": {
+          "version": "0.1.1",
+          "tag": null,
+          "commit": null
+        }
+      },
+      "examples": {
+        "verification": "adapted-from-source",
+        "fixtures": null,
+        "command": null
+      },
+      "navigation": [
+        {
+          "title": "Start",
+          "pages": [
+            "index",
+            "final-snapshot"
+          ]
+        },
+        {
+          "title": "Reference",
+          "pages": [
+            "reference/api"
+          ]
+        }
+      ],
+      "note": "Unstable 0.x line. Only the final release is documented."
+    }
+  ]
+}

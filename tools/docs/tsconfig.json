@@ -1,0 +1,50 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"],
+    "typeRoots": ["../../packages/core/node_modules/@types"],
+    "paths": {
+      "react": ["../../packages/core/node_modules/@types/react"],
+      "react/jsx-runtime": [
+        "../../packages/core/node_modules/@types/react/jsx-runtime"
+      ],
+      "zod": ["../../packages/core/node_modules/zod"],
+      "@jfdevelops/react-layout-internals": [
+        "../../packages/internals/src/index.ts"
+      ],
+      "@jfdevelops/react-layout": ["../../packages/core/src/index.ts"],
+      "@jfdevelops/react-layout-composables": [
+        "../../packages/composables/src/index.ts"
+      ],
+      "@jfdevelops/react-layout-validator": [
+        "../../packages/validators/src/index.ts"
+      ],
+      "@jfdevelops/react-layout-devtools-core": [
+        "../../packages/devtools-core/src/index.ts"
+      ],
+      "@jfdevelops/react-layout-devtools-react": [
+        "../../packages/devtools-react/src/index.ts"
+      ],
+      "@jfdevelops/react-layout-adapters": [
+        "../../packages/adapters/src/index.ts"
+      ],
+      "@jfdevelops/react-layout-adapter-zod": [
+        "../../packages/adapter-zod/src/index.ts"
+      ],
+      "@jfdevelops/react-layout-adapter-arktype": [
+        "../../packages/adapter-arktype/src/index.ts"
+      ],
+      "@jfdevelops/react-layout-composable-navigation/contract": [
+        "../../packages/composable-navigation/src/contract.ts"
+      ],
+      "@jfdevelops/react-layout-composable-navigation": [
+        "../../packages/composable-navigation/src/index.ts"
+      ],
+      "@jfdevelops/react-layout-composable-copy": [
+        "../../packages/composable-copy/src/index.ts"
+      ]
+    }
+  },
+  "include": ["examples/**/*.ts", "examples/**/*.tsx"]
+}
