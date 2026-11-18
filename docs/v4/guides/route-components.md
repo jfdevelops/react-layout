@@ -253,6 +253,39 @@ segment that exists only on a descendant. Repeated segment names share one prope
 `path.create(...parts)` concatenates string parts and preserves literal and union
 types without `as const`; its result is always a string.
 
+Both the callback and object mapping forms support joined capitalization. The
+shorthand preserves path order. Both flags default to `false`, so an empty join
+object behaves like `path.capitalize()`.
+
+```tsx
+displayName: ({ path }) => {
+  if (path.is('containers.overview')) {
+    return path.capitalize({
+      join: { removeDelimiter: true, capitalizeSegments: true },
+    });
+  }
+
+  return path.capitalize();
+}
+```
+
+For custom order or a suffix, use a join callback. It receives typed segment path
+objects, the shared `capitalize` helper, and literal-preserving `create`:
+
+```tsx
+path.capitalize({
+  join: ({ segments, create }) =>
+    create(
+      segments.overview.capitalize(),
+      segments.containers.capitalize(),
+      'Page',
+    ),
+});
+```
+
+The callback's string is returned unchanged. Both forms preserve literal and union
+return types without `as const`.
+
 The `displayName` callback receives a typed `path` object.
 
 | Member                     | Result                                                                                        |

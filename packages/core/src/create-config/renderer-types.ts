@@ -1,6 +1,7 @@
 import type { ReactElement, ReactNode } from 'react';
 import type {
   CapitalizeFn,
+  CapitalizeJoinContext,
   createString,
   CheckedPath,
   StringSelection,
@@ -417,7 +418,10 @@ export interface RendererDisplayNamePath<
     Extract<Path, Prefix | `${Prefix}.${string}`>,
     Allowed
   >;
-  capitalize: CapitalizeFn<Prefixes<Allowed>>;
+  capitalize: CapitalizeFn<
+    Prefixes<Allowed>,
+    CapitalizeJoinContext<this['segments']>
+  >;
   toString(): Path;
 }
 

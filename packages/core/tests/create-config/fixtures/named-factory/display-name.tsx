@@ -57,3 +57,36 @@ config.createRenderer({
     missing: 'Missing',
   },
 });
+
+export const renderCallback = config.createRenderer({
+  render: () => null,
+  displayName: ({ path }) => {
+    if (path.is('users.profile')) {
+      const joined: 'UsersProfile' = path.capitalize({
+        join: {
+          removeDelimiter: true,
+          capitalizeSegments: true,
+        },
+      });
+      const custom: 'ProfileUsersPage' = path.capitalize({
+        join: ({ segments, create }) =>
+          create(
+            segments.profile.capitalize(),
+            segments.users.capitalize(),
+            'Page',
+          ),
+      });
+      const fromValues: 'UsersProfile' = path.capitalize({
+        join: ({ segments, capitalize, create }) =>
+          create(
+            capitalize(segments.users.value),
+            capitalize(segments.profile.value),
+          ),
+      });
+
+      return path.create(joined, custom, fromValues);
+    }
+
+    return path.capitalize();
+  },
+});

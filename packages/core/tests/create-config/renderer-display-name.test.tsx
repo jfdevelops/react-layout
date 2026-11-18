@@ -146,11 +146,14 @@ describe('renderer display names', () => {
           return path.create(path.segments.containers.capitalize(), 'Page');
         },
         'containers.overview': ({ path, params, capitalize }) => {
-          const name = path.create(
-            path.segments.containers.capitalize(),
-            path.segments.overview.capitalize(),
-            'Page',
-          );
+          const name = path.capitalize({
+            join: ({ segments, create }) =>
+              create(
+                segments.containers.capitalize(),
+                segments.overview.capitalize(),
+                'Page',
+              ),
+          });
           expectTypeOf(name).toEqualTypeOf<'ContainersOverviewPage'>();
           expectTypeOf(
             path.segments.overview.value,
@@ -210,6 +213,46 @@ describe('renderer display names', () => {
         missing: 'Missing',
       },
     });
+  });
+
+  it('supports custom joining inside an existing display-name callback', () => {
+    const joinedNames: string[] = [];
+    const renderPage = pages.createRenderer({
+      render: () => null,
+      displayName: ({ path }) => {
+        if (path.is('containers.$containerId')) {
+          joinedNames.push(
+            path.capitalize({
+              join: {},
+            }),
+            path.capitalize({
+              join: {
+                removeDelimiter: true,
+                capitalizeSegments: true,
+              },
+            }),
+          );
+
+          return path.capitalize({
+            join: ({ segments, create, capitalize }) =>
+              create(
+                capitalize(segments.$containerId.value),
+                segments.containers.capitalize(),
+                'Page',
+              ),
+          });
+        }
+
+        return path.capitalize();
+      },
+    });
+    const Component = renderPage('containers.$containerId');
+    renderToStaticMarkup(<Component />);
+    expect(joinedNames).toEqual([
+      'Containers.$containerId',
+      'Containers$containerId',
+    ]);
+    expect(Component.displayName).toBe('$containerIdContainersPage');
   });
 
   it('matches nested parent paths on dot boundaries', () => {

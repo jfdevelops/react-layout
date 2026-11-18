@@ -1,4 +1,9 @@
-import { capitalize, createString } from '@jfdevelops/react-layout-internals';
+import {
+  capitalize,
+  createString,
+  type CapitalizeJoinOptions,
+  type CapitalizeJoinContext,
+} from '@jfdevelops/react-layout-internals';
 import { InvalidPathError } from '../errors';
 import type { RendererDisplayNamePath } from './renderer-types';
 
@@ -28,7 +33,39 @@ export function createDisplayNamePath(
     > {
       return value === path || value.startsWith(`${path}.`);
     },
-    capitalize: function (this: { readonly value: string }, selected?: string) {
+    capitalize: function (
+      this: RendererDisplayNamePath<string>,
+      selected?:
+        | string
+        | {
+            join:
+              | CapitalizeJoinOptions
+              | ((
+                  context: CapitalizeJoinContext<
+                    RendererDisplayNamePath<string>['segments']
+                  >,
+                ) => string);
+          },
+    ) {
+      if (typeof selected === 'object') {
+        if (typeof selected.join === 'function') {
+          return selected.join({
+            segments: this.segments,
+            capitalize,
+            create: createString,
+          });
+        }
+
+        const formatter = {
+          value: this.value,
+          capitalize,
+        };
+
+        return formatter.capitalize({
+          join: selected.join,
+        });
+      }
+
       const key =
         selected === undefined || selected === '*' ? this.value : selected;
 
