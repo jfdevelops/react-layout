@@ -83,6 +83,15 @@ jobs:
       - name: Test release retries
         run: pnpm test:release
 
+      - name: Check docs
+        run: pnpm check:docs
+
+      - name: Test docs checks
+        run: pnpm test:docs
+
+      - name: Type-check docs examples
+        run: pnpm check:docs-examples
+
       - name: Typecheck library
         run: pnpm typecheck
 

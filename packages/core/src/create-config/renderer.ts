@@ -2,7 +2,6 @@ import { createElement, Fragment } from 'react';
 import {
   capitalize,
   resolveStringSelection,
-  type StringSelectionResult,
 } from '@jfdevelops/react-layout-internals';
 import { validateProps } from '@jfdevelops/react-layout-validator';
 import type { PropDefinitions } from '@jfdevelops/react-layout-validator';
@@ -10,6 +9,7 @@ import { InvalidPathError } from '../errors';
 import type { ResourceDefinition } from '../resource';
 import { collectPathComponentKeys, generateResourceConfigPaths } from './paths';
 import { selectPathConfig } from './for-paths/selection';
+import { createDisplayNamePath } from './display-name-path';
 import { COMPONENT_SLOT_KEYS } from './component-keys';
 import type { ForPathsRenderContext } from './for-paths/builder';
 import type { PropsRenderDefinition } from '../props';
@@ -25,7 +25,6 @@ import {
 import type {
   CreateResourceRenderer,
   RendererDefinition,
-  RendererDisplayNamePath,
 } from './renderer-types';
 
 type RuntimeContext<Config> = ForPathsRenderContext<
@@ -155,39 +154,21 @@ export function createResourceRenderer<
           const component = configured.render((context) =>
             createElement(Fragment, null, renderer(buildContext(context))),
           );
-          const displayName = options.displayName;
-
-          function capitalizePath<Current extends string>(this: {
-            readonly value: Current;
-          }): Capitalize<Current>;
-          function capitalizePath<const Selected extends string>(
-            path: Selected,
-          ): StringSelectionResult<
-            Record<string, Capitalize<string>>,
-            Selected,
-            Capitalize<string>
-          >;
-          function capitalizePath(path = prefix) {
-            return resolveStringSelection<
-              Record<string, Capitalize<string>>,
-              string,
-              Capitalize<string>
-            >(
-              displayNamePaths,
-              path,
-              (key) => {
-                if (!displayNamePaths.includes(key)) {
-                  throw new InvalidPathError({
-                    path: key,
-                    validPaths: displayNamePaths,
-                  });
-                }
-
-                return capitalize(key);
-              },
-              () => capitalize(prefix),
-            );
-          }
+          const configuredName = options.displayName;
+          const mappingKey =
+            typeof configuredName === 'object'
+              ? Object.keys(configuredName)
+                  .filter(
+                    (key) =>
+                      key !== '*' &&
+                      (prefix === key || prefix.startsWith(`${key}.`)),
+                  )
+                  .sort((left, right) => right.length - left.length)[0]
+              : undefined;
+          const displayName =
+            typeof configuredName === 'object'
+              ? configuredName[mappingKey ?? '*']
+              : configuredName;
 
           const named =
             displayName === undefined
@@ -199,21 +180,7 @@ export function createResourceRenderer<
                         displayName({
                           ...buildContext(context),
                           capitalize,
-                          path: {
-                            value: prefix,
-                            is<const Path extends string>(
-                              path: Path,
-                            ): this is RendererDisplayNamePath<
-                              Extract<string, Path | `${Path}.${string}`>,
-                              string
-                            > {
-                              return (
-                                prefix === path || prefix.startsWith(`${path}.`)
-                              );
-                            },
-                            capitalize: capitalizePath,
-                            toString: () => prefix,
-                          },
+                          path: createDisplayNamePath(prefix, displayNamePaths),
                         }),
                 );
 
