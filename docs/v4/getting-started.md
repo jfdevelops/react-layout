@@ -25,7 +25,7 @@ Zod is used throughout these docs, but any synchronous Standard Schema library
 works.
 
 ```sh
-pnpm add @jfdevelops/react-layout zod
+pnpm add @jfdevelops/react-layout@4.0.0 zod
 ```
 
 If a prop needs to hold React content (a node or an element) install the adapter
@@ -33,7 +33,7 @@ for your schema library. See
 [Props and validation](./guides/props-and-validation.md#react-values-and-adapters).
 
 ```sh
-pnpm add @jfdevelops/react-layout-adapter-zod
+pnpm add @jfdevelops/react-layout-adapter-zod@1.0.0
 ```
 
 ## Define a layout and create a page

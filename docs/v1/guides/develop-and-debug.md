@@ -20,7 +20,7 @@ In this guide you will:
 Install the React inspector as a development tool.
 
 ```sh
-pnpm add @jfdevelops/react-layout-devtools-react
+pnpm add @jfdevelops/react-layout-devtools-react@0.2.0
 ```
 
 Keep the **full result** of your factory (or of a standalone `defineResourceLayout`
@@ -70,7 +70,7 @@ temporary render-state previews. It is not required by the library or the
 inspector.
 
 ```sh
-pnpm add -D @jfdevelops/react-layout-devtools-vite
+pnpm add -D @jfdevelops/react-layout-devtools-vite@0.1.1
 ```
 
 ```ts

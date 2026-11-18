@@ -37,7 +37,7 @@ gets the slots as `composables`.
 ## Add the breadcrumb preset
 
 ```sh
-pnpm add @jfdevelops/react-layout-composable-breadcrumb
+pnpm add @jfdevelops/react-layout-composable-breadcrumb@0.2.10
 ```
 
 The package exports `createBreadcrumbComposable`. Pass it a render callback and spread

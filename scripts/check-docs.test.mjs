@@ -778,3 +778,40 @@ test('companion package names are reserved', () => {
   assert.ok(COMPANION_NAMES.includes('adapter-zod'));
   assert.ok(COMPANION_NAMES.includes('composable-navigation'));
 });
+
+test('rejects installs that follow latest or target another snapshot', () => {
+  for (const specifier of [
+    '@jfdevelops/react-layout',
+    '@jfdevelops/react-layout@1.1.0',
+    '@jfdevelops/react-layout-adapter-zod',
+  ]) {
+    assertFails((context) => {
+      context.write(
+        'docs/v2/guides/topic.md',
+        page(
+          'Topic',
+          20,
+          `## Details\n\n\`\`\`sh\npnpm add ${specifier}\n\`\`\``,
+        ),
+      );
+    }, 'install-version');
+  }
+});
+
+test('accepts explicitly pinned core and companion installs', () => {
+  withDocs(
+    (context) => {
+      context.write(
+        'docs/v2/guides/topic.md',
+        page(
+          'Topic',
+          20,
+          '## Details\n\n```sh\npnpm add @jfdevelops/react-layout@2.1.0 @jfdevelops/react-layout-adapter-zod@0.1.0 zod\n```',
+        ),
+      );
+    },
+    (_root, result) => {
+      assert.deepEqual(result.errors, []);
+    },
+  );
+});

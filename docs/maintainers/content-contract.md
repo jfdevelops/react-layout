@@ -11,6 +11,11 @@ A site integration reads this contract, not the page text. See
 
 ## What the library owns
 
+Installation commands pin library and companion packages to exact versions from
+the documented release snapshot. The core version must match the manifest's
+`package.endpointVersion`; copying an older guide must never install the latest
+major by accident. The checker enforces explicit versions in `pnpm add` blocks.
+
 One library, `react-layout`, owns all public docs in `docs/`. Companion
 packages (schema adapters, preset composables, devtools) are **not** separate
 products. They have no pages, no navigation sections, no manifest entries and no

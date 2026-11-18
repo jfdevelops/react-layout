@@ -18,7 +18,7 @@ In this guide you will:
 ## Install
 
 ```sh
-pnpm add @jfdevelops/react-layout
+pnpm add @jfdevelops/react-layout@0.25.0
 ```
 
 React 18 or newer is a peer dependency (`react` and `react-dom` at `>=18`). Props are described

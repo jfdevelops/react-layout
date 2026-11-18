@@ -20,7 +20,7 @@ Coming from v2 or v1? Migrate one major at a time: [v2 to v3](../v3/migration.md
 ## Upgrade the package
 
 ```sh
-pnpm add @jfdevelops/react-layout@4
+pnpm add @jfdevelops/react-layout@4.0.0
 ```
 
 The companion packages released alongside v4 are patch releases of their v3-era

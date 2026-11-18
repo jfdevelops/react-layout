@@ -17,7 +17,7 @@ split a definition across files.
 ## Install
 
 ```sh
-pnpm add @jfdevelops/react-layout
+pnpm add @jfdevelops/react-layout@1.6.1
 ```
 
 Props are described with `createProp`, which the package exports. No schema library

@@ -17,7 +17,7 @@ split a definition across files.
 ## Install
 
 ```sh
-pnpm add @jfdevelops/react-layout
+pnpm add @jfdevelops/react-layout@2.7.0
 ```
 
 Props can be described two ways in v2:
@@ -28,7 +28,7 @@ Props can be described two ways in v2:
   in v3.
 
 ```sh
-pnpm add zod @jfdevelops/react-layout-adapter-zod
+pnpm add zod @jfdevelops/react-layout-adapter-zod@0.1.0
 ```
 
 If you are on a release before 2.6.0, use `createProp` and skip the adapter.

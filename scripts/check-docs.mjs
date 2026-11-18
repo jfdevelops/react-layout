@@ -1048,6 +1048,41 @@ function validatePage(page, version, context, errors) {
   for (const fence of scan.fences) {
     const where = `${page.file}:${fence.line}`;
 
+    if (fence.language === 'sh' || fence.language === 'bash') {
+      for (const line of fence.content.split('\n')) {
+        if (!/^pnpm add\s/.test(line)) {
+          continue;
+        }
+
+        const packages =
+          line.match(/@jfdevelops\/[a-z0-9-]+(?:@[^\s]+)?/g) ?? [];
+
+        for (const specifier of packages) {
+          if (!/^@jfdevelops\/[a-z0-9-]+@\d+\.\d+\.\d+$/.test(specifier)) {
+            issue(
+              errors,
+              'install-version',
+              where,
+              `Pin ${specifier} to the audited package version so this guide does not install a different major.`,
+            );
+          }
+
+          if (
+            specifier.startsWith(`${version.package.name}@`) &&
+            specifier !==
+              `${version.package.name}@${version.package.endpointVersion}`
+          ) {
+            issue(
+              errors,
+              'install-version',
+              where,
+              `Install ${version.package.name}@${version.package.endpointVersion} for this documentation snapshot.`,
+            );
+          }
+        }
+      }
+    }
+
     if (!FENCE_LANGUAGES.includes(fence.language)) {
       issue(
         errors,

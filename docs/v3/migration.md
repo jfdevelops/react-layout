@@ -19,8 +19,8 @@ section of `docs/standard-schema.md` at the 3.3.0 tag.
 ## Upgrade the package
 
 ```sh
-pnpm add @jfdevelops/react-layout@3
-pnpm add zod @jfdevelops/react-layout-adapter-zod
+pnpm add @jfdevelops/react-layout@3.3.0
+pnpm add zod @jfdevelops/react-layout-adapter-zod@1.0.0
 ```
 
 Use the schema library you prefer. Companion package versions are in the

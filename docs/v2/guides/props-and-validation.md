@@ -101,10 +101,10 @@ behavior.
 React nodes and elements need an adapter. Install the package for your schema library:
 
 ```sh
-pnpm add @jfdevelops/react-layout-adapter-zod zod
+pnpm add @jfdevelops/react-layout-adapter-zod@0.1.0 zod
 # or
-pnpm add @jfdevelops/react-layout-adapter-valibot valibot
-pnpm add @jfdevelops/react-layout-adapter-arktype arktype
+pnpm add @jfdevelops/react-layout-adapter-valibot@0.1.0 valibot
+pnpm add @jfdevelops/react-layout-adapter-arktype@0.1.0 arktype
 ```
 
 Each adapter has `react` and its library as peer dependencies, and depends on the shared

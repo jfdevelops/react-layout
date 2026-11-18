@@ -46,7 +46,7 @@ props.
 | `@jfdevelops/react-layout-composable-access` 0.1.2       | `createAccessComposable`                           | `roles?`, `permissions?`, `flag?`                       |
 
 ```sh
-pnpm add @jfdevelops/react-layout-composable-navigation @jfdevelops/react-layout-composable-copy
+pnpm add @jfdevelops/react-layout-composable-navigation@0.1.2 @jfdevelops/react-layout-composable-copy@0.1.2
 ```
 
 ```tsx example=v4/composable-presets.tsx

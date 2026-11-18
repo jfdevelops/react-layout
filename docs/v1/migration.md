@@ -20,7 +20,7 @@ Source: the 1.0.0 core changelog, and the README and tests at the `0.25.0` and `
 ## Upgrade the package
 
 ```sh
-pnpm add @jfdevelops/react-layout@1
+pnpm add @jfdevelops/react-layout@1.6.1
 ```
 
 ## 1. Use one configuration object
