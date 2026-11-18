@@ -10,6 +10,7 @@
     "typecheck:examples": "pnpm --filter basic-example typecheck",
     "test": "pnpm test:release && pnpm -r --filter \"@jfdevelops/*\" test",
     "test:release": "node --test scripts/publish.test.mjs",
+    "test:docs": "node --test scripts/check-docs.test.mjs",
     "test:watch": "pnpm -r --filter \"@jfdevelops/*\" test:watch",
     "test:ui": "pnpm --filter ./packages/core test:ui",
     "test:coverage": "pnpm --filter ./packages/core test:coverage",
@@ -23,7 +24,9 @@
     "lint:fix": "oxlint --fix --deny-warnings",
     "format": "oxfmt . && oxlint --fix --deny-warnings && oxfmt .",
     "format:check": "oxfmt --check .",
-    "check:declarations": "node scripts/check-declaration-docs.mjs"
+    "check:declarations": "node scripts/check-declaration-docs.mjs",
+    "check:docs": "node scripts/check-docs.mjs",
+    "check:docs-examples": "tsc -p tools/docs/tsconfig.json"
   },
   "devDependencies": {
     "@changesets/cli": "2.31.0",
