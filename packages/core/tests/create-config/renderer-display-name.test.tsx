@@ -10,6 +10,10 @@ describe('renderer display names', () => {
       displayName: ({ path }) => {
         const explicit = path.capitalize('containers.$containerId');
         const all = path.capitalize('*');
+        const { capitalize } = path;
+        const detached = capitalize('*');
+        expectTypeOf(detached).toEqualTypeOf<typeof all>();
+        expect(detached).toBe(all);
         expectTypeOf(explicit).toEqualTypeOf<'Containers.$containerId'>();
         expectTypeOf(all).toEqualTypeOf<
           | 'Containers'

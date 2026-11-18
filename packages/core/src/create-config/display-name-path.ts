@@ -66,8 +66,7 @@ export function createDisplayNamePath(
         });
       }
 
-      const key =
-        selected === undefined || selected === '*' ? this.value : selected;
+      const key = selected === undefined || selected === '*' ? value : selected;
 
       if (!allowed.includes(key)) {
         throw new InvalidPathError({
