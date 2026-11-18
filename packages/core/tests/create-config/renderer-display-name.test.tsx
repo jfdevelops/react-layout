@@ -100,6 +100,118 @@ describe('renderer display names', () => {
     expect(names).toEqual(['Containers', 'Containers.$containerId', 'trash']);
   });
 
+  it('resolves the most specific mapping and exposes typed segments', () => {
+    const config = defineResourceLayout({
+      resources: [
+        {
+          value: 'containers',
+          subResources: [
+            {
+              value: 'overview',
+              subResources: ['history'],
+            },
+            'create',
+          ],
+        },
+        'trash',
+      ],
+      layout: {
+        render: () => <main />,
+      },
+    }).createResourceConfig({
+      containers: {
+        component: <p>Containers</p>,
+        overview: {
+          component: <p>Overview</p>,
+          history: {
+            component: <p>History</p>,
+          },
+        },
+        create: {
+          component: <p>New</p>,
+        },
+      },
+      trash: {
+        component: <p>Trash</p>,
+      },
+    });
+    const renderPage = config.createRenderer({
+      render: () => null,
+      displayName: {
+        containers: ({ path }) => {
+          if (path.is('containers.create')) {
+            expectTypeOf(path.segments.create.value).toEqualTypeOf<'create'>();
+          }
+
+          return path.create(path.segments.containers.capitalize(), 'Page');
+        },
+        'containers.overview': ({ path, params, capitalize }) => {
+          const name = path.create(
+            path.segments.containers.capitalize(),
+            path.segments.overview.capitalize(),
+            'Page',
+          );
+          expectTypeOf(name).toEqualTypeOf<'ContainersOverviewPage'>();
+          expectTypeOf(
+            path.segments.overview.value,
+          ).toEqualTypeOf<'overview'>();
+          expect(path.segments.overview.is('overview')).toBe(true);
+          expect(path.segments.overview.capitalize('*')).toBe('Overview');
+          expect(capitalize('page')).toBe('Page');
+          expect(params).toBeDefined();
+          // @ts-expect-error Only segments of the selected path are available.
+          void path.segments.missing;
+
+          return name;
+        },
+        'containers.create': 'CreateContainersPage',
+        '*': ({ path }) => path.create(path.capitalize(), 'Fallback'),
+      },
+    });
+    const names = (
+      [
+        'containers',
+        'containers.overview',
+        'containers.overview.history',
+        'containers.create',
+        'trash',
+      ] as const
+    ).map((path) => {
+      const Component = renderPage(path);
+      renderToStaticMarkup(<Component />);
+
+      return Component.displayName;
+    });
+    expect(names).toEqual([
+      'ContainersPage',
+      'ContainersOverviewPage',
+      'ContainersOverviewPage',
+      'CreateContainersPage',
+      'TrashFallback',
+    ]);
+
+    const defaultRenderer = config.createRenderer({
+      render: () => null,
+    });
+    const partialRenderer = config.createRenderer({
+      render: () => null,
+      displayName: {
+        containers: 'Container',
+      },
+    });
+    const Default = defaultRenderer('trash');
+    const Partial = partialRenderer('trash');
+    expect(Partial.displayName).toBe(Default.displayName);
+
+    config.createRenderer({
+      render: () => null,
+      displayName: {
+        // @ts-expect-error Unknown mapping paths are rejected.
+        missing: 'Missing',
+      },
+    });
+  });
+
   it('matches nested parent paths on dot boundaries', () => {
     const config = defineResourceLayout({
       resources: [

@@ -225,6 +225,34 @@ const renderUserDetail = renderUsers.forResource('detail');
 
 ### Name the result
 
+`displayName` accepts a string, a callback, or a path mapping. Each mapping
+entry accepts the same string or callback form. Parent entries match descendants;
+the most specific matching key wins. `'*'` handles unmatched paths. Without it,
+unmatched paths retain the default name.
+
+```tsx
+displayName: {
+  containers: ({ path }) =>
+    path.create(path.segments.containers.capitalize(), 'Page'),
+  'containers.overview': ({ path }) =>
+    path.create(
+      path.segments.containers.capitalize(),
+      path.segments.overview.capitalize(),
+      'Page',
+    ),
+  'containers.create': 'CreateContainersPage',
+  '*': ({ path, params, capitalize }) =>
+    path.create(path.capitalize(), capitalize(params.componentKey)),
+}
+```
+
+Callbacks receive the existing display-name context, with the path narrowed to the
+mapping entry's matching paths. `path.segments` exposes individual segment names as
+path objects with the same helpers. Use `path.is()` to narrow before accessing a
+segment that exists only on a descendant. Repeated segment names share one property.
+`path.create(...parts)` concatenates string parts and preserves literal and union
+types without `as const`; its result is always a string.
+
 The `displayName` callback receives a typed `path` object.
 
 | Member                     | Result                                                                                        |

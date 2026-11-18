@@ -6,8 +6,8 @@ import { spawnSync } from 'node:child_process';
  */
 // Includes implicit children contracts, schema regressions, render benchmark consumer types,
 // resource renderer inference, segment completion / wildcard factory consumer types,
-// and conditional descendant selectors.
-const instantiationBudget = 4_250_000;
+// conditional descendant selectors, display-name mappings, and typed segment consumer tests.
+const instantiationBudget = 4_325_000;
 
 const result = spawnSync('tsc --noEmit --extendedDiagnostics', {
   encoding: 'utf8',

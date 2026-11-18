@@ -12,3 +12,4 @@ export type {
   ShowCallable,
   UnionToIntersection,
 } from './types';
+export { createString, type JoinedStrings } from './create-string';
