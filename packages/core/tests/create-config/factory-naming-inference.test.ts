@@ -106,6 +106,7 @@ it.each(['typescript-5-9', 'typescript-6'])(
     const program = ts.createProgram({
       rootNames: [
         `${root}/tests/create-config/fixtures/named-factory/usage.tsx`,
+        `${root}/tests/create-config/fixtures/named-factory/display-name.tsx`,
         `${root}/vitest.setup.ts`,
       ],
       options: {

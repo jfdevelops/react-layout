@@ -1,4 +1,10 @@
-export { capitalize, type CapitalizeFn } from './capitalize';
+export {
+  capitalize,
+  type CapitalizeJoinContext,
+  type CapitalizeJoinOptions,
+  type CapitalizeJoinedPath,
+  type CapitalizeFn,
+} from './capitalize';
 export type { CheckedPath } from './path-completion';
 export {
   resolveStringSelection,
@@ -12,3 +18,4 @@ export type {
   ShowCallable,
   UnionToIntersection,
 } from './types';
+export { createString, type JoinedStrings } from './create-string';

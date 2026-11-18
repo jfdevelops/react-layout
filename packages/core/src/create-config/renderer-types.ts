@@ -1,6 +1,8 @@
 import type { ReactElement, ReactNode } from 'react';
 import type {
   CapitalizeFn,
+  CapitalizeJoinContext,
+  createString,
   CheckedPath,
   StringSelection,
   StringSelectionResult,
@@ -376,12 +378,27 @@ interface ResourceRendererSelector<
   >;
 }
 
+type PathSegments<Path extends string> =
+  Path extends `${infer Head}.${infer Tail}` ? Head | PathSegments<Tail> : Path;
+
+type DisplayNameSegments<Path extends string> = Path extends unknown
+  ? {
+      readonly [
+        Segment in PathSegments<Path>
+      ]: RendererDisplayNamePath<Segment>;
+    }
+  : never;
+
 /** A display-name path with guards for exact paths and their descendants. */
 export interface RendererDisplayNamePath<
   Path extends string,
   Allowed extends string = Path,
 > {
   readonly value: Path;
+  /** Individual path segments, each exposing the display-name path helpers. */
+  readonly segments: DisplayNameSegments<Path>;
+  /** Concatenates parts and preserves their literal types without `as const`. */
+  create: typeof createString;
   /**
    * Matches an exact path or any descendant separated by a dot, narrowing
    * `path.value` to the matching paths. Suggestions follow the current segment.
@@ -401,7 +418,10 @@ export interface RendererDisplayNamePath<
     Extract<Path, Prefix | `${Prefix}.${string}`>,
     Allowed
   >;
-  capitalize: CapitalizeFn<Prefixes<Allowed>>;
+  capitalize: CapitalizeFn<
+    Prefixes<Allowed>,
+    CapitalizeJoinContext<this['segments']>
+  >;
   toString(): Path;
 }
 
@@ -414,11 +434,30 @@ type RendererDisplayNameContext<Context> = Context extends {
     }
   : Context;
 
+type DisplayNameMapping<Context> = Context extends {
+  path: infer Path extends string;
+}
+  ? {
+      [Prefix in StringSelection<Prefixes<Path>>]?: ValueOrFunction<
+        string,
+        RendererDisplayNameContext<
+          Omit<Context, 'path'> & {
+            path: Prefix extends '*'
+              ? Path
+              : Extract<Path, Prefix | `${Prefix}.${string}`>;
+          }
+        >
+      >;
+    }
+  : never;
+
 /** Shared definition for public inference and runtime renderer configuration. */
 export type RendererDefinition<Context, Params = PathParamsOptions> = {
   params?: Params;
   render: (context: Context) => ReactNode;
-  displayName?: ValueOrFunction<string, RendererDisplayNameContext<Context>>;
+  displayName?:
+    | ValueOrFunction<string, RendererDisplayNameContext<Context>>
+    | DisplayNameMapping<Context>;
 };
 
 /** Factory definitions follow the same props/render contract as resource components. */
@@ -453,6 +492,22 @@ export interface CreateResourceRenderer<
     Definition extends object = {},
   >(
     options: Definition &
+      (Definition extends { displayName: infer Names extends object }
+        ? Names extends (...args: never[]) => unknown
+          ? unknown
+          : {
+              displayName: Record<
+                Exclude<
+                  keyof Names,
+                  | Prefixes<
+                      SelectedPaths<Resources, Config, RenderPath, Options>
+                    >
+                  | '*'
+                >,
+                never
+              >;
+            }
+        : unknown) &
       RendererDefinition<
         ResourceRendererContext<Resources, Config, RenderPath, Options>,
         CheckedPathParams<Options, PathParamPick<Resources, Config, RenderPath>>

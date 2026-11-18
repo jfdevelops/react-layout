@@ -10,6 +10,10 @@ describe('renderer display names', () => {
       displayName: ({ path }) => {
         const explicit = path.capitalize('containers.$containerId');
         const all = path.capitalize('*');
+        const { capitalize } = path;
+        const detached = capitalize('*');
+        expectTypeOf(detached).toEqualTypeOf<typeof all>();
+        expect(detached).toBe(all);
         expectTypeOf(explicit).toEqualTypeOf<'Containers.$containerId'>();
         expectTypeOf(all).toEqualTypeOf<
           | 'Containers'
@@ -98,6 +102,161 @@ describe('renderer display names', () => {
       return Component.displayName;
     });
     expect(names).toEqual(['Containers', 'Containers.$containerId', 'trash']);
+  });
+
+  it('resolves the most specific mapping and exposes typed segments', () => {
+    const config = defineResourceLayout({
+      resources: [
+        {
+          value: 'containers',
+          subResources: [
+            {
+              value: 'overview',
+              subResources: ['history'],
+            },
+            'create',
+          ],
+        },
+        'trash',
+      ],
+      layout: {
+        render: () => <main />,
+      },
+    }).createResourceConfig({
+      containers: {
+        component: <p>Containers</p>,
+        overview: {
+          component: <p>Overview</p>,
+          history: {
+            component: <p>History</p>,
+          },
+        },
+        create: {
+          component: <p>New</p>,
+        },
+      },
+      trash: {
+        component: <p>Trash</p>,
+      },
+    });
+    const renderPage = config.createRenderer({
+      render: () => null,
+      displayName: {
+        containers: ({ path }) => {
+          if (path.is('containers.create')) {
+            expectTypeOf(path.segments.create.value).toEqualTypeOf<'create'>();
+          }
+
+          return path.create(path.segments.containers.capitalize(), 'Page');
+        },
+        'containers.overview': ({ path, params, capitalize }) => {
+          const name = path.capitalize({
+            join: ({ segments, create }) =>
+              create(
+                segments.containers.capitalize(),
+                segments.overview.capitalize(),
+                'Page',
+              ),
+          });
+          expectTypeOf(name).toEqualTypeOf<'ContainersOverviewPage'>();
+          expectTypeOf(
+            path.segments.overview.value,
+          ).toEqualTypeOf<'overview'>();
+          expect(path.segments.overview.is('overview')).toBe(true);
+          expect(path.segments.overview.capitalize('*')).toBe('Overview');
+          expect(capitalize('page')).toBe('Page');
+          expect(params).toBeDefined();
+          // @ts-expect-error Only segments of the selected path are available.
+          void path.segments.missing;
+
+          return name;
+        },
+        'containers.create': 'CreateContainersPage',
+        '*': ({ path }) => path.create(path.capitalize(), 'Fallback'),
+      },
+    });
+    const names = (
+      [
+        'containers',
+        'containers.overview',
+        'containers.overview.history',
+        'containers.create',
+        'trash',
+      ] as const
+    ).map((path) => {
+      const Component = renderPage(path);
+      renderToStaticMarkup(<Component />);
+
+      return Component.displayName;
+    });
+    expect(names).toEqual([
+      'ContainersPage',
+      'ContainersOverviewPage',
+      'ContainersOverviewPage',
+      'CreateContainersPage',
+      'TrashFallback',
+    ]);
+
+    const defaultRenderer = config.createRenderer({
+      render: () => null,
+    });
+    const partialRenderer = config.createRenderer({
+      render: () => null,
+      displayName: {
+        containers: 'Container',
+      },
+    });
+    const Default = defaultRenderer('trash');
+    const Partial = partialRenderer('trash');
+    expect(Partial.displayName).toBe(Default.displayName);
+
+    config.createRenderer({
+      render: () => null,
+      displayName: {
+        // @ts-expect-error Unknown mapping paths are rejected.
+        missing: 'Missing',
+      },
+    });
+  });
+
+  it('supports custom joining inside an existing display-name callback', () => {
+    const joinedNames: string[] = [];
+    const renderPage = pages.createRenderer({
+      render: () => null,
+      displayName: ({ path }) => {
+        if (path.is('containers.$containerId')) {
+          joinedNames.push(
+            path.capitalize({
+              join: {},
+            }),
+            path.capitalize({
+              join: {
+                removeDelimiter: true,
+                capitalizeSegments: true,
+              },
+            }),
+          );
+
+          return path.capitalize({
+            join: ({ segments, create, capitalize }) =>
+              create(
+                capitalize(segments.$containerId.value),
+                segments.containers.capitalize(),
+                'Page',
+              ),
+          });
+        }
+
+        return path.capitalize();
+      },
+    });
+    const Component = renderPage('containers.$containerId');
+    renderToStaticMarkup(<Component />);
+    expect(joinedNames).toEqual([
+      'Containers.$containerId',
+      'Containers$containerId',
+    ]);
+    expect(Component.displayName).toBe('$containerIdContainersPage');
   });
 
   it('matches nested parent paths on dot boundaries', () => {
