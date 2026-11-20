@@ -1,0 +1,13 @@
+{
+  "pages": [
+    "resource-layouts",
+    "props-and-validation",
+    "composables-and-presets",
+    "render-states",
+    "route-components",
+    "lazy-loading",
+    "hosted-surfaces",
+    "reusable-helpers",
+    "develop-and-debug"
+  ]
+}
