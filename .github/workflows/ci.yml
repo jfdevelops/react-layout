@@ -113,10 +113,24 @@ jobs:
       - name: Build example app
         run: pnpm --filter basic-example build
 
+      - name: Detect changesets
+        id: changesets
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          files=$(git diff --name-only --diff-filter=AM origin/main...HEAD -- '.changeset/*.md' ':!.changeset/README.md')
+          if [ -n "$files" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Verify changeset
-        # The version PR has already consumed its changesets into package versions.
+        # Runs only when the pull request adds or edits a changeset. The version PR
+        # has already consumed its changesets into package versions.
         if: >-
           github.event_name == 'pull_request' &&
+          steps.changesets.outputs.present == 'true' &&
           (github.head_ref != 'changeset-release/main' ||
            github.event.pull_request.head.repo.full_name != github.repository)
         run: pnpm changeset status --since=origin/main
