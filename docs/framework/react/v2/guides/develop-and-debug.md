@@ -19,8 +19,20 @@ In this guide you will:
 
 Install the React inspector as a development tool.
 
-```sh
+```npm
+npm i @jfdevelops/react-layout-devtools-react@0.4.0
+```
+
+```pnpm
 pnpm add @jfdevelops/react-layout-devtools-react@0.4.0
+```
+
+```yarn
+yarn add @jfdevelops/react-layout-devtools-react@0.4.0
+```
+
+```bun
+bun add @jfdevelops/react-layout-devtools-react@0.4.0
 ```
 
 Keep the **full result** of your factory (or of a standalone `defineResourceLayout`
@@ -71,8 +83,20 @@ The Vite plugin adds declaration locations, **Open in editor** actions, and
 temporary render-state previews. It is not required by the library or the
 inspector.
 
-```sh
+```npm
+npm i -D @jfdevelops/react-layout-devtools-vite@0.1.2
+```
+
+```pnpm
 pnpm add -D @jfdevelops/react-layout-devtools-vite@0.1.2
+```
+
+```yarn
+yarn add -D @jfdevelops/react-layout-devtools-vite@0.1.2
+```
+
+```bun
+bun add -D @jfdevelops/react-layout-devtools-vite@0.1.2
 ```
 
 ```ts

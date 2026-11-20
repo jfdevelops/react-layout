@@ -3,8 +3,20 @@
 Create native React schemas for any Standard Schema library. This package
 provides a named `createAdapter` export and depends on no schema library.
 
-```sh
+```npm
+npm i @jfdevelops/react-layout-adapters
+```
+
+```pnpm
 pnpm add @jfdevelops/react-layout-adapters
+```
+
+```yarn
+yarn add @jfdevelops/react-layout-adapters
+```
+
+```bun
+bun add @jfdevelops/react-layout-adapters
 ```
 
 ```ts

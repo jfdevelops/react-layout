@@ -13,8 +13,20 @@ Synchronous Standard Schema libraries such as Zod and Valibot also work.
 
 Use React 18 or newer and Node `^20.19.0 || >=22.12.0` for tooling.
 
-```bash
+```npm
+npm i @jfdevelops/react-layout arktype @jfdevelops/react-layout-adapter-arktype
+```
+
+```pnpm
 pnpm add @jfdevelops/react-layout arktype @jfdevelops/react-layout-adapter-arktype
+```
+
+```yarn
+yarn add @jfdevelops/react-layout arktype @jfdevelops/react-layout-adapter-arktype
+```
+
+```bun
+bun add @jfdevelops/react-layout arktype @jfdevelops/react-layout-adapter-arktype
 ```
 
 The adapter provides schemas for React values. Keep `react` and `react-dom`

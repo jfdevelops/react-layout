@@ -21,8 +21,20 @@ props contain JSX. Ordinary string, number, and object schemas need no adapter.
 The adapters also require React 18 or newer. Install only the schema-specific
 package you use; it includes the shared adapter factory as a dependency.
 
-```bash
+```npm
+npm i @jfdevelops/react-layout-adapter-zod zod
+```
+
+```pnpm
 pnpm add @jfdevelops/react-layout-adapter-zod zod
+```
+
+```yarn
+yarn add @jfdevelops/react-layout-adapter-zod zod
+```
+
+```bun
+bun add @jfdevelops/react-layout-adapter-zod zod
 ```
 
 ## Use React values in a layout

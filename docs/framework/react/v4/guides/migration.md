@@ -18,8 +18,20 @@ Coming from v2 or earlier? Apply the [v3 migration guide](../../v3/migration.md)
 
 ## Upgrade the package
 
-```sh
+```npm
+npm i @jfdevelops/react-layout@4.0.0
+```
+
+```pnpm
 pnpm add @jfdevelops/react-layout@4.0.0
+```
+
+```yarn
+yarn add @jfdevelops/react-layout@4.0.0
+```
+
+```bun
+bun add @jfdevelops/react-layout@4.0.0
 ```
 
 Review the peer requirements of any companion packages you install alongside core. See [Companion packages](../installation.md#companion-packages).

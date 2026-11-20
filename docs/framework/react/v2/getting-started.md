@@ -16,8 +16,20 @@ split a definition across files.
 
 ## Install
 
-```sh
+```npm
+npm i @jfdevelops/react-layout@2.7.0
+```
+
+```pnpm
 pnpm add @jfdevelops/react-layout@2.7.0
+```
+
+```yarn
+yarn add @jfdevelops/react-layout@2.7.0
+```
+
+```bun
+bun add @jfdevelops/react-layout@2.7.0
 ```
 
 Props can be described two ways in v2:
@@ -27,8 +39,20 @@ Props can be described two ways in v2:
 - **`createProp`** (all of v2, deprecated in 2.6.0): the built-in builder. It is removed
   in v3.
 
-```sh
+```npm
+npm i zod @jfdevelops/react-layout-adapter-zod@0.1.0
+```
+
+```pnpm
 pnpm add zod @jfdevelops/react-layout-adapter-zod@0.1.0
+```
+
+```yarn
+yarn add zod @jfdevelops/react-layout-adapter-zod@0.1.0
+```
+
+```bun
+bun add zod @jfdevelops/react-layout-adapter-zod@0.1.0
 ```
 
 If you are on a release before 2.6.0, use `createProp` and skip the adapter.

@@ -147,6 +147,7 @@ The renderer must support the contract's Markdown subset:
 | Lists | Ordered, unordered and nested. |
 | Quotes | Multi-line block quotes. Render `**Note:**`, `**Tip:**` and `**Warning:**` openers as callouts. |
 | Code | Fenced blocks with the language available for highlighting: `ts`, `tsx`, `js`, `jsx`, `json`, `sh`, `bash`, `text`, `css`, `diff`, `yaml`. Ignore the `example=` info token. |
+| Install commands | Consecutive `npm`, `pnpm`, `yarn` and `bun` fences hold the same install command for each package manager. Render them as one tabbed block, highlighted as shell, and remember the reader's choice. |
 | Relative links | Resolve a `.md` link against the current page and rewrite it to `/docs/react-layout/<framework>/<version>/<pageId>#anchor`. Cross-version links (`../../v3/migration.md`) rewrite the same way. |
 | External links | `https://` only, with `rel="noopener noreferrer"`. |
 | Images | Copy `docs/framework/<framework>/<version>/assets/**` to a static path and rewrite `./assets/x.svg`. |

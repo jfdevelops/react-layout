@@ -2,8 +2,20 @@
 
 Optional, provider-free devtools for `@jfdevelops/react-layout`.
 
-```sh
+```npm
+npm i @jfdevelops/react-layout-devtools-react
+```
+
+```pnpm
 pnpm add @jfdevelops/react-layout-devtools-react
+```
+
+```yarn
+yarn add @jfdevelops/react-layout-devtools-react
+```
+
+```bun
+bun add @jfdevelops/react-layout-devtools-react
 ```
 
 Keep the full result of your factory (or of a standalone `defineResourceLayout` call) and pass it as `source`:

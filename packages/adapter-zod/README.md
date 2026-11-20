@@ -3,8 +3,20 @@
 Opt-in native zod schemas for `React.ReactNode` and `React.ReactElement`.
 Install this adapter alongside `zod` and React:
 
-```sh
+```npm
+npm i @jfdevelops/react-layout-adapter-zod zod
+```
+
+```pnpm
 pnpm add @jfdevelops/react-layout-adapter-zod zod
+```
+
+```yarn
+yarn add @jfdevelops/react-layout-adapter-zod zod
+```
+
+```bun
+bun add @jfdevelops/react-layout-adapter-zod zod
 ```
 
 ```ts
