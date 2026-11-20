@@ -42,3 +42,9 @@ They are adapted from [glammed-by-arielie PR #65](https://github.com/jfdevelops/
 - [Reusable helpers](./guides/reusable-helpers.md): functions sharing your schemas and resources.
 - [Develop and debug](./guides/develop-and-debug.md): inspect and preview layouts.
 - [API reference](./reference/api.md) and [Troubleshooting](./troubleshooting.md).
+
+## Companion packages
+
+- [Adapters](./packages/adapters.md): React value schemas for ArkType, Zod, Valibot, and Effect.
+- [Composables](./packages/composables.md): named slots and preset contracts.
+- [Devtools](./packages/devtools.md): the React inspector and Vite integration.
