@@ -503,7 +503,7 @@ test('rejects installs that follow latest or target another snapshot', () => {
         page(
           'Overview',
           10,
-          `## Details\n\n\`\`\`sh\npnpm add ${specifier}\n\`\`\``,
+          `## Details\n\n\`\`\`pnpm\npnpm add ${specifier}\n\`\`\``,
         ),
       );
     }, 'install-version');
@@ -518,7 +518,7 @@ test('accepts explicitly pinned core and companion installs', () => {
         page(
           'Overview',
           10,
-          '## Details\n\n```sh\npnpm add @jfdevelops/react-layout@1.1.0 @jfdevelops/react-layout-adapter-zod@0.1.0 zod\n```',
+          '## Details\n\n```npm\nnpm i @jfdevelops/react-layout@1.1.0 @jfdevelops/react-layout-adapter-zod@0.1.0 zod\n```\n\n```pnpm\npnpm add @jfdevelops/react-layout@1.1.0 @jfdevelops/react-layout-adapter-zod@0.1.0 zod\n```\n\n```yarn\nyarn add @jfdevelops/react-layout@1.1.0 @jfdevelops/react-layout-adapter-zod@0.1.0 zod\n```\n\n```bun\nbun add @jfdevelops/react-layout@1.1.0 @jfdevelops/react-layout-adapter-zod@0.1.0 zod\n```',
         ),
       );
     },
@@ -540,7 +540,7 @@ test('lets the current major install unpinned or same-major packages', () => {
           page(
             'Topic',
             20,
-            `## Details\n\n\`\`\`sh\npnpm add ${specifier} zod\n\`\`\``,
+            `## Details\n\n\`\`\`pnpm\npnpm add ${specifier} zod\n\`\`\``,
           ),
         );
       },
@@ -555,10 +555,43 @@ test('lets the current major install unpinned or same-major packages', () => {
       page(
         'Topic',
         20,
-        '## Details\n\n```sh\npnpm add @jfdevelops/react-layout@1.1.0\n```',
+        '## Details\n\n```pnpm\npnpm add @jfdevelops/react-layout@1.1.0\n```',
       ),
     );
   }, 'install-version');
+});
+
+test('checks installs in every package manager fence', () => {
+  for (const [language, command] of [
+    ['npm', 'npm i'],
+    ['npm', 'npm install'],
+    ['yarn', 'yarn add'],
+    ['bun', 'bun add'],
+  ]) {
+    assertFails((context) => {
+      context.write(
+        `${V1}/index.md`,
+        page(
+          'Overview',
+          10,
+          `## Details\n\n\`\`\`${language}\n${command} @jfdevelops/react-layout\n\`\`\``,
+        ),
+      );
+    }, 'install-version');
+  }
+});
+
+test('rejects install commands in a shell fence', () => {
+  assertFails((context) => {
+    context.write(
+      `${V2}/guides/topic.md`,
+      page(
+        'Topic',
+        20,
+        '## Details\n\n```sh\npnpm add @jfdevelops/react-layout\n```',
+      ),
+    );
+  }, 'install-fence');
 });
 
 test('rejects two pages with the same order in one directory', () => {
