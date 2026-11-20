@@ -8,13 +8,20 @@ import {
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import {
+  buildDocsNavigation,
+  listVersions,
+  parseFrontmatter,
+} from './docs-manifest.mjs';
+
+export { parseFrontmatter };
+
 /**
- * Validates docs/docs.json and every public page against the contract in
- * docs/maintainers/content-contract.md. It uses Node builtins only.
+ * Validates every public page against the contract in
+ * docs/maintainers/content-contract.md. docs.json and meta.json are generated
+ * from the same tree, so the checker builds them in memory instead of reading
+ * them. It uses Node builtins only.
  */
-export const SCHEMA_VERSION = 1;
-export const VERSION_STATUSES = ['current', 'previous', 'legacy', 'next'];
-export const EXAMPLE_VERIFICATIONS = ['typechecked', 'adapted-from-source'];
 export const FENCE_LANGUAGES = [
   'ts',
   'tsx',
@@ -38,27 +45,9 @@ export const IMAGE_EXTENSIONS = [
   '.avif',
 ];
 export const FRONTMATTER_KEYS = ['title', 'description', 'order'];
-export const COMPANION_NAMES = [
-  'adapter',
-  'adapters',
-  'adapter-zod',
-  'adapter-valibot',
-  'adapter-arktype',
-  'adapter-effect',
-  'devtools',
-  'devtools-core',
-  'devtools-react',
-  'devtools-vite',
-  'composable-access',
-  'composable-actions',
-  'composable-breadcrumb',
-  'composable-copy',
-  'composable-navigation',
-];
-const COMPANION_KEYS = ['libraries', 'packages', 'companions', 'adapters'];
+const EXCLUDED = ['maintainers'];
+const GENERATED_FILES = ['docs.json', 'meta.json'];
 const SEGMENT = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-const COMMIT = /^[0-9a-f]{40}$/;
-const VERSION_ID = /^v\d+$/;
 const MAX_SEGMENTS = 3;
 
 function issue(errors, code, file, message) {
@@ -67,10 +56,6 @@ function issue(errors, code, file, message) {
     file,
     message,
   });
-}
-
-function isPlainObject(value) {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function toPosix(value) {
@@ -83,68 +68,6 @@ function isInside(parent, child) {
   return (
     relative !== '' && !relative.startsWith('..') && !path.isAbsolute(relative)
   );
-}
-
-/** Parses the `---` frontmatter block. Values are plain scalars. */
-export function parseFrontmatter(text) {
-  const normalized = text.replace(/\r\n/g, '\n');
-
-  if (!normalized.startsWith('---\n')) {
-    return {
-      data: null,
-      body: normalized,
-      error: 'The page must start with a frontmatter block.',
-    };
-  }
-
-  const end = normalized.indexOf('\n---', 4);
-
-  if (end === -1) {
-    return {
-      data: null,
-      body: normalized,
-      error: 'The frontmatter block is not closed.',
-    };
-  }
-
-  const data = {};
-  const lines = normalized.slice(4, end).split('\n');
-
-  for (const line of lines) {
-    if (line.trim() === '') {
-      continue;
-    }
-
-    const colon = line.indexOf(':');
-
-    if (colon === -1) {
-      return {
-        data: null,
-        body: normalized,
-        error: `Frontmatter line "${line}" is not "key: value".`,
-      };
-    }
-
-    const key = line.slice(0, colon).trim();
-    let value = line.slice(colon + 1).trim();
-
-    if (/^(".*"|'.*')$/.test(value)) {
-      value = value.slice(1, -1);
-    }
-
-    data[key] = value;
-  }
-
-  const after = normalized.indexOf('\n', end + 1);
-
-  return {
-    data,
-    body: after === -1 ? '' : normalized.slice(after + 1),
-    bodyOffset: normalized.slice(
-      0,
-      after === -1 ? normalized.length : after + 1,
-    ).length,
-  };
 }
 
 /** GitHub-style heading slug without the duplicate suffix. */
@@ -282,486 +205,6 @@ export function scanMarkdown(body) {
   return result;
 }
 
-function readJson(file, errors) {
-  if (!existsSync(file)) {
-    issue(errors, 'manifest-missing', file, 'docs/docs.json does not exist.');
-
-    return null;
-  }
-
-  try {
-    return JSON.parse(readFileSync(file, 'utf8'));
-  } catch (error) {
-    issue(
-      errors,
-      'manifest-invalid-json',
-      file,
-      `docs.json is not valid JSON: ${error.message}`,
-    );
-
-    return null;
-  }
-}
-
-function checkKeys(errors, file, label, value, required, optional = []) {
-  if (!isPlainObject(value)) {
-    issue(errors, 'manifest-shape', file, `${label} must be an object.`);
-
-    return false;
-  }
-
-  let ok = true;
-
-  for (const key of required) {
-    if (!(key in value)) {
-      issue(errors, 'manifest-shape', file, `${label} is missing "${key}".`);
-      ok = false;
-    }
-  }
-
-  for (const key of Object.keys(value)) {
-    if (!required.includes(key) && !optional.includes(key)) {
-      issue(
-        errors,
-        'manifest-shape',
-        file,
-        `${label} has an unknown key "${key}".`,
-      );
-      ok = false;
-    }
-  }
-
-  return ok;
-}
-
-function namesCompanion(value) {
-  const text = String(value).toLowerCase();
-  const slug = slugifyHeading(text);
-
-  return (
-    COMPANION_NAMES.includes(slug) ||
-    COMPANION_NAMES.includes(text) ||
-    text.includes('@jfdevelops/') ||
-    /^react-layout-/.test(slug)
-  );
-}
-
-function validateManifest(manifest, file, errors) {
-  const topRequired = [
-    'schemaVersion',
-    'library',
-    'defaultVersion',
-    'docsBaseCommit',
-    'auditedOn',
-    'excluded',
-    'legacyRedirects',
-    'versions',
-  ];
-
-  if (
-    !checkKeys(errors, file, 'The manifest', manifest, topRequired, ['$schema'])
-  ) {
-    for (const key of Object.keys(manifest ?? {})) {
-      if (COMPANION_KEYS.includes(key)) {
-        issue(
-          errors,
-          'companion-collection',
-          file,
-          `The manifest has a "${key}" collection. Companion packages are documented inside the library, never as their own collection.`,
-        );
-      }
-    }
-  }
-
-  if (!isPlainObject(manifest)) {
-    return false;
-  }
-
-  if (manifest.schemaVersion !== SCHEMA_VERSION) {
-    issue(
-      errors,
-      'schema-version',
-      file,
-      `schemaVersion must be ${SCHEMA_VERSION}, found ${JSON.stringify(manifest.schemaVersion)}.`,
-    );
-  }
-
-  const library = manifest.library;
-
-  if (Array.isArray(library)) {
-    issue(
-      errors,
-      'library-identity',
-      file,
-      'There must be exactly one library, so "library" cannot be a list.',
-    );
-  } else if (
-    checkKeys(errors, file, '"library"', library, [
-      'id',
-      'name',
-      'npmPackage',
-      'repository',
-    ])
-  ) {
-    if (library.id !== 'react-layout') {
-      issue(
-        errors,
-        'library-identity',
-        file,
-        `library.id must be "react-layout", found "${library.id}".`,
-      );
-    }
-
-    if (!/^@[a-z0-9-]+\/[a-z0-9-]+$/.test(library.npmPackage ?? '')) {
-      issue(
-        errors,
-        'library-identity',
-        file,
-        'library.npmPackage must look like "@scope/name".',
-      );
-    }
-
-    if (!/^https:\/\//.test(library.repository ?? '')) {
-      issue(
-        errors,
-        'library-identity',
-        file,
-        'library.repository must be an https URL.',
-      );
-    }
-  }
-
-  if (!COMMIT.test(manifest.docsBaseCommit ?? '')) {
-    issue(
-      errors,
-      'manifest-shape',
-      file,
-      'docsBaseCommit must be a 40-character commit hash.',
-    );
-  }
-
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(manifest.auditedOn ?? '')) {
-    issue(errors, 'manifest-shape', file, 'auditedOn must be YYYY-MM-DD.');
-  }
-
-  if (
-    !Array.isArray(manifest.excluded) ||
-    !manifest.excluded.includes('maintainers')
-  ) {
-    issue(
-      errors,
-      'manifest-shape',
-      file,
-      '"excluded" must be a list that includes "maintainers".',
-    );
-  } else if (manifest.excluded.some((entry) => !SEGMENT.test(entry))) {
-    issue(
-      errors,
-      'path-containment',
-      file,
-      '"excluded" entries must be single directory names.',
-    );
-  }
-
-  if (!Array.isArray(manifest.legacyRedirects)) {
-    issue(errors, 'manifest-shape', file, '"legacyRedirects" must be a list.');
-  }
-
-  if (!Array.isArray(manifest.versions) || manifest.versions.length === 0) {
-    issue(
-      errors,
-      'manifest-shape',
-      file,
-      '"versions" must be a non-empty list.',
-    );
-
-    return false;
-  }
-
-  return true;
-}
-
-function validateVersions(manifest, file, errors) {
-  const ids = new Set();
-  const valid = [];
-  let previousMajor = Infinity;
-
-  manifest.versions.forEach((version, index) => {
-    const label = `versions[${index}]`;
-    const required = [
-      'id',
-      'label',
-      'major',
-      'status',
-      'path',
-      'package',
-      'source',
-      'examples',
-      'navigation',
-    ];
-
-    if (!checkKeys(errors, file, label, version, required, ['note'])) {
-      return;
-    }
-
-    if (!VERSION_ID.test(version.id)) {
-      issue(
-        errors,
-        'version-id',
-        file,
-        `${label}.id "${version.id}" must match v<number>.`,
-      );
-
-      return;
-    }
-
-    if (ids.has(version.id)) {
-      issue(
-        errors,
-        'version-id',
-        file,
-        `Version id "${version.id}" is used more than once.`,
-      );
-
-      return;
-    }
-
-    ids.add(version.id);
-
-    if (version.path !== version.id) {
-      issue(
-        errors,
-        'path-containment',
-        file,
-        `${version.id}: path must equal the id, found "${version.path}".`,
-      );
-    }
-
-    if (!VERSION_STATUSES.includes(version.status)) {
-      issue(
-        errors,
-        'version-status',
-        file,
-        `${version.id}: status "${version.status}" is not one of ${VERSION_STATUSES.join(', ')}.`,
-      );
-    }
-
-    if (
-      !Number.isInteger(version.major) ||
-      `v${version.major}` !== version.id
-    ) {
-      issue(
-        errors,
-        'version-id',
-        file,
-        `${version.id}: major must be the integer in the id.`,
-      );
-    } else if (version.major >= previousMajor) {
-      issue(
-        errors,
-        'version-order',
-        file,
-        `${version.id}: versions must be ordered newest first.`,
-      );
-    } else {
-      previousMajor = version.major;
-    }
-
-    if (typeof version.label !== 'string' || version.label.trim() === '') {
-      issue(
-        errors,
-        'manifest-shape',
-        file,
-        `${version.id}: label must be text.`,
-      );
-    }
-
-    validateProvenance(manifest, version, file, errors);
-    valid.push(version);
-  });
-
-  const current = valid.filter((version) => version.status === 'current');
-
-  if (current.length !== 1) {
-    issue(
-      errors,
-      'default-version',
-      file,
-      `Exactly one version must have status "current", found ${current.length}.`,
-    );
-  }
-
-  if (!ids.has(manifest.defaultVersion)) {
-    issue(
-      errors,
-      'default-version',
-      file,
-      `defaultVersion "${manifest.defaultVersion}" is not a documented version.`,
-    );
-  } else if (
-    current.length === 1 &&
-    current[0].id !== manifest.defaultVersion
-  ) {
-    issue(
-      errors,
-      'default-version',
-      file,
-      `defaultVersion "${manifest.defaultVersion}" must be the "current" version "${current[0].id}".`,
-    );
-  }
-
-  return valid;
-}
-
-function validateProvenance(manifest, version, file, errors) {
-  const id = version.id;
-  const pkg = version.package;
-  const source = version.source;
-  const examples = version.examples;
-
-  if (
-    checkKeys(errors, file, `${id}.package`, pkg, [
-      'name',
-      'publishedVersions',
-      'firstVersion',
-      'endpointVersion',
-    ])
-  ) {
-    if (pkg.name !== manifest.library?.npmPackage) {
-      issue(
-        errors,
-        'library-identity',
-        file,
-        `${id}: package.name "${pkg.name}" must equal library.npmPackage. Companion packages have no versions of their own.`,
-      );
-    }
-
-    if (!Number.isInteger(pkg.publishedVersions) || pkg.publishedVersions < 0) {
-      issue(
-        errors,
-        'source-provenance',
-        file,
-        `${id}: package.publishedVersions must be a non-negative integer.`,
-      );
-    }
-  }
-
-  if (
-    checkKeys(errors, file, `${id}.source`, source, [
-      'kind',
-      'repository',
-      'tag',
-      'commit',
-      'publishedAt',
-      'provenance',
-      'firstRelease',
-    ])
-  ) {
-    if (source.kind !== 'release-tag') {
-      issue(
-        errors,
-        'source-provenance',
-        file,
-        `${id}: source.kind must be "release-tag".`,
-      );
-    }
-
-    if (source.tag !== `${pkg?.name}@${pkg?.endpointVersion}`) {
-      issue(
-        errors,
-        'source-provenance',
-        file,
-        `${id}: source.tag "${source.tag}" must be "<package>@<endpointVersion>".`,
-      );
-    }
-
-    if (!COMMIT.test(source.commit ?? '')) {
-      issue(
-        errors,
-        'source-provenance',
-        file,
-        `${id}: source.commit must be a 40-character commit hash.`,
-      );
-    }
-
-    if (
-      !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(source.publishedAt ?? '')
-    ) {
-      issue(
-        errors,
-        'source-provenance',
-        file,
-        `${id}: source.publishedAt must be an ISO UTC timestamp from the registry.`,
-      );
-    }
-
-    const first = source.firstRelease;
-
-    if (
-      checkKeys(errors, file, `${id}.source.firstRelease`, first, [
-        'version',
-        'tag',
-        'commit',
-      ])
-    ) {
-      if (first.commit !== null && !COMMIT.test(first.commit)) {
-        issue(
-          errors,
-          'source-provenance',
-          file,
-          `${id}: firstRelease.commit must be a commit hash or null.`,
-        );
-      }
-
-      if (first.version !== pkg?.firstVersion) {
-        issue(
-          errors,
-          'source-provenance',
-          file,
-          `${id}: firstRelease.version must equal package.firstVersion.`,
-        );
-      }
-    }
-  }
-
-  if (
-    checkKeys(errors, file, `${id}.examples`, examples, [
-      'verification',
-      'fixtures',
-      'command',
-    ])
-  ) {
-    if (!EXAMPLE_VERIFICATIONS.includes(examples.verification)) {
-      issue(
-        errors,
-        'manifest-shape',
-        file,
-        `${id}: examples.verification must be one of ${EXAMPLE_VERIFICATIONS.join(', ')}.`,
-      );
-    } else if (
-      examples.verification === 'typechecked' &&
-      (!examples.fixtures || !examples.command)
-    ) {
-      issue(
-        errors,
-        'manifest-shape',
-        file,
-        `${id}: "typechecked" examples need fixtures and command.`,
-      );
-    } else if (
-      examples.verification === 'adapted-from-source' &&
-      (examples.fixtures || examples.command)
-    ) {
-      issue(
-        errors,
-        'manifest-shape',
-        file,
-        `${id}: "adapted-from-source" examples must not claim fixtures or a command.`,
-      );
-    }
-  }
-}
-
 function collectFiles(directory) {
   const entries = readdirSync(directory, {
     withFileTypes: true,
@@ -774,8 +217,8 @@ function collectFiles(directory) {
   });
 }
 
-function loadPages(docsRoot, version, errors) {
-  const versionDir = path.join(docsRoot, version.path);
+function loadPages(version, errors) {
+  const versionDir = version.full;
   const pages = new Map();
   const assets = new Set();
 
@@ -797,6 +240,13 @@ function loadPages(docsRoot, version, errors) {
   for (const full of collectFiles(versionDir)) {
     const relative = toPosix(path.relative(versionDir, full));
     const display = `docs/${version.path}/${relative}`;
+
+    if (
+      path.basename(full) === 'meta.json' ||
+      (version.generatedReference && isInside(version.generatedReference, full))
+    ) {
+      continue;
+    }
 
     if (relative.startsWith('assets/')) {
       if (IMAGE_EXTENSIONS.includes(path.extname(relative).toLowerCase())) {
@@ -853,99 +303,39 @@ function loadPages(docsRoot, version, errors) {
   };
 }
 
-function checkNavigation(version, collection, errors) {
-  const where = `docs/docs.json`;
-  const listed = new Map();
-  const flat = [];
+/**
+ * The current version follows the latest release, so its installs may be
+ * unpinned. Older versions pin every package so a reader gets that major.
+ */
+function checkInstall(specifier, version, where, errors) {
+  const pinned = /^@jfdevelops\/[a-z0-9-]+@\d+\.\d+\.\d+$/.test(specifier);
+  const unpinned = /^@jfdevelops\/[a-z0-9-]+$/.test(specifier);
+  const core = version.package.name;
 
-  version.navigation.forEach((group, index) => {
-    const label = `${version.id}.navigation[${index}]`;
-
-    if (!checkKeys(errors, where, label, group, ['title', 'pages'])) {
-      return;
-    }
-
-    if (typeof group.title !== 'string' || group.title.trim() === '') {
-      issue(errors, 'nav-shape', where, `${label}.title must be text.`);
-    } else if (namesCompanion(group.title)) {
-      issue(
-        errors,
-        'companion-collection',
-        where,
-        `${label}: "${group.title}" is a companion package section. Document companions inside library guides.`,
-      );
-    }
-
-    if (!Array.isArray(group.pages) || group.pages.length === 0) {
-      issue(
-        errors,
-        'nav-shape',
-        where,
-        `${label}.pages must be a non-empty list.`,
-      );
-
-      return;
-    }
-
-    for (const pageId of group.pages) {
-      if (typeof pageId !== 'string') {
-        issue(
-          errors,
-          'nav-shape',
-          where,
-          `${label} has a page id that is not text.`,
-        );
-
-        continue;
-      }
-
-      flat.push(pageId);
-
-      if (listed.has(pageId)) {
-        issue(
-          errors,
-          'nav-duplicate',
-          where,
-          `${version.id}: "${pageId}" appears in navigation more than once.`,
-        );
-      }
-
-      listed.set(pageId, true);
-
-      if (!collection.pages.has(pageId)) {
-        issue(
-          errors,
-          'page-missing',
-          where,
-          `${version.id}: navigation lists "${pageId}" but docs/${version.path}/${pageId}.md does not exist.`,
-        );
-      }
-
-      const segments = pageId.split('/');
-
-      if (segments.some((segment) => namesCompanion(segment))) {
-        issue(
-          errors,
-          'companion-collection',
-          where,
-          `${version.id}: page id "${pageId}" names a companion package. Companions are covered inside library guides.`,
-        );
-      }
-    }
-  });
-
-  for (const page of collection.pages.values()) {
-    if (!listed.has(page.id)) {
-      issue(
-        errors,
-        'nav-orphan',
-        page.file,
-        `${version.id}: page "${page.id}" is not in navigation.`,
-      );
-    }
+  if (!pinned && !(unpinned && version.status === 'current')) {
+    issue(
+      errors,
+      'install-version',
+      where,
+      `Pin ${specifier} to the audited package version so this guide does not install a different major.`,
+    );
   }
 
-  return flat;
+  const sameRelease =
+    version.status === 'current'
+      ? specifier.startsWith(`${core}@${version.major}.`)
+      : specifier === `${core}@${version.package.endpointVersion}`;
+
+  if (pinned && specifier.startsWith(`${core}@`) && !sameRelease) {
+    issue(
+      errors,
+      'install-version',
+      where,
+      version.status === 'current'
+        ? `Install a ${version.major}.x release of ${core} for this documentation.`
+        : `Install ${core}@${version.package.endpointVersion} for this documentation snapshot.`,
+    );
+  }
 }
 
 function validatePage(page, version, context, errors) {
@@ -1003,7 +393,10 @@ function validatePage(page, version, context, errors) {
 
   const versionWord = /(^|[^\w.])(v\d+|react layout \d+)(?![\w.])/i;
 
-  if (page.id !== 'migration' && versionWord.test(`${title} ${description}`)) {
+  if (
+    !page.id.endsWith('migration') &&
+    versionWord.test(`${title} ${description}`)
+  ) {
     issue(
       errors,
       'title-version',
@@ -1058,27 +451,7 @@ function validatePage(page, version, context, errors) {
           line.match(/@jfdevelops\/[a-z0-9-]+(?:@[^\s]+)?/g) ?? [];
 
         for (const specifier of packages) {
-          if (!/^@jfdevelops\/[a-z0-9-]+@\d+\.\d+\.\d+$/.test(specifier)) {
-            issue(
-              errors,
-              'install-version',
-              where,
-              `Pin ${specifier} to the audited package version so this guide does not install a different major.`,
-            );
-          }
-
-          if (
-            specifier.startsWith(`${version.package.name}@`) &&
-            specifier !==
-              `${version.package.name}@${version.package.endpointVersion}`
-          ) {
-            issue(
-              errors,
-              'install-version',
-              where,
-              `Install ${version.package.name}@${version.package.endpointVersion} for this documentation snapshot.`,
-            );
-          }
+          checkInstall(specifier, version, where, errors);
         }
       }
     }
@@ -1213,6 +586,16 @@ function resolveLink(link, page, context, errors, options) {
     return null;
   }
 
+  if (
+    !existsSync(resolved) &&
+    context.generatedReferences.some(
+      (directory) => resolved === directory || isInside(directory, resolved),
+    )
+  ) {
+    // The API reference is generated and gitignored; it may not exist yet.
+    return null;
+  }
+
   if (!existsSync(resolved)) {
     issue(
       errors,
@@ -1250,10 +633,8 @@ function resolveLink(link, page, context, errors, options) {
   }
 
   if (link.image) {
-    const segments = relative.split('/');
-
     if (
-      segments[1] !== 'assets' ||
+      !/^framework\/[^/]+\/v\d+\/assets\//.test(relative) ||
       !IMAGE_EXTENSIONS.includes(path.extname(relative).toLowerCase())
     ) {
       issue(
@@ -1319,270 +700,119 @@ function checkLinks(page, scan, context, errors, options = {}) {
   }
 }
 
-function checkOrder(version, flat, orders, errors) {
-  const seen = new Map();
+function checkFile(display, full, context, errors) {
+  const scan = scanMarkdown(readFileSync(full, 'utf8'));
+  const page = {
+    file: display,
+    full,
+  };
 
-  for (const pageId of flat) {
-    const order = orders.get(pageId);
-
-    if (order === undefined) {
-      continue;
-    }
-
-    if (seen.has(order)) {
-      issue(
-        errors,
-        'nav-order',
-        `docs/${version.path}/${pageId}.md`,
-        `${version.id}: order ${order} is already used by "${seen.get(order)}".`,
-      );
-    }
-
-    seen.set(order, pageId);
+  for (const problem of scan.problems) {
+    issue(errors, problem.code, `${display}:${problem.line}`, problem.message);
   }
 
-  let previous = -Infinity;
+  checkLinks(page, scan, context, errors, {
+    allowExcluded: true,
+  });
 
-  for (const pageId of flat) {
-    const order = orders.get(pageId);
-
-    if (order === undefined) {
-      continue;
-    }
-
-    if (order <= previous) {
-      issue(
-        errors,
-        'nav-order',
-        `docs/${version.path}/${pageId}.md`,
-        `${version.id}: "${pageId}" has order ${order}, which is not greater than the page before it in navigation.`,
-      );
-    }
-
-    previous = order;
-  }
+  return scan;
 }
 
-function checkCollectionLayout(docsRoot, manifest, versions, errors) {
-  const known = new Set(versions.map((version) => version.path));
-  const excluded = new Set(
-    Array.isArray(manifest.excluded) ? manifest.excluded : [],
-  );
-  const stubs = new Set(
-    (Array.isArray(manifest.legacyRedirects)
-      ? manifest.legacyRedirects
-      : []
-    ).map((entry) => entry?.from),
-  );
-
+/**
+ * docs/ holds README.md, framework/, maintainers/ and generated files.
+ * framework/<name>/ holds only v<major> directories.
+ */
+function checkLayout(docsRoot, frameworks, context, errors, stats) {
   for (const entry of readdirSync(docsRoot, {
     withFileTypes: true,
   })) {
-    if (entry.isDirectory()) {
-      if (excluded.has(entry.name) || known.has(entry.name)) {
-        continue;
-      }
+    const relative = `docs/${entry.name}`;
 
-      if (VERSION_ID.test(entry.name)) {
-        issue(
-          errors,
-          'version-directory',
-          `docs/${entry.name}`,
-          `Directory ${entry.name} is not a version in docs.json.`,
-        );
-      } else {
+    if (entry.isDirectory()) {
+      if (entry.name !== 'framework' && !EXCLUDED.includes(entry.name)) {
         issue(
           errors,
           'stray-file',
-          `docs/${entry.name}`,
-          `Directory "${entry.name}" is not a documented version or an excluded directory.`,
+          relative,
+          `Directory "${entry.name}" is not framework/ or an excluded directory.`,
         );
       }
 
       continue;
     }
 
-    const relative = `docs/${entry.name}`;
-
-    if (
-      entry.name === 'docs.json' ||
-      entry.name === 'README.md' ||
-      stubs.has(relative)
-    ) {
+    if (GENERATED_FILES.includes(entry.name)) {
       continue;
     }
 
-    issue(
-      errors,
-      'stray-file',
+    if (entry.name !== 'README.md') {
+      issue(
+        errors,
+        'stray-file',
+        relative,
+        'Only README.md belongs at the docs root. Pages live under framework/.',
+      );
+
+      continue;
+    }
+
+    const scan = checkFile(
       relative,
-      'This file is not part of the public collection, the manifest or a legacy redirect.',
+      path.join(docsRoot, entry.name),
+      context,
+      errors,
     );
+
+    stats.links += scan.links.length;
+  }
+
+  for (const framework of frameworks) {
+    for (const entry of readdirSync(framework.full, {
+      withFileTypes: true,
+    })) {
+      if (entry.isFile() && GENERATED_FILES.includes(entry.name)) {
+        continue;
+      }
+
+      if (!entry.isDirectory() || !/^v\d+$/.test(entry.name)) {
+        issue(
+          errors,
+          'stray-file',
+          `docs/${framework.path}/${entry.name}`,
+          'A framework directory holds only v<major> version directories.',
+        );
+      }
+    }
   }
 }
 
-function checkLegacyRedirects(
-  manifest,
-  versions,
-  collections,
-  context,
-  errors,
-) {
-  if (!Array.isArray(manifest.legacyRedirects)) {
-    return;
-  }
+function checkOrders(collection, errors) {
+  const seen = new Map();
 
-  const seen = new Set();
-  const pageIds = new Map();
-
-  for (const version of versions) {
-    for (const page of collections.get(version.id)?.pages.values() ?? []) {
-      pageIds.set(`${version.id}/${page.id}`, page);
+  for (const page of collection.pages.values()) {
+    if (!Number.isInteger(page.order)) {
+      continue;
     }
-  }
 
-  manifest.legacyRedirects.forEach((entry, index) => {
-    const label = `legacyRedirects[${index}]`;
+    const key = `${path.posix.dirname(page.id)}:${page.order}`;
 
-    if (!isPlainObject(entry) || typeof entry.from !== 'string') {
+    if (seen.has(key)) {
       issue(
         errors,
-        'legacy-redirect',
-        'docs/docs.json',
-        `${label} must be an object with "from".`,
+        'nav-order',
+        page.file,
+        `order ${page.order} is also used by ${seen.get(key)}. Pages in one directory need distinct orders.`,
       );
-
-      return;
-    }
-
-    if (!/^docs\/[a-z0-9-]+\.md$/.test(entry.from)) {
-      issue(
-        errors,
-        'legacy-redirect',
-        'docs/docs.json',
-        `${label}.from "${entry.from}" must be a root docs/*.md path.`,
-      );
-
-      return;
-    }
-
-    if (seen.has(entry.from)) {
-      issue(
-        errors,
-        'legacy-redirect',
-        'docs/docs.json',
-        `${entry.from} is listed more than once.`,
-      );
-    }
-
-    seen.add(entry.from);
-
-    const hasPublic = typeof entry.to === 'string';
-    const hasMaintainer = typeof entry.toMaintainerPage === 'string';
-
-    if (hasPublic === hasMaintainer) {
-      issue(
-        errors,
-        'legacy-redirect',
-        'docs/docs.json',
-        `${label} needs exactly one of "to" or "toMaintainerPage".`,
-      );
-
-      return;
-    }
-
-    const stubFull = path.join(context.root, entry.from);
-    let targetFull = null;
-
-    if (hasPublic) {
-      const targetPage = pageIds.get(entry.to);
-
-      if (!targetPage) {
-        issue(
-          errors,
-          'legacy-target-missing',
-          'docs/docs.json',
-          `${entry.from} points to "${entry.to}", which is not a public page.`,
-        );
-
-        return;
-      }
-
-      targetFull = targetPage.full;
     } else {
-      targetFull = path.resolve(context.docsRoot, entry.toMaintainerPage);
-
-      if (
-        !isInside(context.docsRoot, targetFull) ||
-        !context.excluded.includes(entry.toMaintainerPage.split('/')[0]) ||
-        !existsSync(targetFull)
-      ) {
-        issue(
-          errors,
-          'legacy-target-missing',
-          'docs/docs.json',
-          `${entry.from} points to "${entry.toMaintainerPage}", which is not an existing page in an excluded directory.`,
-        );
-
-        return;
-      }
+      seen.set(key, page.file);
     }
-
-    if (!existsSync(stubFull)) {
-      issue(
-        errors,
-        'legacy-stub-missing',
-        entry.from,
-        'The old link has no retained page or stub.',
-      );
-
-      return;
-    }
-
-    const stub = {
-      file: entry.from,
-      full: stubFull,
-    };
-    const stubText = readFileSync(stubFull, 'utf8');
-    const scan = scanMarkdown(stubText);
-
-    for (const problem of scan.problems) {
-      issue(
-        errors,
-        problem.code,
-        `${entry.from}:${problem.line}`,
-        problem.message,
-      );
-    }
-
-    const linksTarget = scan.links.some((link) => {
-      const file = link.target.split('#')[0];
-
-      return (
-        file !== '' && path.resolve(path.dirname(stubFull), file) === targetFull
-      );
-    });
-
-    if (!linksTarget) {
-      issue(
-        errors,
-        'legacy-stub-link',
-        entry.from,
-        `The stub must link to its target ${entry.to ?? entry.toMaintainerPage}.`,
-      );
-    }
-
-    checkLinks(stub, scan, context, errors, {
-      allowExcluded: true,
-    });
-  });
+  }
 }
 
 /** Runs every check. `root` is the repository root. */
 export function checkDocs({ root, examplesDir = 'tools/docs/examples' } = {}) {
   const errors = [];
   const docsRoot = path.join(root, 'docs');
-  const manifestFile = path.join(docsRoot, 'docs.json');
   const stats = {
     versions: 0,
     pages: 0,
@@ -1590,12 +820,12 @@ export function checkDocs({ root, examplesDir = 'tools/docs/examples' } = {}) {
     examples: 0,
   };
 
-  if (!existsSync(docsRoot)) {
+  if (!existsSync(path.join(docsRoot, 'framework'))) {
     issue(
       errors,
-      'manifest-missing',
-      'docs',
-      'The docs directory does not exist.',
+      'framework-missing',
+      'docs/framework',
+      'The docs/framework directory does not exist.',
     );
 
     return {
@@ -1604,60 +834,77 @@ export function checkDocs({ root, examplesDir = 'tools/docs/examples' } = {}) {
     };
   }
 
-  const manifest = readJson(manifestFile, errors);
-
-  if (!manifest || !validateManifest(manifest, 'docs/docs.json', errors)) {
-    return {
-      errors,
-      stats,
-    };
-  }
-
-  const versions = validateVersions(manifest, 'docs/docs.json', errors);
+  const { core, frameworks } = listVersions(root);
+  const { manifest } = buildDocsNavigation({
+    root,
+  });
   const context = {
     root,
     docsRoot,
     examplesDir,
-    excluded: Array.isArray(manifest.excluded) ? manifest.excluded : [],
+    excluded: EXCLUDED,
+    generatedReferences: frameworks
+      .flatMap((framework) => framework.versions)
+      .map((version) => version.generatedReference)
+      .filter(Boolean),
     slugCache: new Map(),
   };
-  const collections = new Map();
 
-  stats.versions = versions.length;
-  checkCollectionLayout(docsRoot, manifest, versions, errors);
+  checkLayout(docsRoot, frameworks, context, errors, stats);
 
-  for (const version of versions) {
-    const collection = loadPages(docsRoot, version, errors);
-
-    collections.set(version.id, collection);
-
-    if (!Array.isArray(version.navigation)) {
-      continue;
+  for (const framework of manifest.frameworks) {
+    if (!framework.defaultVersion) {
+      issue(
+        errors,
+        'default-version',
+        `docs/${framework.path}`,
+        `No version directory matches the current package major (v${core.major}).`,
+      );
     }
-
-    const flat = checkNavigation(version, collection, errors);
-    const orders = new Map();
-
-    for (const page of collection.pages.values()) {
-      const checked = validatePage(page, version, context, errors);
-
-      if (!checked) {
-        continue;
-      }
-
-      stats.pages += 1;
-      stats.links += checked.scan.links.length;
-      stats.examples += checked.scan.fences.filter(
-        (fence) => fence.example,
-      ).length;
-      orders.set(page.id, checked.order);
-      checkLinks(page, checked.scan, context, errors);
-    }
-
-    checkOrder(version, flat, orders, errors);
   }
 
-  checkLegacyRedirects(manifest, versions, collections, context, errors);
+  for (const framework of frameworks) {
+    for (const version of framework.versions) {
+      const described = {
+        ...version,
+        package: {
+          name: core.name,
+          endpointVersion: version.endpointVersion,
+        },
+      };
+
+      if (!version.endpointVersion) {
+        issue(
+          errors,
+          'version-release',
+          `docs/${version.path}`,
+          `No ${version.id} release is listed in packages/core/CHANGELOG.md.`,
+        );
+      }
+
+      stats.versions += 1;
+
+      const collection = loadPages(described, errors);
+
+      for (const page of collection.pages.values()) {
+        const checked = validatePage(page, described, context, errors);
+
+        if (!checked) {
+          continue;
+        }
+
+        page.order = checked.order;
+        stats.pages += 1;
+        stats.links += checked.scan.links.length;
+        stats.examples += checked.scan.fences.filter(
+          (fence) => fence.example,
+        ).length;
+        checkLinks(page, checked.scan, context, errors);
+      }
+
+      checkOrders(collection, errors);
+    }
+  }
 
   return {
     errors,
@@ -1677,7 +924,8 @@ function main() {
     }
 
     console.error(
-      `\nDocs check failed with ${errors.length} problem${errors.length === 1 ? '' : 's'}.`,
+      `
+Docs check failed with ${errors.length} problem${errors.length === 1 ? '' : 's'}.`,
     );
     process.exitCode = 1;
 

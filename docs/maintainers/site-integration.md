@@ -40,9 +40,9 @@ with uncommitted edits. That tree is a different in-progress design: a generated
 That is not the reference state above, and the plan below does not depend on it.
 Whoever implements this must reconcile with that work.
 
-> **Warning:** Do not carry the `subPackages` model over. Companion packages never get
-> their own pages, navigation sections or version selectors. They live inside React
-> Layout guides.
+> **Warning:** Do not carry the `subPackages` model over. Companion packages have no
+> version selectors of their own. They appear as pages of a React Layout version, under
+> `plugins/` and `devtools`.
 
 ## Plan
 
@@ -59,16 +59,18 @@ Whoever implements this must reconcile with that work.
   }
   ```
 
-- A build step fetches that exact commit, never a branch, tag or `main`. A sparse
-  checkout of `docs/`, `scripts/check-docs.mjs` and `tools/docs/examples/` is enough.
+- A build step fetches that exact commit, never a branch, tag or `main`, and runs
+  `pnpm install --frozen-lockfile`. The manifest, `meta.json` files and API reference
+  are generated, not committed, so the build needs the workspace to generate them.
 - Updating the pin is a reviewed commit in the website repo. Pick a commit on the
   library's default branch that contains the docs you want published.
 - A missing commit, a failed fetch or a changed layout stops the build.
 
 ### 2. Validate before generating anything
 
-1. In the fetched checkout run `node scripts/check-docs.mjs`. It must exit 0.
-2. Read `docs/docs.json`. Refuse any `schemaVersion` the site does not know (today: 1).
+1. In the fetched checkout run `pnpm generate-docs`, then `pnpm check:docs`. Both must
+   exit 0.
+2. Read `docs/docs.json`. Refuse any `schemaVersion` the site does not know (today: 2).
 3. Only then generate the registry. A failure in either step fails the build. Never
    publish partial docs, and never skip a failing page.
 
@@ -86,14 +88,15 @@ built from the manifest. Concrete mapping onto the existing `DocPage` and
 | package `id` and route `$package` | `library.id` (`react-layout`) |
 | package `name` | `library.name` |
 | package `description` | the site's own copy. The manifest has none. |
-| package `version` | `source` of the default version: `package.endpointVersion` of `defaultVersion` |
-| new `versions[]` | `versions[]`: `id`, `label`, `status`, `note`, `package.endpointVersion`, `source.commit`, `examples.verification` |
-| page `slug` (the `_splat`) | `<version.id>/<pageId>`; the `index` page uses the bare `<version.id>` |
+| new `frameworks[]` | `frameworks[]`: `id`, `title`, `defaultVersion` |
+| package `version` | `package.endpointVersion` of the default framework's `defaultVersion` |
+| new `versions[]` | each framework's `versions[]`: `id`, `label`, `status`, `package.endpointVersion` |
+| page `slug` (the `_splat`) | `<framework.id>/<version.id>/<pageId>` |
 | page `title`, `description`, `order` | the page's frontmatter |
 | page `content` | the body after the frontmatter |
-| new page `group` | the `navigation[].title` that lists the page |
+| new page `group` | the title of the navigation directory that holds the page |
 | new page `previous` and `next` | neighbors in the flattened navigation of that version |
-| sidebar | `navigation` of the version in the URL, in manifest order |
+| sidebar | `navigation` of the version in the URL; a `generated` entry reads `<path>/meta.json` |
 
 Page ids are identical across versions wherever a page exists in both, which is what
 makes switching work.
@@ -102,11 +105,11 @@ makes switching work.
 
 | URL | Behavior |
 | --- | --- |
-| `/docs/react-layout` | Redirect to `/docs/react-layout/<defaultVersion>`. Today `defaultVersion` is `v4`. |
-| `/docs/react-layout/<version>` | The version's `index` page. |
-| `/docs/react-layout/<version>/<pageId>` | A page. `<pageId>` may have up to two slashes (`guides/lazy-loading`). |
-| `/docs/react-layout/<version>/index` | Redirect to `/docs/react-layout/<version>`. |
-| unknown version or page | 404. |
+| `/docs/react-layout` | Redirect to `/docs/react-layout/react/<defaultVersion>`. Today that is `v4`. |
+| `/docs/react-layout/<framework>` | Redirect to that framework's `defaultVersion`. |
+| `/docs/react-layout/<framework>/<version>` | The first page of the version's navigation. |
+| `/docs/react-layout/<framework>/<version>/<pageId>` | A page. `<pageId>` may have up to two slashes (`guides/lazy-loading`). |
+| unknown framework, version or page | 404. |
 
 The existing `$package` and `$` routes already carry a multi-segment `_splat`, so this
 needs a loader change and a version-aware registry lookup, not a new route tree.
@@ -117,7 +120,7 @@ needs a loader change and a version-aware registry lookup, not a new route tree.
 - On switch, keep the page: go to the same `pageId` under the chosen version when it
   exists. Build a `pageExists[version][pageId]` set at generation time.
 - When the page does not exist there (for example `guides/hosted-surfaces` in `v1`, or
-  most guides in `v0`), go to that version's `index` page and show a short notice:
+  most guides in `v0`), go to that version's first page and show a short notice:
   "This page does not exist in this version."
 - Keep the `#fragment` only when the same page exists and the heading id exists there.
 
@@ -126,12 +129,11 @@ needs a loader change and a version-aware registry lookup, not a new route tree.
 | Condition | Banner |
 | --- | --- |
 | `status: previous` | "You are reading docs for an older major." Link to the same page in `defaultVersion`, falling back to its `index`. |
-| `status: legacy` | A warning that shows the version's `note`. |
+| `status: legacy` | "This is an unstable 0.x line. Only the final release is documented." |
 | `status: next` | "This version is not released." |
 | `status: current` | None. |
-| `examples.verification: adapted-from-source` | A small note that examples were adapted from source and not compiled. |
 
-Banners come only from manifest fields. Do not hard-code version numbers.
+Banners come only from `status`. Do not hard-code version numbers.
 
 ### 7. Renderer requirements
 
@@ -145,9 +147,9 @@ The renderer must support the contract's Markdown subset:
 | Lists | Ordered, unordered and nested. |
 | Quotes | Multi-line block quotes. Render `**Note:**`, `**Tip:**` and `**Warning:**` openers as callouts. |
 | Code | Fenced blocks with the language available for highlighting: `ts`, `tsx`, `js`, `jsx`, `json`, `sh`, `bash`, `text`, `css`, `diff`, `yaml`. Ignore the `example=` info token. |
-| Relative links | Resolve a `.md` link against the current page and rewrite it to `/docs/react-layout/<version>/<pageId>#anchor`. Cross-version links (`../../v3/migration.md`) rewrite the same way. |
+| Relative links | Resolve a `.md` link against the current page and rewrite it to `/docs/react-layout/<framework>/<version>/<pageId>#anchor`. Cross-version links (`../../v3/migration.md`) rewrite the same way. |
 | External links | `https://` only, with `rel="noopener noreferrer"`. |
-| Images | Copy `docs/<version>/assets/**` to a static path and rewrite `./assets/x.svg`. |
+| Images | Copy `docs/framework/<framework>/<version>/assets/**` to a static path and rewrite `./assets/x.svg`. |
 | Safety | No raw HTML. Keep escaping. Rendering never executes content. |
 | Input | Normalize CRLF to LF before parsing frontmatter. |
 
@@ -164,38 +166,37 @@ renderer. The requirement is the behavior above, not a particular library.
 - **Failure.** If fetching, `check-docs`, manifest parsing or registry generation fails,
   the build fails and the previous deployment keeps serving. Report the checker's error
   lines in the CI log.
-- **New major.** When the library releases a new major, a docs PR adds a version to the
-  manifest, the checker passes, and the website pin moves. The site code needs no change.
+- **New major.** When the library releases a new major, a docs PR adds a
+  `framework/react/v<major>` directory and moves the reference path in `.gitignore`. The
+  generated manifest picks it up, the checker passes, and the website pin moves. The site
+  code needs no change.
 
-### 9. Redirects for old links
+### 9. Old repository paths
 
-The library keeps stubs for the six old root docs (`docs/standard-schema.md` and so on)
-and lists them in `legacyRedirects`. If the site ever served those repository paths, map
-each `from` to `/docs/react-layout/<to>`; `toMaintainerPage` entries have no public URL.
-The website at the reference commit never served them, so this is optional.
+The six old root docs (`docs/standard-schema.md` and so on) were removed. The website
+at the reference commit never served those repository paths, so no redirects are needed.
 
 ## Acceptance gates
 
 The website integration is done when every item is true and demonstrated:
 
-1. The build fetches the pinned commit and fails if the commit or `docs/docs.json` is
-   missing.
-2. The build runs `scripts/check-docs.mjs` on the fetched files and fails on any error.
-3. A manifest with `schemaVersion` other than 1 fails the build with a clear message.
-4. `/docs/react-layout` redirects to `/docs/react-layout/v4` and the target renders.
+1. The build fetches the pinned commit, runs `pnpm generate-docs`, and fails if the
+   commit is missing or generation fails.
+2. The build runs `pnpm check:docs` on the fetched files and fails on any error.
+3. A manifest with `schemaVersion` other than 2 fails the build with a clear message.
+4. `/docs/react-layout` redirects to `/docs/react-layout/react/v4` and the target renders.
 5. Every page id in every version's navigation renders at its URL with its frontmatter
    title as the `h1` and no `#` in the body.
-6. A heading `#fragment` link, for example `getting-started#companion-package-versions`,
+6. A heading `#fragment` link, for example `installation#companion-packages`,
    scrolls to the heading, and the site's slugs equal the checker's for all headings.
 7. Tables, nested lists, multi-line quotes, `####` headings and highlighted `tsx` blocks
    render correctly on a sample page from each version.
 8. A relative `.md` link, including a cross-version one, navigates to the right URL.
 9. Switching versions keeps the page where it exists and falls back to the index with a
    notice where it does not (test `v4` to `v1` on `guides/hosted-surfaces`).
-10. Banners appear for `previous` and `legacy` versions, show the manifest `note` for `v0`,
-    and are absent for `v4`.
-11. Companion packages appear nowhere as their own library, page group, sidebar section or
-    version selector.
+10. Banners appear for `previous` and `legacy` versions and are absent for `v4`.
+11. Companion packages appear only as pages of a React Layout version, never as their own
+    library or version selector.
 12. A deliberate failure (bad pin, broken link in a fixture docs tree) fails the build and
     leaves the previous deployment serving.
 13. Rendering performs no network calls at request time for docs content.
@@ -205,7 +206,6 @@ The website integration is done when every item is true and demonstrated:
 - Where the pin lives and who bumps it after a library release.
 - Whether to extend the current renderer or adopt a Markdown pipeline (the working tree
   on this machine experiments with Fumadocs).
-- Whether to serve the stubs for old repository links.
 - The website repo's `example-package`, `layout-composables` and `layout-validator`
   directories hold placeholder docs, and `docs.config.json` currently maps `example-package`
   to the React Layout slug. Replacing them is part of the website change, not this one.

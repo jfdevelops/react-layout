@@ -113,10 +113,26 @@ jobs:
       - name: Build example app
         run: pnpm --filter basic-example build
 
+      - name: Detect release changes
+        id: changesets
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          changesets=$(git diff --name-only --diff-filter=AM origin/main...HEAD -- '.changeset/*.md' ':!.changeset/README.md')
+          packages=$(git diff --name-only origin/main...HEAD -- packages ':(exclude,glob)packages/**/*.md')
+          if [ -n "$changesets" ] || [ -n "$packages" ]; then
+            echo "verify=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "verify=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Verify changeset
-        # The version PR has already consumed its changesets into package versions.
+        # Runs when the pull request adds a changeset or changes package files other
+        # than Markdown, so docs-only changes need no changeset. The version PR has
+        # already consumed its changesets into package versions.
         if: >-
           github.event_name == 'pull_request' &&
+          steps.changesets.outputs.verify == 'true' &&
           (github.head_ref != 'changeset-release/main' ||
            github.event.pull_request.head.repo.full_name != github.repository)
         run: pnpm changeset status --since=origin/main

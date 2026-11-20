@@ -36,7 +36,7 @@ const options = Schema.toStandardSchemaV1(
 );
 ```
 
-See the [Standard Schema guide](../../docs/standard-schema.md) for usage with React Layout.
+See the [props and validation guide](../../docs/framework/react/v4/guides/props-and-validation.md) for usage with React Layout.
 
 Node and element fields are required by default. Use `Schema.optional` to allow omitted values. `null` remains a valid node.
 

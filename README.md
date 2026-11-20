@@ -8,6 +8,14 @@ A React library for building resource-based page layouts. Define a shared layout
 - **Reuse layout structure** — composable slots (e.g. `Layout`, `Title`, `Content`) keep markup consistent across pages.
 - **Type-safe props** — validate and infer layout props with Standard Schema libraries and native React adapters.
 
+## Documentation
+
+Read the [current React docs](./docs/framework/react/v4/overview.md): start with
+[installation](./docs/framework/react/v4/installation.md) and the
+[quick start](./docs/framework/react/v4/quick-start.md), then see the
+[shared factory guide](./docs/framework/react/v4/guides/shared-factory.md).
+The [docs contributor guide](./docs/README.md) explains API reference generation.
+
 ## Install
 
 ```bash
@@ -69,28 +77,28 @@ The docs are versioned by major. Start with the version you use.
 
 | Version | Docs |
 | --- | --- |
-| v4 (current) | [Overview](./docs/v4/index.md), [Getting started](./docs/v4/getting-started.md), [API reference](./docs/v4/reference/api.md) |
-| v3 | [Overview](./docs/v3/index.md) |
-| v2 | [Overview](./docs/v2/index.md) |
-| v1 | [Overview](./docs/v1/index.md) |
-| v0 (legacy, unstable) | [Overview](./docs/v0/index.md) |
+| v4 (current) | [Overview](./docs/framework/react/v4/overview.md), [Quick start](./docs/framework/react/v4/quick-start.md), [API reference](./docs/framework/react/v4/reference/index.md) |
+| v3 | [Overview](./docs/framework/react/v3/index.md) |
+| v2 | [Overview](./docs/framework/react/v2/index.md) |
+| v1 | [Overview](./docs/framework/react/v1/index.md) |
+| v0 (legacy, unstable) | [Overview](./docs/framework/react/v0/index.md) |
 
 Popular v4 guides:
 
-- [Resources and layouts](./docs/v4/guides/resource-layouts.md): resources, naming, namespaces, shells
-- [Props and validation](./docs/v4/guides/props-and-validation.md): Standard Schema and React values
-- [Render states](./docs/v4/guides/render-states.md): Loading, Error, shared and derived states
-- [Composables and presets](./docs/v4/guides/composables-and-presets.md)
-- [Route components and renderers](./docs/v4/guides/route-components.md)
-- [Reusable helpers](./docs/v4/guides/reusable-helpers.md)
-- [Lazy loading](./docs/v4/guides/lazy-loading.md)
-- [Hosted surfaces](./docs/v4/guides/hosted-surfaces.md)
-- [Develop and debug](./docs/v4/guides/develop-and-debug.md)
-- [Migrating from v3](./docs/v4/migration.md)
+- [Resources and layouts](./docs/framework/react/v4/guides/resource-layouts.md): resources, naming, namespaces, shells
+- [Props and validation](./docs/framework/react/v4/guides/props-and-validation.md): Standard Schema and React values
+- [Render states](./docs/framework/react/v4/guides/render-states.md): Loading, Error, shared and derived states
+- [Composables and presets](./docs/framework/react/v4/guides/composables-and-presets.md)
+- [Route components and renderers](./docs/framework/react/v4/guides/route-components.md)
+- [Reusable helpers](./docs/framework/react/v4/guides/reusable-helpers.md)
+- [Lazy loading](./docs/framework/react/v4/guides/lazy-loading.md)
+- [Hosted surfaces](./docs/framework/react/v4/guides/hosted-surfaces.md)
+- [Develop and debug](./docs/framework/react/v4/guides/develop-and-debug.md)
+- [Migrating from v3](./docs/framework/react/v4/guides/migration.md)
 
 Optional packages for schema adapters, preset composables and devtools are covered inside
 these guides. Their versions are in the
-[compatibility table](./docs/v4/getting-started.md#companion-package-versions).
+[compatibility table](./docs/framework/react/v4/installation.md#companion-packages).
 
 ## Workspace
 
@@ -99,7 +107,7 @@ these guides. Their versions are in the
 | `packages/core`          | `@jfdevelops/react-layout`, the published library                |
 | `packages/*`             | Companion packages and the internal packages core installs       |
 | `examples/basic-example` | Demo app showing resource layouts in action                      |
-| `docs`                   | Versioned docs, their manifest and maintainer notes              |
+| `docs`                   | Docs by framework and major version, plus maintainer notes       |
 
 Contributing: `pnpm install`, then `pnpm build` and `pnpm test`. Tooling, lint and format
 notes are in [docs/maintainers/development.md](./docs/maintainers/development.md).
@@ -107,4 +115,4 @@ notes are in [docs/maintainers/development.md](./docs/maintainers/development.md
 ## Agent skill
 
 The package ships a `build-react-layouts` skill for coding agents. Installation steps are in
-[Getting started](./docs/v4/getting-started.md#agent-skill).
+[Shared factory](./docs/framework/react/v4/guides/shared-factory.md#agent-skill).

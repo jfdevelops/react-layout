@@ -21,6 +21,6 @@ excessive type instantiation. Native ArkType methods are intentionally absent
 from the exported TypeScript API. `reactElement()` accepts element values
 such as `<Icon />`; component functions require their own schema.
 
-See the [Standard Schema guide](../../docs/standard-schema.md) for usage with React Layout.
+See the [props and validation guide](../../docs/framework/react/v4/guides/props-and-validation.md) for usage with React Layout.
 
 Node and element fields are required by default. Use a Standard Schema library's optional wrapper to allow omitted values. `null` remains a valid node.
