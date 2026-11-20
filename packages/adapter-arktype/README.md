@@ -3,8 +3,20 @@
 Opt-in native arktype schemas for `React.ReactNode` and `React.ReactElement`.
 Install this adapter alongside `arktype` and React:
 
-```sh
+```npm
+npm i @jfdevelops/react-layout-adapter-arktype arktype
+```
+
+```pnpm
 pnpm add @jfdevelops/react-layout-adapter-arktype arktype
+```
+
+```yarn
+yarn add @jfdevelops/react-layout-adapter-arktype arktype
+```
+
+```bun
+bun add @jfdevelops/react-layout-adapter-arktype arktype
 ```
 
 ```ts

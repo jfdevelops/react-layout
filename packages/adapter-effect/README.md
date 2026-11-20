@@ -3,8 +3,20 @@
 Opt-in native Effect schemas for `React.ReactNode` and `React.ReactElement`.
 Install this adapter alongside `effect` and React:
 
-```sh
+```npm
+npm i @jfdevelops/react-layout-adapter-effect effect
+```
+
+```pnpm
 pnpm add @jfdevelops/react-layout-adapter-effect effect
+```
+
+```yarn
+yarn add @jfdevelops/react-layout-adapter-effect effect
+```
+
+```bun
+bun add @jfdevelops/react-layout-adapter-effect effect
 ```
 
 ```ts

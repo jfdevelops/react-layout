@@ -100,11 +100,32 @@ behavior.
 
 React nodes and elements need an adapter. Install the package for your schema library:
 
-```sh
+```npm
+npm i @jfdevelops/react-layout-adapter-zod@0.1.0 zod
+# or
+npm i @jfdevelops/react-layout-adapter-valibot@0.1.0 valibot
+npm i @jfdevelops/react-layout-adapter-arktype@0.1.0 arktype
+```
+
+```pnpm
 pnpm add @jfdevelops/react-layout-adapter-zod@0.1.0 zod
 # or
 pnpm add @jfdevelops/react-layout-adapter-valibot@0.1.0 valibot
 pnpm add @jfdevelops/react-layout-adapter-arktype@0.1.0 arktype
+```
+
+```yarn
+yarn add @jfdevelops/react-layout-adapter-zod@0.1.0 zod
+# or
+yarn add @jfdevelops/react-layout-adapter-valibot@0.1.0 valibot
+yarn add @jfdevelops/react-layout-adapter-arktype@0.1.0 arktype
+```
+
+```bun
+bun add @jfdevelops/react-layout-adapter-zod@0.1.0 zod
+# or
+bun add @jfdevelops/react-layout-adapter-valibot@0.1.0 valibot
+bun add @jfdevelops/react-layout-adapter-arktype@0.1.0 arktype
 ```
 
 Each adapter has `react` and its library as peer dependencies, and depends on the shared

@@ -3,8 +3,20 @@
 Opt-in native valibot schemas for `React.ReactNode` and `React.ReactElement`.
 Install this adapter alongside `valibot` and React:
 
-```sh
+```npm
+npm i @jfdevelops/react-layout-adapter-valibot valibot
+```
+
+```pnpm
 pnpm add @jfdevelops/react-layout-adapter-valibot valibot
+```
+
+```yarn
+yarn add @jfdevelops/react-layout-adapter-valibot valibot
+```
+
+```bun
+bun add @jfdevelops/react-layout-adapter-valibot valibot
 ```
 
 ```ts

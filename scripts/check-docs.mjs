@@ -22,6 +22,11 @@ export { parseFrontmatter };
  * from the same tree, so the checker builds them in memory instead of reading
  * them. It uses Node builtins only.
  */
+// Install commands get one fence per package manager, labeled with its name.
+export const PACKAGE_MANAGERS = ['npm', 'pnpm', 'yarn', 'bun'];
+// Install commands whose package versions are checked.
+const INSTALL_COMMAND = /^\s*(npm (install|i)|pnpm add|yarn add|bun add)\s/;
+const SHELL_LANGUAGES = ['sh', 'bash', ...PACKAGE_MANAGERS];
 export const FENCE_LANGUAGES = [
   'ts',
   'tsx',
@@ -34,6 +39,7 @@ export const FENCE_LANGUAGES = [
   'css',
   'diff',
   'yaml',
+  ...PACKAGE_MANAGERS,
 ];
 export const IMAGE_EXTENSIONS = [
   '.png',
@@ -441,10 +447,19 @@ function validatePage(page, version, context, errors) {
   for (const fence of scan.fences) {
     const where = `${page.file}:${fence.line}`;
 
-    if (fence.language === 'sh' || fence.language === 'bash') {
+    if (SHELL_LANGUAGES.includes(fence.language)) {
       for (const line of fence.content.split('\n')) {
-        if (!/^pnpm add\s/.test(line)) {
+        if (!INSTALL_COMMAND.test(line)) {
           continue;
+        }
+
+        if (!PACKAGE_MANAGERS.includes(fence.language)) {
+          issue(
+            errors,
+            'install-fence',
+            where,
+            `Put install commands in one fence per package manager (${PACKAGE_MANAGERS.join(', ')}), not in a ${fence.language} fence.`,
+          );
         }
 
         const packages =

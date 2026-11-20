@@ -19,8 +19,20 @@ Source: the 1.0.0 core changelog, and the README and tests at the `0.25.0` and `
 
 ## Upgrade the package
 
-```sh
+```npm
+npm i @jfdevelops/react-layout@1.6.1
+```
+
+```pnpm
 pnpm add @jfdevelops/react-layout@1.6.1
+```
+
+```yarn
+yarn add @jfdevelops/react-layout@1.6.1
+```
+
+```bun
+bun add @jfdevelops/react-layout@1.6.1
 ```
 
 ## 1. Use one configuration object

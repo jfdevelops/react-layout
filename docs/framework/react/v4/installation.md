@@ -7,8 +7,20 @@ order: 20
 React Layout requires React 18 or newer. Tooling requires Node
 `^20.19.0 || >=22.12.0`.
 
-```bash
+```npm
+npm i @jfdevelops/react-layout zod
+```
+
+```pnpm
 pnpm add @jfdevelops/react-layout zod
+```
+
+```yarn
+yarn add @jfdevelops/react-layout zod
+```
+
+```bun
+bun add @jfdevelops/react-layout zod
 ```
 
 The examples use Zod. Any synchronous Standard Schema library can describe your

@@ -24,16 +24,40 @@ Install the library, plus a Standard Schema library to describe your props.
 Zod is used throughout these docs, but any synchronous Standard Schema library
 works.
 
-```sh
+```npm
+npm i @jfdevelops/react-layout@3.3.0 zod
+```
+
+```pnpm
 pnpm add @jfdevelops/react-layout@3.3.0 zod
+```
+
+```yarn
+yarn add @jfdevelops/react-layout@3.3.0 zod
+```
+
+```bun
+bun add @jfdevelops/react-layout@3.3.0 zod
 ```
 
 If a prop needs to hold React content (a node or an element) install the adapter
 for your schema library. See
 [Props and validation](./guides/props-and-validation.md#react-values-and-adapters).
 
-```sh
+```npm
+npm i @jfdevelops/react-layout-adapter-zod@1.0.0
+```
+
+```pnpm
 pnpm add @jfdevelops/react-layout-adapter-zod@1.0.0
+```
+
+```yarn
+yarn add @jfdevelops/react-layout-adapter-zod@1.0.0
+```
+
+```bun
+bun add @jfdevelops/react-layout-adapter-zod@1.0.0
 ```
 
 ## Define a layout and create a page

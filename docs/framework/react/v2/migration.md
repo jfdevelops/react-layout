@@ -17,8 +17,20 @@ Source: the 2.0.0 section of the core changelog and the 2.7.0 `docs/` pages.
 
 ## Upgrade the package
 
-```sh
+```npm
+npm i @jfdevelops/react-layout@2.7.0
+```
+
+```pnpm
 pnpm add @jfdevelops/react-layout@2.7.0
+```
+
+```yarn
+yarn add @jfdevelops/react-layout@2.7.0
+```
+
+```bun
+bun add @jfdevelops/react-layout@2.7.0
 ```
 
 The inspector and Vite plugin ship as separate packages. The versions that were built

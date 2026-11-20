@@ -4,8 +4,20 @@ Optional development instrumentation for React Layout Devtools. The plugin adds
 source locations and enables temporary render-state previews. It is not required
 by the library or by the React inspector.
 
-```sh
+```npm
+npm i -D @jfdevelops/react-layout-devtools-vite
+```
+
+```pnpm
 pnpm add -D @jfdevelops/react-layout-devtools-vite
+```
+
+```yarn
+yarn add -D @jfdevelops/react-layout-devtools-vite
+```
+
+```bun
+bun add -D @jfdevelops/react-layout-devtools-vite
 ```
 
 ```ts
