@@ -2,6 +2,6 @@
 
 This page moved.
 
-- Usage guide: [Hosted surfaces](./v4/guides/hosted-surfaces.md)
+- Usage guide: [Hosted surfaces](./framework/react/v4/guides/hosted-surfaces.md)
 - Original design rationale, kept for maintainers:
   [design notes](./maintainers/design/hosted-surfaces.md)

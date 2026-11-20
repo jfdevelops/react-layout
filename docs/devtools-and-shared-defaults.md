@@ -3,6 +3,6 @@
 This page moved. Its topics now live in the versioned docs.
 
 - Shared prop contracts and naming conventions:
-  [Resources and layouts](./v4/guides/resource-layouts.md)
+  [Resources and layouts](./framework/react/v4/guides/resource-layouts.md)
 - Inspector, Vite plugin and production builds:
-  [Develop and debug](./v4/guides/develop-and-debug.md)
+  [Develop and debug](./framework/react/v4/guides/develop-and-debug.md)
