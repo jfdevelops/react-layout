@@ -11,3 +11,7 @@ Read each skill before the work it describes:
 - [jf-naming-conventions](.agents/skills/jf-naming-conventions/SKILL.md): Choose names for files, directories, packages, functions, types, and public APIs in jfdevelops projects. Read before adding or renaming these elements.
 
 <!-- jfdevelops:end -->
+
+## Project skills
+
+- [write-docs](.agents/skills/write-docs/SKILL.md): Write, edit, move or review React Layout documentation pages under `docs/framework/`. Read before any change to user-facing docs.
