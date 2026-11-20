@@ -44,9 +44,21 @@ docs/
 - For API details, link to the reference instead of copying signatures into a guide:
   `reference/index.md` or a page under it in the current major, and
   `reference/api.md` in earlier majors.
-- When a new major ships, add `framework/react/v<major>/` and move the reference path
-  in `.gitignore`. Version status and install versions follow automatically from
-  `packages/core`.
+- When a new major ships, the outgoing major loses its generated reference: the
+  generator only writes the current major's, and that one was never committed. Do
+  these steps in one change, before or with the version bump in `packages/core`:
+  1. Write `reference/api.md` for the outgoing major by hand, the way `v3/reference/api.md`
+     is written. Take the exports from `packages/core/src/index.ts` and the companion
+     entry points at the outgoing major's last release tag. Name that version and the
+     tag in the intro. Don't copy the TypeDoc output: it spans many pages and carries
+     an HTML comment that the checker rejects outside the generated reference. Delete the
+     generated pages from that `reference/` folder, so only `api.md` is left.
+  2. In the outgoing major's pages, change links from `reference/index.md` and its
+     subpages to `reference/api.md`, with anchors that exist there.
+  3. Add `framework/react/v<major>/` for the new major, and move the reference path in
+     `.gitignore` from the outgoing major to the new one.
+  4. Run the commands under "Verify". Version status and install versions follow
+     automatically from `packages/core`.
 
 ## Frontmatter
 
