@@ -19,9 +19,24 @@ No provider is required.
 Install the React inspector for your app and the optional plugin as a development
 dependency. Core inspection infrastructure is already installed by the library.
 
-```bash
+```npm
+npm i @jfdevelops/react-layout-devtools-react
+npm i -D @jfdevelops/react-layout-devtools-vite
+```
+
+```pnpm
 pnpm add @jfdevelops/react-layout-devtools-react
 pnpm add -D @jfdevelops/react-layout-devtools-vite
+```
+
+```yarn
+yarn add @jfdevelops/react-layout-devtools-react
+yarn add -D @jfdevelops/react-layout-devtools-vite
+```
+
+```bun
+bun add @jfdevelops/react-layout-devtools-react
+bun add -D @jfdevelops/react-layout-devtools-vite
 ```
 
 ## Mount the inspector

@@ -23,8 +23,20 @@ markup and styling.
 These packages require React and React DOM 18 or newer. The main library already
 installs the composable infrastructure. Add only the presets you need:
 
-```bash
+```npm
+npm i @jfdevelops/react-layout-composable-copy
+```
+
+```pnpm
 pnpm add @jfdevelops/react-layout-composable-copy
+```
+
+```yarn
+yarn add @jfdevelops/react-layout-composable-copy
+```
+
+```bun
+bun add @jfdevelops/react-layout-composable-copy
 ```
 
 ## Add a preset

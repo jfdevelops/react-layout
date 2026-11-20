@@ -45,8 +45,20 @@ props.
 | `@jfdevelops/react-layout-composable-actions` 0.2.1      | `createActionsComposable`                          | `actions` (links with an optional `intent`)             |
 | `@jfdevelops/react-layout-composable-access` 0.1.2       | `createAccessComposable`                           | `roles?`, `permissions?`, `flag?`                       |
 
-```sh
+```npm
+npm i @jfdevelops/react-layout-composable-navigation@0.1.2 @jfdevelops/react-layout-composable-copy@0.1.2
+```
+
+```pnpm
 pnpm add @jfdevelops/react-layout-composable-navigation@0.1.2 @jfdevelops/react-layout-composable-copy@0.1.2
+```
+
+```yarn
+yarn add @jfdevelops/react-layout-composable-navigation@0.1.2 @jfdevelops/react-layout-composable-copy@0.1.2
+```
+
+```bun
+bun add @jfdevelops/react-layout-composable-navigation@0.1.2 @jfdevelops/react-layout-composable-copy@0.1.2
 ```
 
 ```tsx

@@ -135,12 +135,36 @@ React nodes and elements are not described by ordinary schema libraries, so the
 React Layout adapter packages provide `reactNode()` and `reactElement()` in the
 native style of each library. Install only the adapter for the library you use.
 
-```sh
+```npm
+npm i @jfdevelops/react-layout-adapter-zod@1.0.0 zod
+# or
+npm i @jfdevelops/react-layout-adapter-valibot@1.0.0 valibot
+npm i @jfdevelops/react-layout-adapter-arktype@1.0.0 arktype
+npm i @jfdevelops/react-layout-adapter-effect@1.0.0 effect
+```
+
+```pnpm
 pnpm add @jfdevelops/react-layout-adapter-zod@1.0.0 zod
 # or
 pnpm add @jfdevelops/react-layout-adapter-valibot@1.0.0 valibot
 pnpm add @jfdevelops/react-layout-adapter-arktype@1.0.0 arktype
 pnpm add @jfdevelops/react-layout-adapter-effect@1.0.0 effect
+```
+
+```yarn
+yarn add @jfdevelops/react-layout-adapter-zod@1.0.0 zod
+# or
+yarn add @jfdevelops/react-layout-adapter-valibot@1.0.0 valibot
+yarn add @jfdevelops/react-layout-adapter-arktype@1.0.0 arktype
+yarn add @jfdevelops/react-layout-adapter-effect@1.0.0 effect
+```
+
+```bun
+bun add @jfdevelops/react-layout-adapter-zod@1.0.0 zod
+# or
+bun add @jfdevelops/react-layout-adapter-valibot@1.0.0 valibot
+bun add @jfdevelops/react-layout-adapter-arktype@1.0.0 arktype
+bun add @jfdevelops/react-layout-adapter-effect@1.0.0 effect
 ```
 
 Each adapter has `react` and its schema library as peer dependencies, and

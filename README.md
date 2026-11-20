@@ -18,8 +18,20 @@ The [docs contributor guide](./docs/README.md) explains API reference generation
 
 ## Install
 
-```bash
+```npm
+npm i @jfdevelops/react-layout zod
+```
+
+```pnpm
 pnpm add @jfdevelops/react-layout zod
+```
+
+```yarn
+yarn add @jfdevelops/react-layout zod
+```
+
+```bun
+bun add @jfdevelops/react-layout zod
 ```
 
 Zod is only an example. Any synchronous Standard Schema library works.

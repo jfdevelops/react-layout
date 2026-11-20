@@ -128,7 +128,11 @@ The body is CommonMark plus GitHub tables. Supported:
   a callout, and renders as plain quote where callouts are not supported.
 - Tables with a header row.
 - Fenced code blocks with a language from: `ts`, `tsx`, `js`, `jsx`, `json`, `sh`,
-  `bash`, `text`, `css`, `diff`, `yaml`.
+  `bash`, `text`, `css`, `diff`, `yaml`, `npm`, `pnpm`, `yarn`, `bun`.
+- Install commands get one fence per package manager, in this order, each labeled
+  with its name: `npm` (`npm i`), `pnpm` (`pnpm add`), `yarn` (`yarn add`) and `bun`
+  (`bun add`). A site may render the four as tabs. An install command in an `sh` or
+  `bash` fence is an error.
 - Inline links and images.
 
 Not supported, and rejected: raw HTML and HTML comments, autolinks in angle
