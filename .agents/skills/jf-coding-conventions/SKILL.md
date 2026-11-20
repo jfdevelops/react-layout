@@ -17,8 +17,9 @@ Use arrow functions for function-valued props and callbacks. The exception is a 
 
 ## Spacing and grouping
 
-- Put a blank line before every `return` statement.
+- Put a blank line before every `return` statement that follows another statement in the same block. A `return` that is the first statement in a block goes directly after the opening brace, with no blank line.
 - Put a blank line before and after functions and brace-delimited code blocks, separating them from neighboring statements. This describes separation between code units, not padding inside every object literal or JSX expression.
+- Never put a blank line directly after an opening brace or directly before a closing brace.
 - Group related variable declarations together and related functions together; keep unrelated declarations from interleaving those groups.
 - Use braces for every `if`, `for`, and `while` body.
 - Keep the spacing policy consistent across formatter choices. The selected formatter may control indentation, quotes, and semicolons; it must not weaken these required spacing rules.
@@ -29,7 +30,6 @@ function describeSkill(name: string) {
   const hasName = normalizedName.length > 0;
 
   if (!hasName) {
-
     return 'Unnamed skill';
   }
 
@@ -37,7 +37,6 @@ function describeSkill(name: string) {
 }
 
 function describeSkills(names: string[]) {
-
   return names.map((name) => describeSkill(name));
 }
 ```
