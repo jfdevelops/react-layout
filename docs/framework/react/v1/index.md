@@ -22,32 +22,36 @@ resource.
 | Composable   | A named slot component that keeps shared markup consistent. | `composables.Title`     |
 | Render state | A variant of a page such as `Loading` or `Error`.           | `<Users.Loading />`     |
 
+In v1, props are described with the built-in `createProp` builder. Standard Schema
+support arrived in 2.6.0.
+
 ## What changed
 
-v2.0.0 reworked lazy loading and removed two deprecated settings. Compared with v1:
+v1.0.0 replaced the chained `createDefinedResourceLayout` builder with a single
+configuration object. Compared with the final v0 release:
 
-1. **Lazy loading is unified.** Lazy resources, render states and scoped components
-   share one cached loader with `preload()`, `status`, fallbacks and retry.
-2. **Lazy errors are narrower.** A lazy `Error` handles only the closed
-   `LazyResourceError` union. Ordinary render errors go to your route's error boundary.
-3. **Compound states on a lazy proxy need a capital letter.**
-4. **`visibility` and `passthrough` were removed** from `props.include`. Use `required`
-   and `suppliedVia`.
-5. **The layout render context's `resource` was removed.** Read `resources.current`.
+1. **`createDefinedResourceLayout` takes one configuration object.** The chained
+   `createDefinedResourceLayout('users').defineOptions(...)` form is gone.
+2. **Bound layout definitions are flattened.** The bound `defineResourceLayout`
+   takes `{ render }` directly, not `{ layout: { render } }`.
+3. **The `resources` accessor is normalized.** `resources()` returns normalized
+   definitions and `resources.raw()` returns the original declarations.
+4. **`createResourceConfig.forResource` fragments** can be spread into a config.
 
-Minor releases added:
+Minor releases then added:
 
-| Version | Added                                                                                          |
-| ------- | ---------------------------------------------------------------------------------------------- |
-| 2.1.0   | The current `state` in render contexts, `forStates`, and `defineLazyDefaults.createRenderState`. |
-| 2.2.0   | Composable outlines and page highlighting in the inspector.                                    |
-| 2.3.0   | Default `children`, and `createReusable`.                                                      |
-| 2.4.0   | Typed selectors in reusable helpers.                                                           |
-| 2.5.0   | `resources.single()` in reusable helpers.                                                      |
-| 2.6.0   | Standard Schema props and the React adapters. `createProp` was deprecated.                     |
-| 2.7.0   | Hosted surface families and `defineResourceSurfaces`.                                          |
+| Version | Added                                                                                       |
+| ------- | ------------------------------------------------------------------------------------------- |
+| 1.0.1   | Typed callback shorthand for `createRenderState` and state-name suggestions.                |
+| 1.1.0   | `asComposable` on state builders, and the `namespace` option.                               |
+| 1.2.0   | `createRenderState.fromState`.                                                              |
+| 1.3.0   | The graph inspector, shared prop contracts and reusable naming defaults.                    |
+| 1.4.0   | The Vite plugin, source locations and `defineLayoutPreview`.                                |
+| 1.5.0   | `required` and `suppliedVia` in `props.include`.                                            |
+| 1.6.0   | Optional names, `defineLayoutName.defineParts`, `strict` and part validation.               |
+| 1.6.1   | `defineLayoutName` and `namingFn` require a single configuration object.                    |
 
-The [migration guide](./migration.md) covers upgrading from v1.
+The [migration guide](./migration.md) covers upgrading from v0.
 
 ## Next steps
 
@@ -59,12 +63,10 @@ The [migration guide](./migration.md) covers upgrading from v1.
 | Add Loading, Error and custom states         | [Render states](./guides/render-states.md)                     |
 | Share slots                                  | [Composables](./guides/composables-and-presets.md)             |
 | Hand components to a router                  | [Route components](./guides/route-components.md)               |
-| Write typed helper functions                 | [Reusable helpers](./guides/reusable-helpers.md)               |
 | Split bundles                                | [Lazy loading](./guides/lazy-loading.md)                       |
-| Add panes and overlays                       | [Hosted surfaces](./guides/hosted-surfaces.md)                 |
 | Inspect a running layout tree                | [Develop and debug](./guides/develop-and-debug.md)             |
 | Look up an export                            | [API reference](./reference/api.md)                            |
 | Fix an error message                         | [Troubleshooting](./troubleshooting.md)                        |
 
-Other majors: [v4](../v4/index.md), [v3](../v3/index.md), [v1](../v1/index.md),
+Other majors: [v4](../v4/overview.md), [v3](../v3/index.md), [v2](../v2/index.md),
 [v0](../v0/index.md).

@@ -132,4 +132,4 @@ no implicit children.
 
 - [Props and validation](./guides/props-and-validation.md)
 - [Troubleshooting](./troubleshooting.md)
-- Next major: [v3 to v4](../v4/migration.md)
+- Next major: [v3 to v4](../v4/guides/migration.md)

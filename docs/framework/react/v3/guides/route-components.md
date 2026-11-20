@@ -116,7 +116,7 @@ parameter. Factory results keep their inferred type and runtime identity: thunks
 JSX, primitives and objects all work.
 
 > **Note:** v4 replaced this positional call with one options object. See
-> [the v4 migration guide](../../v4/migration.md).
+> [the v4 migration guide](../../v4/guides/migration.md).
 
 ### Configure parameters
 
