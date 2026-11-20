@@ -14,7 +14,7 @@ In this guide you will:
 - read `path.value` in `displayName` callbacks
 - adopt the new `forResource` and path helpers
 
-Coming from v2 or earlier? Consult the migration guides shipped with each intervening major before applying this v3-to-v4 guide.
+Coming from v2 or earlier? Apply the [v3 migration guide](../../v3/migration.md) first. It covers the removal of `createProp` and the legacy validator builders.
 
 ## Upgrade the package
 

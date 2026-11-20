@@ -16,7 +16,6 @@ A site integration reads this contract, not the page text. See
 ```text
 docs/
   README.md                    repository-facing index, not published
-  <old-name>.md                stubs for pages that moved
   framework/
     react/
       v4/ v3/ v2/ v1/ v0/      one directory per documented major
@@ -167,10 +166,10 @@ fixture differ. Fences without `example=` are not verified.
 navigation, and may not be linked to from a public page. It holds the release
 audit, this contract, the site integration handoff and design notes.
 
-## Moved pages
+## Docs root
 
-Pages that used to live at the docs root stay as short stubs so existing links
-resolve. Their links are checked like any page. A site may serve them as redirects.
+The docs root holds only `README.md`, `framework/`, `maintainers/` and generated
+files. Pages never live at the root.
 
 ## Authoring style
 

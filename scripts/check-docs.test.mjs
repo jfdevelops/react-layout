@@ -62,8 +62,8 @@ function withDocs(change, run) {
       '## Details\n\nBack to the [overview](../overview.md).',
     ),
     [`${V1}/index.md`]: page('Overview', 10, '## Start\n\nHello.'),
-    'docs/old-guide.md':
-      '# Old guide\n\nMoved to [the topic](./framework/react/v2/guides/topic.md).\n',
+    'docs/README.md':
+      '# Docs\n\nStart at [the topic](./framework/react/v2/guides/topic.md).\n',
     'docs/maintainers/notes.md': '# Notes\n',
   };
   const context = {
@@ -595,13 +595,19 @@ test('allows links into the generated reference before it exists', () => {
   }, 'link-missing-file');
 });
 
-test('checks links in moved-page stubs', () => {
+test('checks links in the docs README', () => {
   assertFails((context) => {
     context.write(
-      'docs/old-guide.md',
-      '# Old guide\n\nMoved to [the topic](./framework/react/v2/guides/gone.md).\n',
+      'docs/README.md',
+      '# Docs\n\nStart at [the topic](./framework/react/v2/guides/gone.md).\n',
     );
   }, 'link-missing-file');
+});
+
+test('rejects pages at the docs root', () => {
+  assertFails((context) => {
+    context.write('docs/old-guide.md', '# Old guide\n\nMoved.\n');
+  }, 'stray-file');
 });
 
 test('requires a released version for each earlier major', () => {

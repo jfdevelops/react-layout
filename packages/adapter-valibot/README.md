@@ -18,6 +18,6 @@ Both helpers return native valibot schemas, so use the library's normal
 object, array, union, and optional APIs. `reactElement()` accepts element values
 such as `<Icon />`; component functions require their own schema.
 
-See the [Standard Schema guide](../../docs/standard-schema.md) for usage with React Layout.
+See the [props and validation guide](../../docs/framework/react/v4/guides/props-and-validation.md) for usage with React Layout.
 
 Node and element fields are required by default. Use your schema library's optional wrapper to allow omitted values. `null` remains a valid node.

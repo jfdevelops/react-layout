@@ -18,7 +18,6 @@ docs/
         reference/           generated API reference (gitignored)
       v3/ ... v0/            earlier majors
   maintainers/               contributor and publishing information
-  *.md                       stubs for pages that moved
 ```
 
 ## What is generated

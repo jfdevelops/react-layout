@@ -171,11 +171,10 @@ renderer. The requirement is the behavior above, not a particular library.
   generated manifest picks it up, the checker passes, and the website pin moves. The site
   code needs no change.
 
-### 9. Redirects for old links
+### 9. Old repository paths
 
-The library keeps stubs for the six old root docs (`docs/standard-schema.md` and so on),
-each linking to the page that replaced it. The website at the reference commit never
-served those repository paths, so serving them as redirects is optional.
+The six old root docs (`docs/standard-schema.md` and so on) were removed. The website
+at the reference commit never served those repository paths, so no redirects are needed.
 
 ## Acceptance gates
 
@@ -207,7 +206,6 @@ The website integration is done when every item is true and demonstrated:
 - Where the pin lives and who bumps it after a library release.
 - Whether to extend the current renderer or adopt a Markdown pipeline (the working tree
   on this machine experiments with Fumadocs).
-- Whether to serve the stubs for old repository links.
 - The website repo's `example-package`, `layout-composables` and `layout-validator`
   directories hold placeholder docs, and `docs.config.json` currently maps `example-package`
   to the React Layout slug. Replacing them is part of the website change, not this one.

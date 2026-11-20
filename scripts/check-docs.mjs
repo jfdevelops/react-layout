@@ -719,7 +719,7 @@ function checkFile(display, full, context, errors) {
 }
 
 /**
- * docs/ holds README.md, moved-page stubs, framework/ and maintainers/.
+ * docs/ holds README.md, framework/, maintainers/ and generated files.
  * framework/<name>/ holds only v<major> directories.
  */
 function checkLayout(docsRoot, frameworks, context, errors, stats) {
@@ -745,12 +745,12 @@ function checkLayout(docsRoot, frameworks, context, errors, stats) {
       continue;
     }
 
-    if (!entry.name.endsWith('.md')) {
+    if (entry.name !== 'README.md') {
       issue(
         errors,
         'stray-file',
         relative,
-        'Only Markdown pages belong at the docs root.',
+        'Only README.md belongs at the docs root. Pages live under framework/.',
       );
 
       continue;
