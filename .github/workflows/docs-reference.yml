@@ -1,0 +1,41 @@
+name: Docs reference
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'scripts/generate-docs.mjs'
+      - 'scripts/docs-manifest.mjs'
+      - 'tools/docs/**'
+
+concurrency:
+  group: docs-reference-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  generate:
+    name: Generate API reference
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate API reference
+        run: pnpm generate-docs

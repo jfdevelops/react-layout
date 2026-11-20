@@ -25,6 +25,7 @@
     "format": "oxfmt . && oxlint --fix --deny-warnings && oxfmt .",
     "format:check": "oxfmt --check .",
     "check:declarations": "node scripts/check-declaration-docs.mjs",
+    "generate-docs": "node scripts/generate-docs.mjs",
     "check:docs": "node scripts/check-docs.mjs",
     "check:docs-examples": "tsc -p tools/docs/tsconfig.json"
   },
