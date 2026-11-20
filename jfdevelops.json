@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generator": {
     "package": "@jfdevelops/cli",
-    "version": "0.8.0"
+    "version": "0.9.0"
   },
   "project": {
     "name": "view-map-workspace",
@@ -16,6 +16,11 @@
     },
     {
       "path": "packages/adapter-arktype",
+      "kind": "library",
+      "options": {}
+    },
+    {
+      "path": "packages/adapter-effect",
       "kind": "library",
       "options": {}
     },
@@ -85,12 +90,30 @@
       "options": {}
     },
     {
+      "path": "packages/internals",
+      "kind": "library",
+      "options": {}
+    },
+    {
       "path": "packages/validators",
+      "kind": "library",
+      "options": {}
+    },
+    {
+      "path": "tools/docs",
       "kind": "library",
       "options": {}
     }
   ],
   "addons": [
+    {
+      "name": "@jfdevelops/react-layout-composable-access",
+      "options": {}
+    },
+    {
+      "name": "@jfdevelops/react-layout-composable-actions",
+      "options": {}
+    },
     {
       "name": "@jfdevelops/create-error",
       "options": {}
@@ -117,14 +140,6 @@
     },
     {
       "name": "@jfdevelops/react-layout-adapters",
-      "options": {}
-    },
-    {
-      "name": "@jfdevelops/react-layout-composable-access",
-      "options": {}
-    },
-    {
-      "name": "@jfdevelops/react-layout-composable-actions",
       "options": {}
     },
     {
@@ -156,6 +171,10 @@
       "options": {}
     },
     {
+      "name": "@jfdevelops/react-layout-internals",
+      "options": {}
+    },
+    {
       "name": "@jfdevelops/react-layout-validator",
       "options": {}
     },
@@ -175,8 +194,17 @@
       "required": true,
       "source": {
         "package": "@jfdevelops/skills",
-        "version": "0.1.0",
+        "version": "0.2.0",
         "path": "./skills/jf-coding-conventions"
+      }
+    },
+    {
+      "name": "jf-docs",
+      "required": true,
+      "source": {
+        "package": "@jfdevelops/skills",
+        "version": "0.2.0",
+        "path": "./skills/jf-docs"
       }
     },
     {
@@ -184,7 +212,7 @@
       "required": true,
       "source": {
         "package": "@jfdevelops/skills",
-        "version": "0.1.0",
+        "version": "0.2.0",
         "path": "./skills/jf-git"
       }
     },
@@ -193,7 +221,7 @@
       "required": true,
       "source": {
         "package": "@jfdevelops/skills",
-        "version": "0.1.0",
+        "version": "0.2.0",
         "path": "./skills/jf-naming-conventions"
       }
     }
@@ -205,7 +233,15 @@
         "type": "skill",
         "name": "jf-coding-conventions"
       },
-      "sha256": "26a9c9a5cadf7411854b77fbfe6c5e4b0395aa7954c6d4c7523aeb63726fdec9"
+      "sha256": "6b6453d70c6668af56e11012bf9743abca4815bd0cb4d940a918128913cd1dcb"
+    },
+    {
+      "path": ".agents/skills/jf-docs/SKILL.md",
+      "owner": {
+        "type": "skill",
+        "name": "jf-docs"
+      },
+      "sha256": "de7e386750435dce2ede1d7413d09f7900f33694500dbd3a170d77b8e862646b"
     },
     {
       "path": ".agents/skills/jf-git/SKILL.md",
@@ -254,6 +290,14 @@
         "name": "jf-coding-conventions"
       },
       "sha256": "cd8184f448d4bb38964fd7d28713a8926db25f47ed93d402bad328e61050f602"
+    },
+    {
+      "path": ".claude/skills/jf-docs/SKILL.md",
+      "owner": {
+        "type": "skill",
+        "name": "jf-docs"
+      },
+      "sha256": "c32e325dd582a60122392c1317435226a49b42dadd88d1a4548384dda7c7e783"
     },
     {
       "path": ".claude/skills/jf-git/SKILL.md",

@@ -12,11 +12,11 @@ importers:
         specifier: 2.31.0
         version: 2.31.0(@types/node@24.10.1)
       '@jfdevelops/cli':
-        specifier: 0.8.0
-        version: 0.8.0
+        specifier: 0.9.0
+        version: 0.9.0
       '@jfdevelops/skills':
-        specifier: 0.1.0
-        version: 0.1.0
+        specifier: 0.2.0
+        version: 0.2.0
       '@stylistic/eslint-plugin':
         specifier: 5.10.0
         version: 5.10.0(eslint@10.14.0(jiti@2.7.0))
@@ -1225,8 +1225,8 @@ packages:
       '@types/node':
         optional: true
 
-  '@jfdevelops/cli@0.8.0':
-    resolution: {integrity: sha512-qo1AdczYnkFScaVzhPTDwUo8ihC8DGZQDTV8kY/w1NX79P/rBoC6K/ZCLj/4xX3xKEePEKyrfvTyl+mYhcKAyA==}
+  '@jfdevelops/cli@0.9.0':
+    resolution: {integrity: sha512-K0nA0u3fC51SM0ob8hAEPBytZY3iTGFMZa9njUy2M0vUspPx74R5/rJQlumqvT2cF0gvLEAi6fBjDG6fU6k7Ag==}
     engines: {node: '>=22.12.0'}
     hasBin: true
 
@@ -1236,6 +1236,10 @@ packages:
 
   '@jfdevelops/skills@0.1.0':
     resolution: {integrity: sha512-aJRJKSmjaNFf/S/Y0cmYDgWfjFhnb0hFkVOUBWU9x7hCdQRV2P5RGaEY5FxvEtQTeVLrJiKNedBffss2dlIP+Q==}
+    engines: {node: '>=22'}
+
+  '@jfdevelops/skills@0.2.0':
+    resolution: {integrity: sha512-TuO7WkNLKdNTFSCcvZMrOipJDVAls6mAjzUsRjdL2mfZrXS/mVXKeJCe0AbWkTdz8EEgPyjqLwR1T6N9Lm24DQ==}
     engines: {node: '>=22'}
 
   '@jridgewell/gen-mapping@0.3.13':
@@ -4995,7 +4999,7 @@ snapshots:
     optionalDependencies:
       '@types/node': 24.10.1
 
-  '@jfdevelops/cli@0.8.0':
+  '@jfdevelops/cli@0.9.0':
     dependencies:
       '@clack/prompts': 1.9.0
       '@jfdevelops/skills': 0.1.0
@@ -5011,6 +5015,8 @@ snapshots:
       '@standard-schema/spec': 1.1.0
 
   '@jfdevelops/skills@0.1.0': {}
+
+  '@jfdevelops/skills@0.2.0': {}
 
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
