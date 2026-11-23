@@ -20,6 +20,8 @@ docs/
     react/
       v4/ v3/ v2/ v1/ v0/      one directory per documented major
         <page>.md
+        standard-schema.md     schema integration for this major
+        errors/*.md            one page per error available in this major
         guides/*.md
         plugins/*.md           companion packages, current major only
         reference/             authored in earlier majors; generated in the current one

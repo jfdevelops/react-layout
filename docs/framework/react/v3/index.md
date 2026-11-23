@@ -51,6 +51,10 @@ The [migration guide](./migration.md) covers upgrading from v2.
 
 ## Next steps
 
+- [Standard Schema](./standard-schema.md): schema integration and validation support.
+- [Runtime errors](./errors/layout-configuration.md): configuration failures and how to resolve them; the Errors section lists every error for this release.
+
+
 | If you want to…                              | Read                                                           |
 | -------------------------------------------- | -------------------------------------------------------------- |
 | Install the packages and render a first page | [Getting started](./getting-started.md)                        |
