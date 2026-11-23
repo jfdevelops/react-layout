@@ -69,6 +69,46 @@ content and optionality depend on the schema: explicitly allow `undefined` with
 your schema library when a prop may be omitted. Effect's helpers return Standard
 Schema wrappers directly.
 
+## Build a schema from resources
+
+Each schema-specific adapter exports `createResourceSchema`. Pass the `resources`
+accessor returned by a layout definition or a defined-layout factory. The schema
+accepts the declared string literals and preserves their union in its inferred type.
+
+```ts
+import { createDefinedResourceLayout } from '@jfdevelops/react-layout';
+import { createResourceSchema } from '@jfdevelops/react-layout-adapter-zod';
+import { z } from 'zod';
+
+const { resources } = createDefinedResourceLayout({
+  resources: [
+    'posts',
+    { value: 'users', subResources: ['details'] },
+  ],
+});
+const Resource = createResourceSchema(resources);
+type Resource = z.infer<typeof Resource>; // 'posts' | 'users'
+
+const ResourcePath = createResourceSchema(resources, { format: 'paths' });
+type ResourcePath = z.infer<typeof ResourcePath>;
+// 'posts' | 'users' | 'users.details'
+```
+
+| Format | Accepted values |
+| --- | --- |
+| `keys` (default) | Top-level resource names. |
+| `paths` | Top-level names and dotted paths through every declared sub-resource. |
+
+Use the same function and options from the ArkType, Valibot, or Effect adapter
+for its native schema. Effect also exposes Standard Schema validation on the result.
+Schemas compose with your schema library's object, array, and optional APIs.
+Only declared names are included; `allowAnyString` does not add arbitrary paths.
+
+You can also pass a raw definition array or a selection such as
+`resources.pick('users')`. Scoped layout accessors produce schemas restricted to
+their selected resources. An empty selection produces a schema that rejects every
+value. Resource names are treated as exact literals, including punctuation.
+
 ## Write an adapter
 
 Use `createAdapter` from `@jfdevelops/react-layout-adapters` to wrap the supplied

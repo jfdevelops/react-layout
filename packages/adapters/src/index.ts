@@ -65,3 +65,13 @@ export function createAdapter<
     },
   };
 }
+
+export { getResourceSchemaValues } from './resource-schema';
+export type {
+  ResourceSchemaDefinitions,
+  SchemaResource,
+  ResourceSchemaInput,
+  ResourceSchemaFormat,
+  ResourceSchemaOptions,
+  ResourceSchemaValue,
+} from './resource-schema';
