@@ -14,15 +14,30 @@ const resources = {
 };
 const schema = createResourceSchema(resources);
 const paths = createResourceSchema(resources, {
-  format: 'paths',
+  nested: 'paths',
 });
 import type { InferOutput } from 'valibot';
 type Output = InferOutput<typeof schema>;
 type Paths = InferOutput<typeof paths>;
 
-describeResourceSchemaContract(createResourceSchema);
+describeResourceSchemaContract((resources, options) =>
+  options
+    ? createResourceSchema(resources, options)
+    : createResourceSchema(resources),
+);
 
 it('preserves native schema literal inference', () => {
   expectTypeOf<Output>().toEqualTypeOf<'posts' | 'users'>();
   expectTypeOf<Paths>().toEqualTypeOf<'posts' | 'users' | 'users.details'>();
+});
+
+const arraySchema = createResourceSchema(resources, {
+  format: 'array',
+  nested: 'names',
+});
+type ArrayOutput = InferOutput<typeof arraySchema>;
+it('preserves array schema output inference', () => {
+  expectTypeOf<ArrayOutput>().toEqualTypeOf<
+    ('posts' | 'users' | 'details')[]
+  >();
 });

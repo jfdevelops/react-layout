@@ -14,14 +14,29 @@ const resources = {
 };
 const schema = createResourceSchema(resources);
 const paths = createResourceSchema(resources, {
-  format: 'paths',
+  nested: 'paths',
 });
 type Output = typeof schema.Type;
 type Paths = typeof paths.Type;
 
-describeResourceSchemaContract(createResourceSchema);
+describeResourceSchemaContract((resources, options) =>
+  options
+    ? createResourceSchema(resources, options)
+    : createResourceSchema(resources),
+);
 
 it('preserves native schema literal inference', () => {
   expectTypeOf<Output>().toEqualTypeOf<'posts' | 'users'>();
   expectTypeOf<Paths>().toEqualTypeOf<'posts' | 'users' | 'users.details'>();
+});
+
+const arraySchema = createResourceSchema(resources, {
+  format: 'array',
+  nested: 'names',
+});
+type ArrayOutput = typeof arraySchema.Type;
+it('preserves array schema output inference', () => {
+  expectTypeOf<ArrayOutput>().toEqualTypeOf<
+    readonly ('posts' | 'users' | 'details')[]
+  >();
 });

@@ -1,14 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { StandardSchemaV1 } from '@standard-schema/spec';
-import type {
-  ResourceSchemaInput,
-  SchemaResource,
-  ResourceSchemaOptions,
-} from '../src';
+import type { SchemaResource, ResourceSchemaOptions } from '../src';
 
 export function describeResourceSchemaContract(
   createSchema: (
-    resources: ResourceSchemaInput<readonly SchemaResource[]>,
+    resources:
+      | { raw(): readonly SchemaResource[] }
+      | readonly SchemaResource[]
+      | (() => readonly SchemaResource[]),
     options?: ResourceSchemaOptions,
   ) => StandardSchemaV1,
 ) {
@@ -58,7 +57,7 @@ export function describeResourceSchemaContract(
 
     it('supports dotted paths at every depth', async () => {
       const schema = createSchema(resources, {
-        format: 'paths',
+        nested: 'paths',
       });
 
       for (const value of [
@@ -81,6 +80,39 @@ export function describeResourceSchemaContract(
         expect(
           (await schema['~standard'].validate(value)).issues,
         ).toBeDefined();
+      }
+    });
+
+    it('combines each schema shape with every nesting mode', async () => {
+      for (const format of ['union', 'array'] as const) {
+        for (const nested of ['exclude', 'names', 'paths'] as const) {
+          const schema = createSchema(resources, {
+            format,
+            nested,
+          });
+          const value =
+            nested === 'names'
+              ? 'edit'
+              : nested === 'paths'
+                ? 'users.details.edit'
+                : 'users';
+          const valid = format === 'array' ? [value, 'posts'] : value;
+          const invalid = format === 'array' ? [value, 'missing'] : 'missing';
+
+          expect(await schema['~standard'].validate(valid)).toMatchObject({
+            value: valid,
+          });
+          expect(
+            (await schema['~standard'].validate(invalid)).issues,
+          ).toBeDefined();
+          expect(
+            (
+              await schema['~standard'].validate(
+                format === 'array' ? value : [value],
+              )
+            ).issues,
+          ).toBeDefined();
+        }
       }
     });
 

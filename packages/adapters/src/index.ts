@@ -68,10 +68,14 @@ export function createAdapter<
 
 export { getResourceSchemaValues } from './resource-schema';
 export type {
+  ResourceSchemaArguments,
+  ResourceSchemaOptionValue,
+  ResourceSchemaResult,
   ResourceSchemaDefinitions,
   SchemaResource,
   ResourceSchemaInput,
   ResourceSchemaFormat,
+  ResourceSchemaNested,
   ResourceSchemaOptions,
   ResourceSchemaValue,
 } from './resource-schema';

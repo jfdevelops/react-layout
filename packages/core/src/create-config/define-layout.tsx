@@ -397,27 +397,45 @@ export type LayoutResourcesAccessor<
    *
    * @param keys - Top-level resource names to exclude.
    */
-  omit<
-    Keys extends [
-      LayoutResourceKey<Resources>,
-      ...LayoutResourceKey<Resources>[],
-    ],
-  >(
-    ...keys: Keys
-  ): ResourceSelection<OmitResourceDefinitions<Resources, Keys[number]>>;
+  omit: {
+    <
+      Keys extends [
+        LayoutResourceKey<Resources>,
+        ...LayoutResourceKey<Resources>[],
+      ],
+    >(
+      ...keys: Keys
+    ): ResourceSelection<OmitResourceDefinitions<Resources, Keys[number]>>;
+    /**
+     * Resource declarations retained for schema adapters.
+     */
+    readonly resourceSchema: {
+      readonly kind: 'omit';
+      readonly resources: Resources;
+    };
+  };
   /**
    * Selects only the named resources. Requires at least one key.
    *
    * @param keys - Top-level resource names to keep.
    */
-  pick<
-    Keys extends [
-      LayoutResourceKey<Resources>,
-      ...LayoutResourceKey<Resources>[],
-    ],
-  >(
-    ...keys: Keys
-  ): ResourceSelection<PickResourceDefinitions<Resources, Keys[number]>>;
+  pick: {
+    <
+      Keys extends [
+        LayoutResourceKey<Resources>,
+        ...LayoutResourceKey<Resources>[],
+      ],
+    >(
+      ...keys: Keys
+    ): ResourceSelection<PickResourceDefinitions<Resources, Keys[number]>>;
+    /**
+     * Resource declarations retained for schema adapters.
+     */
+    readonly resourceSchema: {
+      readonly kind: 'pick';
+      readonly resources: Resources;
+    };
+  };
 };
 
 /**
@@ -480,6 +498,15 @@ export function createLayoutResourcesAccessor<
     createResourceSelection(
       resources.filter((resource) => keys.includes(readResourceSlug(resource))),
     )) as LayoutResourcesAccessor<Resources>['pick'];
+
+  for (const kind of ['pick', 'omit'] as const) {
+    Object.defineProperty(accessor[kind], 'resourceSchema', {
+      value: {
+        kind,
+        resources,
+      },
+    });
+  }
 
   return accessor;
 }

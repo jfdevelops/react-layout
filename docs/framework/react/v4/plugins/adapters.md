@@ -71,9 +71,9 @@ Schema wrappers directly.
 
 ## Build a schema from resources
 
-Each schema-specific adapter exports `createResourceSchema`. Pass the `resources`
-accessor returned by a layout definition or a defined-layout factory. The schema
-accepts the declared string literals and preserves their union in its inferred type.
+Each schema-specific adapter exports `createResourceSchema`. Pass a layout's
+`resources` accessor, a definition array, or a resource method. The schema preserves
+the declared resource literals in its inferred output type.
 
 ```ts
 import { createDefinedResourceLayout } from '@jfdevelops/react-layout';
@@ -81,33 +81,64 @@ import { createResourceSchema } from '@jfdevelops/react-layout-adapter-zod';
 import { z } from 'zod';
 
 const { resources } = createDefinedResourceLayout({
-  resources: [
-    'posts',
-    { value: 'users', subResources: ['details'] },
-  ],
+  resources: ['posts', { value: 'users', subResources: ['details'] }],
 });
 const Resource = createResourceSchema(resources);
 type Resource = z.infer<typeof Resource>; // 'posts' | 'users'
 
-const ResourcePath = createResourceSchema(resources, { format: 'paths' });
-type ResourcePath = z.infer<typeof ResourcePath>;
-// 'posts' | 'users' | 'users.details'
+const ResourceList = createResourceSchema(resources, {
+  format: 'array',
+  nested: 'paths',
+});
+type ResourceList = z.infer<typeof ResourceList>;
+// ('posts' | 'users' | 'users.details')[]
 ```
 
-| Format | Accepted values |
+`format` chooses the schema shape independently of which nested values are included.
+
+| Format | Schema output |
 | --- | --- |
-| `keys` (default) | Top-level resource names. |
-| `paths` | Top-level names and dotted paths through every declared sub-resource. |
+| `union` (default) | One resource string literal. |
+| `array` | An array whose elements match the resource literal union. |
+
+| Nested option | Accepted literals in this example |
+| --- | --- |
+| `exclude` (default) | `'posts'`, `'users'` |
+| `names` | `'posts'`, `'users'`, `'details'` |
+| `paths` | `'posts'`, `'users'`, `'users.details'` |
+
+Both inclusive nesting modes traverse every declared depth and include parent names.
+Only declared names are included; `allowAnyString` does not add arbitrary paths.
+Resource names remain exact literals, including punctuation.
+
+### Pass a resource method
+
+Pass a method directly and supply its parameters through `args`. Resource names
+in `args` autocomplete and the resulting schema preserves the selected union.
+Methods requiring parameters also require `args`.
+
+```ts
+const AllResources = createResourceSchema(resources.raw);
+const Users = createResourceSchema(resources.pick, {
+  args: ['users'],
+  format: 'array',
+  nested: 'paths',
+});
+// ('users' | 'users.details')[]
+
+const WithoutPosts = createResourceSchema(resources.omit, {
+  args: ['posts'],
+});
+// 'users'
+
+const Selected = createResourceSchema(resources.pick('users'));
+```
 
 Use the same function and options from the ArkType, Valibot, or Effect adapter
 for its native schema. Effect also exposes Standard Schema validation on the result.
-Schemas compose with your schema library's object, array, and optional APIs.
-Only declared names are included; `allowAnyString` does not add arbitrary paths.
-
-You can also pass a raw definition array or a selection such as
-`resources.pick('users')`. Scoped layout accessors produce schemas restricted to
-their selected resources. An empty selection produces a schema that rejects every
-value. Resource names are treated as exact literals, including punctuation.
+Schemas compose with the schema library's object, array, and optional APIs.
+Scoped accessors restrict the schema to their selected resources. Empty selections
+produce a union accepting no values; array format still accepts the empty array.
 
 ## Write an adapter
 

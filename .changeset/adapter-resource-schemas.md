@@ -1,4 +1,5 @@
 ---
+"@jfdevelops/react-layout": minor
 "@jfdevelops/react-layout-adapters": minor
 "@jfdevelops/react-layout-adapter-zod": minor
 "@jfdevelops/react-layout-adapter-valibot": minor
@@ -6,4 +7,4 @@
 "@jfdevelops/react-layout-adapter-effect": minor
 ---
 
-Add createResourceSchema to each schema adapter, preserving resource literal unions for top-level keys and dotted paths.
+Add createResourceSchema to each schema adapter, supporting literal union and array schemas, independent nested-resource handling, and typed arguments for resource methods.
