@@ -3009,6 +3009,7 @@ function defineResourceLayoutImpl<
     IncludeProps,
     CustomProps
   >({
+    resources,
     createLayoutForResource: createLayoutForResourceBuilder,
     ...(layout.composables
       ? {

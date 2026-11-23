@@ -13,6 +13,7 @@ import type {
 } from '../../props';
 import type { LayoutResourceKey, ResourceDefinition } from '../../resource';
 import type {
+  LayoutResourcesAccessor,
   LayoutIncludeProps,
   LayoutPropsForResource,
   ResourceLayoutComponent,
@@ -293,13 +294,17 @@ export type ScopedCreateResourceLayoutFn<
     DefaultNaming
   >;
   /**
-   * Type-only property containing the target resource union. This property is
-   * `undefined` at runtime and exists solely for extracting the scoped type.
-   *
-   * @example
-   * type AccountResource = typeof createAccountLayout.resources;
+   * Resource accessor for the selected resource definitions.
    */
-  readonly resources: SelectedLayoutResources<Resources, Arguments>;
+  readonly resources: LayoutResourcesAccessor<
+    ReadonlyArray<
+      Extract<
+        Resources[number],
+        | SelectedLayoutResources<Resources, Arguments>
+        | { value: SelectedLayoutResources<Resources, Arguments> }
+      >
+    >
+  >;
 } & ([keyof Composables] extends [never]
     ? {}
     : {

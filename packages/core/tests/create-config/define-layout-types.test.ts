@@ -189,7 +189,9 @@ describe('defineResourceLayout types', () => {
     });
 
     expectTypeOf(UsersPage.resource).toEqualTypeOf<'users'>();
-    expectTypeOf(layouts.resources).toEqualTypeOf<'users' | 'admins'>();
+    expectTypeOf(layouts.resources.raw()[0]).toEqualTypeOf<
+      'users' | 'admins'
+    >();
 
     const GeneratedUsers = layouts({
       resource: 'users',

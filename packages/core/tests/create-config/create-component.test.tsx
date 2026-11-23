@@ -98,7 +98,7 @@ describe('createComponent', () => {
       </Directory>,
     );
 
-    expect(createDirectoryLayout.resources).toBeUndefined();
+    expect(createDirectoryLayout.resources.raw()).toEqual(['users', 'admins']);
     expect(UsersPage.resource).toBeUndefined();
     expect(screen.getByText('Directory')).toBeInTheDocument();
     expect(

@@ -24,7 +24,11 @@ import {
   getLayoutDebug,
   layoutDebug,
 } from '@jfdevelops/react-layout-devtools-core';
-import type { MergeContract } from './define-layout';
+import {
+  createLayoutResourcesAccessor,
+  type LayoutResourcesAccessor,
+  type MergeContract,
+} from './define-layout';
 import type { JSX } from 'react';
 import {
   collectComposablePresetEntries,
@@ -1354,6 +1358,7 @@ export type CreateLayoutBuildingBlocks<
   Resources extends ReadonlyArray<ResourceDefinition>,
   Options extends InPropsDefinition<Resources>,
 > = {
+  resources: LayoutResourcesAccessor<Resources>;
   composables: DefineLayoutComposables<Resources>;
   createRenderState: CreateRenderState<Resources, Options>;
 };
@@ -1387,6 +1392,7 @@ export function createLayoutBuildingBlocks<
   }
 
   return {
+    resources: createLayoutResourcesAccessor(arguments_.resources),
     composables,
     createRenderState: createRenderStateBuilder(arguments_),
   };
