@@ -19,6 +19,9 @@ Use the guides below as you add props, states, composables, and routing.
 
 ## Guides and examples
 
+- [Standard Schema](./standard-schema.md): schema integration and validation support.
+- [Runtime errors](./errors/layout-configuration.md): configuration failures and how to resolve them; the Errors section lists every error for this release.
+
 [Shared factory](./guides/shared-factory.md) and [Resource routing](./guides/resource-routing.md)
 show a larger application organized around reusable page chrome and resource-local states.
 They are adapted from [glammed-by-arielie PR #65](https://github.com/jfdevelops/glammed-by-arielie/pull/65).

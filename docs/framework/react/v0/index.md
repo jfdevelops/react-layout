@@ -13,6 +13,10 @@ section is a **legacy snapshot**, not a version-by-version manual.
 
 ## What this section covers
 
+- [Standard Schema](./standard-schema.md): schema integration and validation support.
+- [Runtime errors](./errors/layout-configuration.md): configuration failures and how to resolve them; the Errors section lists every error for this release.
+
+
 - [The final snapshot](./final-snapshot.md): how `0.25.0` is used, from its own README and
   changelog.
 - [API reference for 0.25.0](./reference/api.md): its runtime exports, classified.

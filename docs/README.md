@@ -13,6 +13,8 @@ docs/
         quick-start.md
         typescript.md
         devtools.md
+        standard-schema.md   schema integration summary
+        errors/              one page per runtime error
         guides/              usage guides, examples, troubleshooting, migration
         plugins/             adapters and composables
         reference/           generated API reference (gitignored)
