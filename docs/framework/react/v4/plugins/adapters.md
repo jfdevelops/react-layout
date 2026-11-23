@@ -149,3 +149,32 @@ types.
 
 See [Props and validation](../guides/props-and-validation.md#react-values-and-adapters)
 for composition examples and a custom adapter implementation.
+
+### Add resource schemas to an adapter
+
+Use `createResourceSchemaAdapter` to bind native constructors to the shared
+resource-schema factory. The factory handles input methods, arguments, resource
+selection, nested names, and schema shape. Each adapter supplies only its native
+schema family and its union and array constructors.
+
+```ts
+import {
+  createResourceSchemaAdapter,
+  type ResourceSchemaTypes,
+} from '@jfdevelops/react-layout-adapters';
+import { z } from 'zod';
+
+interface ZodResourceSchemas extends ResourceSchemaTypes {
+  readonly union: z.ZodEnum<Record<this['value'], this['value']>>;
+  readonly array: z.ZodArray<this['union']>;
+}
+
+export const createResourceSchema = createResourceSchemaAdapter<ZodResourceSchemas>({
+  union: values => z.enum(values),
+  array: schema => z.array(schema),
+});
+```
+
+`this['value']` represents the selected resource literal union. The schema family
+keeps native schema methods and output inference available to callers, while the
+factory owns the shared runtime behavior and function signatures.

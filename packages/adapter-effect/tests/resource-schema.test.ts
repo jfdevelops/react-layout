@@ -1,42 +1,38 @@
-import { expectTypeOf, it } from 'vitest';
+import { Schema } from 'effect';
+import { expect, expectTypeOf, it } from 'vitest';
+
 import { createResourceSchema } from '../src';
 import { describeResourceSchemaContract } from '../../adapters/tests/resource-schema-contract';
+import {
+  createResourceSchemaTypeCases,
+  type ResourceSchemaExpectedOutputs,
+} from '../../adapters/tests/resource-schema-fixtures';
 
-const resources = {
-  raw: () =>
-    [
-      'posts',
-      {
-        value: 'users',
-        subResources: ['details'],
-      },
-    ] as const,
-};
-const schema = createResourceSchema(resources);
-const paths = createResourceSchema(resources, {
-  nested: 'paths',
-});
-type Output = typeof schema.Type;
-type Paths = typeof paths.Type;
+describeResourceSchemaContract(createResourceSchema);
 
-describeResourceSchemaContract((resources, options) =>
-  options
-    ? createResourceSchema(resources, options)
-    : createResourceSchema(resources),
-);
+const schemas = createResourceSchemaTypeCases(createResourceSchema);
+type Outputs = { [Key in keyof typeof schemas]: (typeof schemas)[Key]['Type'] };
 
-it('preserves native schema literal inference', () => {
-  expectTypeOf<Output>().toEqualTypeOf<'posts' | 'users'>();
-  expectTypeOf<Paths>().toEqualTypeOf<'posts' | 'users' | 'users.details'>();
+it('preserves native inference across every resource schema type case', () => {
+  expectTypeOf<Outputs>().toEqualTypeOf<ResourceSchemaExpectedOutputs<true>>();
 });
 
-const arraySchema = createResourceSchema(resources, {
-  format: 'array',
-  nested: 'names',
-});
-type ArrayOutput = typeof arraySchema.Type;
-it('preserves array schema output inference', () => {
-  expectTypeOf<ArrayOutput>().toEqualTypeOf<
-    readonly ('posts' | 'users' | 'details')[]
-  >();
+it('composes the returned native schemas inside an object schema', () => {
+  const schema = Schema.Struct({
+    resources: schemas.arrayPaths,
+  });
+  const decode = Schema.decodeUnknownSync(schema);
+
+  expect(
+    decode({
+      resources: ['users.details'],
+    }),
+  ).toEqual({
+    resources: ['users.details'],
+  });
+  expect(() =>
+    decode({
+      resources: ['details'],
+    }),
+  ).toThrow(/details/);
 });

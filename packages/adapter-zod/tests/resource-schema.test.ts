@@ -1,43 +1,38 @@
-import { expectTypeOf, it } from 'vitest';
+import { expect, expectTypeOf, it } from 'vitest';
+import { z } from 'zod';
 import { createResourceSchema } from '../src';
 import { describeResourceSchemaContract } from '../../adapters/tests/resource-schema-contract';
+import {
+  createResourceSchemaTypeCases,
+  type ResourceSchemaExpectedOutputs,
+} from '../../adapters/tests/resource-schema-fixtures';
 
-const resources = {
-  raw: () =>
-    [
-      'posts',
-      {
-        value: 'users',
-        subResources: ['details'],
-      },
-    ] as const,
+describeResourceSchemaContract(createResourceSchema);
+
+const schemas = createResourceSchemaTypeCases(createResourceSchema);
+type Outputs = {
+  [Key in keyof typeof schemas]: z.infer<(typeof schemas)[Key]>;
 };
-const schema = createResourceSchema(resources);
-const paths = createResourceSchema(resources, {
-  nested: 'paths',
-});
-import type { z } from 'zod';
-type Output = z.infer<typeof schema>;
-type Paths = z.infer<typeof paths>;
 
-describeResourceSchemaContract((resources, options) =>
-  options
-    ? createResourceSchema(resources, options)
-    : createResourceSchema(resources),
-);
-
-it('preserves native schema literal inference', () => {
-  expectTypeOf<Output>().toEqualTypeOf<'posts' | 'users'>();
-  expectTypeOf<Paths>().toEqualTypeOf<'posts' | 'users' | 'users.details'>();
+it('preserves native inference across every resource schema type case', () => {
+  expectTypeOf<Outputs>().toEqualTypeOf<ResourceSchemaExpectedOutputs<false>>();
 });
 
-const arraySchema = createResourceSchema(resources, {
-  format: 'array',
-  nested: 'names',
-});
-type ArrayOutput = z.infer<typeof arraySchema>;
-it('preserves array schema output inference', () => {
-  expectTypeOf<ArrayOutput>().toEqualTypeOf<
-    ('posts' | 'users' | 'details')[]
-  >();
+it('composes the returned native schemas inside an object schema', () => {
+  const schema = z.object({
+    resources: schemas.arrayPaths,
+  });
+
+  expect(
+    schema.parse({
+      resources: ['users.details'],
+    }),
+  ).toEqual({
+    resources: ['users.details'],
+  });
+  expect(
+    schema.safeParse({
+      resources: ['details'],
+    }).success,
+  ).toBe(false);
 });

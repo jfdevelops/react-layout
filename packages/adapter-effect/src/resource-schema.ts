@@ -1,53 +1,23 @@
 import {
-  getResourceSchemaValues,
-  type SchemaResource,
-  type ResourceSchemaInput,
-  type ResourceSchemaOptions,
-  type ResourceSchemaArguments,
-  type ResourceSchemaOptionValue,
-  type ResourceSchemaResult,
+  createResourceSchemaAdapter,
+  type ResourceSchemaTypes,
 } from '@jfdevelops/react-layout-adapters';
 import { Schema } from 'effect';
 
-function createUnionSchema<Value extends string>(values: Value[]) {
-  return Schema.toStandardSchemaV1(Schema.Literals(values));
+interface NativeResourceSchemas extends ResourceSchemaTypes {
+  readonly union: ReturnType<
+    typeof Schema.toStandardSchemaV1<Schema.Literals<this['value'][]>>
+  >;
+  readonly array: ReturnType<
+    typeof Schema.toStandardSchemaV1<
+      Schema.$Array<Schema.Literals<this['value'][]>>
+    >
+  >;
 }
 
-function createArraySchema<Value extends string>(values: Value[]) {
-  return Schema.toStandardSchemaV1(Schema.Array(Schema.Literals(values)));
-}
-
-/** Creates a literal union or array schema, with independent nested-resource options. */
-export function createResourceSchema<
-  const Input extends ResourceSchemaInput<readonly SchemaResource[]>,
-  const Options extends ResourceSchemaOptions & { args?: readonly unknown[] },
->(
-  resources: Input,
-  options: Options & ResourceSchemaArguments<Input>,
-): ResourceSchemaResult<
-  Options['format'],
-  ReturnType<
-    typeof createUnionSchema<ResourceSchemaOptionValue<Input, Options>>
-  >,
-  ReturnType<
-    typeof createArraySchema<ResourceSchemaOptionValue<Input, Options>>
-  >
->;
-export function createResourceSchema<
-  const Input extends ResourceSchemaInput<readonly SchemaResource[]>,
->(
-  resources: Input &
-    ([] extends (Input extends (...args: infer Args) => unknown ? Args : [])
-      ? unknown
-      : never),
-): ReturnType<typeof createUnionSchema<ResourceSchemaOptionValue<Input, {}>>>;
-export function createResourceSchema(
-  resources: ResourceSchemaInput<readonly SchemaResource[]>,
-  options?: ResourceSchemaOptions & { args?: readonly unknown[] },
-) {
-  const values = getResourceSchemaValues(resources, options);
-
-  return options?.format === 'array'
-    ? createArraySchema(values)
-    : createUnionSchema(values);
-}
+/** Creates native resource schemas with shared selection and nesting behavior. */
+export const createResourceSchema =
+  createResourceSchemaAdapter<NativeResourceSchemas>({
+    union: (values) => Schema.toStandardSchemaV1(Schema.Literals(values)),
+    array: (schema) => Schema.toStandardSchemaV1(Schema.Array(schema)),
+  });

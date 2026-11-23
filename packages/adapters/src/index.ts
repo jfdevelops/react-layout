@@ -79,3 +79,10 @@ export type {
   ResourceSchemaOptions,
   ResourceSchemaValue,
 } from './resource-schema';
+
+export { createResourceSchemaAdapter } from './create-resource-schema-adapter';
+export type {
+  CreateResourceSchema,
+  ResourceSchemaTypes,
+  ResourceSchemaAdapterOptions,
+} from './create-resource-schema-adapter';

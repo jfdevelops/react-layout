@@ -7,4 +7,4 @@
 "@jfdevelops/react-layout-adapter-effect": minor
 ---
 
-Add createResourceSchema to each schema adapter, supporting literal union and array schemas, independent nested-resource handling, and typed arguments for resource methods.
+Add createResourceSchema to each schema adapter, using a shared createResourceSchemaAdapter factory and supporting literal union and array schemas, independent nested-resource handling, and typed arguments for resource methods.

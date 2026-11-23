@@ -1,42 +1,37 @@
-import { expectTypeOf, it } from 'vitest';
+import { type } from 'arktype';
+import { expect, expectTypeOf, it } from 'vitest';
+
 import { createResourceSchema } from '../src';
 import { describeResourceSchemaContract } from '../../adapters/tests/resource-schema-contract';
+import {
+  createResourceSchemaTypeCases,
+  type ResourceSchemaExpectedOutputs,
+} from '../../adapters/tests/resource-schema-fixtures';
 
-const resources = {
-  raw: () =>
-    [
-      'posts',
-      {
-        value: 'users',
-        subResources: ['details'],
-      },
-    ] as const,
+describeResourceSchemaContract(createResourceSchema);
+
+const schemas = createResourceSchemaTypeCases(createResourceSchema);
+type Outputs = {
+  [Key in keyof typeof schemas]: (typeof schemas)[Key]['infer'];
 };
-const schema = createResourceSchema(resources);
-const paths = createResourceSchema(resources, {
-  nested: 'paths',
-});
-type Output = typeof schema.infer;
-type Paths = typeof paths.infer;
 
-describeResourceSchemaContract((resources, options) =>
-  options
-    ? createResourceSchema(resources, options)
-    : createResourceSchema(resources),
-);
-
-it('preserves native schema literal inference', () => {
-  expectTypeOf<Output>().toEqualTypeOf<'posts' | 'users'>();
-  expectTypeOf<Paths>().toEqualTypeOf<'posts' | 'users' | 'users.details'>();
+it('preserves native inference across every resource schema type case', () => {
+  expectTypeOf<Outputs>().toEqualTypeOf<ResourceSchemaExpectedOutputs<false>>();
 });
 
-const arraySchema = createResourceSchema(resources, {
-  format: 'array',
-  nested: 'names',
-});
-type ArrayOutput = typeof arraySchema.infer;
-it('preserves array schema output inference', () => {
-  expectTypeOf<ArrayOutput>().toEqualTypeOf<
-    ('posts' | 'users' | 'details')[]
-  >();
+it('composes the returned native schemas inside an object schema', () => {
+  const schema = type({
+    resources: schemas.arrayPaths,
+  });
+
+  expect(
+    schema.allows({
+      resources: ['users.details'],
+    }),
+  ).toBe(true);
+  expect(
+    schema.allows({
+      resources: ['details'],
+    }),
+  ).toBe(false);
 });
