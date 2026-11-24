@@ -4,10 +4,7 @@ description: Every runtime export and factory member, plus companion exports use
 order: 120
 ---
 
-This page lists what you can import and what the factories return in
-`@jfdevelops/react-layout` 1.6.1. The export lists were read from
-`packages/core/src/index.ts` and the companion `src/index.ts` files at the v1.6.1 tag.
-Examples and statements were not compiled against the package.
+This page lists what you can import and what the factories return in `@jfdevelops/react-layout` 1.6.1. The export lists were read from `packages/core/src/index.ts` and the companion `src/index.ts` files at the v1.6.1 tag. Examples and statements were not compiled against the package.
 
 ## How exports are classified
 
@@ -20,8 +17,7 @@ Examples and statements were not compiled against the package.
 | **Error**      | An error class.                                                      |
 | **Deprecated** | Still works in v1, removed later, with a replacement named.          |
 
-Types are public too (156 type exports from the core entry). Import them with
-`import type`.
+Types are public too (156 type exports from the core entry). Import them with `import type`.
 
 ## Definition functions
 
@@ -32,13 +28,9 @@ Types are public too (156 type exports from the core entry). Import them with
 | `defineLayoutName`            | Primary | Build a reusable naming convention.                                    | [Resources and layouts](../guides/resource-layouts.md#naming) |
 | `defineLayoutPreview`         | Primary | Supply typed fixture props for a state preview (1.4.0).                | [Develop and debug](../guides/develop-and-debug.md)    |
 
-`defineResourceLayout(options)` returns `createResourceLayout` (with `.forResource(...)`
-and `.forResources(...)`), `createResourceConfig`, `createResourceLinks`, `resources`,
-`ResourceProvider` and `useResource`. Statics: `forResources`, `defineResources`,
-`withLayout` (which also returns `Shell`).
+`defineResourceLayout(options)` returns `createResourceLayout` (with `.forResource(...)` and `.forResources(...)`), `createResourceConfig`, `createResourceLinks`, `resources`, `ResourceProvider` and `useResource`. Statics: `forResources`, `defineResources`, `withLayout` (which also returns `Shell`).
 
-`createDefinedResourceLayout(options)` returns `defineResourceLayout` (bound, with `.lazy`),
-`createRenderState` (`.defer`, `.lazy`, `.fromState`), `defineLazyDefaults` and `resources`.
+`createDefinedResourceLayout(options)` returns `defineResourceLayout` (bound, with `.lazy`), `createRenderState` (`.defer`, `.lazy`, `.fromState`), `defineLazyDefaults` and `resources`.
 
 ## Props and validation exports
 

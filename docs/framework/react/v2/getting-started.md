@@ -4,15 +4,13 @@ description: Install the library, define a layout, and render your first resourc
 order: 20
 ---
 
-In this guide you will install the package, render a first page and see how to
-split a definition across files.
+In this guide you will install the package, render a first page and see how to split a definition across files.
 
 ## Requirements
 
 - React 18 or newer. `react` and `react-dom` are peer dependencies (`>=18`).
 - Node `^20.19.0 || >=22.12.0` for tooling.
-- TypeScript is strongly recommended. The repository's CI checks the published
-  factory types on TypeScript 5.9 and 6.
+- TypeScript is strongly recommended. The repository's CI checks the published factory types on TypeScript 5.9 and 6.
 
 ## Install
 
@@ -34,10 +32,8 @@ bun add @jfdevelops/react-layout@2.7.0
 
 Props can be described two ways in v2:
 
-- **Standard Schema** (from 2.6.0): Zod, Valibot, ArkType or any synchronous Standard
-  Schema library. This is the recommended path.
-- **`createProp`** (all of v2, deprecated in 2.6.0): the built-in builder. It is removed
-  in v3.
+- **Standard Schema** (from 2.6.0): Zod, Valibot, ArkType or any synchronous Standard Schema library. This is the recommended path.
+- **`createProp`** (all of v2, deprecated in 2.6.0): the built-in builder. It is removed in v3.
 
 ```npm
 npm i zod @jfdevelops/react-layout-adapter-zod@0.1.0
@@ -134,20 +130,15 @@ export const usersLayout = defineResourceLayout({
 });
 ```
 
-> **Tip:** Keep the returned factory object. The devtools and several helpers take it
-> as their `source`.
+> **Tip:** Keep the returned factory object. The devtools and several helpers take it as their `source`.
 
 Next: [Resources and layouts](./guides/resource-layouts.md).
 
 ## Companion package versions
 
-The core package installs its own internal packages. Do not install those directly.
-These companion packages you choose yourself.
+The core package installs its own internal packages. Do not install those directly. These companion packages you choose yourself.
 
-The table lists versions from `packages/*/package.json` at the v2.7.0 tag (commit
-`c55251276d2399f27e50bb238fb22ea18741efe6`). They are the set built from that commit.
-Other combinations may work, but only this set is verified by the repository's own
-workspace build and tests.
+The table lists versions from `packages/*/package.json` at the v2.7.0 tag (commit `c55251276d2399f27e50bb238fb22ea18741efe6`). They are the set built from that commit. Other combinations may work, but only this set is verified by the repository's own workspace build and tests.
 
 | You need                                          | Package                                          | Version | Peer requirements        |
 | ------------------------------------------------- | ------------------------------------------------ | ------- | ------------------------ |
@@ -160,13 +151,9 @@ workspace build and tests.
 | Floating or embedded layout inspector             | `@jfdevelops/react-layout-devtools-react`        | 0.4.0   | `react`, `react-dom` ≥18 |
 | Vite plugin for source links and state previews   | `@jfdevelops/react-layout-devtools-vite`         | 0.1.2   | `vite` ^6, ^7 or ^8      |
 
-Resolved by npm for core's own published `dependencies` at 2.7.0:
-`@jfdevelops/react-layout-composables` 0.6.0, `@jfdevelops/react-layout-validator` 0.5.0,
-`@jfdevelops/react-layout-devtools-core` 0.4.0, `@jfdevelops/create-error` 0.2.1 and
-`arktype` 2.2.8.
+Resolved by npm for core's own published `dependencies` at 2.7.0: `@jfdevelops/react-layout-composables` 0.6.0, `@jfdevelops/react-layout-validator` 0.5.0, `@jfdevelops/react-layout-devtools-core` 0.4.0, `@jfdevelops/create-error` 0.2.1 and `arktype` 2.2.8.
 
-> **Note:** The Effect adapter and the navigation, copy, actions and access presets do
-> not exist in v2. They arrived in v3.
+> **Note:** The Effect adapter and the navigation, copy, actions and access presets do not exist in v2. They arrived in v3.
 
 ## Agent skill
 

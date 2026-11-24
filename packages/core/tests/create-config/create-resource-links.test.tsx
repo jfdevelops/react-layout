@@ -833,8 +833,12 @@ describe('createResourceLinks', () => {
           icon: (resource) => {
             receivedResource = resource;
             resource();
-            resource.pick('users');
-            resource.omit('posts');
+            expect(resource.parse('users')).toBe('users');
+            expect(resource.pick('users').parse('users')).toBe('users');
+            expect(resource.omit('posts').parse('users')).toBe('users');
+            expect(() => resource.pick('users').parse('posts')).toThrow(
+              'Resource "posts" is not available',
+            );
 
             return (
               <span

@@ -4,11 +4,7 @@ description: Every runtime export and factory member, plus companion exports use
 order: 120
 ---
 
-This page lists what you can import and what you get back from the factories.
-It covers the runtime exports of `@jfdevelops/react-layout` 3.3.0, the members of
-the objects those functions return, and the exports of companion packages that
-guides use. The export lists were read from `packages/core/src/index.ts` and the
-companion `src/index.ts` files at the v3.3.0 tag. Examples and statements were not compiled against the package.
+This page lists what you can import and what you get back from the factories. It covers the runtime exports of `@jfdevelops/react-layout` 3.3.0, the members of the objects those functions return, and the exports of companion packages that guides use. The export lists were read from `packages/core/src/index.ts` and the companion `src/index.ts` files at the v3.3.0 tag. Examples and statements were not compiled against the package.
 
 ## How exports are classified
 
@@ -21,9 +17,7 @@ companion `src/index.ts` files at the v3.3.0 tag. Examples and statements were n
 | **Error**      | An error class. See the note under Errors for which base class each one extends.            |
 | **Deprecated** | Still works, scheduled for removal, with a replacement named.                              |
 
-Types are public too, but there are 212 type exports from the core entry point, so
-this page names only the ones guides mention. Import them with `import type`.
-`@jfdevelops/react-layout-internals` is private and unpublished. Never import it.
+Types are public too, but there are 212 type exports from the core entry point, so this page names only the ones guides mention. Import them with `import type`. `@jfdevelops/react-layout-internals` is private and unpublished. Never import it.
 
 ## Definition functions
 
@@ -37,8 +31,7 @@ this page names only the ones guides mention. Import them with `import type`.
 
 ### `defineResourceLayout(options)`
 
-Options: `resources`, `options` (a schema map or one object schema), `layout`
-(`composables`, `props`, `render`), `name`, `namespace`.
+Options: `resources`, `options` (a schema map or one object schema), `layout` (`composables`, `props`, `render`), `name`, `namespace`.
 
 Returns an object with:
 
@@ -51,14 +44,11 @@ Returns an object with:
 | `ResourceProvider`     | Provides the current resource manually.                                        |
 | `useResource`          | Reads the current resource. Throws `MissingResourceProviderError` outside one. |
 
-Static members: `defineResourceLayout.forResources(...)`,
-`defineResourceLayout.defineResources(...)` and
-`defineResourceLayout.withLayout(options)`, which also returns `Shell`.
+Static members: `defineResourceLayout.forResources(...)`, `defineResourceLayout.defineResources(...)` and `defineResourceLayout.withLayout(options)`, which also returns `Shell`.
 
 ### `createDefinedResourceLayout(options)`
 
-Options: `resources`, `options`, `composables`, `props` (`include`, `custom`),
-`name`, `namespace`.
+Options: `resources`, `options`, `composables`, `props` (`include`, `custom`), `name`, `namespace`.
 
 Returns an object with:
 
@@ -100,8 +90,7 @@ The result is also what you pass to the inspector as `source`.
 | `LayoutComposablePresetProvider` | Authoring | Provide preset values to composables.                          |
 | `makeComposable`              | Authoring | Create a composable resource layout.                              |
 
-Factories made by `defineComposableComponent` have `rename`, `extend`, `getSchema`,
-`props`, and a member named after the component that holds its definition.
+Factories made by `defineComposableComponent` have `rename`, `extend`, `getSchema`, `props`, and a member named after the component that holds its definition.
 
 ## Resource utilities
 
@@ -116,10 +105,7 @@ Factories made by `defineComposableComponent` have `rename`, `extend`, `getSchem
 
 ## Errors
 
-Errors defined in core extend `ReactLayoutError` or `LayoutConfigurationError`, except
-`ResourceModuleLoadError` and `ResourceRenderError`, which extend `Error`. `PropError`,
-`PropValidatorError` and `InvalidSchemaPathError` come from the validator package, and
-the preset errors from the composables package. Each is built by its own error factory.
+Errors defined in core extend `ReactLayoutError` or `LayoutConfigurationError`, except `ResourceModuleLoadError` and `ResourceRenderError`, which extend `Error`. `PropError`, `PropValidatorError` and `InvalidSchemaPathError` come from the validator package, and the preset errors from the composables package. Each is built by its own error factory.
 
 | Error                          | Raised when                                                                  |
 | ------------------------------ | ---------------------------------------------------------------------------- |
@@ -157,8 +143,7 @@ The deprecated methods delegate to the same implementation and still work in v3.
 
 ## Companion package exports
 
-These are not separate products. They are the exports guides use from
-companion packages, grouped by what you do with them.
+These are not separate products. They are the exports guides use from companion packages, grouped by what you do with them.
 
 ### React values in schemas
 
@@ -167,8 +152,7 @@ companion packages, grouped by what you do with them.
 | `reactNode`, `reactElement`     | `…-adapter-zod`, `-valibot`, `-arktype`, `-effect` | Primary | A native schema for a React node or element |
 | `createAdapter`                 | `@jfdevelops/react-layout-adapters`          | Primary | `{ reactNode, reactElement }` from your callbacks |
 
-Packages are named `@jfdevelops/react-layout-<name>`. See
-[Props and validation](../guides/props-and-validation.md#react-values-and-adapters).
+Packages are named `@jfdevelops/react-layout-<name>`. See [Props and validation](../guides/props-and-validation.md#react-values-and-adapters).
 
 ### Preset composables
 
@@ -181,9 +165,7 @@ Packages are named `@jfdevelops/react-layout-<name>`. See
 | `createActionsComposable`    | `composable-actions`    | `Actions`    | `actions`. Also exports `InvalidIntentError`.        |
 | `createAccessComposable`     | `composable-access`     | `Access`     | `roles?`, `permissions?`, `flag?`                    |
 
-Each package also exports its contract from `/contract`, for example
-`createNavigationComposable`, for use with `extend`.
-See [Composables and presets](../guides/composables-and-presets.md).
+Each package also exports its contract from `/contract`, for example `createNavigationComposable`, for use with `extend`. See [Composables and presets](../guides/composables-and-presets.md).
 
 ### Inspection
 
@@ -194,9 +176,7 @@ See [Composables and presets](../guides/composables-and-presets.md).
 | `ReactLayoutDevtoolsProvider`, `…Toolbar`, `…Explorer`, `…Inspector`, `…Footer`, `…Workspace`, `useReactLayoutDevtools` | `devtools-react`| Compose a custom inspector.                |
 | `reactLayoutDevtools`                                                                  | `devtools-vite` | Vite plugin for source links and state previews.       |
 
-The inspection protocol lives in `devtools-core`, which `devtools-react`
-bundles and `@jfdevelops/react-layout` depends on. See
-[Develop and debug](../guides/develop-and-debug.md).
+The inspection protocol lives in `devtools-core`, which `devtools-react` bundles and `@jfdevelops/react-layout` depends on. See [Develop and debug](../guides/develop-and-debug.md).
 
 ## Next steps
 

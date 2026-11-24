@@ -4,15 +4,13 @@ description: Install the library, define a layout with createProp, and render yo
 order: 20
 ---
 
-In this guide you will install the package, render a first page and see how to
-split a definition across files.
+In this guide you will install the package, render a first page and see how to split a definition across files.
 
 ## Requirements
 
 - React 18 or newer. `react` and `react-dom` are peer dependencies (`>=18`).
 - Node `^20.19.0 || >=22.12.0` for tooling.
-- TypeScript is strongly recommended. The repository's CI checks the published
-  factory types on TypeScript 5.9 and 6.
+- TypeScript is strongly recommended. The repository's CI checks the published factory types on TypeScript 5.9 and 6.
 
 ## Install
 
@@ -32,8 +30,7 @@ yarn add @jfdevelops/react-layout@1.6.1
 bun add @jfdevelops/react-layout@1.6.1
 ```
 
-Props are described with `createProp`, which the package exports. No schema library
-is needed in v1.
+Props are described with `createProp`, which the package exports. No schema library is needed in v1.
 
 ## Define a layout and create a page
 
@@ -117,13 +114,9 @@ Next: [Resources and layouts](./guides/resource-layouts.md).
 
 ## Companion package versions
 
-The core package installs its own internal packages. Do not install those directly.
-These companion packages you choose yourself.
+The core package installs its own internal packages. Do not install those directly. These companion packages you choose yourself.
 
-The table lists versions from `packages/*/package.json` at the v1.6.1 tag (commit
-`f183a3d4deec330876380e3ce2d2735dde398974`). They are the set built from that commit.
-Other combinations may work, but only this set is verified by the repository's own
-workspace build and tests.
+The table lists versions from `packages/*/package.json` at the v1.6.1 tag (commit `f183a3d4deec330876380e3ce2d2735dde398974`). They are the set built from that commit. Other combinations may work, but only this set is verified by the repository's own workspace build and tests.
 
 | You need                                          | Package                                          | Version | Peer requirements        |
 | ------------------------------------------------- | ------------------------------------------------ | ------- | ------------------------ |
@@ -132,13 +125,9 @@ workspace build and tests.
 | Floating or embedded layout inspector (1.3.0+)    | `@jfdevelops/react-layout-devtools-react`        | 0.2.0   | `react`, `react-dom` ≥18 |
 | Vite plugin for source links and state previews (1.4.0+) | `@jfdevelops/react-layout-devtools-vite`  | 0.1.1   | `vite` ^6, ^7 or ^8      |
 
-Resolved by npm for core's own published `dependencies` at 1.6.1:
-`@jfdevelops/react-layout-composables` 0.3.1, `@jfdevelops/react-layout-validator` 0.3.1,
-`@jfdevelops/react-layout-devtools-core` 0.2.0, `@jfdevelops/create-error` 0.2.0 and
-`arktype` 2.2.8.
+Resolved by npm for core's own published `dependencies` at 1.6.1: `@jfdevelops/react-layout-composables` 0.3.1, `@jfdevelops/react-layout-validator` 0.3.1, `@jfdevelops/react-layout-devtools-core` 0.2.0, `@jfdevelops/create-error` 0.2.0 and `arktype` 2.2.8.
 
-> **Note:** The schema adapters and the navigation, copy, actions and access presets
-> did not exist in v1.
+> **Note:** The schema adapters and the navigation, copy, actions and access presets did not exist in v1.
 
 ## Agent skill
 

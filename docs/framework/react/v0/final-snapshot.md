@@ -4,9 +4,7 @@ description: How the last 0.x release is used, taken from its own README and cha
 order: 20
 ---
 
-This page describes the last `0.x` release, `0.25.0`. It is adapted from that tag's README,
-changelog and tests, and none of it was compiled. Earlier `0.x` releases differ, sometimes
-incompatibly. See the [overview](./index.md) for why.
+This page describes the last `0.x` release, `0.25.0`. It is adapted from that tag's README, changelog and tests, and none of it was compiled. Earlier `0.x` releases differ, sometimes incompatibly. See the [overview](./index.md) for why.
 
 In this guide you will:
 
@@ -33,8 +31,7 @@ yarn add @jfdevelops/react-layout@0.25.0
 bun add @jfdevelops/react-layout@0.25.0
 ```
 
-React 18 or newer is a peer dependency (`react` and `react-dom` at `>=18`). Props are described
-with `createProp`, which the package exports.
+React 18 or newer is a peer dependency (`react` and `react-dom` at `>=18`). Props are described with `createProp`, which the package exports.
 
 ## Define a layout
 
@@ -79,14 +76,11 @@ const UsersPage = createResourceLayout({
 });
 ```
 
-Created pages provide their current resource to descendants. Read it with the definition's typed
-`useResource` hook. It throws `MissingResourceProviderError` outside a page (added in 0.23.0). The
-returned `ResourceProvider` is available for manual boundaries.
+Created pages provide their current resource to descendants. Read it with the definition's typed `useResource` hook. It throws `MissingResourceProviderError` outside a page (added in 0.23.0). The returned `ResourceProvider` is available for manual boundaries.
 
 ## Render states
 
-`render` can be an object. `default` is required and becomes the plain component. Every other key
-becomes a typed compound component with its own props and composables.
+`render` can be an object. `default` is required and becomes the plain component. Every other key becomes a typed compound component with its own props and composables.
 
 ```tsx
 const { createResourceLayout } = defineResourceLayout({
@@ -112,9 +106,7 @@ const Users = createResourceLayout({ resource: 'users', name: 'Users', title: 'U
 
 ## Bind resources once
 
-At `0.25.0`, `createDefinedResourceLayout` is a chained builder: pass the resources, then
-`.defineOptions(...)`. It returns `composables`, `createRenderState` and a bound
-`defineResourceLayout`.
+At `0.25.0`, `createDefinedResourceLayout` is a chained builder: pass the resources, then `.defineOptions(...)`. It returns `composables`, `createRenderState` and a bound `defineResourceLayout`.
 
 ```tsx
 const { composables, createRenderState, defineResourceLayout } =
@@ -133,10 +125,7 @@ export const Loading = createRenderState({
 });
 ```
 
-The bound `defineResourceLayout` takes `{ layout: { render } }`. `createRenderState.defer(...)` makes a
-Suspense-deferred inline state, and `createRenderState.lazy(() => import('./audit.state'))` makes a
-code-split state. A lazy state module must have exactly one named export created by
-`createRenderState`.
+The bound `defineResourceLayout` takes `{ layout: { render } }`. `createRenderState.defer(...)` makes a Suspense-deferred inline state, and `createRenderState.lazy(() => import('./audit.state'))` makes a code-split state. A lazy state module must have exactly one named export created by `createRenderState`.
 
 ## Lazy resources
 
@@ -154,9 +143,7 @@ export const Users = defineResourceLayout.lazy({
 });
 ```
 
-Lazy modules use named exports and must export exactly one component created by the library. Nested
-resources use typed dot paths such as `admin.users.detail`. Lazy components preserve compound state
-access such as `<Users.NotFound />` and share one cached module load.
+Lazy modules use named exports and must export exactly one component created by the library. Nested resources use typed dot paths such as `admin.users.detail`. Lazy components preserve compound state access such as `<Users.NotFound />` and share one cached module load.
 
 ## Other features recorded in the changelog
 
@@ -170,8 +157,7 @@ access such as `<Users.NotFound />` and share one cached module load.
 | The typed `ReactLayoutError` hierarchy                     | 0.18.0   |
 | The `build-react-layouts` agent skill                      | 0.17.0   |
 
-For how these behave, read the changelog entry for the release in question. Several changed in
-later `0.x` minors.
+For how these behave, read the changelog entry for the release in question. Several changed in later `0.x` minors.
 
 ## Next steps
 

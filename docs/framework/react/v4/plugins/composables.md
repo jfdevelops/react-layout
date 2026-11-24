@@ -4,10 +4,7 @@ description: Add named UI slots and preset prop contracts to a layout.
 order: 20
 ---
 
-Composables are named components available to a layout's render callback.
-Use them to wrap your own UI primitives, or install a preset to share a prop
-contract for common elements such as breadcrumbs and headers. You supply the
-markup and styling.
+Composables are named components available to a layout's render callback. Use them to wrap your own UI primitives, or install a preset to share a prop contract for common elements such as breadcrumbs and headers. You supply the markup and styling.
 
 ## Choose a package
 
@@ -20,8 +17,7 @@ markup and styling.
 | `@jfdevelops/react-layout-composable-access` | `createAccessComposable`; roles, permissions, and feature flag props interpreted by your callback. |
 | `@jfdevelops/react-layout-composable-breadcrumb` | Compatibility re-export of the breadcrumb factory; use navigation for new code. |
 
-These packages require React and React DOM 18 or newer. The main library already
-installs the composable infrastructure. Add only the presets you need:
+These packages require React and React DOM 18 or newer. The main library already installs the composable infrastructure. Add only the presets you need:
 
 ```npm
 npm i @jfdevelops/react-layout-composable-copy
@@ -41,8 +37,7 @@ bun add @jfdevelops/react-layout-composable-copy
 
 ## Add a preset
 
-Spread the preset into `composables`, select its props with `props.include`, and
-render it from the layout:
+Spread the preset into `composables`, select its props with `props.include`, and render it from the layout:
 
 ```tsx
 import { defineResourceLayout } from '@jfdevelops/react-layout';
@@ -75,11 +70,6 @@ export const ServicesPage = createResourceLayout({
 });
 ```
 
-For slots without a preset contract, use the `create` callback with `name` and
-`wrapWith` to wrap an existing component. Use `defineComposableComponent` when
-writing your own reusable contract. Presets support `rename` and `extend`, and
-expose contract entry points under `/contract`.
+For slots without a preset contract, use the `create` callback with `name` and `wrapWith` to wrap an existing component. Use `defineComposableComponent` when writing your own reusable contract. Presets support `rename` and `extend`, and expose contract entry points under `/contract`.
 
-See [Composables and presets](../guides/composables-and-presets.md) for custom
-contracts, prop inheritance, and extension examples. The access preset supplies
-a UI contract; your application implements the access checks.
+See [Composables and presets](../guides/composables-and-presets.md) for custom contracts, prop inheritance, and extension examples. The access preset supplies a UI contract; your application implements the access checks.

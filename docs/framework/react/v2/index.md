@@ -4,13 +4,9 @@ description: What the library includes, what changed from the previous major, an
 order: 10
 ---
 
-React Layout is a React library for resource-based page layouts. You define the
-shared structure of your pages once, then create a typed component for each
-resource.
+React Layout is a React library for resource-based page layouts. You define the shared structure of your pages once, then create a typed component for each resource.
 
-> **Note:** The examples in this section are adapted from the package's own documentation
-> and tests for its last release. They were not compiled. The repository does not promise
-> fixes to this major.
+> **Note:** The examples in this section are adapted from the package's own documentation and tests for its last release. They were not compiled. The repository does not promise fixes to this major.
 
 ## Core ideas
 
@@ -26,13 +22,10 @@ resource.
 
 v2.0.0 reworked lazy loading and removed two deprecated settings. Compared with v1:
 
-1. **Lazy loading is unified.** Lazy resources, render states and scoped components
-   share one cached loader with `preload()`, `status`, fallbacks and retry.
-2. **Lazy errors are narrower.** A lazy `Error` handles only the closed
-   `LazyResourceError` union. Ordinary render errors go to your route's error boundary.
+1. **Lazy loading is unified.** Lazy resources, render states and scoped components share one cached loader with `preload()`, `status`, fallbacks and retry.
+2. **Lazy errors are narrower.** A lazy `Error` handles only the closed `LazyResourceError` union. Ordinary render errors go to your route's error boundary.
 3. **Compound states on a lazy proxy need a capital letter.**
-4. **`visibility` and `passthrough` were removed** from `props.include`. Use `required`
-   and `suppliedVia`.
+4. **`visibility` and `passthrough` were removed** from `props.include`. Use `required` and `suppliedVia`.
 5. **The layout render context's `resource` was removed.** Read `resources.current`.
 
 Minor releases added:
@@ -70,5 +63,4 @@ The [migration guide](./migration.md) covers upgrading from v1.
 | Look up an export                            | [API reference](./reference/api.md)                            |
 | Fix an error message                         | [Troubleshooting](./troubleshooting.md)                        |
 
-Other majors: [v4](../v4/overview.md), [v3](../v3/index.md), [v1](../v1/index.md),
-[v0](../v0/index.md).
+Other majors: [v4](../v4/overview.md), [v3](../v3/index.md), [v1](../v1/index.md), [v0](../v0/index.md).

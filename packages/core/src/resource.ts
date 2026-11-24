@@ -154,11 +154,14 @@ export function normalizeResourceDefinitions<
 export function createIsValidResourceFn<
   Resources extends ReadonlyArray<ResourceDefinition>,
 >(resources: Resources) {
+  const validResources = new Set(
+    resources.map((resource) =>
+      typeof resource === 'string' ? resource : resource.value,
+    ),
+  );
+
   return (value: unknown): value is LayoutResourceKey<Resources> => {
-    return (
-      typeof value === 'string' &&
-      Object.keys(normalizeResources(resources)).includes(value)
-    );
+    return typeof value === 'string' && validResources.has(value);
   };
 }
 

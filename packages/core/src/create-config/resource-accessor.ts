@@ -1,3 +1,4 @@
+import { InvalidResourceError } from '../errors';
 import {
   createIsValidResourceFn,
   normalizeResourceDefinitions,
@@ -55,6 +56,7 @@ type OmitResourceDefinitions<
  *
  * - calling it returns the selected resource definitions.
  * - `.isResource(value)` narrows an unknown value to one of the selected keys.
+ * - `.parse(value)` returns a selected key or throws `InvalidResourceError`.
  */
 export type ResourceSelection<
   Definitions extends ReadonlyArray<ResourceDefinition>,
@@ -69,6 +71,14 @@ export type ResourceSelection<
    * @param value - The value to test.
    */
   isResource(value: unknown): value is LayoutResourceKey<Definitions>;
+  /**
+   * Validates an unknown value and returns its resource key unchanged.
+   *
+   * @param value - The value to validate against these top-level resources.
+   * @returns The validated resource key.
+   * @throws {InvalidResourceError} When the value is not an available resource.
+   */
+  parse(value: unknown): LayoutResourceKey<Definitions>;
 };
 
 /**
@@ -79,6 +89,7 @@ export type ResourceSelection<
  * - `resources.omit(key, ...rest)` selects every resource except the named ones.
  * - `resources.pick(key, ...rest)` selects only the named resources.
  * - `resources.isResource(value)` narrows an unknown value to a resource key.
+ * - `resources.parse(value)` returns a valid key or throws `InvalidResourceError`.
  *
  * `pick` / `omit` return a {@link ResourceSelection} thunk: call it for the
  * definitions, or use its `isResource` guard.
@@ -111,6 +122,14 @@ export type LayoutResourcesAccessor<
    * @param value - The value to test.
    */
   isResource(value: unknown): value is LayoutResourceKey<Resources>;
+  /**
+   * Validates an unknown value and returns its resource key unchanged.
+   *
+   * @param value - The value to validate against these top-level resources.
+   * @returns The validated resource key.
+   * @throws {InvalidResourceError} When the value is not an available resource.
+   */
+  parse(value: unknown): LayoutResourceKey<Resources>;
   /**
    * Selects every declared resource except the named ones. Requires at least
    * one key.
@@ -158,14 +177,47 @@ export type LayoutResourcesAccessor<
   };
 };
 
+/**
+ * Creates a shared resource guard and parser for an accessor or selection.
+ *
+ * @param resources - The available top-level resource definitions.
+ * @returns Validation methods sharing one precomputed resource guard.
+ * @internal
+ */
+export function createResourceValidation<
+  Resources extends ReadonlyArray<ResourceDefinition>,
+>(resources: Resources) {
+  const isResource = createIsValidResourceFn(resources);
+  const validResources = resources.map((resource) =>
+    typeof resource === 'string' ? resource : resource.value,
+  );
+
+  const parse: LayoutResourcesAccessor<Resources>['parse'] = (value) => {
+    if (!isResource(value)) {
+      throw new InvalidResourceError({
+        resource: value,
+        validResources: [...validResources],
+      });
+    }
+
+    return value;
+  };
+
+  return {
+    isResource,
+    parse,
+  };
+}
+
 function createResourceSelection(
   definitions: ReadonlyArray<ResourceDefinition>,
 ): ResourceSelection<ReadonlyArray<ResourceDefinition>> {
-  const selection = (() => definitions) as ResourceSelection<
-    ReadonlyArray<ResourceDefinition>
-  >;
+  const selection: ResourceSelection<ReadonlyArray<ResourceDefinition>> = () =>
+    definitions;
+  const { isResource, parse } = createResourceValidation(definitions);
 
-  selection.isResource = createIsValidResourceFn(definitions);
+  selection.isResource = isResource;
+  selection.parse = parse;
 
   return selection;
 }
@@ -192,7 +244,7 @@ export function createLayoutResourcesAccessor<
       ? select(resources)
       : resources) as LayoutResourcesAccessor<Resources>['raw'];
 
-  accessor.isResource = createIsValidResourceFn(resources);
+  Object.assign(accessor, createResourceValidation(resources));
 
   accessor.omit = ((...keys: string[]) =>
     createResourceSelection(

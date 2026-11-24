@@ -10,6 +10,24 @@ const context = type({
 
 export type InvalidResourceContext = typeof context.infer;
 
+function formatResource(resource: unknown): string {
+  try {
+    const serialized = JSON.stringify(resource);
+
+    if (serialized !== undefined) {
+      return serialized;
+    }
+  } catch {
+    // Circular values, bigint values, and custom serializers may throw.
+  }
+
+  try {
+    return JSON.stringify(String(resource));
+  } catch {
+    return '"[unprintable resource]"';
+  }
+}
+
 /** Thrown when a requested layout resource is invalid or unavailable. */
 export class InvalidResourceError extends createReactLayoutError({
   code: 'invalidResource',
@@ -17,8 +35,7 @@ export class InvalidResourceError extends createReactLayoutError({
 })
   .defineContext(context)
   .implement(({ context, scope }) => {
-    const quotedResource =
-      JSON.stringify(context.resource) ?? `"${String(context.resource)}"`;
+    const quotedResource = formatResource(context.resource);
     const reasonMessage = context.reason ? ` ${context.reason}` : '';
     const validResourcesMessage =
       context.validResources && context.validResources.length > 0

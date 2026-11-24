@@ -4,10 +4,7 @@ description: Describe props with the createProp builder, include them in layouts
 order: 40
 ---
 
-In v1 every prop is described with `createProp`, a small builder exported by
-`@jfdevelops/react-layout`. A definition gives the prop a type, makes it required
-or optional, and is validated at runtime when a page renders. Standard Schema
-libraries are not supported until 2.6.0, and `createProp` was removed in v3.
+In v1 every prop is described with `createProp`, a small builder exported by `@jfdevelops/react-layout`. A definition gives the prop a type, makes it required or optional, and is validated at runtime when a page renders. Standard Schema libraries are not supported until 2.6.0, and `createProp` was removed in v3.
 
 In this guide you will:
 
@@ -42,8 +39,7 @@ options: {
 
 ## Include props in a layout
 
-`options` holds the definitions. `layout.props.include` decides which ones the render
-callback receives and where their values are supplied.
+`options` holds the definitions. `layout.props.include` decides which ones the render callback receives and where their values are supplied.
 
 | Form                        | Meaning                                                           |
 | --------------------------- | ----------------------------------------------------------------- |
@@ -51,13 +47,11 @@ callback receives and where their values are supplied.
 | `title: 'optional'`         | Optional, accepted when the page is created or on the component.  |
 | `title: { required, suppliedVia }` | Explicit (1.5.0). `suppliedVia` is `'component'` or `'config'`. |
 
-`visibility` and `passthrough` are older spellings. They are deprecated aliases in v1,
-accepted alongside the new names (the new names win), and removed in v2.
+`visibility` and `passthrough` are older spellings. They are deprecated aliases in v1, accepted alongside the new names (the new names win), and removed in v2.
 
 ## Add per-layout props
 
-`props.custom` adds definitions that belong to one layout or state and are not shared
-options. A render state can declare its own `custom` props too.
+`props.custom` adds definitions that belong to one layout or state and are not shared options. A render state can declare its own `custom` props too.
 
 ```tsx
 Error: {
@@ -72,14 +66,11 @@ Error: {
 
 ## Children
 
-Automatic optional `children` in render props, and the `children: 'required'` shorthand,
-arrived in 2.3.0. In v1, declare a `children` definition if your layout renders them,
-for example `createProp.component({ type: 'ReactNode' }).optional()`.
+Automatic optional `children` in render props, and the `children: 'required'` shorthand, arrived in 2.3.0. In v1, declare a `children` definition if your layout renders them, for example `createProp.component({ type: 'ReactNode' }).optional()`.
 
 ## Errors
 
-A failed prop throws a `PropError` (added in 0.17.1) with precise prop paths, the layout
-name and the resource. It covers both missing and invalid props.
+A failed prop throws a `PropError` (added in 0.17.1) with precise prop paths, the layout name and the resource. It covers both missing and invalid props.
 
 ## Next steps
 

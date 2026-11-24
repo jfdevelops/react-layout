@@ -4,10 +4,7 @@ description: Define typed resource layouts, compose page states, and render Reac
 order: 10
 ---
 
-React Layout turns a shared page design into typed components for each resource
-in your application. Define the resource vocabulary, schemas, and composables
-once. Build reusable page chrome from those primitives, then let each resource
-own its content, loading, error, and detail states.
+React Layout turns a shared page design into typed components for each resource in your application. Define the resource vocabulary, schemas, and composables once. Build reusable page chrome from those primitives, then let each resource own its content, loading, error, and detail states.
 
 ## Start here
 
@@ -22,9 +19,7 @@ Use the guides below as you add props, states, composables, and routing.
 - [Standard Schema](./standard-schema.md): schema integration and validation support.
 - [Runtime errors](./errors/layout-configuration.md): configuration failures and how to resolve them; the Errors section lists every error for this release.
 
-[Shared factory](./guides/shared-factory.md) and [Resource routing](./guides/resource-routing.md)
-show a larger application organized around reusable page chrome and resource-local states.
-They are adapted from [glammed-by-arielie PR #65](https://github.com/jfdevelops/glammed-by-arielie/pull/65).
+[Shared factory](./guides/shared-factory.md) and [Resource routing](./guides/resource-routing.md) show a larger application organized around reusable page chrome and resource-local states. They are adapted from [glammed-by-arielie PR #65](https://github.com/jfdevelops/glammed-by-arielie/pull/65).
 
 ## Vocabulary
 

@@ -1,10 +1,7 @@
+import { createResourceValidation } from './resource-accessor';
 import type { ElementType, ReactNode } from 'react';
 import type { NonEmptyReadonlyArray } from '@jfdevelops/react-layout-internals';
-import {
-  createIsValidResourceFn,
-  type LayoutResourceKey,
-  type ResourceDefinition,
-} from '../resource';
+import { type LayoutResourceKey, type ResourceDefinition } from '../resource';
 import { LayoutConfigurationError } from '../errors';
 import type {
   LayoutRenderResourcesAccessor,
@@ -628,7 +625,7 @@ function createResourceSelection(
     ReadonlyArray<ResourceDefinition>
   >;
 
-  selection.isResource = createIsValidResourceFn(definitions);
+  Object.assign(selection, createResourceValidation(definitions));
 
   return selection;
 }
@@ -640,7 +637,7 @@ function createRenderResourcesAccessor<
     current,
   }) as LayoutRenderResourcesAccessor<Resources>;
 
-  accessor.isResource = createIsValidResourceFn(resources);
+  Object.assign(accessor, createResourceValidation(resources));
   accessor.omit = ((...keys: string[]) =>
     createResourceSelection(
       resources.filter(

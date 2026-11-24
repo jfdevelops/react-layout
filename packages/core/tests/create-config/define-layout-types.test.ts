@@ -69,7 +69,11 @@ describe('defineResourceLayout types', () => {
       },
     });
 
+    expectTypeOf(resources.parse).parameter(0).toBeUnknown();
+    expectTypeOf(resources.parse).returns.toEqualTypeOf<'users' | 'posts'>();
+
     const picked = resources.pick('posts');
+    expectTypeOf(picked.parse).returns.toEqualTypeOf<'posts'>();
     const pickedDefs = picked();
     expectTypeOf(pickedDefs).toBeArray();
     expectTypeOf(pickedDefs[0].value).toEqualTypeOf<'posts'>();
@@ -77,6 +81,7 @@ describe('defineResourceLayout types', () => {
     expectTypeOf(picked.isResource).guards.toEqualTypeOf<'posts'>();
 
     const omitted = resources.omit('posts');
+    expectTypeOf(omitted.parse).returns.toEqualTypeOf<'users'>();
     expectTypeOf(omitted()).toEqualTypeOf<Array<'users'>>();
     expectTypeOf(omitted.isResource).guards.toEqualTypeOf<'users'>();
 
