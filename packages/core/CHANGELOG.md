@@ -1,5 +1,18 @@
 # @jfdevelops/react-layout
 
+## 4.2.0
+
+### Minor Changes
+
+- 4ad676e: Add createResourceSchema to each schema adapter, using a shared createResourceSchemaAdapter factory and supporting literal union and array schemas, independent nested-resource handling, and typed arguments for resource methods.
+
+### Patch Changes
+
+- b871a4e: Expose resource accessors on scoped layout factories and layout building blocks.
+- Updated dependencies [4ad676e]
+  - @jfdevelops/react-layout-adapter-arktype@1.1.0
+  - @jfdevelops/react-layout-composables@1.2.1
+
 ## 4.1.0
 
 ### Minor Changes
