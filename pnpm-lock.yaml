@@ -782,6 +782,9 @@ importers:
 
   tools/docs:
     devDependencies:
+      markdown-it:
+        specifier: 14.3.3
+        version: 14.3.3
       typedoc:
         specifier: 0.28.20
         version: 0.28.20(typescript@6.0.3)
