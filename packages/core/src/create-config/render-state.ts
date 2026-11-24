@@ -1,3 +1,4 @@
+import { createLayoutResourcesAccessor } from './resource-accessor';
 import {
   normalizeCustomProps,
   type CustomPropsInput,
@@ -25,7 +26,6 @@ import {
   layoutDebug,
 } from '@jfdevelops/react-layout-devtools-core';
 import {
-  createLayoutResourcesAccessor,
   type LayoutResourcesAccessor,
   type MergeContract,
 } from './define-layout';

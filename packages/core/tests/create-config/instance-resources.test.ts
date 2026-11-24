@@ -4,10 +4,10 @@ import { defineResourceLayout } from '../../src';
 import { createLayoutBuildingBlocks } from '../../src/create-config/render-state';
 
 it('exposes selected definitions from every scoped selection notation', () => {
-  const users = {
+  const [users] = defineResourceLayout.defineResources({
     value: 'users',
     subResources: ['details'],
-  } as const;
+  });
   const { createResourceLayout } = defineResourceLayout({
     resources: [users, 'posts', 'admins'],
     layout: {
@@ -35,7 +35,7 @@ it('exposes selected definitions from every scoped selection notation', () => {
 
 it('exposes resources from layout building blocks', () => {
   const blocks = createLayoutBuildingBlocks({
-    resources: ['users'] as const,
+    resources: defineResourceLayout.defineResources('users'),
     options: {},
   });
 

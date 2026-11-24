@@ -1,14 +1,11 @@
+import { defineResources } from '../../core/src/resource';
+import { createLayoutResourcesAccessor } from '../../core/src/create-config/resource-accessor';
 import type { CreateResourceSchema, ResourceSchemaTypes } from '../src';
 
 declare const createSchema: CreateResourceSchema<ResourceSchemaTypes>;
-declare const pick: ((
-  ...keys: ['users' | 'posts', ...('users' | 'posts')[]]
-) => () => readonly ('users' | 'posts')[]) & {
-  readonly resourceSchema: {
-    readonly kind: 'pick';
-    readonly resources: readonly ['users', 'posts'];
-  };
-};
+const { pick } = createLayoutResourcesAccessor(
+  defineResources('users', 'posts'),
+);
 
 createSchema(pick, {
   args: ['users'],

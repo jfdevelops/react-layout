@@ -1,3 +1,5 @@
+import { defineResources } from '../../core/src/resource';
+import { createLayoutResourcesAccessor } from '../../core/src/create-config/resource-accessor';
 import type {
   CreateResourceSchema,
   ResourceSchemaTypes,
@@ -5,7 +7,7 @@ import type {
   ResourceSchemaNested,
 } from '../src';
 
-export const resourceDefinitions = [
+export const resourceDefinitions = defineResources(
   'posts',
   {
     value: 'users',
@@ -28,48 +30,10 @@ export const resourceDefinitions = [
     value: 'empty',
     subResources: [],
   },
-] as const;
+);
 
-function raw<Selected = typeof resourceDefinitions>(
-  select?: (resources: typeof resourceDefinitions) => Selected,
-) {
-  return select
-    ? select(resourceDefinitions)
-    : (resourceDefinitions as Selected);
-}
-
-function pick(...keys: [string, ...string[]]) {
-  return () =>
-    resourceDefinitions.filter((resource) =>
-      keys.includes(typeof resource === 'string' ? resource : resource.value),
-    );
-}
-
-function omit(...keys: [string, ...string[]]) {
-  return () =>
-    resourceDefinitions.filter(
-      (resource) =>
-        !keys.includes(
-          typeof resource === 'string' ? resource : resource.value,
-        ),
-    );
-}
-
-export const resourceMethods = {
-  raw,
-  pick: Object.assign(pick, {
-    resourceSchema: {
-      kind: 'pick' as const,
-      resources: resourceDefinitions,
-    },
-  }),
-  omit: Object.assign(omit, {
-    resourceSchema: {
-      kind: 'omit' as const,
-      resources: resourceDefinitions,
-    },
-  }),
-};
+export const resourceMethods =
+  createLayoutResourcesAccessor(resourceDefinitions);
 
 export const allowedResources = {
   exclude: ['posts', 'users', 'teams', "quote' | string", 'empty'],
@@ -99,104 +63,43 @@ export const allowedResources = {
 export function createResourceSchemaTypeCases<
   Types extends ResourceSchemaTypes,
 >(createSchema: CreateResourceSchema<Types>) {
-  const definitions = [
-    'posts',
-    {
-      value: 'users',
-      subResources: ['details'],
-    },
-  ] as const;
+  const definitions = defineResources('posts', {
+    value: 'users',
+    subResources: ['details'],
+  });
 
-  function raw<Selected = typeof definitions>(
-    select?: (resources: typeof definitions) => Selected,
-  ) {
-    return select ? select(definitions) : (definitions as Selected);
-  }
-
-  const selected = Object.assign(
-    (..._keys: ['posts' | 'users', ...('posts' | 'users')[]]) =>
-      () =>
-        definitions,
-    {
-      resourceSchema: {
-        kind: 'pick' as const,
-        resources: definitions,
-      },
-    },
-  );
-  const omitted = Object.assign(
-    (..._keys: ['posts' | 'users', ...('posts' | 'users')[]]) =>
-      () =>
-        definitions,
-    {
-      resourceSchema: {
-        kind: 'omit' as const,
-        resources: definitions,
-      },
-    },
-  );
+  const resources = createLayoutResourcesAccessor(definitions);
+  const { raw, pick: selected, omit: omitted } = resources;
 
   function dynamic(format: ResourceSchemaFormat, nested: ResourceSchemaNested) {
-    return createSchema(
-      {
-        raw,
-      },
-      {
-        format,
-        nested,
-      },
-    );
+    return createSchema(resources, {
+      format,
+      nested,
+    });
   }
 
   return {
-    union: createSchema({
-      raw,
+    union: createSchema(resources),
+    paths: createSchema(resources, {
+      nested: 'paths',
     }),
-    paths: createSchema(
-      {
-        raw,
-      },
-      {
-        nested: 'paths',
-      },
-    ),
-    names: createSchema(
-      {
-        raw,
-      },
-      {
-        nested: 'names',
-      },
-    ),
-    array: createSchema(
-      {
-        raw,
-      },
-      {
-        format: 'array',
-      },
-    ),
-    arrayPaths: createSchema(
-      {
-        raw,
-      },
-      {
-        format: 'array',
-        nested: 'paths',
-      },
-    ),
-    arrayNames: createSchema(
-      {
-        raw,
-      },
-      {
-        format: 'array',
-        nested: 'names',
-      },
-    ),
+    names: createSchema(resources, {
+      nested: 'names',
+    }),
+    array: createSchema(resources, {
+      format: 'array',
+    }),
+    arrayPaths: createSchema(resources, {
+      format: 'array',
+      nested: 'paths',
+    }),
+    arrayNames: createSchema(resources, {
+      format: 'array',
+      nested: 'names',
+    }),
     raw: createSchema(raw),
     rawSelected: createSchema(raw, {
-      args: [(definitions) => [definitions[0]] as const],
+      args: [(definitions) => defineResources(definitions[0])],
     }),
     picked: createSchema(selected, {
       args: ['users'],
@@ -205,9 +108,9 @@ export function createResourceSchemaTypeCases<
     omitted: createSchema(omitted, {
       args: ['posts'],
     }),
-    thunk: createSchema(() => ['users'] as const),
-    empty: createSchema([] as const),
-    emptyArray: createSchema([] as const, {
+    thunk: createSchema(selected('users')),
+    empty: createSchema(defineResources()),
+    emptyArray: createSchema(defineResources(), {
       format: 'array',
     }),
     dynamic: dynamic('union', 'exclude'),

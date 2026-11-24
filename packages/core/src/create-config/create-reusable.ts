@@ -1,3 +1,4 @@
+import { createLayoutResourcesAccessor } from './resource-accessor';
 import {
   validateProps,
   isStandardSchema,
@@ -6,7 +7,6 @@ import {
 import type { InPropsDefinition, InPropsObject, PropsContract } from '../props';
 import type { ResourceDefinition } from '../resource';
 import { LayoutConfigurationError } from '../errors';
-import { createLayoutResourcesAccessor } from './define-layout';
 import {
   schemaOptionDefinitions,
   validateOptionSchema,

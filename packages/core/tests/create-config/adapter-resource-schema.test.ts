@@ -1,7 +1,7 @@
 import { expect, expectTypeOf, it } from 'vitest';
 import { z } from 'zod';
 import { createResourceSchema } from '@jfdevelops/react-layout-adapter-zod';
-import { createDefinedResourceLayout } from '../../src';
+import { createDefinedResourceLayout, defineResourceLayout } from '../../src';
 
 it('accepts real layout, factory, render, and scoped resource accessors', () => {
   const factory = createDefinedResourceLayout({
@@ -54,7 +54,9 @@ it('infers direct raw, pick, and omit method arguments and results', () => {
     nested: 'paths',
   });
   const rawSelected = createResourceSchema(resources.raw, {
-    args: [(definitions) => [definitions[0]] as const],
+    args: [
+      (definitions) => defineResourceLayout.defineResources(definitions[0]),
+    ],
   });
   const omitted = createResourceSchema(resources.omit, {
     args: ['posts', 'admins'],

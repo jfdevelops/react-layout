@@ -1,3 +1,4 @@
+import { createLayoutResourcesAccessor } from '../resource-accessor';
 import { validateOptionSchema, type OptionSchema } from '../../option-schema';
 import {
   normalizeCustomProps,
@@ -29,10 +30,7 @@ import type { InPropsDefinition } from '../../props';
 import type { LayoutResourceKey, ResourceDefinition } from '../../resource';
 import { capitalize } from '@jfdevelops/react-layout-internals';
 import { LayoutConfigurationError } from '../../errors';
-import {
-  createLayoutResourcesAccessor,
-  type LayoutIncludeProps,
-} from '../define-layout';
+import { type LayoutIncludeProps } from '../define-layout';
 import type {
   CapitalizedResource,
   ResourcesLayoutName,

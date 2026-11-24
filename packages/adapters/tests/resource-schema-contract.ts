@@ -1,3 +1,4 @@
+import { defineResources } from '../../core/src/resource';
 import { describe, expect, it, vi } from 'vitest';
 import type { CreateResourceSchema, ResourceSchemaTypes } from '../src';
 import {
@@ -67,15 +68,10 @@ export function describeResourceSchemaContract<
               format,
               nested,
             }),
-            createSchema(
-              {
-                raw: resourceMethods.raw,
-              },
-              {
-                format,
-                nested,
-              },
-            ),
+            createSchema(resourceMethods, {
+              format,
+              nested,
+            }),
             createSchema(resourceMethods.raw, {
               format,
               nested,
@@ -147,9 +143,7 @@ export function describeResourceSchemaContract<
     }
 
     it('defaults to a top-level literal union', async () => {
-      const schema = createSchema({
-        raw: resourceMethods.raw,
-      });
+      const schema = createSchema(resourceMethods);
 
       expect(await schema['~standard'].validate('users')).toMatchObject({
         value: 'users',
@@ -206,8 +200,8 @@ export function describeResourceSchemaContract<
     });
 
     it('forwards arguments once and resolves a returned selection once', async () => {
-      const selection = vi.fn<() => readonly ['users']>(
-        () => ['users'] as const,
+      const selection = vi.fn<() => readonly ['users']>(() =>
+        defineResources('users'),
       );
       const method = vi.fn<(first: string, second: number) => typeof selection>(
         (_first, _second) => selection,

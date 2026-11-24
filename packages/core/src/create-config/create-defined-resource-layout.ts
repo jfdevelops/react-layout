@@ -1,3 +1,4 @@
+import { createLayoutResourcesAccessor } from './resource-accessor';
 import {
   createResourceSurface,
   type DefineResourceSurface,
@@ -47,7 +48,6 @@ import {
   type ResourceLayoutConfig,
   type CreateViewMapRenderStatesOptions,
   type DefinedResourceLayoutFromStates,
-  createLayoutResourcesAccessor,
 } from './define-layout';
 import {
   createLazyResourceLayout,

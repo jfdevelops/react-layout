@@ -4,7 +4,8 @@
     "noEmit": true,
     "types": ["react", "node", "vitest/globals"],
     "paths": {
-      "@jfdevelops/react-layout-adapters": ["../adapters/src/index.ts"]
+      "@jfdevelops/react-layout-adapters": ["../adapters/src/index.ts"],
+      "@jfdevelops/react-layout-internals": ["../internals/src/index.ts"]
     }
   },
   "include": ["src", "tests"]
