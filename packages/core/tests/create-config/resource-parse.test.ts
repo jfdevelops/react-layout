@@ -56,3 +56,44 @@ it('validates against only the selected resources', () => {
 
   expect(() => empty.parse('users')).toThrow(InvalidResourceError);
 });
+
+it('rejects unserializable inputs without losing resource error context', () => {
+  const circular: { self?: unknown } = {};
+  circular.self = circular;
+  const unprintable = {
+    toJSON: () => {
+      throw new Error('serialization failed');
+    },
+    [Symbol.toPrimitive]: () => {
+      throw new Error('coercion failed');
+    },
+  };
+
+  for (const value of [1n, circular, unprintable]) {
+    for (const accessor of [
+      resources,
+      resources.pick('users'),
+      resources.omit('posts'),
+    ]) {
+      let caught: unknown;
+
+      try {
+        accessor.parse(value);
+      } catch (error) {
+        caught = error;
+      }
+
+      expect(caught).toBeInstanceOf(InvalidResourceError);
+
+      if (!(caught instanceof InvalidResourceError)) {
+        throw caught;
+      }
+
+      expect(caught.context.resource).toBe(value);
+      expect(caught.context.validResources).toEqual(
+        accessor === resources ? ['users', 'posts'] : ['users'],
+      );
+      expect(caught.message).toContain('Available resources');
+    }
+  }
+});
