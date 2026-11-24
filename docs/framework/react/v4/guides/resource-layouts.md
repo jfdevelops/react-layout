@@ -216,8 +216,14 @@ accessor as `context.resources`.
 | `resources.omit(...keys)`       | A selection of every resource except those named. At least one key.      |
 | `resources.isResource(value)`   | Narrows an unknown value to a resource key.                              |
 
+`resources.parse(value)` accepts unknown input and returns the validated top-level
+resource key unchanged. Invalid values throw `InvalidResourceError`; nested keys
+and paths are not accepted.
+
 `pick` and `omit` return a selection thunk: call it to get the definitions, or use
-its own `isResource` guard to narrow against just that selection.
+its own `isResource` guard to narrow against just that selection. Each selection
+also exposes `parse(value)`, which returns a selected key or throws
+`InvalidResourceError` with the available keys for that selection.
 
 ## A persistent shell
 
