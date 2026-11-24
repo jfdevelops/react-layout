@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { createRequire } from 'node:module';
 import { unwrapMarkdownParagraphs } from './markdown-paragraphs.mjs';
 
 test('unwraps prose, list continuations and block quotes', () => {
@@ -25,4 +26,29 @@ test('preserves CRLF and is idempotent', () => {
 
   assert.equal(result, 'First second.\r\n');
   assert.equal(unwrapMarkdownParagraphs(result), result);
+});
+
+test('preserves rendered blockquotes inside deeply indented list items', () => {
+  const MarkdownIt = createRequire(
+    new URL('../tools/docs/package.json', import.meta.url),
+  )('markdown-it');
+  const markdown = new MarkdownIt();
+  markdown.renderer.rules.softbreak = () => ' ';
+  const cases = [
+    ['10. > First\n    > second.\n', '10. > First second.\n'],
+    [
+      '- Parent\n  - Child\n\n    > First\n    > second.\n',
+      '- Parent\n  - Child\n\n    > First second.\n',
+    ],
+    ['10. > > First\n    > > second.\n', '10. > > First second.\n'],
+    ['10. > First\n    > \\> literal.\n', '10. > First \\> literal.\n'],
+  ];
+
+  for (const [source, expected] of cases) {
+    const result = unwrapMarkdownParagraphs(source);
+
+    assert.equal(result, expected);
+    assert.equal(markdown.render(result), markdown.render(source));
+    assert.equal(unwrapMarkdownParagraphs(result), result);
+  }
 });

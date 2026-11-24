@@ -28,13 +28,14 @@ export function unwrapMarkdownParagraphs(source) {
 
     const [start, end] = inline.map.map((line) => line + offset);
     const result = [lines[start]];
+    const contentLines = inline.content.split('\n');
 
     for (let line = start + 1; line < end; line++) {
       if (/(?: {2,}|\\)$/.test(lines[line - 1])) {
         result.push(lines[line]);
       } else {
         result[result.length - 1] +=
-          ` ${lines[line].replace(/^(?: {0,3}> ?)*\s*/, '')}`;
+          ` ${contentLines[line - start].trimStart()}`;
       }
     }
 
