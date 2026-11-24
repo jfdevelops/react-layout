@@ -1,5 +1,16 @@
 # @jfdevelops/react-layout-adapter-valibot
 
+## 1.1.0
+
+### Minor Changes
+
+- 4ad676e: Add createResourceSchema to each schema adapter, using a shared createResourceSchemaAdapter factory and supporting literal union and array schemas, independent nested-resource handling, and typed arguments for resource methods.
+
+### Patch Changes
+
+- Updated dependencies [4ad676e]
+  - @jfdevelops/react-layout-adapters@1.1.0
+
 ## 1.0.0
 
 ### Major Changes
