@@ -7,7 +7,9 @@ import { spawnSync } from 'node:child_process';
 // Includes implicit children contracts, schema regressions, render benchmark consumer types,
 // resource renderer inference, segment completion / wildcard factory consumer types,
 // conditional descendant selectors, display-name mappings, and typed segment consumer tests.
-const instantiationBudget = 4_325_000;
+// Resource-accessor and native-schema integration regressions bring the measured
+// total to 5,202,813; retain roughly 2% headroom for this source-and-tests budget.
+const instantiationBudget = 5_300_000;
 
 const result = spawnSync('tsc --noEmit --extendedDiagnostics', {
   encoding: 'utf8',

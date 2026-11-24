@@ -7,3 +7,5 @@ export const { reactNode, reactElement } = createAdapter({
     custom<Exclude<ReactNode, undefined>>(check, 'Expected a React node'),
   element: (check) => custom<ReactElement>(check, 'Expected a React element'),
 });
+
+export { createResourceSchema } from './resource-schema';

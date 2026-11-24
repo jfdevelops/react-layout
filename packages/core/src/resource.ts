@@ -311,3 +311,10 @@ export type NestedSubResourceDefinitions<Def extends ResourceDefinition> =
   }
     ? Nested
     : readonly [];
+
+/** Captures resource definitions as a literal tuple without a const assertion. */
+export function defineResources<
+  const Resources extends ReadonlyArray<ResourceDefinition>,
+>(...resources: Resources): Resources {
+  return resources;
+}

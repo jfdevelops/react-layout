@@ -19,3 +19,5 @@ export const { reactNode, reactElement } = createAdapter({
   element: (check) =>
     type('unknown').narrow(check) as unknown as ReactElementSchema,
 });
+
+export { createResourceSchema } from './resource-schema';

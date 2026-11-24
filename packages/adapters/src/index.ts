@@ -65,3 +65,24 @@ export function createAdapter<
     },
   };
 }
+
+export { getResourceSchemaValues } from './resource-schema';
+export type {
+  ResourceSchemaArguments,
+  ResourceSchemaOptionValue,
+  ResourceSchemaResult,
+  ResourceSchemaDefinitions,
+  SchemaResource,
+  ResourceSchemaInput,
+  ResourceSchemaFormat,
+  ResourceSchemaNested,
+  ResourceSchemaOptions,
+  ResourceSchemaValue,
+} from './resource-schema';
+
+export { createResourceSchemaAdapter } from './create-resource-schema-adapter';
+export type {
+  CreateResourceSchema,
+  ResourceSchemaTypes,
+  ResourceSchemaAdapterOptions,
+} from './create-resource-schema-adapter';

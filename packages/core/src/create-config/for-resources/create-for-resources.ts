@@ -1,3 +1,4 @@
+import { createLayoutResourcesAccessor } from '../resource-accessor';
 import { validateOptionSchema, type OptionSchema } from '../../option-schema';
 import {
   normalizeCustomProps,
@@ -29,7 +30,7 @@ import type { InPropsDefinition } from '../../props';
 import type { LayoutResourceKey, ResourceDefinition } from '../../resource';
 import { capitalize } from '@jfdevelops/react-layout-internals';
 import { LayoutConfigurationError } from '../../errors';
-import type { LayoutIncludeProps } from '../define-layout';
+import { type LayoutIncludeProps } from '../define-layout';
 import type {
   CapitalizedResource,
   ResourcesLayoutName,
@@ -48,6 +49,7 @@ const rawSchemaInputs = Symbol('rawSchemaInputs');
 type CreateForResourcesOptions<
   Resources extends ReadonlyArray<ResourceDefinition>,
 > = {
+  resources: ReadonlyArray<ResourceDefinition>;
   lazyEnvironment?: LazyEnvironment;
   optionSchema?: OptionSchema;
   createLayoutForResource: (
@@ -70,6 +72,7 @@ export function createForResources<
   IncludeProps extends LayoutIncludeProps<Resources, Options, Composables>,
   CustomProps extends CustomPropsObject,
 >({
+  resources,
   createLayoutForResource,
   createMakeComposableLayout,
   createResourceLayout,
@@ -951,12 +954,22 @@ export function createForResources<
       createResourceComponents: typeof createResourceComponents;
       forResource: typeof scopedForResource;
       makeComposable?: (options: Record<string, unknown>) => unknown;
-      resources: undefined;
+      resources: ReturnType<
+        typeof createLayoutResourcesAccessor<ResourceDefinition[]>
+      >;
     } = {
       createComponent,
       createResourceComponents,
       forResource: scopedForResource,
-      resources: undefined,
+      resources: createLayoutResourcesAccessor(
+        resources.filter((resource) =>
+          resourceOptions.some(
+            (option) =>
+              option.resource ===
+              (typeof resource === 'string' ? resource : resource.value),
+          ),
+        ),
+      ),
     };
 
     if (createMakeComposableLayout) {

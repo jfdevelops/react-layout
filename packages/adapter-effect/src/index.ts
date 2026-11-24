@@ -15,3 +15,5 @@ export const { reactNode, reactElement } = createAdapter({
       }),
     ),
 });
+
+export { createResourceSchema } from './resource-schema';
