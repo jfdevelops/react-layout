@@ -4,9 +4,7 @@ description: The runtime exports of the last 0.x release, each with a classifica
 order: 30
 ---
 
-This page lists the runtime exports of `@jfdevelops/react-layout` `0.25.0`, read from
-`packages/core/src/index.ts` at that tag (commit `185598a15d362035ac59a5429404642d9c52abb4`). It
-also lists the factory members. Nothing here was compiled. Other `0.x` releases differ.
+This page lists the runtime exports of `@jfdevelops/react-layout` `0.25.0`, read from `packages/core/src/index.ts` at that tag (commit `185598a15d362035ac59a5429404642d9c52abb4`). It also lists the factory members. Nothing here was compiled. Other `0.x` releases differ.
 
 ## How exports are classified
 
@@ -27,9 +25,7 @@ Types are public too (129 type exports from the core entry).
 | `createDefinedResourceLayout` | Primary | Start the chained builder: `('users').defineOptions(...)`. |
 | `createProp`                  | Primary | Describe a prop with the built-in builder.                |
 
-`defineResourceLayout(options)` returns `createResourceLayout`, `createResourceConfig`,
-`createResourceLinks`, `resources`, `ResourceProvider` and `useResource`, with statics
-`forResources`, `defineResources` and `withLayout`.
+`defineResourceLayout(options)` returns `createResourceLayout`, `createResourceConfig`, `createResourceLinks`, `resources`, `ResourceProvider` and `useResource`, with statics `forResources`, `defineResources` and `withLayout`.
 
 ## Props exports
 
@@ -81,8 +77,7 @@ Types are public too (129 type exports from the core entry).
 
 ## Companion exports
 
-`@jfdevelops/react-layout-composable-breadcrumb` 0.2.8 exports `createBreadcrumbComposable`. The
-composables and validator packages are installed with core.
+`@jfdevelops/react-layout-composable-breadcrumb` 0.2.8 exports `createBreadcrumbComposable`. The composables and validator packages are installed with core.
 
 ## Next steps
 

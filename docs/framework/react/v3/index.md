@@ -4,13 +4,9 @@ description: What the library includes, what changed from the previous major, an
 order: 10
 ---
 
-React Layout is a React library for resource-based page layouts. You define the
-shared structure of your pages once, then create a typed component for each
-resource.
+React Layout is a React library for resource-based page layouts. You define the shared structure of your pages once, then create a typed component for each resource.
 
-> **Note:** The examples in this section are adapted from the package's own documentation
-> and tests for its last release. They were not compiled. The repository does not promise
-> fixes to this major.
+> **Note:** The examples in this section are adapted from the package's own documentation and tests for its last release. They were not compiled. The repository does not promise fixes to this major.
 
 ## Core ideas
 
@@ -26,18 +22,11 @@ resource.
 
 v3.0.0 was a coordinated major release of every package. Compared with v2:
 
-1. **Props use Standard Schema only.** `createProp` and the legacy prop builders
-   were removed. Use Zod, Valibot, ArkType, Effect or any Standard Schema library,
-   plus the React adapters.
-2. **React components get optional `children` by default**, including the prop
-   schemas retained for reuse.
-3. **Public generic types are cheaper to check**, and most large builder types now
-   declare invariant parameters.
-4. **A private `@jfdevelops/react-layout-internals` package** holds shared types.
-   Do not import it.
-5. **Smaller API cleanups:** `defineLazyDefaults.createErrorComponent` was removed;
-   `RenderStateContext` reordered its type parameters; `Show` no longer preserves
-   call signatures (use `ShowCallable`).
+1. **Props use Standard Schema only.** `createProp` and the legacy prop builders were removed. Use Zod, Valibot, ArkType, Effect or any Standard Schema library, plus the React adapters.
+2. **React components get optional `children` by default**, including the prop schemas retained for reuse.
+3. **Public generic types are cheaper to check**, and most large builder types now declare invariant parameters.
+4. **A private `@jfdevelops/react-layout-internals` package** holds shared types. Do not import it.
+5. **Smaller API cleanups:** `defineLazyDefaults.createErrorComponent` was removed; `RenderStateContext` reordered its type parameters; `Show` no longer preserves call signatures (use `ShowCallable`).
 
 Minor releases then added:
 
@@ -70,5 +59,4 @@ The [migration guide](./migration.md) covers upgrading from v2.
 | Look up an export                            | [API reference](./reference/api.md)                            |
 | Fix an error message                         | [Troubleshooting](./troubleshooting.md)                        |
 
-Other majors: [v4](../v4/overview.md), [v2](../v2/index.md), [v1](../v1/index.md),
-[v0](../v0/index.md).
+Other majors: [v4](../v4/overview.md), [v2](../v2/index.md), [v1](../v1/index.md), [v0](../v0/index.md).

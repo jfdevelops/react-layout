@@ -4,10 +4,7 @@ description: Share named slots across pages, use ready-made preset composables, 
 order: 60
 ---
 
-A composable is a named slot component such as `Layout`, `Title` or `Breadcrumb`.
-Pages render the same slots, so your markup stays consistent. A **preset**
-composable also ships its props, so a page supplies the values and your render
-callback supplies the markup.
+A composable is a named slot component such as `Layout`, `Title` or `Breadcrumb`. Pages render the same slots, so your markup stays consistent. A **preset** composable also ships its props, so a page supplies the values and your render callback supplies the markup.
 
 In this guide you will:
 
@@ -18,8 +15,7 @@ In this guide you will:
 
 ## Declare slots
 
-`layout.composables` receives a resource-aware `create` function. Each call
-returns a slot with a stable component name.
+`layout.composables` receives a resource-aware `create` function. Each call returns a slot with a stable component name.
 
 ```tsx
 composables: (create) => ({
@@ -28,15 +24,11 @@ composables: (create) => ({
 }),
 ```
 
-`name` is a string or a callback receiving `{ resource, capitalize }`, so each
-resource can get its own display name. The render callback gets the slots as
-`composables`.
+`name` is a string or a callback receiving `{ resource, capitalize }`, so each resource can get its own display name. The render callback gets the slots as `composables`.
 
 ## Add presets
 
-Install the preset package you need, then spread its factory into
-`composables`. Each factory takes a render callback that receives the preset's
-props.
+Install the preset package you need, then spread its factory into `composables`. Each factory takes a render callback that receives the preset's props.
 
 | Package                                                  | Factories                                          | Props                                                   |
 | -------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------- |
@@ -117,31 +109,21 @@ export const Users = createResourceLayout({
 });
 ```
 
-The preset's props show up in `props.include`, so the page that creates `Users`
-supplies `title`, `description` and `segments` once.
+The preset's props show up in `props.include`, so the page that creates `Users` supplies `title`, `description` and `segments` once.
 
-Each preset package also exports its contract from a `/contract` entry point,
-for use with `extend` (below). `@jfdevelops/react-layout-composable-breadcrumb`
-is an older package that re-exports `createBreadcrumbComposable`. New code should
-import it from the navigation package.
+Each preset package also exports its contract from a `/contract` entry point, for use with `extend` (below). `@jfdevelops/react-layout-composable-breadcrumb` is an older package that re-exports `createBreadcrumbComposable`. New code should import it from the navigation package.
 
 ### Presets that share a prop
 
-Presets in one layout that declare the same prop receive the same page value, so
-they must share one definition. Header and Meta both use `title` and
-`description`, which is why the example above supplies them once. Two different
-definitions for one prop throw `ConflictingPresetPropError` when the layout is
-created.
+Presets in one layout that declare the same prop receive the same page value, so they must share one definition. Header and Meta both use `title` and `description`, which is why the example above supplies them once. Two different definitions for one prop throw `ConflictingPresetPropError` when the layout is created.
 
 ## Rename and extend
 
 Added in 3.2.0.
 
-Every factory made by `defineComposableComponent` accepts `rename` and has
-`extend`.
+Every factory made by `defineComposableComponent` accepts `rename` and has `extend`.
 
-- `rename` gives a default prop a new name (`{ items: 'steps' }`), or a new name
-  and definition (`{ title: { name: 'heading', schema } }`).
+- `rename` gives a default prop a new name (`{ items: 'steps' }`), or a new name and definition (`{ title: { name: 'heading', schema } }`).
 - `extend` derives a new factory with its own `name`, props or wrapper.
 
 An invalid rename throws `InvalidPropRenameError`.
@@ -179,30 +161,17 @@ export type Href = typeof hrefSchema.infer;
 
 Added in 3.3.0.
 
-`getSchema(path)` returns the definition at a path that starts with a prop name.
-`infer` on the result is the value type. Inside definitions built from the
-built-in validators the path goes deeper: an object key is a segment, `[string]`
-is any key of a record, and `[number]` is any item of an array. The editor
-suggests the next segment after each dot.
+`getSchema(path)` returns the definition at a path that starts with a prop name. `infer` on the result is the value type. Inside definitions built from the built-in validators the path goes deeper: an object key is a segment, `[string]` is any key of a record, and `[number]` is any item of an array. The editor suggests the next segment after each dot.
 
 - `infer` exists only in types and is `undefined` at runtime.
-- A factory also holds its definitions under its name, for example
-  `createNavigationComposable.Navigation.props`. For names that collide with
-  factory methods or function properties, use `factory.props` or
-  `factory.getSchema` instead.
-- Paths stop at external schemas and custom validator functions, because
-  Standard Schema exposes validation but not child definitions. Those leaves can
-  still be fetched and validated whole.
+- A factory also holds its definitions under its name, for example `createNavigationComposable.Navigation.props`. For names that collide with factory methods or function properties, use `factory.props` or `factory.getSchema` instead.
+- Paths stop at external schemas and custom validator functions, because Standard Schema exposes validation but not child definitions. Those leaves can still be fetched and validated whole.
 
 ## Define your own composable
 
 Validator functions as props and `defineContext` arrived in 3.2.0.
 
-`defineComposableComponent` takes a `name` and `props`. A prop is a Standard
-Schema or a validator function, so a composable needs no schema library. A
-validator receives `{ value, error }`, returns the validated value (its return
-type is the prop type), and rejects with `throw error('Expected text')`, which
-creates a `PropValidatorError`. `createPropValidator` makes one reusable.
+`defineComposableComponent` takes a `name` and `props`. A prop is a Standard Schema or a validator function, so a composable needs no schema library. A validator receives `{ value, error }`, returns the validated value (its return type is the prop type), and rejects with `throw error('Expected text')`, which creates a `PropValidatorError`. `createPropValidator` makes one reusable.
 
 ```tsx
 import {
@@ -228,21 +197,13 @@ export const createNoticeComposable = defineComposableComponent({
 });
 ```
 
-The thrown error becomes the `cause` of the `PropError` that reports the value.
-`props` accepts the same shape as `props.custom`, including
-`children: 'required'`; a string on any other prop throws
-`InvalidComposablePropsError`.
+The thrown error becomes the `cause` of the `PropError` that reports the value. `props` accepts the same shape as `props.custom`, including `children: 'required'`; a string on any other prop throws `InvalidComposablePropsError`.
 
-When a definition depends on values a caller may change, use
-`defineComposableComponent.defineContext({ ... }).handler(...)`. Each context
-entry has a default `value` and an optional `handler` deciding how a supplied
-value is applied. A caller passes a value, or a function of the default, beside
-the other options: `createNotice({ tones: (defaults) => [...defaults, 'loud'], render })`.
+When a definition depends on values a caller may change, use `defineComposableComponent.defineContext({ ... }).handler(...)`. Each context entry has a default `value` and an optional `handler` deciding how a supplied value is applied. A caller passes a value, or a function of the default, beside the other options: `createNotice({ tones: (defaults) => [...defaults, 'loud'], render })`.
 
 ## Composables on bound pages
 
-A page bound with `asHOF()` exposes `makeComposable` when the layout defines
-composables. See [Route components and renderers](./route-components.md).
+A page bound with `asHOF()` exposes `makeComposable` when the layout defines composables. See [Route components and renderers](./route-components.md).
 
 ## Next steps
 

@@ -4,10 +4,7 @@ description: Replace the chained createDefinedResourceLayout builder with one co
 order: 140
 ---
 
-v1.0.0 has one breaking change set: the chained `createDefinedResourceLayout` builder was
-replaced by a single configuration object. v0 itself changed incompatibly between many minor
-releases, so this guide starts from the final v0 release, `0.25.0`. If you are on an earlier
-`0.x`, read [the v0 notes](../v0/index.md) first.
+v1.0.0 has one breaking change set: the chained `createDefinedResourceLayout` builder was replaced by a single configuration object. v0 itself changed incompatibly between many minor releases, so this guide starts from the final v0 release, `0.25.0`. If you are on an earlier `0.x`, read [the v0 notes](../v0/index.md) first.
 
 In this guide you will:
 
@@ -96,8 +93,7 @@ const { createResourceLayout } = defineBoundLayout({
 
 ## 3. Read the normalized resources accessor
 
-`resources()` now returns normalized definitions, and the original declarations are on
-`resources.raw()`. `pick`, `omit` and `isResource` behave as before.
+`resources()` now returns normalized definitions, and the original declarations are on `resources.raw()`. `pick`, `omit` and `isResource` behave as before.
 
 ```tsx
 resources();     // [{ value: 'users' }, { value: 'posts', subResources: [{ value: 'comments' }] }]
@@ -106,12 +102,10 @@ resources.raw(); // ['users', { value: 'posts', subResources: ['comments'] }]
 
 ## 4. New in 1.x
 
-- `createResourceConfig.forResource('users', { component })` fragments you can spread into a
-  config.
+- `createResourceConfig.forResource('users', { component })` fragments you can spread into a config.
 - 1.1.0: `asComposable` and the `namespace` option. 1.2.0: `createRenderState.fromState`.
 - 1.3.0 and 1.4.0: the inspector and the Vite plugin. 1.5.0: `required` and `suppliedVia`.
-- 1.6.0 and 1.6.1: optional layout names, `defineLayoutName.defineParts`, and the
-  configuration-object form of `defineLayoutName`.
+- 1.6.0 and 1.6.1: optional layout names, `defineLayoutName.defineParts`, and the configuration-object form of `defineLayoutName`.
 
 ## Checklist
 

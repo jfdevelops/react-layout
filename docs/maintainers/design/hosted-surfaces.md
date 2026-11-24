@@ -2,20 +2,13 @@
 
 > Status: implemented.
 >
-> Goal: type the product relationship between a root layout family and
-> structurally different hosted families (side panes, settings overlays)
-> without replacing the existing multi-file `createDefinedResourceLayout`
-> workflow.
+> Goal: type the product relationship between a root layout family and structurally different hosted families (side panes, settings overlays) without replacing the existing multi-file `createDefinedResourceLayout` workflow.
 
 ## Problem
 
-`defineResourceLayout` / `createDefinedResourceLayout` model **shared chrome
-and a shared prop contract**. Surfaces with a different structural contract
-correctly get their own definition (page shell vs create/detail pane vs
-settings frame).
+`defineResourceLayout` / `createDefinedResourceLayout` model **shared chrome and a shared prop contract**. Surfaces with a different structural contract correctly get their own definition (page shell vs create/detail pane vs settings frame).
 
-What the library does not model today is the **host relationship** between
-those families. Apps invent it by convention:
+What the library does not model today is the **host relationship** between those families. Apps invent it by convention:
 
 ```ts
 // Host resource is typed on the page factory.
@@ -31,18 +24,15 @@ export const PurposesPageCreatePane = resourcePaneLayout.createResourceLayout({
 });
 ```
 
-Subresources are the wrong tool for this: they describe hierarchy inside one
-chrome, not a different chrome attached to a host resource.
+Subresources are the wrong tool for this: they describe hierarchy inside one chrome, not a different chrome attached to a host resource.
 
 ## Design principles
 
 1. Keep today's multi-file usage as the ideal path.
 2. Offer a one-shot bag API for smaller apps, same types underneath.
-3. Reuse the library's HOF vocabulary (`forResource` / `forResources`) instead
-   of a new builder chain for hosting.
+3. Reuse the library's HOF vocabulary (`forResource` / `forResources`) instead of a new builder chain for hosting.
 4. Every surface uses the same normalized slots; only values differ.
-5. Host typing flows from `createDefinedResourceLayout`, not from stringly
-   surface names across files.
+5. Host typing flows from `createDefinedResourceLayout`, not from stringly surface names across files.
 
 ## Normalized surface contract
 
@@ -54,14 +44,11 @@ Every surface definition uses the same slots:
 | `host`                                                   | Optional attachment to a host layout's resources (`resources` subset or `'*'`)            |
 | `options` / `composables` / `props` / `render` / `shell` | Existing layout contract                                                                  |
 
-No per-surface special keys such as `modes`, `kind`, or ad-hoc relationship
-fields. A pane mode is a resource id on the pane surface. Overlay behavior
-falls out of declaring `host` and omitting persistent `shell`.
+No per-surface special keys such as `modes`, `kind`, or ad-hoc relationship fields. A pane mode is a resource id on the pane surface. Overlay behavior falls out of declaring `host` and omitting persistent `shell`.
 
 ## Split / multi-file API (ideal)
 
-`defineResourceSurface` is returned from `createDefinedResourceLayout` so host
-resource literals are in scope.
+`defineResourceSurface` is returned from `createDefinedResourceLayout` so host resource literals are in scope.
 
 ```ts
 // admin/-utils/layout/base.tsx
@@ -97,8 +84,7 @@ export const {
 } = adminLayoutDefinition;
 ```
 
-The root page family keeps using `defineResourceLayout` as today. Hosted
-families call `defineResourceSurface`:
+The root page family keeps using `defineResourceLayout` as today. Hosted families call `defineResourceSurface`:
 
 ```ts
 // admin/$resource/-pane/layout.tsx
@@ -162,24 +148,17 @@ export const { createRenderState, defineResourceLayout } =
   });
 ```
 
-Auth and other unrelated product areas stay on a standalone
-`defineResourceLayout` / `createDefinedResourceLayout` with no `host`.
+Auth and other unrelated product areas stay on a standalone `defineResourceLayout` / `createDefinedResourceLayout` with no `host`.
 
 ### Why there is no `host.surface` field in the split API
 
-Across files, the host is the `createDefinedResourceLayout` result that
-provided `defineResourceSurface`. Passing `surface: 'page'` or a sibling
-variable is unnecessary; the function binding already carries the host
-resource union.
+Across files, the host is the `createDefinedResourceLayout` result that provided `defineResourceSurface`. Passing `surface: 'page'` or a sibling variable is unnecessary; the function binding already carries the host resource union.
 
-String surface keys are reserved for the one-shot bag below, where siblings
-are declared in one object.
+String surface keys are reserved for the one-shot bag below, where siblings are declared in one object.
 
 ## Consuming hosted layouts: conditional `forResource` option
 
-Do not add a `.hostedBy(...).forResource(...)` builder chain. Extend the
-existing `forResource` options object. `hostedBy` appears in the type **only**
-when the layout was created through `defineResourceSurface`:
+Do not add a `.hostedBy(...).forResource(...)` builder chain. Extend the existing `forResource` options object. `hostedBy` appears in the type **only** when the layout was created through `defineResourceSurface`:
 
 ```ts
 // admin/$resource/-purposes/pages-config.ts
@@ -241,17 +220,14 @@ type ForResourceOptions<Layout> = Layout extends HostedLayout<
 Rules:
 
 - Root page `forResource({ resource: 'purposes' })` rejects `hostedBy`.
-- Hosted pane `forResource({ resource: 'create' })` requires `hostedBy` when
-  `host` was declared.
-- `hostedBy` must be assignable to the surface's `host.resources` (or any host
-  resource when `host.resources` is `'*'`).
+- Hosted pane `forResource({ resource: 'create' })` requires `hostedBy` when `host` was declared.
+- `hostedBy` must be assignable to the surface's `host.resources` (or any host resource when `host.resources` is `'*'`).
 
 `forResources` follows the same rule when narrowing a hosted factory.
 
 ## One-shot bag API
 
-Smaller apps may declare the graph in one call. Internally this is sugar over
-`createDefinedResourceLayout` + `defineResourceSurface`:
+Smaller apps may declare the graph in one call. Internally this is sugar over `createDefinedResourceLayout` + `defineResourceSurface`:
 
 ```ts
 export const adminSurfaces = defineResourceSurfaces({
@@ -374,16 +350,12 @@ createDefinedResourceLayout(...)
 - Replacing `withLayout` / `Shell` (root persistent chrome stays as today).
 - Folding panes into the page renderer with flags.
 - Modeling auth as a hosted surface of admin.
-- Router search-param schemas (apps may later derive unions from
-  `host.resources` / surface `resources`, but that is not required for v1).
+- Router search-param schemas (apps may later derive unions from `host.resources` / surface `resources`, but that is not required for v1).
 
 ## Implementation sketch
 
 1. Extend `createDefinedResourceLayout` to return `defineResourceSurface`.
-2. `defineResourceSurface` reuses the existing defined-layout machinery with a
-   typed `host.resources` constraint against the parent resource union.
-3. Mark hosted layout results so `forResource` / `createResourceLayout` option
-   types conditionally require `hostedBy`.
+2. `defineResourceSurface` reuses the existing defined-layout machinery with a typed `host.resources` constraint against the parent resource union.
+3. Mark hosted layout results so `forResource` / `createResourceLayout` option types conditionally require `hostedBy`.
 4. Add `defineResourceSurfaces` as compositional sugar over (1)–(2).
-5. Optional follow-ups: inspection edges for host → surface in devtools, and
-   helpers that export resource/mode unions for route validation.
+5. Optional follow-ups: inspection edges for host → surface in devtools, and helpers that export resource/mode unions for route validation.

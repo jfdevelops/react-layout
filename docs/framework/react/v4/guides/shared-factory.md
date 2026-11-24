@@ -4,10 +4,7 @@ description: Create a shared factory and reusable page chrome, then render a res
 order: 100
 ---
 
-Start with one shared factory for a product area. This keeps resource names,
-validation, UI primitives, and component naming consistent as pages grow.
-The examples use ArkType, matching the reference application's approach.
-Synchronous Standard Schema libraries such as Zod and Valibot also work.
+Start with one shared factory for a product area. This keeps resource names, validation, UI primitives, and component naming consistent as pages grow. The examples use ArkType, matching the reference application's approach. Synchronous Standard Schema libraries such as Zod and Valibot also work.
 
 ## Install
 
@@ -29,15 +26,11 @@ yarn add @jfdevelops/react-layout arktype @jfdevelops/react-layout-adapter-arkty
 bun add @jfdevelops/react-layout arktype @jfdevelops/react-layout-adapter-arktype
 ```
 
-The adapter provides schemas for React values. Keep `react` and `react-dom`
-installed in your application. TypeScript preserves the resource names and
-infers the props accepted by each created component.
+The adapter provides schemas for React values. Keep `react` and `react-dom` installed in your application. TypeScript preserves the resource names and infers the props accepted by each created component.
 
 ## Bind the shared contract
 
-Create `layout/base.tsx`. In a real application, `wrapWith` points to your own
-layout, header, and content primitives; intrinsic elements keep this example
-self-contained.
+Create `layout/base.tsx`. In a real application, `wrapWith` points to your own layout, header, and content primitives; intrinsic elements keep this example self-contained.
 
 ```tsx
 import { createDefinedResourceLayout } from '@jfdevelops/react-layout';
@@ -74,14 +67,11 @@ export const { createRenderState, defineResourceLayout, defineLazyDefaults } =
   adminLayoutDefinition;
 ```
 
-`title: true` makes the title a required creation-time option. Values that change
-with the current screen, such as toolbar contents, belong in component props.
-Keep `adminLayoutDefinition` available as the source for devtools.
+`title: true` makes the title a required creation-time option. Values that change with the current screen, such as toolbar contents, belong in component props. Keep `adminLayoutDefinition` available as the source for devtools.
 
 ## Define the page chrome once
 
-Create `layout/layout-state.tsx`. This is a render state called `Layout`, used as
-a composable by the default and other shared states.
+Create `layout/layout-state.tsx`. This is a render state called `Layout`, used as a composable by the default and other shared states.
 
 ```tsx
 import { reactNode } from '@jfdevelops/react-layout-adapter-arktype';
@@ -114,14 +104,11 @@ export const layoutState = createRenderState({
 });
 ```
 
-This minimal contract requires callers to supply `toolbar` and `actions`; pass
-`null` when a slot is empty. To allow omission, use a schema that explicitly
-accepts `undefined`. See [Props and validation](./props-and-validation.md).
+This minimal contract requires callers to supply `toolbar` and `actions`; pass `null` when a slot is empty. To allow omission, use a schema that explicitly accepts `undefined`. See [Props and validation](./props-and-validation.md).
 
 ## Assemble the default state
 
-Create `layout/default-state.tsx`. Reuse the shared state's prop contract and
-forward those props explicitly to its composable.
+Create `layout/default-state.tsx`. Reuse the shared state's prop contract and forward those props explicitly to its composable.
 
 ```tsx
 import { createRenderState } from './base';
@@ -183,28 +170,19 @@ export function Services() {
 }
 ```
 
-The page owns its toolbar, actions, and data UI. The shared state owns their
-placement and page chrome. Keep data queries in resource components so the
-shared factory stays useful across the application.
+The page owns its toolbar, actions, and data UI. The shared state owns their placement and page chrome. Keep data queries in resource components so the shared factory stays useful across the application.
 
-Continue with [Resource routing](./resource-routing.md) to add
-resource-local route states and lazy loading.
+Continue with [Resource routing](./resource-routing.md) to add resource-local route states and lazy loading.
 
 ## Companion package versions
 
-Choose the adapter for the schema library installed in your app. ArkType, Zod,
-Valibot, and Effect adapters live in their corresponding
-`@jfdevelops/react-layout-adapter-*` packages. Presets and devtools are optional;
-install them when following [Composables and presets](./composables-and-presets.md)
-or [Develop and debug](./develop-and-debug.md).
+Choose the adapter for the schema library installed in your app. ArkType, Zod, Valibot, and Effect adapters live in their corresponding `@jfdevelops/react-layout-adapter-*` packages. Presets and devtools are optional; install them when following [Composables and presets](./composables-and-presets.md) or [Develop and debug](./develop-and-debug.md).
 
-The core package installs its own validator, composable, and inspection
-infrastructure. You do not need to add those packages for the workflow above.
+The core package installs its own validator, composable, and inspection infrastructure. You do not need to add those packages for the workflow above.
 
 ## Agent skill
 
-The package includes a skill for coding agents. Install it into your agent's
-skill directory after adding the dependency:
+The package includes a skill for coding agents. Install it into your agent's skill directory after adding the dependency:
 
 ```bash
 npx skills add ./node_modules/@jfdevelops/react-layout/skills/build-react-layouts

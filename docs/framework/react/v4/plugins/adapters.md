@@ -4,9 +4,7 @@ description: Validate React nodes and elements with your preferred schema librar
 order: 10
 ---
 
-Adapters provide `reactNode()` and `reactElement()` schemas for React values.
-Install the adapter matching your schema library when layout options or custom
-props contain JSX. Ordinary string, number, and object schemas need no adapter.
+Adapters provide `reactNode()` and `reactElement()` schemas for React values. Install the adapter matching your schema library when layout options or custom props contain JSX. Ordinary string, number, and object schemas need no adapter.
 
 ## Choose a package
 
@@ -18,8 +16,7 @@ props contain JSX. Ordinary string, number, and object schemas need no adapter.
 | `@jfdevelops/react-layout-adapter-effect` | Effect `^4.0.0` |
 | `@jfdevelops/react-layout-adapters` | Factory for writing your own adapter |
 
-The adapters also require React 18 or newer. Install only the schema-specific
-package you use; it includes the shared adapter factory as a dependency.
+The adapters also require React 18 or newer. Install only the schema-specific package you use; it includes the shared adapter factory as a dependency.
 
 ```npm
 npm i @jfdevelops/react-layout-adapter-zod zod
@@ -63,17 +60,11 @@ export const ServicesPage = createResourceLayout({
 });
 ```
 
-`reactNode()` describes renderable content; `reactElement()` requires a React
-element such as `<Icon />`, rather than the `Icon` component function. Empty
-content and optionality depend on the schema: explicitly allow `undefined` with
-your schema library when a prop may be omitted. Effect's helpers return Standard
-Schema wrappers directly.
+`reactNode()` describes renderable content; `reactElement()` requires a React element such as `<Icon />`, rather than the `Icon` component function. Empty content and optionality depend on the schema: explicitly allow `undefined` with your schema library when a prop may be omitted. Effect's helpers return Standard Schema wrappers directly.
 
 ## Build a schema from resources
 
-Each schema-specific adapter exports `createResourceSchema`. Pass a layout's
-`resources` accessor, a definition array, or a resource method. The schema preserves
-the declared resource literals in its inferred output type.
+Each schema-specific adapter exports `createResourceSchema`. Pass a layout's `resources` accessor, a definition array, or a resource method. The schema preserves the declared resource literals in its inferred output type.
 
 ```ts
 import { createDefinedResourceLayout } from '@jfdevelops/react-layout';
@@ -107,15 +98,11 @@ type ResourceList = z.infer<typeof ResourceList>;
 | `names` | `'posts'`, `'users'`, `'details'` |
 | `paths` | `'posts'`, `'users'`, `'users.details'` |
 
-Both inclusive nesting modes traverse every declared depth and include parent names.
-Only declared names are included; `allowAnyString` does not add arbitrary paths.
-Resource names remain exact literals, including punctuation.
+Both inclusive nesting modes traverse every declared depth and include parent names. Only declared names are included; `allowAnyString` does not add arbitrary paths. Resource names remain exact literals, including punctuation.
 
 ### Pass a resource method
 
-Pass a method directly and supply its parameters through `args`. Resource names
-in `args` autocomplete and the resulting schema preserves the selected union.
-Methods requiring parameters also require `args`.
+Pass a method directly and supply its parameters through `args`. Resource names in `args` autocomplete and the resulting schema preserves the selected union. Methods requiring parameters also require `args`.
 
 ```ts
 const AllResources = createResourceSchema(resources.raw);
@@ -134,28 +121,17 @@ const WithoutPosts = createResourceSchema(resources.omit, {
 const Selected = createResourceSchema(resources.pick('users'));
 ```
 
-Use the same function and options from the ArkType, Valibot, or Effect adapter
-for its native schema. Effect also exposes Standard Schema validation on the result.
-Schemas compose with the schema library's object, array, and optional APIs.
-Scoped accessors restrict the schema to their selected resources. Empty selections
-produce a union accepting no values; array format still accepts the empty array.
+Use the same function and options from the ArkType, Valibot, or Effect adapter for its native schema. Effect also exposes Standard Schema validation on the result. Schemas compose with the schema library's object, array, and optional APIs. Scoped accessors restrict the schema to their selected resources. Empty selections produce a union accepting no values; array format still accepts the empty array.
 
 ## Write an adapter
 
-Use `createAdapter` from `@jfdevelops/react-layout-adapters` to wrap the supplied
-React predicates in your schema library's constructors. It takes `node` and
-`element` callbacks and returns the two schema helpers, preserving their native
-types.
+Use `createAdapter` from `@jfdevelops/react-layout-adapters` to wrap the supplied React predicates in your schema library's constructors. It takes `node` and `element` callbacks and returns the two schema helpers, preserving their native types.
 
-See [Props and validation](../guides/props-and-validation.md#react-values-and-adapters)
-for composition examples and a custom adapter implementation.
+See [Props and validation](../guides/props-and-validation.md#react-values-and-adapters) for composition examples and a custom adapter implementation.
 
 ### Add resource schemas to an adapter
 
-Use `createResourceSchemaAdapter` to bind native constructors to the shared
-resource-schema factory. The factory handles input methods, arguments, resource
-selection, nested names, and schema shape. Each adapter supplies only its native
-schema family and its union and array constructors.
+Use `createResourceSchemaAdapter` to bind native constructors to the shared resource-schema factory. The factory handles input methods, arguments, resource selection, nested names, and schema shape. Each adapter supplies only its native schema family and its union and array constructors.
 
 ```ts
 import {
@@ -175,6 +151,4 @@ export const createResourceSchema = createResourceSchemaAdapter<ZodResourceSchem
 });
 ```
 
-`this['value']` represents the selected resource literal union. The schema family
-keeps native schema methods and output inference available to callers, while the
-factory owns the shared runtime behavior and function signatures.
+`this['value']` represents the selected resource literal union. The schema family keeps native schema methods and output inference available to callers, while the factory owns the shared runtime behavior and function signatures.

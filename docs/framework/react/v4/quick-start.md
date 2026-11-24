@@ -8,8 +8,7 @@ This page assumes you have [installed](./installation.md) React Layout and Zod.
 
 ## Define a layout
 
-Declare your resources, the options each page can supply, and the markup that
-renders those options:
+Declare your resources, the options each page can supply, and the markup that renders those options:
 
 ```tsx
 import { defineResourceLayout } from '@jfdevelops/react-layout';
@@ -44,10 +43,7 @@ export const ServicesPage = createResourceLayout({
 });
 ```
 
-`resources` defines the allowed resource keys. `options` describes values with
-schemas. `props.include` selects the options used by the layout: `title: true`
-requires a title when creating the page. `createResourceLayout` returns a React
-component bound to that resource and its option values.
+`resources` defines the allowed resource keys. `options` describes values with schemas. `props.include` selects the options used by the layout: `title: true` requires a title when creating the page. `createResourceLayout` returns a React component bound to that resource and its option values.
 
 ## Render the page
 

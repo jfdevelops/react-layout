@@ -4,9 +4,7 @@ description: Inspect resources, layouts, states, and composables during developm
 order: 50
 ---
 
-Devtools show the layout graph and mounted instances. Use the React inspector
-on its own, then add the Vite plugin for source links and render-state previews.
-No provider is required.
+Devtools show the layout graph and mounted instances. Use the React inspector on its own, then add the Vite plugin for source links and render-state previews. No provider is required.
 
 ## Choose a package
 
@@ -16,8 +14,7 @@ No provider is required.
 | `@jfdevelops/react-layout-devtools-vite` | Source locations, editor links, and state previews for Vite 6, 7, and 8. |
 | `@jfdevelops/react-layout-devtools-core` | Framework-independent inspection protocol and graph types for custom tooling; no React or DOM dependency. |
 
-Install the React inspector for your app and the optional plugin as a development
-dependency. Core inspection infrastructure is already installed by the library.
+Install the React inspector for your app and the optional plugin as a development dependency. Core inspection infrastructure is already installed by the library.
 
 ```npm
 npm i @jfdevelops/react-layout-devtools-react
@@ -41,8 +38,7 @@ bun add -D @jfdevelops/react-layout-devtools-vite
 
 ## Mount the inspector
 
-Keep the full factory result and pass it as `source`. In this Vite example,
-replace the placeholder content with your application's routes:
+Keep the full factory result and pass it as `source`. In this Vite example, replace the placeholder content with your application's routes:
 
 ```tsx
 import { createDefinedResourceLayout } from '@jfdevelops/react-layout';
@@ -63,10 +59,7 @@ export function App() {
 }
 ```
 
-Create your definitions through that same factory so the inspector can discover
-them. A standalone `defineResourceLayout` result can also be used as the source.
-Switch between graph and tree views to inspect resources, prop contracts,
-composables, and lazy loading status.
+Create your definitions through that same factory so the inspector can discover them. A standalone `defineResourceLayout` result can also be used as the source. Switch between graph and tree views to inspect resources, prop contracts, composables, and lazy loading status.
 
 ## Add Vite integration
 
@@ -80,12 +73,6 @@ export default defineConfig({
 });
 ```
 
-Select a mounted layout and a state in the inspector to preview it; choose
-**Auto** to return control to the app. Use `defineLayoutPreview` from the main
-library when a state needs fixture props.
+Select a mounted layout and a state in the inspector to preview it; choose **Auto** to return control to the app. Use `defineLayoutPreview` from the main library when a state needs fixture props.
 
-The default React entry is disabled in production builds. The `/production`
-entry always enables the inspector; `/disabled` always renders empty components.
-Keep fixture props behind a development guard. See
-[Develop and debug](./guides/develop-and-debug.md) for configuration, embedding,
-and production behavior.
+The default React entry is disabled in production builds. The `/production` entry always enables the inspector; `/disabled` always renders empty components. Keep fixture props behind a development guard. See [Develop and debug](./guides/develop-and-debug.md) for configuration, embedding, and production behavior.
